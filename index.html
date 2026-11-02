@@ -2727,7 +2727,11 @@ const PETS=[
   {id:"seihyo",t:"漁港に製氷機を",x:"氷が足りず、獲れた魚を捨てている",p:"zaimu"},
   {id:"bus",t:"山あいのバスを守れ",x:"日に二本の路線まで消えかけている",p:"soumu"},
   {id:"rito",t:"島の診療所に医者を",x:"急病の夜は船を待つしかない",p:"koro"},
-  {id:"koban",t:"交番を戻してほしい",x:"統合で駐在さんがいなくなった",p:"boei"}];
+  {id:"koban",t:"交番を戻してほしい",x:"統合で駐在さんがいなくなった",p:"boei"},
+  {id:"haiko",t:"村の学校を残してほしい",x:"子が減り、統合で灯が消えかけている",p:"monka"},
+  {id:"nougyo",t:"田畑の担い手を",x:"跡継ぎがなく、田が荒れはじめた",p:"nosui"},
+  {id:"kankyaku",t:"海外の客を呼びたい",x:"温泉街に直行便と案内の手を",p:"gaimu"},
+  {id:"taishin",t:"古い橋と校舎の耐震を",x:"次の大地震に間に合わせたい",p:"kokudo"}];
 function petOf(){try{if(!S||!sekOn()||S.cur==="sosaisen"||S.cur==="senkyo")return null;
   if(S.pet&&S.pet.m===S.month)return S.pet;
   const L=sekRegs();if(!L.length)return null;
