@@ -116,6 +116,7 @@ button:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
 .gr-n{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;font-variant-numeric:tabular-nums}.gr-n b{font-family:var(--f-disp);color:var(--kin)}.goalres small{font-size:.72rem;color:var(--sumi)}
 .choice .gmk{font-size:.7rem;font-weight:800;color:var(--kin);border:1px solid var(--kin);border-radius:999px;padding:0 6px;line-height:1.5}
 .yrnews summary{min-height:36px;display:flex;align-items:center;cursor:pointer}.yrnews .kawaraban{margin-top:6px;gap:8px}.yrnews .kb-item h3{font-size:.95rem}.yrm{font-family:var(--f-body);font-size:.7rem;font-weight:800;color:#9b2c20;margin-right:6px}
+.bkdisc{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.78rem;margin:6px 0}.bkdisc .bd-c small{color:var(--muted,#888)}.bd-h{margin:2px 0 8px;font-size:.82rem;color:var(--kin)}
 .synbook{background:var(--ai2);border-radius:10px;padding:8px 12px;border-left:4px solid #c9a4ff}.synbook summary{font-weight:700;font-size:.88rem;cursor:pointer}.synbook .bonds{margin-top:8px}
 .cand.star::after{content:"★";color:var(--kin);font-size:.75rem}
 .cand.warn::after{content:"⚡";color:var(--shu);font-size:.75rem}
@@ -5310,7 +5311,15 @@ function synBookHTML(){const seen=(S&&S.synB)||[];const ks=Object.keys(SYNB);if(
     return `<details class="bk syn${on?" on":""}"><summary class="bk-h"><b class="bk-k">相乗</b><h3>${n}</h3>${on?'<em class="synon">発動済</em>':`<em class="synon">${L.length}行</em>`}</summary>${sy?`<p class="muted">${sy.r.join("＋")}</p>`:""}
     <div class="bk-l">${L.map(([k,t])=>`<div class="bl">${portrait(k,32,"happy")}<div><b>${nameOf(k)}</b><p>「${spTx(t)}」</p></div></div>`).join("")}</div></details>`}).join("")}</div>
   <p class="muted">ほかの相乗は、発動した月に関わる偉人どうしの短い掛け合いが出る。</p>`}
-let bookKind="all";
+let bookKind="all",bookHint=0;
+function bookDiscHTML(){try{const sn=(S&&S.banterSeen)||[],s2=(S&&S.banterSeen2)||[],sy=(S&&S.synB)||[];
+  const bd=BONDS.filter(b=>!b.foe),fo=BONDS.filter(b=>b.foe);
+  const c=(A,f)=>A.filter(f).length;const seen=b=>sn.includes(b.n);
+  const row=(t,a,z)=>`<span class="bd-c"><small>${t}</small> <b>${a}</b>／${z}</span>`;
+  const un=BONDS.filter(b=>!seen(b)&&b.k&&b.k.length>=2);let hint="";
+  if(un.length){const b=un[bookHint%un.length];hint=`<p class="bd-h">手がかり：${b.k.slice(0,2).map(nameOf).join("と")}を同じ内閣に</p>`}
+  else hint=`<p class="bd-h">縁の掛け合いはすべて見た</p>`;
+  return `<div class="bkdisc">${row("縁",c(bd,seen),bd.length)}${row("因縁",c(fo,seen),fo.length)}${row("其の二",c(Object.keys(BANTER2),n=>s2.includes(n)),Object.keys(BANTER2).length)}${row("相乗",c(Object.keys(SYNB),n=>sy.includes(n)),Object.keys(SYNB).length)}${row("西軍",c(OBONDS,seen),OBONDS.length)}</div>${hint}`}catch(e){return ""}}
 function banterBook(){
   const kinds=[["all","すべて"],["bond","連携"],["rival","好敵手"],["clash","犬猿"],["foe","因縁（西軍党）"],["enemy","西軍党の縁"]];
   const ALL=[...BONDS,...OBONDS.map(b=>({...b,enemy:1}))];const kd0=b=>b.enemy?"enemy":b.foe?"foe":b.kind;
@@ -5318,7 +5327,7 @@ function banterBook(){
   const cnt=k=>ALL.filter(b=>k==="all"||kd0(b)===k).length;
   app.innerHTML=`<div class="eyebrow">縁と掛け合い</div><h2>掛け合い一覧（${ALL.length}組）</h2>
   <p class="muted">偉人同士の縁と、その縁が地図で初めて働いたときの掛け合い。別の月にもう一度働くと「其の二」の続きが出る。犬猿の仲は、仲裁役がいれば和解できる。</p>
-  <div class="cands">${kinds.map(([k,n])=>`<button class="cand" data-bk="${k}" aria-pressed="${bookKind===k}">${n}<span class="dots">${cnt(k)}</span></button>`).join("")}</div>
+  ${bookDiscHTML()}<div class="cands">${kinds.map(([k,n])=>`<button class="cand" data-bk="${k}" aria-pressed="${bookKind===k}">${n}<span class="dots">${cnt(k)}</span></button>`).join("")}</div>
   <details class="synbook"><summary>縁の相乗（${SYN.length}組）　2つの縁がそろうと発動</summary><div class="bonds">${synChips(SYN)}</div>${synBookHTML()}</details>
   <div class="book">${list.map(b=>{const kd=b.enemy?"enemy":b.foe?"foe":b.kind;const L=(b.enemy?OBANTER:BANTER)[b.n]||[];
     return `<article class="bk ${kd}"><div class="bk-h"><b class="bk-k">${b.enemy?"西軍"+({bond:"連携",rival:"好敵手",clash:"不和"})[b.kind]:b.foe?"因縁":({bond:"連携",rival:"好敵手",clash:"犬猿"})[b.kind]}</b><h3>${b.n}</h3></div>
@@ -5377,7 +5386,7 @@ function title(){
   $("#setBtn").onclick=openSettings;
   {const tg=()=>{const e=$("#recHist"),t=$("#recTap");if(!e)return;e.hidden=!e.hidden;if(t)t.textContent=(e.hidden?"▸ 過去5回の記録を見る":"▾ 過去5回の記録を閉じる")};const b=$("#recBox"),t=$("#recTap");if(b)b.onclick=tg;if(t)t.onclick=tg;}
   $("#start").onclick=()=>{pick={};pmPick="ieyasu";curPost="pm";lastPick=null;pv=null;renderCabinet()};
-  $("#book").onclick=banterBook;
+  $("#book").onclick=()=>{bookHint++;banterBook()};
   if(resumable)$("#resume").onclick=()=>{S=sv;render()};
 }
 
