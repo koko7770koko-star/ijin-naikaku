@@ -5624,11 +5624,13 @@ function renderCabinet(){
     else if(cgSort==='name')list=list.slice().sort((a,b)=>yomiOf(a[0],a[1].n).localeCompare(yomiOf(b[0],b[1].n),'ja'));
     const isX=XPOSTS.includes(p);
     const postOf=key=>key===pmPick?PMPOST:[...POSTS,...XPOSTS].find(x=>pick[x.id]===key);
-    const CGN=12;let shown=list,hid=0;
-    if(!cgAll&&cgSort==='nou'){const keep=[];let n=0;for(const e of list){const key=e[0],on=k===key,dis=!!(!on&&postOf(key))&&!isP,isPv=pv&&pv.p===p.id&&pv.k===key;
+    const CGN=k?9:12;let shown=list,hid=0;/* qa04：任命済みのポストは見比べ用に少なめ（全員は「ほかの○人も見る」で） */
+    if(!cgAll&&cgSort==='nou'){const keep=[],bk=[];let n=0;const ab0=activeBonds(ids0);for(const e of list){const key=e[0],on=k===key,dis=!!(!on&&postOf(key))&&!isP,isPv=pv&&pv.p===p.id&&pv.k===key;
         if(on||isPv){keep.push(e);continue}if(dis)continue;if(n<CGN){keep.push(e);n++;continue}
-        const nb=activeBonds([...ids0,key]).filter(b=>!activeBonds(ids0).includes(b)&&b.kind!=="clash");if(nb.length)keep.push(e)}
-      hid=list.length-keep.length;shown=keep}
+        const nb=activeBonds([...ids0,key]).filter(b=>!ab0.includes(b)&&b.kind!=="clash");if(nb.length)bk.push([e,nb.length])}
+      /* qa04：縁で残す人は縁の多い順に CGN_B 人まで（おまかせ組閣の後にほぼ全員が残って2000px超になっていた） */
+      const CGN_B=k?3:6,bs=new Set(bk.slice().sort((a,b)=>b[1]-a[1]).slice(0,CGN_B).map(x=>x[0]));const ks=new Set(keep);
+      shown=list.filter(e=>ks.has(e)||bs.has(e));hid=list.length-shown.length}
     return `<div class="post" id="cpost">
       <div class="post-head"><h3>${p.name}</h3><span class="field">重視：${FIELDS[p.field]}</span></div>
       ${isX?`<p class="effbox" style="display:block"><b>このポストの効果</b>：${p.x}（●3以上で発動、●5なら2倍）。空席でも政権は発足できる。</p>`:""}<p class="legend">${isP?"誰でも総理になれます。札は「総理の特技」。●は発信力。":"得意な順に並んでいます。●がこのポストの能力、★は縁が生まれる人、⚡は相性が悪い人。"}${k?" 緑/赤の数字は任命中の人との差。タップすると並べて比べられます。":""}</p>
