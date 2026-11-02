@@ -225,7 +225,8 @@ button:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
 .act .t{font-weight:700}
 .act .hint{font-size:.76rem;color:var(--sumi)}
 .regtab{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
-.regtab div{display:flex;gap:8px;align-items:baseline;background:var(--ai2);border-radius:6px;padding:6px 10px;font-size:.84rem}
+.regtab div{display:flex;gap:4px;align-items:baseline;background:var(--ai2);border-radius:6px;padding:6px 8px;font-size:.84rem}
+.regtab span{white-space:nowrap}.endfold{padding:12px 0;cursor:pointer}.regtab .muted{font-size:.74rem}/* qa05：390px で「九州・沖縄」が折れていた */
 .regtab b{margin-left:auto;font-family:var(--f-disp);font-variant-numeric:tabular-nums}
 .regtab small{font-size:.7rem;color:var(--sumi)}
 .tag.who{border-color:var(--midori);color:var(--midori)}
@@ -6374,8 +6375,8 @@ function ending(){
     ${macYearHTML()}
     ${cast}
     <div class="titles"><div class="muted">今回の称号</div>${earned.length?earned.map(t=>`<div class="title-chip on"><b>${t.t}</b><small>${t.x}${newT.includes(t.id)?"　初獲得":""}</small></div>`).join(""):`<p class="muted">称号なし</p>`}
-      <details><summary class="muted">すべての称号（${rec.titles.length}/${TITLES.length}）</summary>${TITLES.map(t=>`<div class="title-chip ${rec.titles.includes(t.id)?"on":""}"><b>${rec.titles.includes(t.id)?t.t:"？？？"}</b><small>${t.x}</small></div>`).join("")}</details></div>
-    <details><summary class="muted">政権の記録</summary><div class="log">${S.log.map(l=>`<div><span>${l[0]}月</span><span>${l[1]}</span></div>`).join("")}</div></details>
+      <details><summary class="muted endfold">すべての称号（${rec.titles.length}/${TITLES.length}）</summary>${TITLES.map(t=>`<div class="title-chip ${rec.titles.includes(t.id)?"on":""}"><b>${rec.titles.includes(t.id)?t.t:"？？？"}</b><small>${t.x}</small></div>`).join("")}</details></div>
+    <details><summary class="muted endfold">政権の記録</summary><div class="log">${S.log.map(l=>`<div><span>${l[0]}月</span><span>${l[1]}</span></div>`).join("")}</div></details>
     <div class="row"><button class="btn ghost" id="share">結果を共有</button></div><div id="shareOut" class="share-out"></div>
     <div class="row">
       <button class="btn" id="again">同じ顔ぶれで再挑戦</button>
