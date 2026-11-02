@@ -3417,10 +3417,13 @@ const SOKUHO=[
  {t:"繁華街で詐欺の被害が相次ぐ",o:[{t:"警察に特別班を置く",d:{saf:3},c:-1,x:"治安↑ 国庫-1"},{t:"注意を呼びかけるにとどめる",d:{saf:1,sup:-1},x:"治安↑ 支持↓"}]},
  {t:"大規模な通信障害が発生",o:[{t:"官邸に対策室を置く",d:{saf:2,sup:1},tire:1,x:"治安↑ 支持↑ 閣僚が一人疲れる"},{t:"事業者に復旧を任せる",d:{eco:-1,sup:-1},x:"経済↓ 支持↓"}]},
  {t:"子ども食堂の寄付が全国で急増",o:[{t:"国も上乗せして支える",d:{wel:3},c:-1,x:"民生↑ 国庫-1"},{t:"総理が現場を訪ねて礼を述べる",d:{sup:2,wel:1},x:"支持↑ 民生↑"}]},
+ /* 11/03 野党の追及カード 外交・結束（iA。tk:1 は tkPick だけが出す） */
+ {tk:1,id:"gai",k:"追及",t:"西軍党が「弱腰外交だ」と追及",o:[{t:"交渉の経過を丁寧に説明する",d:{sup:2},tire:1,x:"支持↑ 閣僚が一人疲れる"},{t:"「対話こそ国益」と反論",pr:1,d:{dip:2,sup:1},opp:-2,f:{sup:-4,dip:-1},fo:2,x:"成功:外交↑ 西軍↓／失敗:支持↓↓ 西軍↑"}]},
+ {tk:1,id:"ketsu",k:"追及",t:"西軍党が「閣内不一致だ」と追及",o:[{t:"閣僚を集めて足並みをそろえる",d:{coh:2},tire:1,x:"結束↑ 閣僚が一人疲れる"},{t:"「活発な議論の証」と反論",pr:1,d:{coh:2,sup:1},opp:-2,f:{sup:-3,coh:-2},fo:2,x:"成功:結束↑ 西軍↓／失敗:支持↓ 結束↓"}]},
 ];
 function tkP(){try{return Math.max(.3,Math.min(.8,.5+Math.min(.15,(skA(PMK(),"speech")-3)*.05)+(S.st.sup>=60?.08:0)-(S.opp>=60?.1:0)))}catch(e){return .5}}
 function tkPick(){if(!S||!S.month||S.month<3||S.month>9||S.tkM===S.month||Math.random()>.55)return null;
-  const sc={zai:55-S.st.eco+((S.kokko||0)<=1?15:0)+((S.kokko||0)<0?10:0)-(S.tag==="seiren"?6:0),chi:55-Math.min(S.st.wel,S.st.saf),man:manOn()?30:S.st.sup-55};
+  const sc={zai:55-S.st.eco+((S.kokko||0)<=1?15:0)+((S.kokko||0)<0?10:0)-(S.tag==="seiren"?6:0),chi:55-Math.min(S.st.wel,S.st.saf),man:manOn()?30:S.st.sup-55,gai:55-S.st.dip,ketsu:55-S.st.coh};
   const ids=Object.keys(sc).filter(k=>k!==S.tkLast).sort((x,y)=>(sc[y]+Math.random()*10)-(sc[x]+Math.random()*10));
   const id=ids[0];const i=SOKUHO.findIndex(e=>e.tk&&e.id===id);if(i<0)return null;S.tkM=S.month;S.tkLast=id;return i}
 const IE_SK=[4,3,3,3,3,3];
