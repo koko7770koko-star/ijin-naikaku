@@ -6182,7 +6182,7 @@ function faTick(){
     else{const idle=Object.entries(S.pc).filter(([k,P])=>!(P.path&&P.path.length)&&!(P.curse>0)).sort((a,b)=>hopsTo(a[0],r)-hopsTo(b[0],r))[0];if(idle&&idle[1].faSei!==S.month){idle[1].faSei=S.month;const A=actionsFor(idle[0],r);if(A.length)dispatch(idle[0],r,A[0],true)}}}
   if(S.day>=30){const b=q("#endTurn");if(b&&!b.hidden&&faWait("end",1800))b.click()}
 }
-setInterval(()=>{try{faTick()}catch(e){console.log("fa",e)}
+setInterval(()=>{try{faTick()}catch(e){console.error("faTick",e&&e.message||e)}/* 全自動の例外は console.error に（自動対戦の errs に出る） */
   let bn=document.getElementById("faBanner");const on=!!(S&&S.fullAuto&&!S.done&&document.querySelector(".mapsec")&&S.phase==="map");
   if(on&&!bn){bn=document.createElement("div");bn.id="faBanner";bn.className="fa-banner";bn.innerHTML='地図を全自動で進行中 <button id="faStop">止める</button>';document.body.appendChild(bn)}
   if(bn)bn.hidden=!on;
