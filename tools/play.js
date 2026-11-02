@@ -1,4 +1,4 @@
-// 自動対戦：組閣→案件→地図（全自動）を12月の結末まで進め、エラーと結果を出す。usage: node tools/play.js <index.htmlの絶対パス> <seed> <撮影の頭>  env: LIM=ミリ秒 TR=1 で手順表示 MODE=smart で狙い撃ち（9月から、ふつうの遊説・開発を接戦区へ振り向ける。既定は auto＝ゲームの全自動） DIFF=easy|normal|hard で難易度 FAST=自動進行の待ちを何分の1にするか（既定8、1で従来どおり） PICK=fa で案件の選択肢をゲームの faEventPick（国庫の赤字も見る）で選ぶ（既定は一番上） RULE=<変則ルールid> TAG=<口ぐせid> GOAL=<国家目標id> VOW=<一枚札id> でその札を選ぶ（結果の fin に rule・tag・goal・vow）
+// 自動対戦：組閣→案件→地図（全自動）を12月の結末まで進め、エラーと結果を出す。usage: node tools/play.js <index.htmlの絶対パス> <seed> <撮影の頭>  env: LIM=ミリ秒 TR=1 で手順表示 MODE=smart で狙い撃ち（9月から、ふつうの遊説・開発を接戦区へ振り向ける。既定は auto＝ゲームの全自動） DIFF=easy|normal|hard で難易度 FAST=自動進行の待ちを何分の1にするか（既定8、1で従来どおり） PICK=fa で案件の選択肢をゲームの faEventPick（国庫の赤字も見る）で選ぶ（既定は一番上） OL=<西軍党首id> で7月の党首選をその人に固定（fin に ol） RULE=<変則ルールid> TAG=<口ぐせid> GOAL=<国家目標id> VOW=<一枚札id> でその札を選ぶ（結果の fin に rule・tag・goal・vow）
 const {chromium}=require('playwright');
 (async()=>{const [file,seed,shot]=process.argv.slice(2);
 const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});
@@ -7,6 +7,8 @@ await p.addInitScript(s=>{let x=+s||1;Math.random=()=>{x^=x<<13;x>>>=0;x^=x>>>17
 await p.goto('file://'+file);await p.waitForTimeout(1200);
 await p.evaluate(()=>{try{localStorage.clear()}catch(e){}});await p.reload();await p.waitForTimeout(1200);
 if(process.env.DIFF)await p.evaluate(d=>{diff=d},process.env.DIFF);
+/* env OL=<西軍党首id>：7月の党首選を必ずその党首に（難しさの測り比べ用。mitsunari なら続投） */
+if(process.env.OL)await p.evaluate(K=>{if(typeof OLEAD==='undefined'||!OLEAD[K])return;oppLeadElect=function(L){if(S.month!==7||S.oppLead)return;const g=K==="mitsunari"?2:5;S.oppLead={k:K,m:S.month};S.oppLeadPend=1;S.oppOrder=[K,...S.oppOrder.filter(x=>x!==K)];S.opp=clamp(S.opp+g);L.push([`西軍党の党首選（${OPP[K].n}・固定）`,`勢い+${g}`]);S.log.push([S.month,`西軍党首選：${OPP[K].n}（固定）`])}},process.env.OL);
 await p.evaluate(F=>{if(F>1&&typeof faWait==='function'){const o=faWait;faWait=(k,ms)=>o(k,ms/F)}},FAST);
 await p.screenshot({path:shot+'-title.png'});
 const BL=['#setBtn','#howBtn','#book','#faStop','#kantei','#pp','#spd','#viewCab','#recTap','#back','#bkBack','#backMap','#cancelKaizo','#cancelSel','#again','#re','#share'];
@@ -39,6 +41,6 @@ while(Date.now()-t0<(+process.env.LIM||600000)){steps++;
   const e=[...document.querySelectorAll('button')].find(e=>vis(e)&&!BL.some(s=>e.matches(s)));if(e){e.click();return 'btn:'+(e.id||e.innerText.slice(0,12))}return '';},[BL,process.env.MODE||'auto',{PICK:process.env.PICK||'',RULE:process.env.RULE||'',TAG:process.env.TAG||'',GOAL:process.env.GOAL||'',VOW:process.env.VOW||''}]);
  if(clicked)last=clicked; if(process.env.TR)console.log(steps,JSON.stringify(st),clicked);
  await p.waitForTimeout(clicked?(FAST>1?120:250):(FAST>1?300:800));}
-const fin=await p.evaluate(()=>({diff:S.diff,done:S.done,fall:S.fall||'',seats:S.seats,month:S.month,br:(()=>{try{const R=S.regRes||[];const reg=R.reduce((a,x)=>a+x.w,0);const pr=S.pledgeRes||[];const ok=pr.filter(x=>x.ok).length;return {reg,dif:DIFF[S.diff||'normal'].seat,pl:ok*10-(pr.length-ok)*8+(pr.length&&ok===pr.length?6:0),bill:Object.values(S.bills||{}).filter(b=>b.st==='passed').length*2,kok:S.kokko<0?-10:0,sup:S.st&&S.st.sup,opp:S.opp}}catch(e){return null}})(),img:document.querySelectorAll('img').length,bgi:Object.keys(BGI).length,imgk:Object.keys(IMG).length,rule:S.rule||'',tag:S.tag||'',goal:S.goal||'',vow:S.vow||''}));
+const fin=await p.evaluate(()=>({ol:S.oppLead?S.oppLead.k:'',diff:S.diff,done:S.done,fall:S.fall||'',seats:S.seats,month:S.month,br:(()=>{try{const R=S.regRes||[];const reg=R.reduce((a,x)=>a+x.w,0);const pr=S.pledgeRes||[];const ok=pr.filter(x=>x.ok).length;return {reg,dif:DIFF[S.diff||'normal'].seat,pl:ok*10-(pr.length-ok)*8+(pr.length&&ok===pr.length?6:0),bill:Object.values(S.bills||{}).filter(b=>b.st==='passed').length*2,kok:S.kokko<0?-10:0,sup:S.st&&S.st.sup,opp:S.opp}}catch(e){return null}})(),img:document.querySelectorAll('img').length,bgi:Object.keys(BGI).length,imgk:Object.keys(IMG).length,rule:S.rule||'',tag:S.tag||'',goal:S.goal||'',vow:S.vow||''}));
 await p.screenshot({path:shot+'-end.png'});
 console.log(JSON.stringify({seed,fin,steps,secs:Math.round((Date.now()-t0)/1000),last,errs:errs.slice(0,5)}));await b.close()})();
