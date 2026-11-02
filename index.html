@@ -2244,7 +2244,7 @@ function startGov(){
   {const ps=PMSK[pmPick]||{};if(ps.coh0)S.st.coh=clamp(S.st.coh+ps.coh0);if(ps.sup0)S.st.sup=clamp(S.st.sup+ps.sup0);}
   {const tg=pmTagOf(pmTag);if(tg){S.tag=tg.id;if(tg.id==="kenyaku")S.kokko=(S.kokko||0)+1;if(tg.id==="jinshin")S.st.sup=clamp(S.st.sup+2);S.log.push([S.month,`総理の口ぐせ方針「${tg.n}」（${tg.x}）`])}}
   {const c=cnOf([...ids,...team,pmPick],pmTag);if(c){S.cn={n:c.n,t:c.t,b:c.b,wk:c.wk};S.cnW=c.wk;S.st[c.b]=clamp(S.st[c.b]+2);S.log.push([S.month,`内閣の合言葉「${c.n}」（${KS[c.b]}+2・苦手${KS[c.wk]}）`])}}
-  {const ru=ruleOf(ruleSel);if(ru){S.rule=ru.id;Object.entries(ru.st).forEach(([k,d])=>{S.st[k]=clamp(S.st[k]+d)});S.log.push([S.month,`今年の変則ルール「${ru.n}」（${ru.x}）`])}}
+  {const ru=ruleOf(ruleSel);if(ru){S.rule=ru.id;Object.entries(ru.st).forEach(([k,d])=>{S.st[k]=clamp(S.st[k]+d)});if(ru.kk)S.kokko=(S.kokko||0)+ru.kk;ruleQ();S.log.push([S.month,`今年の変則ルール「${ru.n}」（${ru.x}）`])}}
   initMap();
   try{const vv=vowOf(loadRec().vowL);if(vv){S.st[vv.s]=clamp(S.st[vv.s]+2);S.log.push([S.month,`前の公約「${vv.t}」を果たした（${KS[vv.s]}+2）`])}}catch(e){}
   {const lg=legacyPick&&legList().some(t=>t.id===legacyPick)?legOf(legacyPick):null;if(lg){S.legacy=lg.id;S.st[lg.k]=clamp(S.st[lg.k]+LEG_N);S.opp=clamp(S.opp+LEG_OPP);S.lgB=S.st[lg.k];S.log.push([S.month,`遺産「${lg.t}」を引き継ぐ（${KS[lg.k]}+${LEG_N}・西軍の勢い+${LEG_OPP}）`])}}
@@ -4780,15 +4780,18 @@ const RULES=[
  {id:"kome",n:"米価高騰",k:"wel",st:{wel:-4},lo:["sup","支持"],hi:["eco","経済"],x:"民生-4で始まる。毎月、民生が50未満なら支持-1、60以上なら経済+1"},
  {id:"gaiatsu",n:"外圧",k:"dip",st:{dip:-4},lo:["coh","結束"],hi:["sup","支持"],x:"外交-4で始まる。毎月、外交が50未満なら結束-1、60以上なら支持+1"},
  {id:"jinzai",n:"人材難",k:"coh",st:{coh:-5},lo:["saf","治安"],hi:["sup","支持"],x:"結束-5で始まる。毎月、結束が50未満なら治安-1、60以上なら支持+1"},
- {id:"shukusai",n:"祝祭",k:"sup",st:{sup:4,eco:-3},lo:["coh","結束"],hi:["eco","経済"],x:"支持+4・経済-3で始まる。毎月、支持が50未満なら結束-1、65以上なら経済+1"}];
-const RULE_HI={shukusai:65};
+ {id:"shukusai",n:"祝祭",k:"sup",st:{sup:4,eco:-3},lo:["coh","結束"],hi:["eco","経済"],x:"支持+4・経済-3で始まる。毎月、支持が50未満なら結束-1、65以上なら経済+1"},
+ {id:"saigai",n:"災害の年",k:"wel",st:{wel:2},kk:-2,lo:["sup","支持"],hi:["coh","結束"],x:"国庫-2・民生+2で始まり、地震・台風・豪雨が出やすい。毎月、民生が45未満なら支持-1、55以上なら結束+1"}];
+const RULE_HI={shukusai:65,saigai:55},RULE_LO={saigai:45};
+/* 災害の年：地震・台風・豪雨を案件の山の前の方へ（位置を 1/1.5 に＝出やすさ約1.5倍） */
+function ruleQ(){try{if(S.rule!=="saigai"||!Array.isArray(S.queue))return;["jishin","taifu","gouu"].forEach(id=>{const i=S.queue.indexOf(id);if(i>0){S.queue.splice(i,1);S.queue.splice(Math.floor(i/1.5),0,id)}})}catch(e){}}
 let ruleSel="";
 function ruleOf(id){return RULES.find(r=>r.id===id)||null}
 function ruleMonth(){try{const r=S&&S.rule?ruleOf(S.rule):null;if(!r||S.month>12)return;
-  const v=S.st[r.k],th=RULE_HI[r.id]||60;let t=null,d=0;
-  if(v<50){t=r.lo;d=-1}else if(v>=th){t=r.hi;d=1}
+  const v=S.st[r.k],th=RULE_HI[r.id]||60,lo=RULE_LO[r.id]||50;let t=null,d=0;
+  if(v<lo){t=r.lo;d=-1}else if(v>=th){t=r.hi;d=1}
   if(!t)return;S.st[t[0]]=clamp(S.st[t[0]]+d);S.delta[t[0]]=(S.delta[t[0]]||0)+d;
-  S.log.push([S.month,`変則ルール「${r.n}」：${KS[r.k]||""}${v<50?"が低く":"が高く"}${t[1]}${d>0?"+":""}${d}`]);
+  S.log.push([S.month,`変則ルール「${r.n}」：${KS[r.k]||""}${v<lo?"が低く":"が高く"}${t[1]}${d>0?"+":""}${d}`]);
   S.ruleN=(S.ruleN||0)+(d>0?1:0);S.ruleB=(S.ruleB||0)+(d<0?1:0);
 }catch(e){}}
 function ruleLine(){try{const r=S&&S.rule?ruleOf(S.rule):null;if(!r)return "";
