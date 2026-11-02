@@ -1296,7 +1296,7 @@ function voteCards(list){if(!list.length)return "";
   setTimeout(()=>document.querySelectorAll(".vbar i[data-w]").forEach(i=>i.style.width=i.dataset.w+"%"),60);
   return h;}
 function dietBand(t){return `<div class="diet-band" style="background-image:url(${BGI.diet})"><span>${t}</span></div>`}
-function isDietScene(){const e=EV[S.cur];return ["kokkai","kokkaiRes"].includes(S.phase)||S.view==="bill"||(S.phase==="event"&&e&&(["shoshin","yosan","kaiki"].includes(S.cur)||e.o.some(o=>o.vote)))}
+function isDietScene(){const e=EV[S.cur];return S.view==="bill"||(S.phase==="event"&&e&&(["shoshin","yosan","kaiki"].includes(S.cur)||e.o.some(o=>o.vote)))}
 /* 戦績の引っ越し（機種変更用）：loadRec() の JSON を "IJIN1:"＋base64 にして書き出し、貼り付けで読み込む */
 function recExport(){try{return "IJIN1:"+btoa(unescape(encodeURIComponent(JSON.stringify(loadRec()))))}catch(e){return ""}}
 function recImport(t){try{t=String(t||"").replace(/\s+/g,"");if(!t.startsWith("IJIN1:"))return null;
@@ -2049,28 +2049,7 @@ const CRISES=[
  {id:"cr_koritsu",c:S=>S.st.dip<=30},
 ];
 
-// 国会答弁（予算委員会）：a=答え方ごとの評価 [正面から, 数字で, はぐらかす, 故事で]
-const QA_MONTHS=[];
-const ANS=[
- {t:"正面から答える",x:"誠実さで勝負"},
- {t:"数字で反論する",x:"データで論破"},
- {t:"はぐらかす",x:"言質を取らせない"},
- {t:"故事を引いて煙に巻く",x:"四百年の経験"},
-];
-const QA=[
- {by:"mitsunari",q:"総理、国庫の使い道に無駄が多すぎる。一円単位で説明していただきたい。",a:[1,2,-2,-1]},
- {by:"yukimura",q:"閣僚の問題発言が相次いでいる。総理の任命責任をどうお考えか！",a:[2,-1,-2,0]},
- {by:"kanetsugu",q:"この内閣の政治に『愛』はあるのか。弱い立場の人を見捨てていないか。",a:[1,0,-2,2]},
- {by:"mitsunari",q:"四百年前の関ヶ原、あれは調略による勝利だった。総理は今も人を裏で操っておられるのでは？",a:[-1,-2,1,2]},
- {by:"yukimura",q:"総理はAIだ。AIに国の舵取りを任せてよいと本気で思っているのか！",a:[2,1,-2,1]},
- {by:"kanetsugu",q:"地方は疲弊している。東京ばかり見ていないか。米沢の民の声を聞いたことがあるか。",a:[2,1,-1,0]},
- {by:"mitsunari",q:"経済政策の効果を示せ。示せないなら失政だ。",a:[0,2,-2,-1]},
- {by:"yukimura",q:"防衛費の中身が不透明だ。真田丸のような備えになっているのか！",a:[1,2,-1,1]},
- {by:"kanetsugu",q:"子育て世代は将来に絶望している。総理は若者に何を約束するのか。",a:[2,0,-2,1]},
- {by:"mitsunari",q:"江戸幕府の鎖国が日本を遅らせた。総理にこの国の外交を任せられるのか。",a:[1,1,-1,2]},
- {by:"yukimura",q:"国会審議を軽んじ、閣議だけで物事を決めているのではないか！",a:[2,-1,-2,0]},
- {by:"kanetsugu",q:"物価高に苦しむ家計に、今すぐ届く手立てはあるのか。",a:[1,2,-2,-1]},
-];
+/* 11/03 旧版の国会答弁（QA_MONTHS・ANS・QA・startQA・answerQA・qaView・qaResView）は v130 の野党の追及カード（SOKUHO tk）に役目を移したので消した。S.qaSeen・S.qaWin はセーブの形を変えないため残す */
 
 /* ---------- 拡張データ：難易度・法案・人物イベント・称号 ---------- */
 const DIFF={
@@ -2506,47 +2485,6 @@ function resolveVote(o){
     msg:`「${optT(o.t)}」が功を奏し、不信任案は否決された。（成功の見込み ${Math.round(Math.min(.92,p)*100)}%）西軍党の勢いは削がれた。`,d:{...S.delta}};
   S.news.push({m:S.month,h:"内閣不信任案を否決　偉人内閣、首の皮一枚",c:ldQ("次は必ず")});
   S.phase="result";save();render();
-}
-function startQA(){
-  const pool=QA.filter((q,i)=>!S.qaSeen.includes(i));
-  const list=pool.length?pool:QA;
-  const q=list[Math.random()*list.length|0];
-  S.qa={i:QA.indexOf(q)};S.qaSeen.push(S.qa.i);S.phase="kokkai";S.delta={};save();render();window.scrollTo(0,0);
-}
-function answerQA(i){
-  const q=QA[S.qa.i]; let sc=q.a[i];
-  // 官房長官の発信力で少し補正
-  const kb=S.cab.kanbo?getSk(S.cab.kanbo,"speech"):1;
-  if(kb>=5&&sc<2)sc+= Math.random()<.4?1:0;
-  if(kb<=2&&sc>-2)sc-= Math.random()<.3?1:0;
-  const E={2:{sup:5,opp:-8},1:{sup:2,opp:-4},0:{sup:0,opp:1},"-1":{sup:-3,opp:4},"-2":{sup:-5,opp:8}}[sc];
-  apply({sup:E.sup},true);S.opp=clamp(S.opp+E.opp);
-  if(sc>=1)S.qaWin=(S.qaWin||0)+1;
-  const o=OPP[q.by];
-  const verdict=sc>=2?"完璧な答弁。議場がどよめいた。":sc===1?"そつなく切り抜けた。":sc===0?"可もなく不可もなし。":sc===-1?"答弁は空回り。野次が飛んだ。":"最悪の答弁。審議が止まった。";
-  S.qa.res={sc,E,verdict,quote:sc>=1?o.win:o.lose,ans:ANS[i].t};
-  S.news.push({m:S.month,h:`予算委　${o.n}氏の追及に総理「${ANS[i].t}」`,c:verdict});
-  S.log.push([S.month,`国会答弁（${o.n}）：${ANS[i].t}`]);
-  S.phase="kokkaiRes";save();render();
-}
-function qaView_(){
-  const q=QA[S.qa.i],o=OPP[q.by];
-  return `<article class="event diet">
-    <span class="tag">予算委員会</span>
-    <div class="speaker">${portrait(q.by,64,"angry")}<div class="quote">「${q.q}」<small>${o.role}　${o.n}</small></div></div>
-    <p class="muted">家康総理、答弁に立つ。どう答えるか。</p>
-    <div class="choices">${ANS.map((a,i)=>`<button class="choice" data-qa="${i}"><span class="t">${a.t}</span><span class="hint">${a.x}</span></button>`).join("")}</div>
-  </article>`;
-}
-function qaView(){return qaView_().replace("家康総理、答弁に立つ",pmName()+"総理、答弁に立つ")}
-function qaResView(){
-  const q=QA[S.qa.i],o=OPP[q.by],r=S.qa.res;
-  return `<article class="result">
-    <div class="speaker">${portrait(PMK(),56,r.sc>=1?"happy":r.sc<=-1?"angry":"normal")}<div class="quote" style="font-size:.95rem">総理、${r.ans}。<small>${r.verdict}</small></div></div>
-    <div class="speaker">${portrait(q.by,56,r.sc>=1?"normal":"happy")}<div class="quote">「${r.quote}」<small>${o.role}　${o.n}</small></div></div>
-    <div class="chips"><span class="${r.E.sup>=0?"up":"dn"}">支持 ${sgn(r.E.sup)}</span><span class="${r.E.opp<=0?"up":"dn"}">西軍党の勢い ${sgn(r.E.opp)}</span></div>
-    <button class="btn" id="toPolicy2">内政へ進む</button>
-  </article>`;
 }
 function submitBill(id){
   const b=BILLS.find(x=>x.id===id);
@@ -6018,6 +5956,7 @@ function dash(){const HB=hmBase();
 function render(){
   stopLoop();
   if(S.done){ending();return}
+  if(S.phase==="kokkai"||S.phase==="kokkaiRes")S.phase="policy";/* 旧版の国会答弁の途中のセーブ */
   let body="";
   if(S.view==="cab")body=cabView();
   else if(S.view==="kantei")body=policyView();
@@ -6026,20 +5965,18 @@ function render(){
   else if(S.view==="gaiko")body=gaikoView();
   else if(S.phase==="event")body=eventView();
   else if(S.phase==="result")body=resultView();
-  else if(S.phase==="kokkai")body=qaView();
-  else if(S.phase==="kokkaiRes")body=qaResView();
   else if(S.view==="kantei")body=policyView();
   else if(S.phase==="map")body=mapView();
   else if(S.phase==="policy")body=policyView();
   else if(S.phase==="settle")body=settleView();
   const dietS=isDietScene();
   const evSc=evScene()||settleScene();setScene(S.view==="cab"||S.view==="kaizo"?"cabinet":evSc?evSc:dietS?"diet":S.phase==="map"&&S.view==="main"?"map":"");
-  if(dietS&&S.view==="main")body=dietBand(S.phase==="kokkai"||S.phase==="kokkaiRes"?"国会　予算委員会":"国会　本会議場")+body;
+  if(dietS&&S.view==="main")body=dietBand("国会　本会議場")+body;
   if(S.view==="cab")body=cabScene(PMK(),S.cab,{team:S.team,angry:Object.values(S.cab).filter(k=>(S.dis[k]||0)>=60)})+body;
   const ph=["event","result","map","settle"];const pl=["案件","結果","地図","決算"];
   app.innerHTML=`${dash()}${SET.adv!==false&&S.view==="main"?advice():""}
     <div class="turnline"><span class="eyebrow">令和　偉人内閣　${S.month}月 / 12月</span>${calStrip()}
-    <span class="phase">${pl.map((l,i)=>`<span class="${(ph[i]===S.phase||(ph[i]==="kokkai"&&S.phase==="kokkaiRes"))&&S.view==="main"?"on":""}">${l}</span>`).join("")}</span></div>
+    <span class="phase">${pl.map((l,i)=>`<span class="${ph[i]===S.phase&&S.view==="main"?"on":""}">${l}</span>`).join("")}</span></div>
     ${body}
     ${S.log.length&&S.view==="main"?`<details><summary class="muted">政権の記録（${S.log.length}件）</summary><div class="log">${S.log.slice().reverse().map(l=>`<div><span>${l[0]}月</span><span>${l[1]}</span></div>`).join("")}</div></details>`:""}`;
   bind();
@@ -6397,8 +6334,6 @@ function bind(){
   app.querySelectorAll("[data-focus]").forEach(b=>b.onclick=()=>setFocus(b.dataset.focus));
   app.querySelectorAll("[data-pet]").forEach(b=>b.onclick=()=>petAnswer(b.dataset.pet==="1"));
   const tp=$("#toPolicy"); if(tp)tp.onclick=()=>{ if(S.cur==="senkyo"){S.done=true;election();return} S.phase="map";S.delta={};save();render();window.scrollTo(0,0)};
-  app.querySelectorAll("[data-qa]").forEach(b=>b.onclick=()=>answerQA(+b.dataset.qa));
-  const tp2=$("#toPolicy2"); if(tp2)tp2.onclick=()=>{S.phase="policy";S.delta={};save();render();window.scrollTo(0,0)};
   app.querySelectorAll(".cmd").forEach(b=>b.onclick=()=>doCmd(b.dataset.c));
   const bm=$("#backMap"); if(bm)bm.onclick=()=>{S.view="main";render();window.scrollTo(0,0)};
   const em=$("#endMonth"); if(em)em.onclick=()=>{S.delta={};settle()};
