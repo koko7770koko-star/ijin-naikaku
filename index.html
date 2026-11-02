@@ -2569,7 +2569,7 @@ function rivalNews(){if(S.month<7||S.month>8||S.rivalNews)return;const R=rivalNo
 function facMonthly(L){
   const F=S.fac||(S.fac={});const n=facCount(S.cab,S.pm);const tot=Object.values(n).reduce((a,v)=>a+v,0)||1;
   const big=Object.keys(n).find(f=>n[f]/tot>.5);const seen=S.facSeen||(S.facSeen={});let coh=0,opp=0;const hot=[];
-  Object.keys(FAC).forEach(f=>{let d=n[f]===0?5:(big&&f!==big&&n[f]<=1)?2:-3;if(d>0)d=Math.max(0,d-aideN("chosei"));if(d>0&&S.tag==="seiren"&&S.month%3===0)d+=1;F[f]=Math.max(0,Math.min(100,(F[f]||0)+d));
+  Object.keys(FAC).forEach(f=>{let d=n[f]===0?5:(big&&f!==big&&n[f]<=1)?2:-3;if(d>0)d=Math.max(0,d-aideN("chosei"));if(d>0&&S.tag==="seiren"&&S.month%3===0){d+=1;S.tagH=S.tagH||{p:0,m:0};S.tagH.m++}F[f]=Math.max(0,Math.min(100,(F[f]||0)+d));
     const v=F[f];if(v>=40){coh+=1;hot.push(FAC[f].n)}if(v>=70){coh+=1;opp+=1}
     const lv=v>=70?2:v>=40?1:0;if(lv>(seen[f]||0)){S.news.push({m:S.month,h:lv>=2?`与党${FAC[f].n}、造反の構え`:`与党${FAC[f].n}が「冷遇」に不満`,c:lv>=2?"総裁選で対抗馬擁立の声も":`ポストを与えれば収まる見込み`});}
     seen[f]=lv;});
@@ -2611,7 +2611,7 @@ function settle(){
   BILLS.forEach(b=>{const s=S.bills[b.id]; if(s&&s.st==="passed"&&s.since<S.month){apply(b.per,true);if(b.pc)S.kokko+=b.pc;
     L.push([`${b.t}の効果`,Object.entries(b.per).map(([k,v])=>`${KS[k]}${sgn(v)}`).join(" ")+(b.pc?` 国庫${b.pc}`:"")])}});
   // 対決姿勢：強行採決のあと4か月なにもなければ1段和らぐ
-  if((S.tk||0)>0&&S.month-(S.tkM||0)>=(S.tag==="chosei"?3:4)){S.tk--;S.tkM=S.month;L.push(["西軍党の対決姿勢が和らぐ",S.tk?`対決Lv${S.tk}`:"平常に戻る"])}
+  if((S.tk||0)>0&&S.month-(S.tkM||0)>=(S.tag==="chosei"?3:4)){if(S.tag==="chosei"&&S.month-(S.tkM||0)<4){S.tagH=S.tagH||{p:0,m:0};S.tagH.p++}S.tk--;S.tkM=S.month;L.push(["西軍党の対決姿勢が和らぐ",S.tk?`対決Lv${S.tk}`:"平常に戻る"])}
   // 審議中の法案
   BILLS.forEach(b=>{const s=S.bills[b.id]; if(!s||s.st!=="debate")return; s.left--;
     if(s.left>0){if(!s.cm&&!(S.diet&&S.diet.m===S.month)){s.cm=1;const tac=S.opp>=55-10*Math.min(2,S.tk||0)?"kyohi":"gyuho";if(tac==="kyohi"&&S.month<=9)s.left++;else if(tac==="gyuho")s.mod=(s.mod||0)-.05;
@@ -2619,7 +2619,7 @@ function settle(){
       L.push([`${b.t}　審議中`,`採決まで${s.left}か月`]);return}
     const p=passProb(b)+(s.force?.25:0);
     const okV=Math.random()<p;if(s.force){apply({sup:-4},true);S.opp=clamp(S.opp+3);tkUp();L.push([`${b.t}　強行採決の代償`,`支持-4 西軍+3・西軍の対決姿勢Lv${S.tk}`]);news.push({h:`${b.t}、委員会で強行採決`,c:"西軍党が議場で抗議の座り込み"})}mkVote(b.t,okV,Object.values(b.now||{}).reduce((a,v)=>a+Math.abs(v),0)>=8);
-    if(s.force&&S.tag==="daitan"){apply({sup:okV?2:-2},true);L.push(["総理の口ぐせ「大胆」",okV?"強行採決が通り支持+2":"強行採決が裏目に出て支持-2"])}
+    if(s.force&&S.tag==="daitan"){apply({sup:okV?2:-2},true);S.tagH=S.tagH||{p:0,m:0};S.tagH[okV?"p":"m"]++;L.push(["総理の口ぐせ「大胆」",okV?"強行採決が通り支持+2":"強行採決が裏目に出て支持-2"])}
     if(okV){s.st="passed";s.since=S.month;apply(b.now,true);
       L.push([`${b.t}　可決・成立`,Object.entries(b.now).map(([k,v])=>`${KS[k]}${sgn(v)}`).join(" ")]);
       news.push({h:`${b.t}が成立　偉人内閣の看板政策`,c:"総理「百年の計の第一歩」"});S.opp=clamp(S.opp-4);S.log.push([S.month,`${b.t} 成立`]);}
@@ -2978,7 +2978,10 @@ function kotaeRuleHTML(){try{const L=[],sg=v=>(v>0?"+":"")+v;
     const m=Object.entries(S.ruleS||{}).filter(([k,v])=>v).map(([k,v])=>`${KS[k]||k}${sg(v)}`);
     L.push(`<b>変則ルール「${r.n}」</b>：はじめ ${st.join("・")||"なし"}／毎月 ${m.length?m.join("・"):"動きなし"}（恩恵${S.ruleN||0}回・罰${S.ruleB||0}回）`)}
   const c=S.cn;if(c)L.push(`<b>合言葉「${c.n}」</b>：初期${KS[c.b]}+2／苦手の${KS[c.wk]}が弱まったのは${S.cnWn||0}回`);
-  const t=S.tag?pmTagOf(S.tag):null;if(t)L.push(`<b>口ぐせ「${t.n}」</b>：${t.x}`);
+  const t=S.tag?pmTagOf(S.tag):null;if(t){const H=S.tagH||{p:0,m:0};
+    const e={daitan:H.p+H.m?`強行採決が通った${H.p}回（支持+${H.p*2}）・裏目${H.m}回（支持-${H.m*2}）`:"強行採決はしなかった（効きなし）",chosei:`西軍党の対決姿勢が1か月早く和らいだ${H.p}回`,kenyaku:"初期の国庫+1",jinshin:"初期の支持+2",
+      seiren:`財政の追及で支持の下げが軽く済んだ${H.p}回／派閥の不満が余分にたまった${H.m}回`}[t.id]||t.x;
+    L.push(`<b>口ぐせ「${t.n}」</b>：${e}`)}
   return L.length?`<div class="kt-rl">${L.map(x=>`<p>${x}</p>`).join("")}</div>`:""}catch(e){return ""}}
 function kojiHTML(){if(S.cur!=="senkyo")return "";const k=S.koji,ok=kojiDone(),O=kojiOpts(),lk=oppLeadK();
   let ov="";try{ov=portrait(lk,36,"angry")}catch(e){}
@@ -3774,7 +3777,7 @@ function mapTick(dd){
 function answerSoku(j){
   const ev=SOKUHO[S.pend],o=ev.o[j];
   let d={...o.d},opp=o.opp,pf=null;if(o.risk&&Math.random()<.5){d={saf:-4,sup:-3};}
-  if(o.pr!=null){pf=Math.random()>=tkP();if(pf){d={...o.f};opp=o.fo;if(S.tag==="seiren"&&ev.id==="zai"&&d.sup<0)d.sup+=1}S.tkH=S.tkH||{n:0,ok:0};S.tkH.n++;if(!pf)S.tkH.ok++}
+  if(o.pr!=null){pf=Math.random()>=tkP();if(pf){d={...o.f};opp=o.fo;if(S.tag==="seiren"&&ev.id==="zai"&&d.sup<0){d.sup+=1;S.tagH=S.tagH||{p:0,m:0};S.tagH.p++}}S.tkH=S.tkH||{n:0,ok:0};S.tkH.n++;if(!pf)S.tkH.ok++}
   if(o.tire){S.tire=S.tire||{};const tk=Object.keys(S.pc||{}).filter(k=>!isPM(k)&&C[k]);if(tk.length){const k=tk[Math.random()*tk.length|0];S.tire[k]=Math.min(3,(S.tire[k]||0)+1)}}
   apply(d);if(o.c)S.kokko+=o.c;if(opp)S.opp=clamp(S.opp+opp);
   mlog(`${ev.k||"速報"}「${ev.t}」→ ${o.t}${o.risk&&d.saf<0?"（裏目に出た）":""}${pf===true?"（押し切れず）":pf===false?"（押し切った）":""}`,!(d.sup<0||d.saf<0));
