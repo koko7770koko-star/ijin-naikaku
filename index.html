@@ -5313,14 +5313,14 @@ function synBookHTML(){const seen=(S&&S.synB)||[];const ks=Object.keys(SYNB);if(
     <div class="bk-l">${L.map(([k,t])=>`<div class="bl">${portrait(k,32,"happy")}<div><b>${nameOf(k)}</b><p>「${spTx(t)}」</p></div></div>`).join("")}</div></details>`}).join("")}</div>
   <p class="muted">ほかの相乗は、発動した月に関わる偉人どうしの短い掛け合いが出る。</p>`}
 let bookKind="all",bookHint=0;
-function bookDiscHTML(){try{const sn=(S&&S.banterSeen)||[],s2=(S&&S.banterSeen2)||[],sy=(S&&S.synB)||[];
+function bookDiscHTML(){try{let G=S;if(!G){try{G=load()}catch(e){}}const sn=(G&&G.banterSeen)||[],s2=(G&&G.banterSeen2)||[],sy=(G&&G.synB)||[];
   const bd=BONDS.filter(b=>!b.foe),fo=BONDS.filter(b=>b.foe);
   const c=(A,f)=>A.filter(f).length;const seen=b=>sn.includes(b.n);
   const row=(t,a,z)=>`<span class="bd-c"><small>${t}</small> <b>${a}</b>／${z}</span>`;
   const un=BONDS.filter(b=>!seen(b)&&b.k&&b.k.length>=2);let hint="";
   if(un.length){const b=un[bookHint%un.length];hint=`<p class="bd-h">手がかり：${b.k.slice(0,2).map(nameOf).join("と")}を同じ内閣に</p>`}
   else hint=`<p class="bd-h">縁の掛け合いはすべて見た</p>`;
-  return `<div class="bkdisc">${row("縁",c(bd,seen),bd.length)}${row("因縁",c(fo,seen),fo.length)}${row("其の二",c(Object.keys(BANTER2),n=>s2.includes(n)),Object.keys(BANTER2).length)}${row("相乗",c(Object.keys(SYNB),n=>sy.includes(n)),Object.keys(SYNB).length)}${row("西軍",c(OBONDS,seen),OBONDS.length)}</div>${hint}`}catch(e){return ""}}
+  return `<div class="bkdisc"><span class="bd-c"><small>${G?"この政権で見た数":"見た数（政権を始めると数える）"}</small></span>${row("縁",c(bd,seen),bd.length)}${row("因縁",c(fo,seen),fo.length)}${row("其の二",c(Object.keys(BANTER2),n=>s2.includes(n)),Object.keys(BANTER2).length)}${row("相乗",c(Object.keys(SYNB),n=>sy.includes(n)),Object.keys(SYNB).length)}${row("西軍",c(OBONDS,seen),OBONDS.length)}</div>${hint}`}catch(e){return ""}}
 function banterBook(){
   const kinds=[["all","すべて"],["bond","連携"],["rival","好敵手"],["clash","犬猿"],["foe","因縁（西軍党）"],["enemy","西軍党の縁"]];
   const ALL=[...BONDS,...OBONDS.map(b=>({...b,enemy:1}))];const kd0=b=>b.enemy?"enemy":b.foe?"foe":b.kind;
