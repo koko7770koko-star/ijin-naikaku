@@ -51,6 +51,10 @@ button:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
 .plsel{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
 .plb{text-align:left;display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:8px;border:1px solid var(--ai3);background:var(--ai);color:var(--washi)}
 .plb b{font-size:.88rem}.plb small{color:var(--sumi);font-size:.72rem}
+/* 11/03 qa03 組閣画面を短く：口ぐせ・変則ルールは名前だけの3列、選んだ札の説明は下の pick-note に */
+.plsel.tight{grid-template-columns:repeat(3,1fr)}
+.plsel.tight .plb{min-height:40px;justify-content:center;padding:6px 8px}
+.plsel.tight .plb small{display:none}
 .plb[aria-pressed="true"]{border-color:var(--kin);background:var(--ai3)}.plb[aria-pressed="true"] b{color:var(--kin)}
 .plb:disabled{opacity:.35}
 .pls{display:flex;flex-direction:column;gap:5px}
@@ -5643,10 +5647,10 @@ function renderCabinet(){
   <div class="post"><div class="post-head"><h3>公約</h3><span class="field">3つ選ぶ（${pledges.length}/3）　達成で+10議席・未達で-8議席</span></div>
     <div class="plsel">${PLEDGES.map(p=>`<button class="plb" data-pl="${p.id}" aria-pressed="${pledges.includes(p.id)}" ${!pledges.includes(p.id)&&pledges.length>=3?"disabled":""}><b>${p.n}</b><small>${p.x}</small></button>`).join("")}</div></div>
   <div class="post"><div class="post-head"><h3>総理の口ぐせ方針</h3><span class="field">1つ選べる（任意）</span></div>
-    <div class="plsel">${PMTAGS.map(t=>`<button class="plb" data-pmtag="${t.id}" aria-pressed="${pmTag===t.id}"><b>${t.n}</b><small>${t.x}</small></button>`).join("")}</div>
-    ${pmTagOf(pmTag)?`<div class="pick-note">${pmTagOf(pmTag).a}</div>`:""}</div>
+    <div class="plsel tight">${PMTAGS.map(t=>`<button class="plb" data-pmtag="${t.id}" aria-pressed="${pmTag===t.id}"><b>${t.n}</b><small>${t.x}</small></button>`).join("")}</div>
+    ${pmTagOf(pmTag)?`<div class="pick-note"><b>${pmTagOf(pmTag).n}</b>　${pmTagOf(pmTag).x}<br>${pmTagOf(pmTag).a}</div>`:`<div class="pick-note">札を押すと説明が出る（もう一度押すと外れる）</div>`}</div>
   <div class="post"><div class="post-head"><h3>今年の変則ルール</h3><span class="field">任意（なしで通常）</span></div>
-    <div class="plsel">${RULES.map(t=>`<button class="plb" data-rule="${t.id}" aria-pressed="${ruleSel===t.id}"><b>${t.n}</b><small>${t.x}</small></button>`).join("")}</div></div>
+    <div class="plsel tight">${RULES.map(t=>`<button class="plb" data-rule="${t.id}" aria-pressed="${ruleSel===t.id}"><b>${t.n}</b><small>${t.x}</small></button>`).join("")}</div><div class="pick-note">${ruleOf(ruleSel)?`<b>${ruleOf(ruleSel).n}</b>　${ruleOf(ruleSel).x}`:"札を押すと説明が出る（もう一度押すと外れる）"}</div></div>
   <div class="post"><div class="post-head"><h3>難易度</h3></div><div class="cands">${Object.entries(DIFF).map(([k,d])=>`<button class="cand" data-diff="${k}" aria-pressed="${diff===k}">${d.n}</button>`).join("")}</div><div class="pick-note">${DIFF[diff].x}</div></div>
   ${legBox()}${vowLegBox()}
   <div class="row"><button class="btn ghost" id="autoCab">おまかせ組閣</button></div>
