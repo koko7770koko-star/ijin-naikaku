@@ -2771,12 +2771,16 @@ function petAnswer(yes){const P=petOf();if(!P||P.a!=null)return;const q=PETS.fin
 function optT(t){t=String(t==null?"":t);const m=t.match(/^「([^「」]*)」$/);return m?m[1]:t}
 /* v94 国家目標の中間評価（6月の決算で一度だけ） */
 const GOAL_MID_M=6;
+/* 組の目標（s2）は、掲げたときからの伸びが小さい方の指標（同じなら今の値が低い方）。単独の目標は g.s */
+function goalWeak(g){if(!g)return null;if(!g.s2)return g.s;const B=S.goalBs||{},d=k=>(S.st[k]||0)-(B[k]??S.goalB??50);
+  const a=d(g.s),b=d(g.s2);return b<a||(b===a&&(S.st[g.s2]||0)<(S.st[g.s]||0))?g.s2:g.s}
 function goalMid(L,news){const g=goalOf();if(!g||S.month!==GOAL_MID_M||S.goalMid)return;
   const gn=goalGain(),n=S.goalN||0,K=goalK(g);
   const v=(gn>=goalNeed()/2&&n>=Math.ceil(GOAL_N/2))?"g":gn<=Math.min(1,goalNeed()-1)?"r":"y",tip=v==="r"||n===0;
-  const adv=[S.cab&&S.cab.kanbo,S.cab&&S.cab[{eco:"zaimu",dip:"gaimu",wel:"koro",saf:"boei"}[g.s]]].find(k=>k&&C[k]&&!isPM(k))||null;
+  const wk=goalWeak(g),mk=S.cab&&S.cab[{eco:"zaimu",dip:"gaimu",wel:"koro",saf:"boei"}[wk]],kb=S.cab&&S.cab.kanbo;
+  const adv=(g.s2?[mk,kb]:[kb,mk]).find(k=>k&&C[k]&&!isPM(k))||null,KW=g.s2?KS[wk]:K;
   const need=Math.max(0,goalNeed()-gn),nn=Math.max(0,GOAL_N-n);
-  const q=tip?(n===0?`「${g.n}」を掲げたまま、◎の案はまだ一度も選ばれておりませぬ。合う案が来たら迷わず◎を。`:`${K}が伸び悩んでおります。◎の案を重ね、官邸の手でも${K}を後押しなされませ。`):"";
+  const q=tip?(n===0?`「${g.n}」を掲げたまま、◎の案はまだ一度も選ばれておりませぬ。合う案が来たら迷わず◎を。`:`${KW}が伸び悩んでおります。◎の案を重ね、官邸の手でも${KW}を後押しなされませ。`):"";
   S.goalMid={m:S.month,v,gn,n,adv:tip?adv:null,q,g:g.id};
   const hd=v==="g"?`国家目標「${g.n}」、折り返しで順調`:v==="r"?`国家目標「${g.n}」、半年で停滞`:`国家目標「${g.n}」、道半ば`;
   const tx=`掲げてから${K}${gn>=0?"+":""}${gn}・◎の案${n}回。`+(v==="g"?"有言実行の評価で支持+1":v==="r"?"「看板倒れ」と野党":`達成まで${K}あと${need}${nn?`・◎あと${nn}回`:""}`);
@@ -2789,7 +2793,7 @@ function goalMidHTML(){try{const M=S.goalMid;if(!M||M.m!==S.month||!M.adv||!C[M.
 function goalArcHTML(g,ok){try{const M=S.goalMid;if(!M||!M.v||(M.g&&M.g!==g.id))return "";
   const t=ok&&M.v==="r"?["巻","6月の停滞から巻き返し、志を遂げた"]:ok&&M.v==="y"?["伸","6月は道半ば。後半の追い込みで届いた"]:!ok&&M.v==="g"?["失","6月は順調だったが、後半に失速"]:null;
   if(!t)return "";return `<p class="gr-arc ${ok?"g":"r"}"><b>${t[0]}</b>${t[1]}<span>6月 ${M.gn>=0?"+":""}${M.gn}・◎${M.n}回</span></p>`}catch(e){return ""}}
-function goalRe(){const g=goalOf();if(!g||S.goalRe||S.month>6)return;S.goalRe=1;S.goal=null;S.goalN=0;S.goalB=null;S.st.coh=clamp(S.st.coh-3);S.log.push([S.month,`国家目標「${g.n}」を取り下げる（結束-3）`]);save();render()}
+function goalRe(){const g=goalOf();if(!g||S.goalRe||S.month>6)return;S.goalRe=1;S.goal=null;S.goalN=0;S.goalB=null;S.goalBs=null;S.st.coh=clamp(S.st.coh-3);S.log.push([S.month,`国家目標「${g.n}」を取り下げる（結束-3）`]);save();render()}
 function goalResHTML(){try{const g=goalOf();if(!g||S.fall)return "";const base=Math.round(S.goalB??50),now=Math.round(goalV(g)),gn=now-base,n=S.goalN||0,ok=goalDone();
   const v=ok?["達成","g"]:(gn>=goalNeed()/2||n>=GOAL_N)?["あと一歩","y"]:["届かず","r"];
   const X=x=>Math.max(0,Math.min(100,x));
@@ -2797,7 +2801,7 @@ function goalResHTML(){try{const g=goalOf();if(!g||S.fall)return "";const base=M
   <div class="gr-bar"><u style="width:${X(base)}%"></u><i style="left:${X(Math.min(base,now))}%;width:${Math.abs(now-base)}%" class="${gn>=0?"up":"dn"}"></i></div>
   <div class="gr-n"><span>${goalK(g)}${g.s2?"（平均）":""} ${base}→<b>${now}</b>（${gn>=0?"+":""}${gn}）</span><span>◎の案 <b>${n}</b>回</span></div>
   ${goalArcHTML(g,ok)}<small>${ok?"掲げた志を一年で形にした。称号「志を遂げし者」":`達成の目安：${goalK(g)}${g.s2?"の平均":""}+${goalNeed()}以上・◎の案を${GOAL_N}回以上`}${S.goalRe?"（途中で掲げ直し）":""}</small></div>`}catch(e){return ""}}
-function setGoal(id){if(!GL[id]||!S||S.goal)return;S.goal=id;S.goalB=goalV(GL[id]);S.goalN=0;S.log.push([S.month,`国家目標「${GL[id].n}」を掲げる`]);S.news.push({m:S.month,h:`${pmName()}総理、国家目標に「${GL[id].n}」`,c:"「この一年、ここに力を注ぐ」"});save();render()}
+function setGoal(id){if(!GL[id]||!S||S.goal)return;S.goal=id;S.goalB=goalV(GL[id]);S.goalBs=Object.fromEntries(goalSs(GL[id]).map(k=>[k,S.st[k]||0]));S.goalN=0;S.log.push([S.month,`国家目標「${GL[id].n}」を掲げる`]);S.news.push({m:S.month,h:`${pmName()}総理、国家目標に「${GL[id].n}」`,c:"「この一年、ここに力を注ぐ」"});save();render()}
 function eventView(){
   const e=EV[S.cur]; const A=actor(e); const key=A.key; const m=C[key]; const post=A.post;
   const ri=recIndex(e,key);
