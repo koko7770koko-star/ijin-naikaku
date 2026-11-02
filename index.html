@@ -1210,8 +1210,10 @@ function goalIco(id,cls){const u=GOALI[id];return u?`<img class="gico${cls?" "+c
 const SETK="ijin_settings_v1";
 let SET={fx:"full",speed:1,mapAuto:true};
 try{const v=JSON.parse(localStorage.getItem(SETK)||"null");if(v)SET={...SET,...v}}catch(e){}
-function saveSet(){try{localStorage.setItem(SETK,JSON.stringify(SET))}catch(e){}document.documentElement.dataset.fx=SET.fx}
-document.documentElement.dataset.fx=SET.fx;
+const FSZ={s:92,m:100,l:112};
+function applyFs(){document.documentElement.style.fontSize=(FSZ[SET.fs]||100)+"%"}
+function saveSet(){try{localStorage.setItem(SETK,JSON.stringify(SET))}catch(e){}document.documentElement.dataset.fx=SET.fx;applyFs()}
+document.documentElement.dataset.fx=SET.fx;applyFs();
 let curScene="";
 function setScene(name){const el=document.getElementById("sceneBg");if(!el||curScene===name)return;curScene=name;
   if(!name||!BGI[name]){el.classList.remove("on");return}
@@ -1261,6 +1263,7 @@ function openSettings(){
   const box=document.createElement("div");
   const draw=()=>{box.innerHTML=`<div class="pvsheet setsheet" role="dialog" aria-label="設定"><div class="hd"><b>設定</b></div>
     <h3>演出の強さ</h3><div class="opt">${[["full","豪華"],["lite","控えめ"],["off","なし"]].map(([v,n])=>`<button data-fx="${v}" aria-pressed="${SET.fx===v}">${n}</button>`).join("")}</div>
+    <h3>文字の大きさ</h3><div class="opt">${[["s","小"],["m","中"],["l","大"]].map(([v,n])=>`<button data-fs="${v}" aria-pressed="${(SET.fs||"m")===v}">${n}</button>`).join("")}</div>
     <h3>地図の初めの速さ</h3><div class="opt">${[1,2,4].map(v=>`<button data-sp="${v}" aria-pressed="${SET.speed===v}">×${v}</button>`).join("")}</div>
     <h3>地図の全自動（新しいゲームの最初）</h3><div class="opt">${[[true,"ON"],[false,"OFF"]].map(([v,n])=>`<button data-ma="${v}" aria-pressed="${SET.mapAuto===v}">${n}</button>`).join("")}</div>
     <h3>参謀の助言（計器の下の一行）</h3><div class="opt">${[[true,"表示"],[false,"隠す"]].map(([v,n])=>`<button data-adv="${v}" aria-pressed="${(SET.adv!==false)===v}">${n}</button>`).join("")}</div>
@@ -1268,6 +1271,7 @@ function openSettings(){
     <p class="muted">設定はこのスマホに保存されます。セーブデータには影響しません。</p>
     <div class="pvbtns"><button class="btn" data-close="1">閉じる</button></div></div>`;
     box.querySelectorAll("[data-fx]").forEach(b=>b.onclick=()=>{SET.fx=b.dataset.fx;saveSet();draw()});
+    box.querySelectorAll("[data-fs]").forEach(b=>b.onclick=()=>{SET.fs=b.dataset.fs;saveSet();draw()});
     box.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{SET.speed=+b.dataset.sp;saveSet();draw()});
     box.querySelectorAll("[data-ma]").forEach(b=>b.onclick=()=>{SET.mapAuto=b.dataset.ma==="true";saveSet();draw()});
     box.querySelectorAll("[data-adv]").forEach(b=>b.onclick=()=>{SET.adv=b.dataset.adv==="true";saveSet();draw();if(S&&!S.done&&document.querySelector(".dash"))render()});
