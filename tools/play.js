@@ -1,4 +1,4 @@
-// 自動対戦：組閣→案件→地図（全自動）を12月の結末まで進め、エラーと結果を出す。usage: node tools/play.js <index.htmlの絶対パス> <seed> <撮影の頭>  env: LIM=ミリ秒 TR=1 で手順表示 MODE=smart で狙い撃ち（9月から、ふつうの遊説・開発を接戦区へ振り向ける。既定は auto＝ゲームの全自動） DIFF=easy|normal|hard で難易度 FAST=自動進行の待ちを何分の1にするか（既定8、1で従来どおり） PICK=fa で案件の選択肢をゲームの faEventPick（国庫の赤字も見る）で選ぶ（既定は一番上） OL=<西軍党首id> で7月の党首選をその人に固定（fin に ol） RULE=<変則ルールid> TAG=<口ぐせid> GOAL=<国家目標id> VOW=<一枚札id> でその札を選ぶ（結果の fin に rule・tag・goal・vow）
+// 自動対戦：組閣→案件→地図（全自動）を12月の結末まで進め、エラーと結果を出す。usage: node tools/play.js <index.htmlの絶対パス> <seed> <撮影の頭>  env: LIM=ミリ秒 TR=1 で手順表示 MODE=smart で狙い撃ち（9月から、ふつうの遊説・開発を接戦区へ振り向ける。既定は auto＝ゲームの全自動） DIFF=easy|normal|hard で難易度 FAST=自動進行の待ちを何分の1にするか（既定8、1で従来どおり） PICK=fa で案件の選択肢をゲームの faEventPick（国庫の赤字も見る）で選ぶ（既定は一番上） OL=<西軍党首id> で7月の党首選をその人に固定（fin に ol） RULE=<変則ルールid> TAG=<口ぐせid> GOAL=<国家目標id> VOW=<一枚札id> でその札を選ぶ（結果の fin に rule・tag・goal・vow） KANTEI=1 で地図の月ごとに1回、官邸の政務を使う（審議中が2本未満なら可決の見込みが一番高い法案を提出→票固め・綱紀粛正→残りの政治資本で一番低い指標を上げる指令。国庫が年末まで赤字にならない物だけ（法案は毎月の国庫負担を見込む）。結果の fin に bills＝成立数・cmds＝使った指令の数）
 const {chromium}=require('playwright');
 (async()=>{const [file,seed,shot]=process.argv.slice(2);
 const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});
@@ -19,6 +19,20 @@ while(Date.now()-t0<(+process.env.LIM||600000)){steps++;
  if(st&&!shots[st.ph]&&st.ph){shots[st.ph]=1;await p.screenshot({path:shot+'-'+st.ph+'.png'})}
  const clicked=await p.evaluate(([BL,MODE,ENV])=>{const vis=e=>e&&e.offsetParent&&!e.disabled&&!e.hidden;
   const pick=s=>[...document.querySelectorAll(s)].find(vis);
+  /* env KANTEI=1：地図（全自動）の月ごとに1回、官邸の政務を関数で直に使う（画面は地図のまま。#kantei ボタンは押さない） */
+  if(ENV.KANTEI&&S&&S.phase==='map'&&S.fullAuto&&S.view==='main'&&!S.done&&S.pend==null&&!S.banter&&window.__kt!==S.month){window.__kt=S.month;const did=[];
+   try{const deb=BILLS.filter(b=>S.bills[b.id]&&S.bills[b.id].st==='debate').length;
+    if(deb<2&&S.ap>=2&&!S.used.includes('houan')){const pcSum=BILLS.filter(b=>S.bills[b.id]&&S.bills[b.id].st!=='failed').reduce((a,b)=>a+(b.pc||0),0);const c=BILLS.filter(b=>!S.bills[b.id]&&S.month+b.m<=11&&S.kokko+(pcSum+(b.pc||0))*(12-S.month)>=5).sort((a,b)=>passProb(b)-passProb(a))[0];
+     if(c&&passProb(c)>=.45){submitBill(c.id);did.push('bill:'+c.id)}}
+    const tryCmd=id=>{const c=CMDS.find(x=>x.id===id);if(!c)return false;const {ap,kk}=cmdCost(c);if(S.ap<ap||S.used.includes(id)||(c.once&&S.once.includes(id))||S.kokko+kk<5)return false;
+     if(c.sosaiOnly&&!hyogaOk())return false;if(c.manOnly&&!manOn())return false;const a0=S.ap;doCmd(id);if(S.ap<a0){did.push(id);return true}return false};
+    tryCmd('hyoga');tryCmd('kouki');
+    for(let n=0;n<6&&S.ap>0&&!S.done;n++){const st=S.st||{};const ks=['sup','eco','wel','dip','saf','coh'].sort((a,b)=>(st[a]??50)-(st[b]??50));let ok=false;
+     for(const k of ks){const L=CMDS.filter(c=>c.d&&c.d[k]>0&&!['shuno','houan','kaizo','hyoga','kouki','kokusai','chosa'].includes(c.id)).sort((a,b)=>(b.d[k]||0)-(a.d[k]||0));
+      for(const c of L){if(tryCmd(c.id)){ok=true;break}}if(ok)break}
+     if(!ok)break}
+   }catch(e){did.push('err:'+e.message)}
+   S.view='main';render();window.__kcmd=(window.__kcmd||0)+did.length;return 'kantei['+did.join(',')+']'}
   if(S&&S.phase==='map'&&!S.fullAuto){const f=pick('#fullAuto');if(f){f.click();return 'fullAuto'}}
   if(S&&S.phase==='map'&&S.fullAuto){S.speed=4;try{DAY_SEC=0.3}catch(e){}
    if(MODE==='smart'&&!S.pend&&!S.banter&&S.month>=9){/* 狙い撃ち：9月から。危機の対処・西軍との論戦・説得・外遊はゲームの全自動の選択に任せ、ふつうの遊説・開発だけを接戦区へ振り向ける（同じ地方に固まらないよう、送った数の少ない接戦区から順に） */
@@ -38,9 +52,9 @@ while(Date.now()-t0<(+process.env.LIM||600000)){steps++;
   const V=ENV.VOW&&pick(`[data-vow="${ENV.VOW}"]`);if(V){V.click();return 'vow='+ENV.VOW}
   /* 大臣が去った後の後任の任命（view kaizo）：候補 [data-new] を押す（押さないと上の「支持率」ボタンを押し続けて止まる） */
   for(const s of ['[data-new]','[data-goal]','[data-focus]','[data-pet]','[data-fq]','[data-kj]','[data-kf]','[data-vow]','.choice','#toPolicy','#go','#autoCab','#next','#resume']){if(s==='.choice'&&ENV.PICK==='fa'&&typeof faEventPick==='function'&&pick('.choice[data-i]')){let i=0;try{i=faEventPick()}catch(x){}const c=[...document.querySelectorAll('.choice[data-i="'+i+'"]')].find(vis);if(c){c.click();return '.choice:fa'+i}}const e=pick(s);if(e){e.click();return s}}
-  const e=[...document.querySelectorAll('button')].find(e=>vis(e)&&!BL.some(s=>e.matches(s)));if(e){e.click();return 'btn:'+(e.id||e.innerText.slice(0,12))}return '';},[BL,process.env.MODE||'auto',{PICK:process.env.PICK||'',RULE:process.env.RULE||'',TAG:process.env.TAG||'',GOAL:process.env.GOAL||'',VOW:process.env.VOW||''}]);
+  const e=[...document.querySelectorAll('button')].find(e=>vis(e)&&!BL.some(s=>e.matches(s)));if(e){e.click();return 'btn:'+(e.id||e.innerText.slice(0,12))}return '';},[BL,process.env.MODE||'auto',{PICK:process.env.PICK||'',RULE:process.env.RULE||'',TAG:process.env.TAG||'',GOAL:process.env.GOAL||'',VOW:process.env.VOW||'',KANTEI:process.env.KANTEI||''}]);
  if(clicked)last=clicked; if(process.env.TR)console.log(steps,JSON.stringify(st),clicked);
  await p.waitForTimeout(clicked?(FAST>1?120:250):(FAST>1?300:800));}
-const fin=await p.evaluate(()=>({ol:S.oppLead?S.oppLead.k:'',diff:S.diff,done:S.done,fall:S.fall||'',seats:S.seats,month:S.month,br:(()=>{try{const R=S.regRes||[];const reg=R.reduce((a,x)=>a+x.w,0);const pr=S.pledgeRes||[];const ok=pr.filter(x=>x.ok).length;return {reg,dif:DIFF[S.diff||'normal'].seat,pl:ok*10-(pr.length-ok)*8+(pr.length&&ok===pr.length?6:0),bill:Object.values(S.bills||{}).filter(b=>b.st==='passed').length*2,kok:S.kokko<0?-10:0,sup:S.st&&S.st.sup,opp:S.opp}}catch(e){return null}})(),img:document.querySelectorAll('img').length,bgi:Object.keys(BGI).length,imgk:Object.keys(IMG).length,rule:S.rule||'',tag:S.tag||'',goal:S.goal||'',vow:S.vow||''}));
+const fin=await p.evaluate(()=>({ol:S.oppLead?S.oppLead.k:'',diff:S.diff,done:S.done,fall:S.fall||'',seats:S.seats,month:S.month,br:(()=>{try{const R=S.regRes||[];const reg=R.reduce((a,x)=>a+x.w,0);const pr=S.pledgeRes||[];const ok=pr.filter(x=>x.ok).length;return {reg,dif:DIFF[S.diff||'normal'].seat,pl:ok*10-(pr.length-ok)*8+(pr.length&&ok===pr.length?6:0),bill:Object.values(S.bills||{}).filter(b=>b.st==='passed').length*2,kok:S.kokko<0?-10:0,sup:S.st&&S.st.sup,opp:S.opp}}catch(e){return null}})(),img:document.querySelectorAll('img').length,bgi:Object.keys(BGI).length,imgk:Object.keys(IMG).length,rule:S.rule||'',tag:S.tag||'',goal:S.goal||'',vow:S.vow||'',bills:Object.values(S.bills||{}).filter(b=>b.st==='passed').length,cmds:window.__kcmd||0}));
 await p.screenshot({path:shot+'-end.png'});
 console.log(JSON.stringify({seed,fin,steps,secs:Math.round((Date.now()-t0)/1000),last,errs:errs.slice(0,5)}));await b.close()})();
