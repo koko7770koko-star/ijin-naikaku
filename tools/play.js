@@ -1,4 +1,4 @@
-// 自動対戦：組閣→案件→地図（全自動）を12月の結末まで進め、エラーと結果を出す。usage: node tools/play.js <index.htmlの絶対パス> <seed> <撮影の頭>  env: LIM=ミリ秒 TR=1 で手順表示 MODE=smart で狙い撃ち（9月から、ふつうの遊説・開発を接戦区へ振り向ける。既定は auto＝ゲームの全自動） DIFF=easy|normal|hard で難易度 FAST=自動進行の待ちを何分の1にするか（既定8、1で従来どおり）
+// 自動対戦：組閣→案件→地図（全自動）を12月の結末まで進め、エラーと結果を出す。usage: node tools/play.js <index.htmlの絶対パス> <seed> <撮影の頭>  env: LIM=ミリ秒 TR=1 で手順表示 MODE=smart で狙い撃ち（9月から、ふつうの遊説・開発を接戦区へ振り向ける。既定は auto＝ゲームの全自動） DIFF=easy|normal|hard で難易度 FAST=自動進行の待ちを何分の1にするか（既定8、1で従来どおり） PICK=fa で案件の選択肢をゲームの faEventPick（国庫の赤字も見る）で選ぶ（既定は一番上）
 const {chromium}=require('playwright');
 (async()=>{const [file,seed,shot]=process.argv.slice(2);
 const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});
@@ -15,7 +15,7 @@ while(Date.now()-t0<(+process.env.LIM||600000)){steps++;
  const st=await p.evaluate(()=>typeof S!=='undefined'&&S?{done:!!S.done,fall:S.fall||'',ph:S.phase,view:S.view,m:S.month,fa:!!S.fullAuto,d:Math.round(S.day||0),pa:!!S.paused,pe:S.pend,bt:!!S.banter,sp:S.speed}:null);
  if(st&&st.done&&(st.fall||await p.$('#seatCount'))){await p.waitForTimeout(2500);break}
  if(st&&!shots[st.ph]&&st.ph){shots[st.ph]=1;await p.screenshot({path:shot+'-'+st.ph+'.png'})}
- const clicked=await p.evaluate(([BL,MODE])=>{const vis=e=>e&&e.offsetParent&&!e.disabled&&!e.hidden;
+ const clicked=await p.evaluate(([BL,MODE,PK])=>{const vis=e=>e&&e.offsetParent&&!e.disabled&&!e.hidden;
   const pick=s=>[...document.querySelectorAll(s)].find(vis);
   if(S&&S.phase==='map'&&!S.fullAuto){const f=pick('#fullAuto');if(f){f.click();return 'fullAuto'}}
   if(S&&S.phase==='map'&&S.fullAuto){S.speed=4;try{DAY_SEC=0.3}catch(e){}
@@ -28,8 +28,8 @@ while(Date.now()-t0<(+process.env.LIM||600000)){steps++;
       if(!keep){const x=[...L].sort((p,q)=>(load[p.r]||0)-(load[q.r]||0)||q.sw-p.sw)[0];const A=actionsFor(k,x.r);const ra=A.find(y=>y.id==='rally');if(ra){r=x.r;a=ra}}
       dispatch(k,r,a,true);P.task.dur*=1.3;P.task.auto=1;load[r]=(load[r]||0)+1}}}
    return ''}
-  for(const s of ['[data-goal]','[data-focus]','[data-pet]','[data-fq]','[data-kj]','[data-kf]','[data-vow]','.choice','#toPolicy','#go','#autoCab','#next','#resume']){const e=pick(s);if(e){e.click();return s}}
-  const e=[...document.querySelectorAll('button')].find(e=>vis(e)&&!BL.some(s=>e.matches(s)));if(e){e.click();return 'btn:'+(e.id||e.innerText.slice(0,12))}return '';},[BL,process.env.MODE||'auto']);
+  for(const s of ['[data-goal]','[data-focus]','[data-pet]','[data-fq]','[data-kj]','[data-kf]','[data-vow]','.choice','#toPolicy','#go','#autoCab','#next','#resume']){if(s==='.choice'&&PK==='fa'&&typeof faEventPick==='function'&&pick('.choice[data-i]')){let i=0;try{i=faEventPick()}catch(x){}const c=[...document.querySelectorAll('.choice[data-i="'+i+'"]')].find(vis);if(c){c.click();return '.choice:fa'+i}}const e=pick(s);if(e){e.click();return s}}
+  const e=[...document.querySelectorAll('button')].find(e=>vis(e)&&!BL.some(s=>e.matches(s)));if(e){e.click();return 'btn:'+(e.id||e.innerText.slice(0,12))}return '';},[BL,process.env.MODE||'auto',process.env.PICK||'']);
  if(clicked)last=clicked; if(process.env.TR)console.log(steps,JSON.stringify(st),clicked);
  await p.waitForTimeout(clicked?(FAST>1?120:250):(FAST>1?300:800));}
 const fin=await p.evaluate(()=>({diff:S.diff,done:S.done,fall:S.fall||'',seats:S.seats,month:S.month,br:(()=>{try{const R=S.regRes||[];const reg=R.reduce((a,x)=>a+x.w,0);const pr=S.pledgeRes||[];const ok=pr.filter(x=>x.ok).length;return {reg,dif:DIFF[S.diff||'normal'].seat,pl:ok*10-(pr.length-ok)*8+(pr.length&&ok===pr.length?6:0),bill:Object.values(S.bills||{}).filter(b=>b.st==='passed').length*2,kok:S.kokko<0?-10:0,sup:S.st&&S.st.sup,opp:S.opp}}catch(e){return null}})(),img:document.querySelectorAll('img').length,bgi:Object.keys(BGI).length,imgk:Object.keys(IMG).length}));
