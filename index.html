@@ -3549,7 +3549,7 @@ function wandTick(dd){
     if(k==="kukai")Object.values(S.pc).forEach(Q=>{if(Q.r===P.r&&Q.task&&!(Q.path&&Q.path.length))Q.task.prog+=dd});
     else{Object.values(S.op).forEach(Q=>{if(Q.r===P.r&&Q.task&&!(Q.path&&Q.path.length)){Q.task.prog+=dd;S.off[P.r]-=.4*dd}})}
     if(P.wait>0){P.wait-=dd;return}
-    if(P.path.length){const R=RG[P.path[0]];const dx=R.x-P.x,dy=R.y-P.y,d=Math.hypot(dx,dy),st=34*dd;
+    if(P.path.length){const R=RG[P.path[0]];if(!isFinite(P.x)||!isFinite(P.y)){const R0=RG[P.r]||R;P.x=R0.x;P.y=R0.y}const dx=R.x-P.x,dy=R.y-P.y,d=Math.hypot(dx,dy),st=34*dd;
       if(d<=st){P.x=R.x;P.y=R.y;P.r=P.path.shift();P.wait=1.5;wandArrive(k,P.r);} else {P.x+=dx/d*st;P.y+=dy/d*st;}}
     else if(k==="kukai")wandLeave(k,"空海は次の地へ旅立った");
     else{S.opp=clamp(S.opp+6);wandLeave(k,"安倍晴明は逃げおおせた（西軍党の勢い+6）");S.news.push({m:S.month,h:"晴明の呪い、各地に爪あと",c:ldQ("天は我らに味方した")});}
@@ -3601,7 +3601,7 @@ function mapTick(dd){
   autoTick();synBanter();
   Object.entries(S.pc).forEach(([k,P])=>{
     if(P.curse>0){P.curse-=dd;return}
-    if(P.path&&P.path.length){const R=RG[P.path[0]];const dx=R.x-P.x,dy=R.y-P.y,d=Math.hypot(dx,dy),st=spdOf(k)*dd;
+    if(P.path&&P.path.length){const R=RG[P.path[0]];if(!isFinite(P.x)||!isFinite(P.y)){const R0=RG[P.r]||R;P.x=R0.x;P.y=R0.y}const dx=R.x-P.x,dy=R.y-P.y,d=Math.hypot(dx,dy),st=spdOf(k)*dd;
       if(C[k]?.trail&&!RG[P.r].ov&&Math.random()<dd*.5){S.off[P.r]+=.3}
       if(d<=st){P.x=R.x;P.y=R.y;P.r=P.path.shift();} else {P.x+=dx/d*st;P.y+=dy/d*st;}
     } else if(P.task){const tm=taskMult(k,P);P.task.combo=tm.b?{b:tm.b,with:tm.with}:null;
@@ -3619,7 +3619,7 @@ function mapTick(dd){
   // 西軍党
   Object.entries(S.op).forEach(([o,P])=>{
     if(P.stun>0){P.stun-=dd;return}
-    if(P.path&&P.path.length){const R=RG[P.path[0]];const dx=R.x-P.x,dy=R.y-P.y,d=Math.hypot(dx,dy),st=45*dd;
+    if(P.path&&P.path.length){const R=RG[P.path[0]];if(!isFinite(P.x)||!isFinite(P.y)){const R0=RG[P.r]||R;P.x=R0.x;P.y=R0.y}const dx=R.x-P.x,dy=R.y-P.y,d=Math.hypot(dx,dy),st=45*dd;
       if(d<=st){P.x=R.x;P.y=R.y;P.r=P.path.shift();} else {P.x+=dx/d*st;P.y+=dy/d*st;}
     } else if(!P.task){oppThink(o);}
     else { P.task.prog+=dd; const ob=oppBond(o);if(ob)oppBanter(o); S.off[P.r]-=.4*OPP[o].s/3*dd*(ob?(ob.kind==='clash'?.6:1.5):1)*(oppStyle()?.chiho?1.25:1)*(sekF(P.r)?1.3:1);
@@ -3747,8 +3747,8 @@ function drawMap(){
     const p=m.left/m.life,C2=2*Math.PI*11;
     return `<g class="mk ${p<.35?"urgent":""}"><circle cx="${x}" cy="${y}" r="8.5"/><circle class="tm" cx="${x}" cy="${y}" r="11" stroke-dasharray="${(C2*p).toFixed(1)} ${C2.toFixed(1)}" transform="rotate(-90 ${x} ${y})"/><text x="${x}" y="${y+3.6}">${MK[m.t].n[0]}</text></g>`}).join("");
   // 移動経路
-  const RT=$("#routes");if(RT)RT.innerHTML=Object.values(S.pc).filter(P=>P.path&&P.path.length).map(P=>{const pts=[[P.x,P.y],...P.path.map(r=>[RG[r].x,RG[r].y])];return `<polyline points="${pts.map(p=>p.join(",")).join(" ")}" class="route"/>`}).join("")
-    +Object.values(S.op).filter(P=>P.path&&P.path.length).map(P=>{const pts=[[P.x,P.y],...P.path.map(r=>[RG[r].x,RG[r].y])];return `<polyline points="${pts.map(p=>p.join(",")).join(" ")}" class="route foe"/>`}).join("");
+  const RT=$("#routes");if(RT)RT.innerHTML=Object.values(S.pc).filter(P=>P.path&&P.path.length).map(P=>{const pts=[[isFinite(P.x)?P.x:RG[P.r].x,isFinite(P.y)?P.y:RG[P.r].y],...P.path.map(r=>[RG[r].x,RG[r].y])];return `<polyline points="${pts.map(p=>p.join(",")).join(" ")}" class="route"/>`}).join("")
+    +Object.values(S.op).filter(P=>P.path&&P.path.length).map(P=>{const pts=[[isFinite(P.x)?P.x:RG[P.r].x,isFinite(P.y)?P.y:RG[P.r].y],...P.path.map(r=>[RG[r].x,RG[r].y])];return `<polyline points="${pts.map(p=>p.join(",")).join(" ")}" class="route foe"/>`}).join("");
   // 時計
   const d=Math.min(30,Math.floor(S.day)+1);const md=$("#mDay");if(md)md.textContent=`${S.month}月${d}日`;
   const db=$("#dayBar");if(db)db.style.width=(S.day/30*100)+"%";
