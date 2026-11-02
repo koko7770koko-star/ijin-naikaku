@@ -5887,7 +5887,9 @@ const OSAKU=[
  {id:"saigai",t:"災害対応批判",k:"saf",x:"被災地の遅れを取り上げ、国会で連日問いただす",q:"民が困っている時に、政府はどこにおった"},
  {id:"bouei",t:"守りの不安",k:"saf",x:"国境の警備の手薄さを演説で繰り返す",q:"この国の守り、今のままで本当によいのか"},
  {id:"gaitou",t:"街頭演説合戦",k:"sup",x:"党首が駅前で毎朝演説し、総理との差を見せる",q:"毎朝ここに立つ。それが我らの誠意ぞ"},
- {id:"bakuro",t:"疑惑の暴露",k:"sup",x:"政権の古い疑惑を週刊誌に流し、人気を削る",q:"清い顔をして、裏では何をしておったか"}];
+ {id:"bakuro",t:"疑惑の暴露",k:"sup",x:"政権の古い疑惑を週刊誌に流し、人気を削る",q:"清い顔をして、裏では何をしておったか"},
+ {id:"nenkin",t:"老後不安",k:"wel",x:"年金と介護の先行きを示し、年配の票に訴える",q:"老いて安心して暮らせぬ国に、誰が未来を託すか"},
+ {id:"jinji",t:"身内人事批判",k:"coh",x:"閣僚人事の身内びいきを取り上げ、内輪の不満をあおる",q:"仲間うちで固めた内閣に、民の声は届くまい"}];
 const OS_HIT=40,OS_OK=55,OS_MISS=65,OS_DAY=12;
 function osakuOf(){const o=S.osaku;return o&&o.m===S.month?OSAKU.find(x=>x.id===o.id)||null:null}
 function osakuPick(){if(!S.off||S.month<2||S.month>10){return}if(S.osaku&&S.osaku.m===S.month)return;
