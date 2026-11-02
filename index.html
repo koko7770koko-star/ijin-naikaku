@@ -3124,14 +3124,15 @@ function revoltAnswer(i){const r=S.revolt;if(!r||r.ans!=null||r.m!==S.month)retu
   save();render();const el=document.querySelector(".revolt");if(el)el.scrollIntoView({block:"center"});
 }
 /* v110 派閥の政策要求（8月以降、不満40〜69の派閥。造反の手前） */
-const FREQ={a:{t:"防衛と治安の予算を積み増せ",q:"いまの内閣は守りが甘い。攻め派の顔も立てていただこう",y:{saf:2,wel:-1},rv:"m",yh:"治安+2・民生-1",nh:""},
-  m:{t:"地方への配分を厚くせよ",q:"民の暮らしは地方にあり。予算を地元へ回されよ",y:{wel:2},kk:-2,rv:"z",yh:"民生+2・国庫-2兆円",nh:""},
-  w:{t:"近隣との対話を先にせよ",q:"力より和を。まず隣国と膝を交えるべきでござる",y:{dip:2,saf:-1},rv:"a",yh:"外交+2・治安-1",nh:""},
-  z:{t:"歳出を削って財布を締めよ",q:"ばらまきは国を滅ぼす。いまこそ歳出に大鉈を",y:{wel:-2},kk:2,rv:"m",yh:"国庫+2兆円・民生-2",nh:""}};
-/* 二つ目の要求（同じ派閥が二度目に出るときや半々で、こちらを出す。偏らないよう攻め派・民本派・協調派に1つずつ） */
-const FREQ2={a:{t:"有事の備えを法で固めよ",q:"備えあれば憂いなし。いざという時の決まりを先に作られよ",y:{saf:2,dip:-1},rv:"w",yh:"治安+2・外交-1",nh:""},
-  m:{t:"子育てと医療を手厚くせよ",q:"国の宝は人でござる。子と病む者を先に救われよ",y:{wel:2,eco:-1},rv:"z",yh:"民生+2・経済-1",nh:""},
-  w:{t:"留学と交流の枠を広げよ",q:"人の行き来こそ和の礎。若い者を海の外へ出されよ",y:{dip:1,eco:1},kk:-2,rv:"a",yh:"外交+1・経済+1・国庫-2兆円",nh:""}};
+const FREQ={a:{t:"防衛と治安の予算を積み増せ",q:"いまの内閣は守りが甘い。攻め派の顔も立てていただこう",y:{saf:2,wel:-1},rv:"m",yh:"治安+2・民生-1",ya:"それでこそ総理。守りは国の礎でござる",nh:"守りを軽んじて、後で泣きを見られますな"},
+  m:{t:"地方への配分を厚くせよ",q:"民の暮らしは地方にあり。予算を地元へ回されよ",y:{wel:2},kk:-2,rv:"z",yh:"民生+2・国庫-2兆円",ya:"これで地元に顔向けができ申す",nh:"地方の声を聞かぬ総理か……覚えておきますぞ"},
+  w:{t:"近隣との対話を先にせよ",q:"力より和を。まず隣国と膝を交えるべきでござる",y:{dip:2,saf:-1},rv:"a",yh:"外交+2・治安-1",ya:"和を先にされる総理、頼もしゅうござる",nh:"力で押すおつもりか。隣国は見ておりますぞ"},
+  z:{t:"歳出を削って財布を締めよ",q:"ばらまきは国を滅ぼす。いまこそ歳出に大鉈を",y:{wel:-2},kk:2,rv:"m",yh:"国庫+2兆円・民生-2",ya:"よくぞ決められた。国の財布は守られた",nh:"ばらまきの付けは、いずれ総理に回りますぞ"}};
+/* 二つ目の要求（同じ派閥が二度目に出るときや半々で、こちらを出す。偏らないよう4派に1つずつ。ya＝飲んだときの返事、nh＝突っぱねたときの返事） */
+const FREQ2={a:{t:"有事の備えを法で固めよ",q:"備えあれば憂いなし。いざという時の決まりを先に作られよ",y:{saf:2,dip:-1},rv:"w",yh:"治安+2・外交-1",ya:"備えが法になれば、民も安心いたそう",nh:"備えなく有事を迎えるおつもりか"},
+  m:{t:"子育てと医療を手厚くせよ",q:"国の宝は人でござる。子と病む者を先に救われよ",y:{wel:2,eco:-1},rv:"z",yh:"民生+2・経済-1",ya:"子と病む者が救われる。ありがたや",nh:"人を後回しにして、国が保ちますかな"},
+  w:{t:"留学と交流の枠を広げよ",q:"人の行き来こそ和の礎。若い者を海の外へ出されよ",y:{dip:1,eco:1},kk:-2,rv:"a",yh:"外交+1・経済+1・国庫-2兆円",ya:"若い者が海を越える。良い国になりますぞ",nh:"内向きの国に先はござらぬ……"},
+  z:{t:"国債の償還を先にせよ",q:"借金は子や孫への付け回し。まず返す道筋を示されよ",y:{eco:-1},kk:3,rv:"m",yh:"国庫+3兆円・経済-1",ya:"これで孫子に顔向けができる",nh:"返す気の無い借金……覚えておきますぞ"}};
 function freqQ(r){return r&&r.v&&FREQ2[r.f]?FREQ2[r.f]:FREQ[r.f]}
 const FREQ_Y=20,FREQ_N=8,FREQ_RV=5;
 function facReqPick(L){S.facReq=S.facReq&&S.facReq.m===S.month?S.facReq:null;if(S.facReq||S.month<8||S.month>11)return;if(S.revolt&&S.revolt.m===S.month)return;
@@ -3146,8 +3147,8 @@ function facReqHTML(){const r=S.facReq;if(!r||r.m!==S.month||!C[r.k]||!FREQ[r.f]
      :`<div class="cr-r"><b>${r.ans?"要求を飲んだ":"突っぱねた"}</b>　${r.res}</div>`}</div>`}
 function facReqAnswer(yes){const r=S.facReq;if(!r||r.ans!=null||r.m!==S.month||!FREQ[r.f])return;const Q=freqQ(r);const F=S.fac||(S.fac={});const f=r.f,n=C[r.k].n;S.delta={};
   if(yes){if(Q.kk<0&&S.kokko<-Q.kk)return;F[f]=Math.max(0,(F[f]||0)-FREQ_Y);F[Q.rv]=Math.min(100,(F[Q.rv]||0)+FREQ_RV);apply(Q.y,true);if(Q.kk)S.kokko+=Q.kk;
-    r.res=`${n}「話のわかる総理じゃ」（${FAC[f].n}の不満${F[f]}）。${FAC[Q.rv].n}は渋い顔（不満${F[Q.rv]}）`}
-  else{F[f]=Math.min(100,(F[f]||0)+FREQ_N);r.res=`${n}「……覚えておきますぞ」（${FAC[f].n}の不満${F[f]}${F[f]>=70?"・造反の構え":""}）`}
+    r.res=`${n}「${Q.ya||"話のわかる総理じゃ"}」（${FAC[f].n}の不満${F[f]}）。${FAC[Q.rv].n}は渋い顔（不満${F[Q.rv]}）`}
+  else{F[f]=Math.min(100,(F[f]||0)+FREQ_N);r.res=`${n}「${Q.nh||"……覚えておきますぞ"}」（${FAC[f].n}の不満${F[f]}${F[f]>=70?"・造反の構え":""}）`}
   r.ans=yes?1:0;S.log.push([S.month,`${FAC[f].n}の政策要求を${yes?"飲んだ":"退けた"}`]);
   {const H=S.facH||(S.facH={y:0,n:0,ff:{}});yes?H.y++:H.n++;H.ff[f]=(H.ff[f]||0)+1;
    if(yes&&H.y>=FACH_Y){apply({sup:-1},true);r.res+=`　「何でも飲む八方美人」と世間の声（支持-1）`}}
