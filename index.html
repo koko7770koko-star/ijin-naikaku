@@ -115,6 +115,7 @@ button:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
 .gr-arc{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.76rem;margin:0;color:var(--washi)}.gr-arc b{flex:none;font-size:.62rem;font-weight:800;width:1.6em;height:1.6em;display:grid;place-items:center;border-radius:50%;background:#2f7a50}.gr-arc.r b{background:#9b2c20}.gr-arc span{margin-left:auto;font-size:.68rem;color:var(--sumi);font-variant-numeric:tabular-nums}
 .gr-n{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;font-variant-numeric:tabular-nums}.gr-n b{font-family:var(--f-disp);color:var(--kin)}.goalres small{font-size:.72rem;color:var(--sumi)}
 .choice .gmk{font-size:.7rem;font-weight:800;color:var(--kin);border:1px solid var(--kin);border-radius:999px;padding:0 6px;line-height:1.5}
+.tsushin summary{min-height:36px;display:flex;align-items:center;cursor:pointer}.tsushin .tsu-l{display:grid;gap:4px;margin-top:6px}.tsu-r{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;padding:6px 8px;border:1px solid rgba(200,170,90,.25);border-radius:8px}.tsu-r b{min-width:6.5em;font-size:.92rem}.tsu-r b em{font-style:normal;font-size:.7rem;margin-left:4px;padding:0 4px;border-radius:4px;background:var(--kin);color:#1a1a1a}.tsu-r small{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:.8rem}.tsu-r.mvp{border-color:var(--kin)}
 .yrnews summary{min-height:36px;display:flex;align-items:center;cursor:pointer}.yrnews .kawaraban{margin-top:6px;gap:8px}.yrnews .kb-item h3{font-size:.95rem}.yrm{font-family:var(--f-body);font-size:.7rem;font-weight:800;color:#9b2c20;margin-right:6px}
 .bkdisc{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.78rem;margin:6px 0}.bkdisc .bd-c small{color:var(--muted,#888)}.bd-h{margin:2px 0 8px;font-size:.82rem;color:var(--kin)}
 .synbook{background:var(--ai2);border-radius:10px;padding:8px 12px;border-left:4px solid #c9a4ff}.synbook summary{font-weight:700;font-size:.88rem;cursor:pointer}.synbook .bonds{margin-top:8px}
@@ -3419,7 +3420,7 @@ function yukHere(r){if(!S||!S.pc)return [];return Object.keys(S.pc).filter(k=>yu
 function yukLine(k){const y=yukOf(k);return y?`<p class="yukln"><b>ゆかり</b>${RG[y.r].n}（${y.tx}）。そこで遊説・底上げ・解決をすると支持+${YUK_B}。同じ月に${YUK_TIRE}回目からは疲れやすい</p>`:""}
 function yukLook(r){if(!RG[r]||RG[r].ov)return "";const ks=yukHere(r);return ks.length?`<p class="yukln"><b>ゆかり</b>${ks.map(k=>nameOf(k)).join("・")}。送ると支持の伸び+${YUK_B}</p>`:""}
 function yukTask(key,t,r,ok){try{const y=yukOf(key);if(!ok||!y||y.r!==r||RG[r].ov||!["rally","dev","fix"].includes(t.id))return null;
-  S.off[r]+=YUK_B;S.yukM=S.yukM||{};const c=S.yukM[key]&&S.yukM[key].m===S.month?S.yukM[key]:{m:S.month,n:0};c.n++;S.yukM[key]=c;S.yukN=(S.yukN||0)+1;S.yukH=S.yukH||{};S.yukH[key]=(S.yukH[key]||0)+1;
+  S.off[r]+=YUK_B;S.yukM=S.yukM||{};const c=S.yukM[key]&&S.yukM[key].m===S.month?S.yukM[key]:{m:S.month,n:0};c.n++;S.yukM[key]=c;S.yukN=(S.yukN||0)+1;S.yukH=S.yukH||{};S.yukH[key]=(S.yukH[key]||0)+1;stAdd(key,"yuk");
   let tx=`（ゆかりの地：支持+${YUK_B}）`;if(c.n===1&&Math.random()<.6)bubble(key,YUK_Q[Math.random()*YUK_Q.length|0]);
   if(c.n>=YUK_TIRE&&!isPM(key)&&C[key]){S.tireM=S.tireM||{};S.tireM[key]=(S.tireM[key]||0)+1;tx+="　故郷回りが続いて疲れ気味";}
   return tx}catch(e){return null}}
@@ -3430,10 +3431,10 @@ const tireMk=k=>tireLv(k)>=2?`<i class="tire" title="疲れ（任務の力-${tir
 function tireMonth(L){S.tire=S.tire||{};const m=S.tireM||{};const nt=[],rc=[];
   Object.keys(S.pc||{}).forEach(k=>{if(isPM(k)||!C[k])return;const n=m[k]||0,o=S.tire[k]||0;let v=o;
     if(n>=TIRE_N)v=Math.min(3,o+1);else if(n>=TIRE_N-2)v=o;else if(n>=2)v=Math.max(0,o-1);else v=Math.max(0,o-2);
-    if(v)S.tire[k]=v;else delete S.tire[k];if(v>=2&&o<2)nt.push(C[k].n);if(o>=2&&v<2)rc.push(C[k].n);});
+    if(v)S.tire[k]=v;else delete S.tire[k];if(v>=2)stAdd(k,"tire");if(v>=2&&o<2)nt.push(C[k].n);if(o>=2&&v<2)rc.push(C[k].n);});
   S.tireM={};if(nt.length)L.push(`${nt.join("・")}に疲れ（任務の力-1。翌月あまり使わなければ回復）`);if(rc.length)L.push(`${rc.join("・")}の疲れが取れた`);}
 function finishTask(key){
-  const P=S.pc[key],t=P.task,r=P.r,R=RG[r],nm=nameOf(key);P.task=null;
+  const P=S.pc[key],t=P.task,r=P.r,R=RG[r],nm=nameOf(key);P.task=null;stAdd(key,"task");
   try{if(sekOn()&&!R.ov&&sekRegs().some(x=>x.r===r)){S.sekV=S.sekV||{};S.sekV[r]=(S.sekV[r]||0)+1}}catch(e){}
   const cbB=t.combo&&t.combo.b?BONDS.find(x=>x.n===t.combo.b.n):null;const cb=cbB&&kindOf(cbB)!=="clash"?{b:cbB,with:t.combo.with}:null;const sk=Math.max(0,t.sk+(cb?(bondLv(cbB)>=3?2:1):0)-(isPM(key)?0:tirePen(key)));if(!isPM(key)&&C[key]){S.tireM=S.tireM||{};S.tireM[key]=(S.tireM[key]||0)+1;}
   let msg="",ok=true,fxT="";
@@ -3443,7 +3444,7 @@ function finishTask(key){
     const o=oppIn(r)[0];
     if(o){ if(Math.random()<debP(key,o)){const g=Math.round((3+sk)*dimin(r));S.off[r]+=g;S.opp=clamp(S.opp-1-(C[key]?.debateOpp||0));if(S.base[r])S.base[r]--;
         const home=["kin","chg","kyu"].filter(x=>x!==r)[Math.random()*2|0];S.op[o].path=route(r,home);S.op[o].task=null;S.op[o].stun=0;
-        S.debWin=(S.debWin||0)+1;bubble(key,lineOf(key,"w"));setTimeout(()=>bubble(o,oppLine(o,"d"),true),700);msg=`${R.n}の論戦で${nm}が${OPP[o].n}に勝利！`;fxT=`勝利 +${g}`;msg+=gainXP(key,"speech");
+        S.debWin=(S.debWin||0)+1;stAdd(key,"win");bubble(key,lineOf(key,"w"));setTimeout(()=>bubble(o,oppLine(o,"d"),true),700);msg=`${R.n}の論戦で${nm}が${OPP[o].n}に勝利！`;fxT=`勝利 +${g}`;msg+=gainXP(key,"speech");
         const fb=BONDS.find(b=>b.foe&&b.k[0]===key&&b.k[1]===o);if(fb)msg+=`（因縁：${fb.n}）`;
         if(C[key]?.thief){S.kokko+=1;S.opp=clamp(S.opp-1);msg+="　西軍党の裏金を奪った（国庫+1）";}
         if(OPP[o].turn&&o!=="kobayakawa"&&S.op[o]&&Math.random()<(isPM(key)||foeB(key,o)>0?.7:.35)){delete S.op[o];S.oppOrder=S.oppOrder.filter(x=>x!==o);S.opp=clamp(S.opp-6);
@@ -3451,7 +3452,7 @@ function finishTask(key){
         if(o==="kobayakawa"&&Math.random()<(isPM(key)||key==="kaishu"||inCab("kaishu")?.8:.45)){delete S.op.kobayakawa;S.oppOrder=S.oppOrder.filter(x=>x!=="kobayakawa");S.allies.push("kobayakawa");S.opp=clamp(S.opp-8);S.flags.uragiri=true;
           msg+="　……小早川秀秋が寝返った！　偉人内閣に協力するという";fxT="寝返り！";S.news.push({m:S.month,h:"小早川秀秋、西軍党を離党",c:"「令和の関ヶ原でも寝返り」と話題"});S.log.push([S.month,"小早川秀秋が寝返る"]);}}
       else if(C[key]?.noLoss){bubble(key,lineOf(key,"l"));ok=false;msg=`${R.n}の論戦で${nm}が${OPP[o].n}に押されたが、一歩も退かなかった`;fxT="立ち往生";}
-      else{S.off[r]-=3;ok=false;bubble(o,oppLine(o,"v"),true);setTimeout(()=>bubble(key,lineOf(key,"l")),700);msg=`${R.n}の論戦で${nm}が${OPP[o].n}に敗北`;fxT="敗北 -3";} }
+      else{S.off[r]-=3;ok=false;stAdd(key,"lose");bubble(o,oppLine(o,"v"),true);setTimeout(()=>bubble(key,lineOf(key,"l")),700);msg=`${R.n}の論戦で${nm}が${OPP[o].n}に敗北`;fxT="敗北 -3";} }
     else if(S.base[r]){ if(Math.random()<.4+sk*.1){S.base[r]--;S.off[r]+=2;msg=`${nm}が${R.n}の西軍党の地盤を崩した`;fxT="地盤-1";msg+=gainXP(key,"speech");}else{ok=false;msg=`${R.n}の地盤は固い`;fxT="……";} }
     else {const g=Math.max(1,Math.round((1.5+sk*.6+(C[key]?.rallyB||0))*dimin(r)));S.off[r]+=g;if(Math.random()<.45)bubble(key,lineOf(key,"q"));msg=`${nm}が${R.n}で遊説`;fxT=`支持+${g}`;if(sk>=4)msg+=gainXP(key,"speech");}
   }
@@ -5329,6 +5330,14 @@ function yearNewsHTML(){try{const N=(S.news||[]).filter(n=>n&&n.h);if(N.length<2
   const ev=(A,n)=>A.length<=n?A:n<=0?[]:n===1?[A[A.length-1]]:[...Array(n)].map((_,i)=>A[Math.round(i*(A.length-1)/(n-1))]);
   const hi=L.filter(x=>x.sc>1),lo=L.filter(x=>x.sc<=1);L=[...ev(hi,6),...(hi.length<6?ev(lo,6-hi.length):[])].sort((a,b)=>(a.n.m||0)-(b.n.m||0));
   return `<details class="yrnews" open><summary class="muted">この一年の瓦版（${L.length}件）</summary><div class="kawaraban"><div class="kb-head"><span>偉人瓦版</span><span>一年の総まくり</span></div>${L.map(({n})=>`<div class="kb-item"><h3><small class="yrm">${n.m}月</small>${spTx?spTx(n.h):n.h}</h3>${n.c?`<p>${n.c}</p>`:""}</div>`).join("")}</div></details>`}catch(e){return ""}}
+/* 結末の「大臣の通信簿」：一人一行で一年の働き（任務・論戦・疲れ・ゆかりの地・掛け合い） */
+function stAdd(k,f){try{if(!k||!S)return;S.stats=S.stats||{};const o=S.stats[k]||(S.stats[k]={task:0,win:0,lose:0,tire:0,yuk:0});o[f]=(o[f]||0)+1}catch(e){}}
+function cabReportHTML(){try{const st=S.stats||{};const ks=[...new Set([...Object.keys(S.pc||{}),...Object.keys(st)])].filter(k=>isPM(k)||C[k]);if(!ks.length)return "";
+  const seen=[...(S.banterSeen||[]),...(S.banterSeen2||[])];const bn=k=>seen.filter(n=>{const b=BONDS.find(x=>x.n===n);return b&&b.k.includes(k)}).length;
+  const R=ks.map(k=>{const o=st[k]||{};return {k,t:o.task||0,w:o.win||0,l:o.lose||0,ti:o.tire||0,y:o.yuk||0,b:bn(k)}}).sort((a,b)=>(isPM(b.k)-isPM(a.k))||(b.t+b.w*2-(a.t+a.w*2)));
+  const mvp=R.filter(x=>!isPM(x.k)).sort((a,b)=>(b.t+b.w*3+b.y)-(a.t+a.w*3+a.y))[0];
+  const cell=(v,u)=>v?`<span>${u}${v}</span>`:"";
+  return `<details class="tsushin" open><summary class="muted">大臣の通信簿（${R.length}人）</summary><div class="tsu-l">${R.map(x=>`<div class="tsu-r${mvp&&mvp.k===x.k&&mvp.t?" mvp":""}"><b>${nameOf(x.k)}${mvp&&mvp.k===x.k&&mvp.t?"<em>殊勲</em>":""}</b><small>${[`<span>任務${x.t}</span>`,(x.w||x.l)?`<span>論戦${x.w}勝${x.l}敗</span>`:"",(x.ti?`<span>疲れ${x.ti}か月</span>`:""),cell(x.y,"ゆかり"),cell(x.b,"掛け合い")].join("")||'<span class="muted">出番なし</span>'}</small></div>`).join("")}</div></details>`}catch(e){return ""}}
 /* ---------- 掛け合い一覧 ---------- */
 // v77 相乗の掛け合いを一覧で読み返す
 function synBookHTML(){const seen=(S&&S.synB)||[];const ks=Object.keys(SYNB);if(!ks.length)return "";
@@ -6224,6 +6233,7 @@ function ending(){
     <div class="final">${K.map(k=>`<div><span class="muted">${KL[k]}</span><b>${st[k]}</b></div>`).join("")}<div><span class="muted">国庫</span><b>${Math.round(S.kokko)}</b></div></div>
     ${histChartHTML(1)||`<div class="poll"><div class="row"><span class="muted">内閣支持率の推移</span></div>${spark(S.history.map(h=>h.sup).concat([S.st.sup]))}</div>`}
     ${yearNewsHTML()}
+    ${cabReportHTML()}
     ${macYearHTML()}
     ${cast}
     <div class="titles"><div class="muted">今回の称号</div>${earned.length?earned.map(t=>`<div class="title-chip on"><b>${t.t}</b><small>${t.x}${newT.includes(t.id)?"　初獲得":""}</small></div>`).join(""):`<p class="muted">称号なし</p>`}
