@@ -614,7 +614,7 @@ body.sosup::after{content:"";position:fixed;inset:0;z-index:40;pointer-events:no
 .koji .fin-r{border-color:var(--kin)}
 .koji .kj-q{font-size:.78rem;color:#ffc2b6;margin:0}
 /* v83 終盤情勢 */
-.shuban{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:8px;background:var(--washi);color:#2a2220}
+.kt-rl{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line,#ccc);font-size:12px;line-height:1.5}.kt-rl p{margin:2px 0}.shuban{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:8px;background:var(--washi);color:#2a2220}
 .shuban .sb-h{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #2a2220;padding-bottom:3px;font-family:var(--f-disp);font-weight:800}
 .shuban .sb-h b{color:#9b2c20;letter-spacing:.15em;font-size:.95rem}.shuban .sb-h small{font-family:var(--f-body);font-size:.66rem;color:#5a4e46;font-weight:500}
 .shuban .sb-n{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-family:var(--f-disp)}
@@ -2940,7 +2940,15 @@ function kotaeHTML(){try{const k=S.koji;if(!k||k.lo==null||S.fall||S.seats==null
    <div class="sb-n"><span>予想${lo}〜${hi}</span><span>→</span><em>${s}</em><span>議席</span><i class="${v[1]==="y"?"":v[1]}">${v[0]}</i></div>
    <div class="sb-bar"><u style="left:${X(lo)}%;width:${Math.max(1,X(hi)-X(lo))}%"></u><b style="left:${X(s)}%"></b><s style="left:${X(233)}%"></s></div>
    <div class="sb-k">${cm}（帯が予想の幅、赤線が結果）</div>
-   ${rows?`<div class="kt-r">${rows}</div>${ttL}`:""}</div>`}catch(e){return ""}}
+   ${rows?`<div class="kt-r">${rows}</div>${ttL}`:""}${kotaeRuleHTML()}</div>`}catch(e){return ""}}
+/* 答え合わせの下に、今年の変則ルール・合言葉・口ぐせ方針がどれだけ効いたか */
+function kotaeRuleHTML(){try{const L=[],sg=v=>(v>0?"+":"")+v;
+  const r=S.rule?ruleOf(S.rule):null;if(r){const st=Object.entries(r.st||{}).map(([k,v])=>`${KS[k]||k}${sg(v)}`);if(r.kk)st.unshift(`国庫${sg(r.kk)}`);
+    const m=Object.entries(S.ruleS||{}).filter(([k,v])=>v).map(([k,v])=>`${KS[k]||k}${sg(v)}`);
+    L.push(`<b>変則ルール「${r.n}」</b>：はじめ ${st.join("・")||"なし"}／毎月 ${m.length?m.join("・"):"動きなし"}（恩恵${S.ruleN||0}回・罰${S.ruleB||0}回）`)}
+  const c=S.cn;if(c)L.push(`<b>合言葉「${c.n}」</b>：初期${KS[c.b]}+2／苦手の${KS[c.wk]}が弱まったのは${S.cnWn||0}回`);
+  const t=S.tag?pmTagOf(S.tag):null;if(t)L.push(`<b>口ぐせ「${t.n}」</b>：${t.x}`);
+  return L.length?`<div class="kt-rl">${L.map(x=>`<p>${x}</p>`).join("")}</div>`:""}catch(e){return ""}}
 function kojiHTML(){if(S.cur!=="senkyo")return "";const k=S.koji,ok=kojiDone(),O=kojiOpts(),lk=oppLeadK();
   let ov="";try{ov=portrait(lk,36,"angry")}catch(e){}
   return `<div class="koji"><div class="cr-h"><b>公示</b><span>最後の一押し<small class="kj-d">投票日まで、あと12日</small></span></div>
@@ -4854,7 +4862,7 @@ function ruleMonth(){try{const r=S&&S.rule?ruleOf(S.rule):null;if(!r||S.month>12
   if(v<lo){t=r.lo;d=-1}else if(v>=th){t=r.hi;d=1}
   if(!t)return;S.st[t[0]]=clamp(S.st[t[0]]+d);S.delta[t[0]]=(S.delta[t[0]]||0)+d;
   S.log.push([S.month,`変則ルール「${r.n}」：${KS[r.k]||""}${v<lo?"が低く":"が高く"}${t[1]}${d>0?"+":""}${d}`]);
-  S.ruleN=(S.ruleN||0)+(d>0?1:0);S.ruleB=(S.ruleB||0)+(d<0?1:0);
+  S.ruleN=(S.ruleN||0)+(d>0?1:0);S.ruleB=(S.ruleB||0)+(d<0?1:0);S.ruleS=S.ruleS||{};S.ruleS[t[0]]=(S.ruleS[t[0]]||0)+d;
 }catch(e){}}
 function ruleLine(){try{const r=S&&S.rule?ruleOf(S.rule):null;if(!r)return "";
   return `<p class="goalln legln"><b>変則</b><span><em>${r.n}</em><br><small>${r.x}</small><i class="gln-n">　恩恵${S.ruleN||0}・罰${S.ruleB||0}</i></span></p>`}catch(e){return ""}}
@@ -5770,7 +5778,7 @@ function apply(d,raw){
     const v0=S.st[k]; let v=d[k];
     if(!raw){ v = v>0 ? v*Math.max(0.15,Math.min(1.2,(100-v0)/50)) : v*Math.max(0.7,Math.min(1.6,v0/50)); v=Math.round(v)||Math.sign(d[k]);
       if(k==="sup"&&v0>=MAN_TH&&!koukiOn()){const v1=v>0?Math.round(v*.7):Math.round(v*1.3);const lost=Math.abs(v1-v);if(lost){if(!S.manM||S.manM.m!==S.month)S.manM={m:S.month,n:0};S.manM.n+=lost}v=v1;} }
-    if(!raw&&v>0&&S.cnW===k&&S.cnWm!==S.month){S.cnWm=S.month;v=Math.max(0,v-1)}
+    if(!raw&&v>0&&S.cnW===k&&S.cnWm!==S.month){S.cnWm=S.month;S.cnWn=(S.cnWn||0)+1;v=Math.max(0,v-1)}
     const before=S.st[k]; S.st[k]=clamp(S.st[k]+v);
     S.delta[k]=(S.delta[k]||0)+(S.st[k]-before);
   }
