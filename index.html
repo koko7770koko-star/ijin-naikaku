@@ -104,6 +104,7 @@ button:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
 .bd.clash{border-left-color:var(--shu)}.bd.clash b{background:var(--shu);color:var(--washi)}
 .bd.foe{border-left-color:var(--midori)}.bd.foe b{background:var(--midori)}
 .bonds.sm .bd i{display:none}
+.bdfold{margin-top:6px}.cohesion .bdfold>summary{padding:4px 0;box-sizing:border-box;min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700;font-size:.86rem;color:var(--kin)}
 .bd.syn{border-left-color:#c9a4ff;background:linear-gradient(90deg,rgba(150,90,255,.14),var(--ai) 70%)}.bd.syn b{background:#c9a4ff;color:var(--ai)}
 .bd .bloom{display:block;color:var(--midori);font-size:.7rem}
 .rivalbox{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--ai);border-left:4px solid var(--fc)}.rivalbox>div{display:flex;flex-direction:column;min-width:0;gap:1px}.rivalbox small{font-size:.66rem;color:var(--fc);font-weight:800}.rivalbox b{font-family:var(--f-disp);font-size:1.02rem}.rivalbox q{font-size:.76rem;color:var(--sumi);quotes:"「" "」"}.rivalbox .sswhy{font-size:.7rem;color:var(--sumi);line-height:1.4}.rivalbox span{font-size:.74rem}.rivalbox em{font-style:normal;color:var(--kin);font-weight:800}.choice .sopr{color:var(--kin)}
@@ -1219,7 +1220,7 @@ const CMDS=[
 ];
 
 const SAVE="ieyasu_cabinet_v7";
-let S=null, pick={}, curPost="pm", lastPick=null, pv=null, pmPick="ieyasu";
+let S=null, pick={}, curPost="pm", lastPick=null, pv=null, pmPick="ieyasu"; let bdOpen=false;
 const YOMI={"ieyasu":"とくがわいえやす","nobunaga":"おだのぶなが","hideyoshi":"とよとみひでよし","mitsuhide":"あけちみつひで","ryoma":"さかもとりょうま","yoshimune":"とくがわよしむね","masako":"ほうじょうまさこ","shotoku":"しょうとくたいし","koan":"おがたこうあん","kaishu":"かつかいしゅう","shibusawa":"しぶさわえいいち","tsunayoshi":"とくがわつなよし","takamori":"さいごうたかもり","okubo":"おおくぼとしみち","shingen":"たけだしんげん","kenshin":"うえすぎけんしん","murasaki":"むらさきしきぶ","himiko":"ひみこ","tadataka":"いのうただたか","ninomiya":"にのみやそんとく","noguchi":"のぐちひでよ","yukichi":"ふくざわゆきち","tokimune":"ほうじょうときむね","mutsu":"むつむねみつ","date":"だてまさむね","hijikata":"ひじかたとしぞう","yoritomo":"みなもとのよりとも","umeko":"つだうめこ","maeda":"まえだとしいえ","yoshinobu":"とくがわよしのぶ","kiyomori":"たいらのきよもり","motonari":"もうりもとなり","shoin":"よしだしょういん","takasugi":"たかすぎしんさく","okuma":"おおくましげのぶ","itagaki":"いたがきたいすけ","kitasato":"きたざとしばさぶろう","nitobe":"にとべいなぞう","yoshimitsu":"あしかがよしみつ","michinaga":"ふじわらのみちなが","honda":"ほんだただかつ","ii":"いいなおまさ","sakai":"さかいただつぐ","sakakibara":"さかきばらやすまさ","kobayakawa":"こばやかわひであき","kanbei":"くろだかんべえ","hanbei":"たけなかはんべえ","hidenaga":"とよとみひでなが","nene":"ねね","kasuga":"かすがのつぼね","oichi":"おいちのかた","atsuhime":"あつひめ","nakaoka":"なかおかしんたろう","kido":"きどたかよし","ooka":"おおおかただすけ","kiyomasa":"かとうきよまさ","masanori":"ふくしままさのり","tanuma":"たぬまおきつぐ","sadanobu":"まつだいらさだのぶ","yodo":"よどどの","hideyori":"とよとみひでより","gracia":"ほそかわがらしゃ","yoshimoto":"いまがわよしもと","kamatari":"なかとみのかまたり","gyoki":"ぎょうき","kibi":"きびのまきび","michizane":"すがわらのみちざね","saicho":"さいちょう","nakamaro":"あべのなかまろ","komachi":"おののこまち","kiyomaro":"わけのきよまろ","tsurayuki":"きのつらゆき","yasutoki":"ほうじょうやすとき","yoshitoki":"ほうじょうよしとき","hiromoto":"おおえのひろもと","masashige":"くすのきまさしげ","zeami":"ぜあみ","ikkyu":"いっきゅうそうじゅん","tomiko":"ひのとみこ","sesshu":"せっしゅう","soun":"ほうじょうそううん","ujisato":"がもううじさと","yusai":"ほそかわゆうさい","takatora":"とうどうたかとら","kazutoyo":"やまうちかずとよ","chiyo":"ちよ","kojuro":"かたくらこじゅうろう","ginchiyo":"たちばなぎんちよ","ukon":"たかやまうこん","sokyu":"いまいそうきゅう","hoshina":"ほしなまさゆき","hakuseki":"あらいはくせき","iemitsu":"とくがわいえみつ","kuranosuke":"おおいしくらのすけ","yozan":"うえすぎようざん","norinaga":"もとおりのりなが","rinzo":"まみやりんぞう","kahei":"たかだやかへえ","takakazu":"せきたかかず","nariakira":"しまづなりあきら","masahiro":"あべまさひろ","oguri":"おぐりただまさ","shozan":"さくましょうざん","shonan":"よこいしょうなん","iwakura":"いわくらともみ","yamagata":"やまがたありとも","hara":"はらたかし","korekiyo":"たかはしこれきよ","inukai":"いぬかいつよし","ozaki":"おざきゆきお","goto":"ごとうしんぺい","komura":"こむらじゅたろう","omura":"おおむらますじろう","manjiro":"じょんまんじろう","godai":"ごだいともあつ","kano":"かのうじごろう","asako":"ひろおかあさこ","ginko":"おぎのぎんこ","raicho":"ひらつからいちょう","kumagusu":"みなかたくまぐす","hatta":"はったよいち","takamine":"たかみねじょうきち","niijima":"にいじまじょう","tenshin":"おかくらてんしん","imoko":"おののいもこ","maejima":"まえじまひそか"};
 const yomiOf=(k,n)=>YOMI[k]||'\uffff'+n;
 let cgSort="nou"; // 候補の並べ替え（画面の中だけ・保存しない）
@@ -5795,7 +5796,9 @@ function renderCabinet(){
       ${cgAll?`<button class="btn ghost small cgmore" data-cgmore="0">得意な上位だけに戻す</button>`:hid?`<button class="btn ghost small cgmore" data-cgmore="1">ほかの${hid}人も見る（●の多い順）</button>`:""}
     </div>`})()}
   <div class="cohesion">${relChart(ids0)}閣内結束の見込み：<b>${Math.max(5,Math.min(95,60+ps.v))}</b>
-    <div class="bonds">${synChips(activeSyn(ids0))}${activeBonds(ids0).length?bondChips(activeBonds(ids0)):`<span class="muted">まだ縁はない。★のついた人物を選ぶと縁が生まれる</span>`}</div>
+    ${(()=>{const ab=activeBonds(ids0),as=activeSyn(ids0),inner=`<div class="bonds">${synChips(as)}${ab.length?bondChips(ab):`<span class="muted">まだ縁はない。★のついた人物を選ぶと縁が生まれる</span>`}</div>`;
+      /* 11/03 縁が5つ以上なら畳む（組閣画面が画面10枚分になっていたため。開いたかどうかは描き直しても保つ） */
+      return ab.length+as.length>4?`<details class="bdfold" ${bdOpen?"open":""} ontoggle="bdOpen=this.open"><summary>いまの縁 ${ab.length}組${as.length?`・相乗 ${as.length}`:""}（タップで開く）</summary>${inner}</details>`:inner})()}
     ${nearSyn(ids0).length?`<div class="muted" style="margin-top:6px">あと1つの縁で相乗：${nearSyn(ids0).map(s=>s.n).join("、")}</div>`:""}
     ${near.length?`<div class="muted" style="margin-top:6px">あと1人で成立：${near.map(b=>b.n).join("、")}</div>`:""}</div>
   <div class="post"><div class="post-head"><h3>特命チーム</h3><span class="field">地図を駆け回る現場部隊・3人（${team.length}/3）</span></div>
