@@ -4783,6 +4783,10 @@ const PLEDGES=[
  {id:"ichigan",n:"内閣一丸",x:"閣内結束60以上・辞任ゼロ",f:S=>S.st.coh>=60&&!S.resigned,v:S=>`結束 ${S.st.coh}/60${S.resigned?"・辞任あり":""}`},
  {id:"ronsen",n:"論戦無双",x:"西軍党との論戦に25回勝つ",f:S=>(S.debWin||0)>=25,v:S=>`勝利 ${S.debWin||0}/25回`},
  {id:"kaiketsu",n:"現場主義",x:"各地の問題を20件解決する",f:S=>(S.fixN||0)>=20,v:S=>`解決 ${S.fixN||0}/20件`},
+ {id:"shinnin",n:"国民の信任",x:"任期末に支持率60以上",f:S=>S.st.sup>=60,v:S=>`支持 ${S.st.sup}/60`},
+ {id:"kitamamori",n:"北の守り",x:"北海道・東北の平均支持55%以上",f:S=>(supR("hok")+supR("toh"))/2>=55,v:S=>`北 ${Math.floor((supR("hok")+supR("toh"))/2)}/55%`},
+ {id:"seigun",n:"西軍封じ",x:"任期末に西軍党の勢い35以下",f:S=>(S.opp??45)<=35,v:S=>`西軍の勢い ${Math.round(S.opp??45)}/35以下`},
+ {id:"ryoritsu",n:"成長と分配",x:"任期末に経済・民生ともに55以上",f:S=>S.st.eco>=55&&S.st.wel>=55,v:S=>`経済 ${S.st.eco}・民生 ${S.st.wel}/55`},
 ];
 const PL=Object.fromEntries(PLEDGES.map(p=>[p.id,p]));
 let pledges=[];
