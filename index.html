@@ -2208,7 +2208,10 @@ const VOWS=[
  {id:"anpo",t:"安全第一",s:"saf",h:"治安+3・経済-1",q:"夜道を安んじて歩ける国を",f:()=>apply({saf:3,eco:-1},true)},
  {id:"hiraku",t:"外交で国を開く",s:"dip",h:"外交+3・結束-1（内向きの声が反発）",q:"海の向こうに、明日がある",f:()=>apply({dip:3,coh:-1},true)},
  {id:"kurashi",t:"暮らし第一",s:"wel",h:"民生+3・国庫-1兆円",q:"台所の明日を守る",f:()=>{apply({wel:3},true);S.kokko=(S.kokko||0)-1}},
- {id:"zaisei",t:"財政再建",s:"eco",h:"国庫+2兆円・支持-1",q:"子や孫に借金を残さぬ",f:()=>{S.kokko=(S.kokko||0)+2;apply({sup:-1},true)}}];
+ {id:"zaisei",t:"財政再建",s:"eco",h:"国庫+2兆円・支持-1",q:"子や孫に借金を残さぬ",f:()=>{S.kokko=(S.kokko||0)+2;apply({sup:-1},true)}},
+ {id:"sekisen",t:"接戦区に全力",s:"sup",h:"接戦区の支持+3・ほかの地方-1",q:"一票の差に、すべてを懸ける",f:()=>{let K=[];try{K=kojiRegs()}catch(e){}if(!K.length)K=[...DOM].sort((a,b)=>supR(a)-supR(b)).slice(0,2);DOM.forEach(r=>S.off[r]=Math.max(-40,Math.min(40,(S.off[r]||0)+(K.includes(r)?3:-1))))}},
+ {id:"jiban",t:"地盤を切り崩す",s:"saf",h:"西軍の旗の多い2地方で旗-1・国庫-1兆円",q:"相手の牙城にこそ、足を運ぶ",f:()=>{let F=[];try{F=kojiF()}catch(e){}F.slice(0,2).forEach(r=>S.base[r]=Math.max(0,(S.base[r]||0)-1));S.kokko=(S.kokko||0)-1}},
+ {id:"danketsu",t:"一致団結",s:"coh",h:"結束+3・民生-1",q:"一枚岩で、最後まで戦い抜く",f:()=>apply({coh:3,wel:-1},true)}];
 function vowOf(id){return VOWS.find(v=>v.id===id)||null}
 function vowDone(){return !!(S&&S.vow)}
 function vowPick(id){if(S.cur!=="senkyo"||!kojiDone()||vowDone())return;const v=vowOf(id);if(!v)return;S.delta={};v.f();S.vow=id;
@@ -5638,7 +5641,7 @@ function title(){
       <li><b>派閥の政策要求</b>　8〜11月、不満が40〜69の派閥は領袖を立てて政策の要求を突きつける。飲めばその派閥の不満が大きく下がるが、指標が上下し、別の派閥が少し不満を持つ。突っぱねると不満が増え、70で造反。同じ派閥が二度目に出るときは別の要求（攻め派・民本派・協調派）になることがある。</li>
       <li><b>接戦区の陳情</b>　10〜11月、接戦区の地方から陳情が届く。受けるとその地方の支持が上がるが政治資本と担当大臣の体力を使い、断ると支持が少し下がる。</li>
       <li><b>巷の声</b>　月末の令和瓦版には、その月いちばん大きく動いた指標（支持・経済・民生・治安・外交・結束）について、町の人の声が一つ載る。口ぐせ方針・変則ルール・国家目標によっては、それにちなんだ声も混じる。</li>
-      <li><b>最終公約の一枚札</b>　12月の公示のあとに「減税」「改革断行」「安定継続」「安全第一」「外交で国を開く」「暮らし第一」「財政再建」の7枚から一枚を切る。勝てば次の政権の初期値に+2が残る。</li>
+      <li><b>最終公約の一枚札</b>　12月の公示のあとに「減税」「改革断行」「安定継続」「安全第一」「外交で国を開く」「暮らし第一」「財政再建」「接戦区に全力」「地盤を切り崩す」「一致団結」の10枚から一枚を切る。勝てば次の政権の初期値に+2が残る。</li>
       <li><b>最後の重点演説</b>　公示のあと、地方を一つ選んで最後の訴えをする。その地方の支持+4、西軍が総力を挙げる地方なら食い込める。ただし手薄になった他の地方で西軍の勢いが+1。</li>
     </ul><button type="button" class="htop" data-hs="top">▲目次へ</button>
     <h3 class="hsec" id="hs5">人と国</h3>
