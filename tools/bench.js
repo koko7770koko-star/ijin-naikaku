@@ -1,6 +1,6 @@
 // 自動対戦を N 回回して、議席・支持・退陣・エラー・時間を1行ずつと平均で出す（bal2 の測り直しなどの土台）。
 // usage: node tools/bench.js [index.htmlのパス]   env: N=回数（既定5、seed 1〜N） SEED0=最初の seed（既定1） MODE=auto|smart（既定 auto）
-//   DIFF=easy|normal|hard（既定 normal） PAR=並列数（既定1、最大2） FAST=play.js に渡す（既定8） LIM=1回の上限ミリ秒（既定600000） OUT=撮影の置き場（既定 /tmp/bench）
+//   DIFF=easy|normal|hard（既定 normal） RULE・TAG・GOAL・VOW=play.js にそのまま渡る（その札を選ぶ） PAR=並列数（既定1、最大2） FAST=play.js に渡す（既定8） LIM=1回の上限ミリ秒（既定600000） OUT=撮影の置き場（既定 /tmp/bench）
 // play.js と index.html は変えない。難易度と最後の支持は、play.js に node -r でこのファイルを読ませて足す（BENCH_HOOK=1 のとき）。
 if (process.env.BENCH_HOOK) {
   // ---- フック：play.js の中で動く ----
