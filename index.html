@@ -2116,7 +2116,7 @@ const TITLES=[
  {id:"scout",t:"三顧の礼",x:"在野の偉人を3人以上仲間にする",f:S=>(S.allies||[]).length+Object.values(S.cab).filter(k=>C[k].scout).length>=3},
  {id:"jiban",t:"地盤ゼロ",x:"西軍党の地盤をすべて崩して終える",f:S=>S.base&&DOM.every(r=>!S.base[r])},
  {id:"angya",t:"全国行脚",x:"8地方すべての支持を55%以上にして終える",f:S=>S.off&&DOM.every(r=>supR(r)>=55)},
- {id:"fushin",t:"首の皮一枚",x:"内閣不信任案を否決する",f:S=>!!S.flags?.survived},
+ {id:"kawaichimai",t:"首の皮一枚",x:"内閣不信任案を否決する",f:S=>!!S.flags?.survived},
  {id:"sekigahara",t:"関ヶ原、再び",x:"西軍党の勢いを15以下に抑えて勝つ",f:S=>!S.fall&&S.seats>=233&&(S.opp??45)<=15},
  {id:"yugen",t:"有言実行",x:"公約を3つすべて守る",f:S=>!S.fall&&S.pledgeRes&&S.pledgeRes.length===3&&S.pledgeRes.every(x=>x.ok)},
  {id:"chusai",t:"天下の調整役",x:"犬猿の仲を2組以上和解させる",f:S=>Object.keys(S.recon||{}).length>=2},
@@ -2135,7 +2135,7 @@ const TITLES=[
 ];
 const REC="ieyasu_cabinet_records";
 /* v92 前の政権の遺産：前回取った称号から1つを次の1年へ（小さな加点、代わりに西軍の勢い+3） */
-const LEG_ST={mukketsu:"coh",zaisei:"eco",rippou:"coh",hitotarashi:"coh",naku:"coh",fushin:"saf",kaikoku:"dip",tami:"wel",taisho:"sup",ransei:"sup",seichou:"coh",ronpa:"sup",scout:"coh",jiban:"sup",angya:"wel",sekigahara:"sup",yugen:"sup",chusai:"coh",fukaki:"coh",enmusubi:"coh",uragiri:"coh",shitenno:"coh",honnoji:"saf",yomikae:"sup",kokorozashi:"eco",sekkyo:"sup",sakiyomi:"coh",kikimimi:"sup",hatafuri:"wel",dohyogiwa:"coh"};
+const LEG_ST={kawaichimai:"sup",mukketsu:"coh",zaisei:"eco",rippou:"coh",hitotarashi:"coh",naku:"coh",fushin:"saf",kaikoku:"dip",tami:"wel",taisho:"sup",ransei:"sup",seichou:"coh",ronpa:"sup",scout:"coh",jiban:"sup",angya:"wel",sekigahara:"sup",yugen:"sup",chusai:"coh",fukaki:"coh",enmusubi:"coh",uragiri:"coh",shitenno:"coh",honnoji:"saf",yomikae:"sup",kokorozashi:"eco",sekkyo:"sup",sakiyomi:"coh",kikimimi:"sup",hatafuri:"wel",dohyogiwa:"coh"};
 const LEG_N=3,LEG_OPP=3,LG_GAIN=8;let legacyPick=null;
 /* v124（二周目目標） 称号しばりの二周目目標：遺産の指標を始めから+8以上伸ばして勝てば、次の政権の初期支持+2（rec.lgb）。古いセーブは S.lgB 無し→出さない */
 /* v125（前政権の宿題カード） 前の政権の最後でいちばん低かった指標を rec.weak に残し、次の政権の2月に小さな案件「宿題」を出す。古いセーブは S.hw 無し→出さない */
