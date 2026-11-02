@@ -2033,6 +2033,16 @@ Object.assign(EV,{
   {t:"造反組を一喝する",s:"a",d:{coh:5,sup:2},opp:3},
   {t:"政策で譲歩する",s:"m",d:{coh:6}},
   {t:"放っておく",s:"z",d:{coh:-5}}]},
+ cr_fukushi:{t:"社会保障への不安が噴き出す",f:"welfare",crisis:1,x:"介護・医療・年金の綻びが相次いで報じられ、「老後が見えない」という声が全国で上がっている。",o:[
+  {t:"社会保障の緊急パッケージ",s:"a",d:{wel:10,sup:3},c:-9},
+  {t:"介護・医療の現場を直接支える",s:"m",d:{wel:7,saf:2},c:-5},
+  {t:"超党派の改革会議を開く",s:"w",d:{wel:5,coh:3}},
+  {t:"給付と負担を見直す",s:"z",d:{wel:4,sup:-3},c:4}]},
+ cr_kurashi:{t:"物価高に暮らしの悲鳴",f:"econ",crisis:1,x:"景気も福祉も冷え込む中、食料品や光熱費が上がり続け、家計が悲鳴を上げている。",o:[
+  {t:"生活必需品に給付金",s:"m",d:{wel:6,sup:4},c:-8},
+  {t:"物価対策の減税を打つ",s:"a",d:{eco:6,sup:3},c:-7},
+  {t:"流通を整えて値上がりを抑える",s:"w",d:{eco:4,wel:3},c:-3},
+  {t:"賃上げが追いつくのを待つ",s:"z",d:{eco:2,sup:-3}}]},
  cr_fushin:{t:"内閣不信任案が提出された",f:"speech",crisis:1,x:"支持率の低迷を見た西軍党が、内閣不信任案を提出。与党から造反が出れば内閣は終わる。",o:[
   {t:"党内を固めて否決に持ち込む",s:"w",vote:"coh"},
   {t:"野党の一部を切り崩す",s:"a",vote:"split"},
@@ -2048,6 +2058,8 @@ const CRISES=[
  {id:"cr_kakusage",c:S=>S.kokko<=-12},
  {id:"cr_chian",c:S=>S.st.saf<=30},
  {id:"cr_koritsu",c:S=>S.st.dip<=30},
+ {id:"cr_fukushi",c:S=>S.st.wel<=30},
+ {id:"cr_kurashi",c:S=>S.st.eco<=40&&S.st.wel<=40},
 ];
 
 /* 11/03 旧版の国会答弁（QA_MONTHS・ANS・QA・startQA・answerQA・qaView・qaResView）は v130 の野党の追及カード（SOKUHO tk）に役目を移したので消した。S.qaSeen・S.qaWin はセーブの形を変えないため残す */
