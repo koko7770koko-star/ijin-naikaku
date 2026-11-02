@@ -354,6 +354,8 @@ button.cc .sk,.cc span.sk{white-space:normal;line-height:1.25;text-align:center;
 .fa-banner{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:var(--kin);color:var(--ai);font-weight:800;font-size:.8rem;padding:7px 14px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.45);display:flex;gap:10px;align-items:center}
 .fa-banner{white-space:nowrap}
 .fa-banner button{border:0;background:var(--ai);color:var(--kin);font:inherit;font-size:.75rem;padding:3px 10px;border-radius:999px}
+/* t-fastop-size 「止める」を指で押せる大きさに（バナーの上下の余白を減らして高さを保つ） */
+.fa-banner{padding:2px 4px 2px 14px}.fa-banner button{padding:8px 16px;min-height:36px;min-width:64px}
 .cc.pv{outline:2.5px solid #fff3c4;outline-offset:1px;background:var(--ai2)}
 .pvsheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-height:72vh;overflow:auto;background:#0f1b2e;border-top:2px solid var(--kin);border-radius:14px 14px 0 0;padding:14px 16px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -10px 30px rgba(0,0,0,.55);animation:pvUp .2s ease}
 @keyframes pvUp{from{transform:translateY(40%);opacity:0}}
