@@ -5564,7 +5564,7 @@ function yearNewsHTML(){try{const N=(S.news||[]).filter(n=>n&&n.h);if(N.length<2
   let L=Object.keys(by).map(Number).sort((a,b)=>a-b).map(m=>by[m]);
   const ev=(A,n)=>A.length<=n?A:n<=0?[]:n===1?[A[A.length-1]]:[...Array(n)].map((_,i)=>A[Math.round(i*(A.length-1)/(n-1))]);
   const hi=L.filter(x=>x.sc>1),lo=L.filter(x=>x.sc<=1);L=[...ev(hi,6),...(hi.length<6?ev(lo,6-hi.length):[])].sort((a,b)=>(a.n.m||0)-(b.n.m||0));
-  return `<details class="yrnews" open><summary class="muted">この一年の瓦版（${L.length}件）</summary><div class="kawaraban"><div class="kb-head"><span>偉人瓦版</span><span>一年の総まくり</span></div>${L.map(({n})=>`<div class="kb-item"><h3><small class="yrm">${n.m}月</small>${spTx?spTx(n.h):n.h}</h3>${n.c?`<p>${n.c}</p>`:""}</div>`).join("")}</div></details>`}catch(e){return ""}}
+  return `<details class="yrnews"><summary class="muted">この一年の瓦版（${L.length}件）</summary><div class="kawaraban"><div class="kb-head"><span>偉人瓦版</span><span>一年の総まくり</span></div>${L.map(({n})=>`<div class="kb-item"><h3><small class="yrm">${n.m}月</small>${spTx?spTx(n.h):n.h}</h3>${n.c?`<p>${n.c}</p>`:""}</div>`).join("")}</div></details>`}catch(e){return ""}}
 /* 結末の「大臣の通信簿」：一人一行で一年の働き（任務・論戦・疲れ・ゆかりの地・掛け合い） */
 function stAdd(k,f){try{if(!k||!S)return;S.stats=S.stats||{};const o=S.stats[k]||(S.stats[k]={task:0,win:0,lose:0,tire:0,yuk:0});o[f]=(o[f]||0)+1}catch(e){}}
 function cabReportHTML(){try{const st=S.stats||{};const ks=[...new Set([...Object.keys(S.pc||{}),...Object.keys(st)])].filter(k=>isPM(k)||C[k]);if(!ks.length)return "";
@@ -5572,7 +5572,7 @@ function cabReportHTML(){try{const st=S.stats||{};const ks=[...new Set([...Objec
   const R=ks.map(k=>{const o=st[k]||{};return {k,t:o.task||0,w:o.win||0,l:o.lose||0,ti:o.tire||0,y:o.yuk||0,b:bn(k)}}).sort((a,b)=>(isPM(b.k)-isPM(a.k))||(b.t+b.w*2-(a.t+a.w*2)));
   const mvp=R.filter(x=>!isPM(x.k)).sort((a,b)=>(b.t+b.w*3+b.y)-(a.t+a.w*3+a.y))[0];
   const cell=(v,u)=>v?`<span>${u}${v}</span>`:"";
-  return `<details class="tsushin" open><summary class="muted">大臣の通信簿（${R.length}人）</summary><div class="tsu-l">${R.map(x=>`<div class="tsu-r${mvp&&mvp.k===x.k&&mvp.t?" mvp":""}"><b>${nameOf(x.k)}${mvp&&mvp.k===x.k&&mvp.t?"<em>殊勲</em>":""}</b><small>${[`<span>任務${x.t}</span>`,(x.w||x.l)?`<span>論戦${x.w}勝${x.l}敗</span>`:"",(x.ti?`<span>疲れ${x.ti}か月</span>`:""),cell(x.y,"ゆかり"),cell(x.b,"掛け合い")].join("")||'<span class="muted">出番なし</span>'}</small></div>`).join("")}</div></details>`}catch(e){return ""}}
+  return `<details class="tsushin"><summary class="muted">大臣の通信簿（${R.length}人）</summary><div class="tsu-l">${R.map(x=>`<div class="tsu-r${mvp&&mvp.k===x.k&&mvp.t?" mvp":""}"><b>${nameOf(x.k)}${mvp&&mvp.k===x.k&&mvp.t?"<em>殊勲</em>":""}</b><small>${[`<span>任務${x.t}</span>`,(x.w||x.l)?`<span>論戦${x.w}勝${x.l}敗</span>`:"",(x.ti?`<span>疲れ${x.ti}か月</span>`:""),cell(x.y,"ゆかり"),cell(x.b,"掛け合い")].join("")||'<span class="muted">出番なし</span>'}</small></div>`).join("")}</div></details>`}catch(e){return ""}}
 /* ---------- 掛け合い一覧 ---------- */
 // v77 相乗の掛け合いを一覧で読み返す
 function synBookHTML(){const seen=(S&&S.synB)||[];const ks=Object.keys(SYNB);if(!ks.length)return "";
