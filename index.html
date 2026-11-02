@@ -2909,6 +2909,7 @@ function shubanAdj(){const pr=(S.pledges||[]).map(id=>{try{return PL[id].f(S)}ca
   let t=DIFF[S.diff||"normal"].seat+ok*10-ng*8+(pr.length&&!ng?6:0)+Object.values(S.bills||{}).filter(b=>b.st==="passed").length*2;if(S.kokko<0)t-=10;return t}
 function shubanRange(){const op=S.opp??45,a=shubanAdj();let lo=a,hi=a;
   DOM.forEach(r=>{const R=RG[r],sr=supR(r),b=S.base[r]||0;lo+=R.seats*seatShare(sr,op,b,-.04);hi+=R.seats*seatShare(sr,op,b,.04)});
+  if(hi-lo<12){const m=(lo+hi)/2;lo=m-6;hi=m+6}/* t-shuban-range0：支持率が天井だと幅が0になり「予想333〜333」になっていた。最小±6議席 */
   const f=x=>Math.max(30,Math.min(440,Math.round(x)));return [f(lo),f(hi)]}
 function shubanRegs(){const k=S.koji||{};const L=[...new Set([...(k.rs||[]),...(S.sekF||[]),...(S.sekR||[])])].filter(r=>RG[r]&&DOM.includes(r)).slice(0,4);
   const op=S.opp??45;return L.map(r=>{const p=seatShare(supR(r),op,S.base[r]||0,0);return {r,p,w:Math.round(RG[r].seats*p),t:RG[r].seats,f:(S.sekF||[]).includes(r),k:(k.rs||[]).includes(r)}})}
