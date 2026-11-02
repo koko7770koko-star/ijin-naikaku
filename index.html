@@ -2199,7 +2199,8 @@ function waysHTML(){try{if(S.fall||S.seats==null)return "";const rec=loadRec(),h
   const left=WAYS.filter(w=>!have.includes(w.id));
   const got=nw.map(id=>WAYS.find(w=>w.id===id)).filter(Boolean);
   return `<div class="waysbox"><div class="muted">まだない勝ち方（${have.length}/${WAYS.length}）</div>${got.length?got.map(w=>`<div class="way on"><b>達成！ ${w.t}</b><small>${w.x}　次の政権の初期国庫+1</small></div>`).join(""):""}${left.slice(0,3).map(w=>`<div class="way"><b>？ ${w.t}</b><small>${w.x}</small></div>`).join("")||`<p class="muted">すべての勝ち方を達成済み</p>`}</div>`}catch(e){return ""}}
-function loadRec(){try{return JSON.parse(localStorage.getItem(REC))||{best:0,titles:[],plays:0}}catch(e){return {best:0,titles:[],plays:0}}}
+/* 古いセーブ・壊れたセーブでも落ちないよう、titles・best・plays の既定値を入れて返す */
+function loadRec(){let r=null;try{r=JSON.parse(localStorage.getItem(REC))}catch(e){}if(!r||typeof r!=="object"||Array.isArray(r))r={};if(!Array.isArray(r.titles))r.titles=[];r.best=+r.best||0;r.plays=+r.plays||0;return r}
 function saveRec(r){try{localStorage.setItem(REC,JSON.stringify(r))}catch(e){}}
 function recHistHTML(r){const H=Array.isArray(r.hist)?r.hist:[];if(!H.length)return `<p class="rh-none">これから遊ぶ1年の記録が、ここに最大5回分残ります。</p>`;
   return H.map((x,i)=>{const nm=(C[x.pm]&&C[x.pm].n)||"総理";const dn=(DIFF[x.d]&&DIFF[x.d].n)||"";const win=x.s!=null&&x.s>=233;
