@@ -1,4 +1,4 @@
-// 自動対戦：組閣→案件→地図（全自動）を12月の結末まで進め、エラーと結果を出す。usage: node tools/play.js <index.htmlの絶対パス> <seed> <撮影の頭>  env: LIM=ミリ秒 TR=1 で手順表示 MODE=smart で狙い撃ち（9月から、ふつうの遊説・開発を接戦区へ振り向ける。既定は auto＝ゲームの全自動） DIFF=easy|normal|hard で難易度 FAST=自動進行の待ちを何分の1にするか（既定8、1で従来どおり） PICK=fa で案件の選択肢をゲームの faEventPick（国庫の赤字も見る）で選ぶ（既定は一番上） RULE=<変則ルールid> TAG=<口ぐせid> GOAL=<国家目標id> VOW=<一枚札id> でその札を選ぶ（結果の fin に rule・tag・goal・vow）
+// 自動対戦：組閣→案件→地図（全自動）を12月の結末まで進め、エラーと結果を出す。usage: node tools/play.js <index.htmlの絶対パス> <seed> <撮影の頭>  env: LIM=ミリ秒 TR=1 で手順表示 MODE=smart で狙い撃ち（9月から、ふつうの遊説・開発を接戦区へ振り向ける。既定は auto＝ゲームの全自動） DIFF=easy|normal|hard で難易度 FAST=自動進行の待ちを何分の1にするか（既定8、1で従来どおり） 11月などに大臣が辞めて後任の任命（kaizo）が出たら ◎ の人を起用。PICK=fa で案件の選択肢をゲームの faEventPick（国庫の赤字も見る）で選ぶ（既定は一番上） RULE=<変則ルールid> TAG=<口ぐせid> GOAL=<国家目標id> VOW=<一枚札id> でその札を選ぶ（結果の fin に rule・tag・goal・vow）
 const {chromium}=require('playwright');
 (async()=>{const [file,seed,shot]=process.argv.slice(2);
 const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});
@@ -34,6 +34,7 @@ while(Date.now()-t0<(+process.env.LIM||600000)){steps++;
   /* env GOAL・VOW：その id の札があれば最初の物の代わりに押す */
   const G=ENV.GOAL&&pick(`[data-goal="${ENV.GOAL}"]`);if(G){G.click();return 'goal='+ENV.GOAL}
   const V=ENV.VOW&&pick(`[data-vow="${ENV.VOW}"]`);if(V){V.click();return 'vow='+ENV.VOW}
+  if(S&&S.view==='kaizo'){/* 後任の任命（大臣が辞めて空席）：◎（派閥に合う）の人を先に、いなければ先頭。任意の改造なら「やめる」 */const N=[...document.querySelectorAll('[data-new]')].filter(vis);const n=N.find(e=>e.querySelector('.kz-m.ok'))||N[0];if(n){n.click();return 'kaizo:'+n.dataset.new}const ck=pick('#cancelKaizo');if(ck){ck.click();return '#cancelKaizo'}}
   for(const s of ['[data-goal]','[data-focus]','[data-pet]','[data-fq]','[data-kj]','[data-kf]','[data-vow]','.choice','#toPolicy','#go','#autoCab','#next','#resume']){if(s==='.choice'&&ENV.PICK==='fa'&&typeof faEventPick==='function'&&pick('.choice[data-i]')){let i=0;try{i=faEventPick()}catch(x){}const c=[...document.querySelectorAll('.choice[data-i="'+i+'"]')].find(vis);if(c){c.click();return '.choice:fa'+i}}const e=pick(s);if(e){e.click();return s}}
   const e=[...document.querySelectorAll('button')].find(e=>vis(e)&&!BL.some(s=>e.matches(s)));if(e){e.click();return 'btn:'+(e.id||e.innerText.slice(0,12))}return '';},[BL,process.env.MODE||'auto',{PICK:process.env.PICK||'',RULE:process.env.RULE||'',TAG:process.env.TAG||'',GOAL:process.env.GOAL||'',VOW:process.env.VOW||''}]);
  if(clicked)last=clicked; if(process.env.TR)console.log(steps,JSON.stringify(st),clicked);
