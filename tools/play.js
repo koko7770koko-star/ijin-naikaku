@@ -9,7 +9,7 @@ await p.evaluate(()=>{try{localStorage.clear()}catch(e){}});await p.reload();awa
 if(process.env.DIFF)await p.evaluate(d=>{diff=d},process.env.DIFF);
 await p.evaluate(F=>{if(F>1&&typeof faWait==='function'){const o=faWait;faWait=(k,ms)=>o(k,ms/F)}},FAST);
 await p.screenshot({path:shot+'-title.png'});
-const BL=['#setBtn','#howBtn','#book','#faStop','#kantei','#pp','#spd','#viewCab','#recTap','#back','#bkBack','#backMap','#cancelKaizo','#cancelSel','#again','#re'];
+const BL=['#setBtn','#howBtn','#book','#faStop','#kantei','#pp','#spd','#viewCab','#recTap','#back','#bkBack','#backMap','#cancelKaizo','#cancelSel','#again','#re','#share'];
 let steps=0,shots={},t0=Date.now(),last='';
 while(Date.now()-t0<(+process.env.LIM||600000)){steps++;
  const st=await p.evaluate(()=>typeof S!=='undefined'&&S?{done:!!S.done,fall:S.fall||'',ph:S.phase,view:S.view,m:S.month,fa:!!S.fullAuto,d:Math.round(S.day||0),pa:!!S.paused,pe:S.pend,bt:!!S.banter,sp:S.speed}:null);
