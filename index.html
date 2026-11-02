@@ -2673,7 +2673,7 @@ function goalGain(){const g=goalOf();if(!g)return 0;return Math.round((S.st[g.s]
 function goalDone(){const g=goalOf();if(!g||S.fall)return false;return goalGain()>=GOAL_GAIN&&(S.goalN||0)>=GOAL_N}
 const GOAL_GAIN=10,GOAL_N=3;
 /* v106 重点月間（7〜11月の月初に1つ掲げられる。S.focus={m,id}、掲げないと S.focusSkip=月） */
-const FOCUS=[{id:"bukka",n:"物価対策月間",s:"eco",p:"zaimu"},{id:"bosai",n:"防災月間",s:"saf",p:"boei"},{id:"gaiko",n:"外交月間",s:"dip",p:"gaimu"},{id:"fukushi",n:"暮らし安心月間",s:"wel",p:"koro"}];
+const FOCUS=[{id:"bukka",n:"物価対策月間",s:"eco",p:"zaimu"},{id:"bosai",n:"防災月間",s:"saf",p:"boei"},{id:"gaiko",n:"外交月間",s:"dip",p:"gaimu"},{id:"fukushi",n:"暮らし安心月間",s:"wel",p:"koro"},{id:"yuwa",n:"党内融和月間",s:"coh",p:"kanbo"},{id:"koho",n:"広報強化月間",s:"sup",p:"kanbo"}];
 const FOCL=Object.fromEntries(FOCUS.map(f=>[f.id,f]));
 const FOCUS_M0=7,FOCUS_M1=11;
 function focusOf(){return S&&S.focus&&S.focus.m===S.month&&FOCL[S.focus.id]||null}
