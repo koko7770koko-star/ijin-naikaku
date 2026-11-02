@@ -3108,18 +3108,23 @@ const FREQ={a:{t:"防衛と治安の予算を積み増せ",q:"いまの内閣は
   m:{t:"地方への配分を厚くせよ",q:"民の暮らしは地方にあり。予算を地元へ回されよ",y:{wel:2},kk:-2,rv:"z",yh:"民生+2・国庫-2兆円",nh:""},
   w:{t:"近隣との対話を先にせよ",q:"力より和を。まず隣国と膝を交えるべきでござる",y:{dip:2,saf:-1},rv:"a",yh:"外交+2・治安-1",nh:""},
   z:{t:"歳出を削って財布を締めよ",q:"ばらまきは国を滅ぼす。いまこそ歳出に大鉈を",y:{wel:-2},kk:2,rv:"m",yh:"国庫+2兆円・民生-2",nh:""}};
+/* 二つ目の要求（同じ派閥が二度目に出るときや半々で、こちらを出す。偏らないよう攻め派・民本派・協調派に1つずつ） */
+const FREQ2={a:{t:"有事の備えを法で固めよ",q:"備えあれば憂いなし。いざという時の決まりを先に作られよ",y:{saf:2,dip:-1},rv:"w",yh:"治安+2・外交-1",nh:""},
+  m:{t:"子育てと医療を手厚くせよ",q:"国の宝は人でござる。子と病む者を先に救われよ",y:{wel:2,eco:-1},rv:"z",yh:"民生+2・経済-1",nh:""},
+  w:{t:"留学と交流の枠を広げよ",q:"人の行き来こそ和の礎。若い者を海の外へ出されよ",y:{dip:1,eco:1},kk:-2,rv:"a",yh:"外交+1・経済+1・国庫-2兆円",nh:""}};
+function freqQ(r){return r&&r.v&&FREQ2[r.f]?FREQ2[r.f]:FREQ[r.f]}
 const FREQ_Y=20,FREQ_N=8,FREQ_RV=5;
 function facReqPick(L){S.facReq=S.facReq&&S.facReq.m===S.month?S.facReq:null;if(S.facReq||S.month<8||S.month>11)return;if(S.revolt&&S.revolt.m===S.month)return;
   const F=S.fac||{};const rs=S.facReqSeen||(S.facReqSeen={});
   const f=Object.keys(FAC).filter(f=>(F[f]||0)>=40&&(F[f]||0)<70&&!(rs[f]>=S.month-2)).sort((a,b)=>(F[b]||0)-(F[a]||0))[0];
-  const k=f&&facBoss(f);if(!f||!k)return;rs[f]=S.month;S.facReq={m:S.month,f,k,ans:null,res:""};L.push([`与党${FAC[f].n}が政策要求を突きつける`,`不満${F[f]}`])}
-function facReqHTML(){const r=S.facReq;if(!r||r.m!==S.month||!C[r.k]||!FREQ[r.f])return "";const c=C[r.k],Fc=FAC[r.f],Q=FREQ[r.f],F=S.fac||{};const rv=FAC[Q.rv];
+  const k=f&&facBoss(f);if(!f||!k)return;rs[f]=S.month;const v=FREQ2[f]&&((S.facH&&S.facH.ff&&S.facH.ff[f])||Math.random()<.5)?1:0;S.facReq={m:S.month,f,k,v,ans:null,res:""};L.push([`与党${FAC[f].n}が政策要求を突きつける`,`不満${F[f]}`])}
+function facReqHTML(){const r=S.facReq;if(!r||r.m!==S.month||!C[r.k]||!FREQ[r.f])return "";const c=C[r.k],Fc=FAC[r.f],Q=freqQ(r),F=S.fac||{};const rv=FAC[Q.rv];
   const noK=Q.kk<0&&S.kokko<-Q.kk;
   return `<div class="brink revolt freq" style="--fc:${Fc.c}"><div class="cr-h"><b>要求</b><span>${Fc.n}「${Q.t}」</span></div>
    <div class="speaker">${portrait(r.k,44,"normal")}<p class="quote" style="font-size:.92rem">「${Q.q}」<small>${c.n}（${Fc.n}の領袖）　不満${F[r.f]||0}</small></p></div>
    ${r.ans==null?`<div class="cr-o"><button class="act" data-fq="1" ${noK?"disabled":""}><span class="t">要求を飲む</span><span class="hint">${Fc.n}の不満-${FREQ_Y}。${Q.yh}・${rv.n}の不満+${FREQ_RV}</span></button><button class="act" data-fq="0"><span class="t">突っぱねる</span><span class="hint">${Fc.n}の不満+${FREQ_N}（70で造反）</span></button></div>`
      :`<div class="cr-r"><b>${r.ans?"要求を飲んだ":"突っぱねた"}</b>　${r.res}</div>`}</div>`}
-function facReqAnswer(yes){const r=S.facReq;if(!r||r.ans!=null||r.m!==S.month||!FREQ[r.f])return;const Q=FREQ[r.f];const F=S.fac||(S.fac={});const f=r.f,n=C[r.k].n;S.delta={};
+function facReqAnswer(yes){const r=S.facReq;if(!r||r.ans!=null||r.m!==S.month||!FREQ[r.f])return;const Q=freqQ(r);const F=S.fac||(S.fac={});const f=r.f,n=C[r.k].n;S.delta={};
   if(yes){if(Q.kk<0&&S.kokko<-Q.kk)return;F[f]=Math.max(0,(F[f]||0)-FREQ_Y);F[Q.rv]=Math.min(100,(F[Q.rv]||0)+FREQ_RV);apply(Q.y,true);if(Q.kk)S.kokko+=Q.kk;
     r.res=`${n}「話のわかる総理じゃ」（${FAC[f].n}の不満${F[f]}）。${FAC[Q.rv].n}は渋い顔（不満${F[Q.rv]}）`}
   else{F[f]=Math.min(100,(F[f]||0)+FREQ_N);r.res=`${n}「……覚えておきますぞ」（${FAC[f].n}の不満${F[f]}${F[f]>=70?"・造反の構え":""}）`}
