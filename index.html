@@ -177,7 +177,7 @@ button:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
 #fxl{z-index:5}
 .mans{font-style:normal;font-size:.56rem;font-weight:800;line-height:1;padding:1px 3px;margin-left:3px;border-radius:3px;background:var(--shu);color:var(--washi);vertical-align:1px}
 .tire{font-style:normal;font-size:.56rem;font-weight:800;line-height:1;padding:2px 3px;border-radius:4px;background:#6b7b94;color:var(--washi);letter-spacing:0}
-.piece .tire{position:absolute;left:-6px;top:38%;z-index:2}
+.piece .tire{position:absolute;left:-6px;top:38%;z-index:2}.tire.t1{background:#8a94a6;opacity:.8;font-size:.48rem;padding:1px 2px}.tire.t2{background:#b23a2e}.mini .tire,.sh-h .tire{margin-left:3px;vertical-align:1px}
 .fsum,.fend{flex-wrap:wrap}.fwd{flex-basis:100%;display:flex;align-items:center;gap:6px;margin-top:6px;font-size:.78rem;line-height:1.4}.fwd i{font-style:normal;flex:1;min-width:0}.fwd img,.fwd svg{flex:none;border-radius:50%}.piece .tire[hidden]{display:none}
 .cc .tire{position:absolute;top:4px;left:5px}.min .pas .tire{margin-right:6px;vertical-align:1px}
 /* v75 浮き文字・吹き出しを地図の枠の中に（上の計器盤に重ならない） */
@@ -3510,7 +3510,8 @@ function yukTask(key,t,r,ok){try{const y=yukOf(key);if(!ok||!y||y.r!==r||RG[r].o
 const TIRE_N=6;
 const tireLv=k=>(S&&S.tire&&S.tire[k])||0;
 const tirePen=k=>tireLv(k)>=2?1:0;
-const tireMk=k=>tireLv(k)>=2?`<i class="tire" title="疲れ（任務の力-${tirePen(k)}）">疲</i>`:"";
+const tireTi=k=>{const v=tireLv(k);return v>=2?`疲れ：今月の任務の力-${tirePen(k)}（翌月あまり使わなければ回復）`:v>=1?"疲れ気味：このまま使い続けると任務の力-1":""};
+const tireMk=k=>{if(isPM(k))return "";const v=tireLv(k);return v>=1?`<i class="tire ${v>=2?"t2":"t1"}" title="${tireTi(k)}">疲</i>`:""};
 function tireMonth(L){S.tire=S.tire||{};const m=S.tireM||{};const nt=[],rc=[];
   Object.keys(S.pc||{}).forEach(k=>{if(isPM(k)||!C[k])return;const n=m[k]||0,o=S.tire[k]||0;let v=o;
     if(n>=TIRE_N)v=Math.min(3,o+1);else if(n>=TIRE_N-2)v=o;else if(n>=2)v=Math.max(0,o-1);else v=Math.max(0,o-2);
@@ -3816,7 +3817,7 @@ function drawMap(){
     el.style.left=((P.x+o[0])/4)+"%";el.style.top=((P.y+o[1])/4.4)+"%";el.style.transform=`translate(-50%,-50%) scale(${o[2]||1})`;
     const t=kind.startsWith("wand")?null:P.task;const moving=P.path&&P.path.length;
     el.classList.toggle("moving",!!moving);el.classList.toggle("sel",S.sel===k);el.classList.toggle("idle",kind==="own"&&!t&&!moving);
-    el.classList.toggle("stun",!!(P.stun>0));el.classList.toggle("curse",!!(P.curse>0));{const ti=el.querySelector(".tire");if(ti){const tv=kind==="own"?tireLv(k):0;ti.hidden=tv<2;}}
+    el.classList.toggle("stun",!!(P.stun>0));el.classList.toggle("curse",!!(P.curse>0));{const ti=el.querySelector(".tire");if(ti){const tv=kind==="own"&&!isPM(k)?tireLv(k):0;ti.hidden=tv<1;ti.classList.toggle("t1",tv===1);ti.classList.toggle("t2",tv>=2);ti.title=tv?tireTi(k):"";}}
     el.querySelector(".ring").style.setProperty("--p",t&&!moving?Math.min(1,t.prog/t.dur):0);
     const tg=el.querySelector(".tag2");el.classList.toggle("auto",kind==="own"&&!!(S.auto&&S.auto[k]));tg.textContent=extra||(moving?"移動":t?({rally:"遊説",dev:"振興",fix:"対処",scout:"説得",gaiyu:"外遊",ninja:"足止",orally:"遊説"})[t.id]:kind==="own"?"待機":"");tg.hidden=!tg.textContent||(tg.textContent==="待機"&&(o[2]||1)<1);
   };
@@ -3857,7 +3858,7 @@ function sheetHTML(){
       <div class="acts">${A.map((a,i)=>`<button class="act" data-act="${i}"><span class="t">${a.t}</span><span class="hint">${FIELDS[a.f]} ${dots(Math.min(5,a.sk))}　${a.x}</span></button>`).join("")}</div>
       <button class="btn ghost small" id="cancelSel">選び直す</button></div>`}
   if(S.sel){const P=S.pc[S.sel];const c=C[S.sel];
-    return `<div class="sheet"><div class="sh-h">${portrait(S.sel,40)}<div><b>${nameOf(S.sel)}</b>　${isPM(S.sel)?"総理・政府専用機":c?.agent?"特命チーム":postOfKey(S.sel)?.name||""}<br><span class="muted">いま${RG[P.r].n}${P.task?`・${P.task.t}（${RG[P.task.r].n}）`:""}。行き先の地方をタップ</span></div></div>
+    return `<div class="sheet"><div class="sh-h">${portrait(S.sel,40)}<div><b>${nameOf(S.sel)}</b>${tireMk(S.sel)}　${isPM(S.sel)?"総理・政府専用機":c?.agent?"特命チーム":postOfKey(S.sel)?.name||""}<br><span class="muted">いま${RG[P.r].n}${P.task?`・${P.task.t}（${RG[P.task.r].n}）`:""}。行き先の地方をタップ</span></div></div>
       ${destGrid(S.sel)}
       ${c?.agent?`<p class="muted">${c.p}</p>`:""}
       ${yukLine(S.sel)}
@@ -3872,10 +3873,10 @@ function sheetHTML(){
       ${mk.map(m=>`<p>⚠ ${MK[m.t].n}：${m.tx}（あと${Math.ceil(m.left)}日・${FIELDS[MK[m.t].f]}が得意な人向き）</p>`).join("")}
       ${S.scout&&S.scout.r===S.look?`<p>在野の<b>${C[S.scout.k].n}</b>（あと${Math.ceil(S.scout.left)}日）：${C[S.scout.k].p}</p>`:""}
       ${ops.map(o=>`<p class="dn">${OPP[o].n}（弁舌${OPP[o].s}）が遊説中。支持を削り、地盤を築こうとしている</p>`).join("")}
-      ${(()=>{const mine=Object.entries(S.pc).filter(([k,P])=>P.r===S.look&&!(P.path&&P.path.length)).map(([k])=>k);return mine.length?`<p class="muted">ここにいる味方（タップで指示）：</p><div class="lookpcs">${mine.map(k=>`<button class="mini" data-pick="${k}">${portrait(k,22)}${nameOf(k)}</button>`).join("")}</div>`:""})()}
+      ${(()=>{const mine=Object.entries(S.pc).filter(([k,P])=>P.r===S.look&&!(P.path&&P.path.length)).map(([k])=>k);return mine.length?`<p class="muted">ここにいる味方（タップで指示）：</p><div class="lookpcs">${mine.map(k=>`<button class="mini" data-pick="${k}">${portrait(k,22)}${nameOf(k)}${tireMk(k)}</button>`).join("")}</div>`:""})()}
       <button class="btn ghost small" id="closeLook">閉じる</button></div>`}
   const idle=Object.entries(S.pc).filter(([k,P])=>!P.task&&!(P.path&&P.path.length)&&!(S.auto&&S.auto[k])).map(([k])=>k);
-  return `<div class="sheet"><p>${idle.length?`<b>待機中：</b>${idle.map(k=>`<button class="mini" data-pick="${k}">${portrait(k,22)}${nameOf(k)}</button>`).join("")}`:"全員が動いている。"}</p>
+  return `<div class="sheet"><p>${idle.length?`<b>待機中：</b>${idle.map(k=>`<button class="mini" data-pick="${k}">${portrait(k,22)}${nameOf(k)}${tireMk(k)}</button>`).join("")}`:"全員が動いている。"}</p>
     <div class="row"><button class="btn small ${Object.keys(S.pc).every(k=>S.auto&&S.auto[k])?"":"ghost"}" id="autoAll">${Object.keys(S.pc).every(k=>S.auto&&S.auto[k])?"全員のおまかせを解除":"全員おまかせ"}</button><span class="muted">おまかせ中：${Object.keys(S.pc).filter(k=>S.auto&&S.auto[k]).length}/${Object.keys(S.pc).length}人</span></div>
     <p class="muted">顔をタップ→行き先の地方をタップ→指示を選ぶ。「任」の印がついた駒はおまかせで動く。時間は流れ続ける。地方をタップすると詳細。赤枠は西軍党、緑は在野の偉人。</p>
     ${S.allies?.length?`<p class="muted">協力者：${S.allies.map(k=>C[k].n).join("、")}</p>`:""}</div>`;
