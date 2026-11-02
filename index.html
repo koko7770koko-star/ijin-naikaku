@@ -2129,10 +2129,13 @@ const TITLES=[
  {id:"kokorozashi",t:"志を遂げし者",x:"国家目標を掲げ、一年で達成する",f:S=>goalDone()},
  {id:"sekkyo",t:"接戦の鬼",x:"終盤情勢で互角の地方を2つ以上すべて競り勝つ",f:S=>{const c=kotaeCount();return !!c&&c.tie>=2&&c.tw===c.tie}},
  {id:"sakiyomi",t:"先を読む者",x:"西軍の作戦を3回以上空振りさせる",f:S=>!S.fall&&((S.osakuH&&S.osakuH.miss)||0)>=3},
+ {id:"kikimimi",t:"聞く耳",x:"接戦区の陳情を2件以上受けて勝つ",f:S=>!S.fall&&S.seats>=233&&(S.petH||[]).filter(x=>x&&x.a).length>=2},
+ {id:"hatafuri",t:"旗振り役",x:"重点月間を4か月以上掲げて勝つ",f:S=>!S.fall&&S.seats>=233&&Object.values(S.focusH||{}).reduce((n,h)=>n+((h&&h.n)||0),0)>=4},
+ {id:"dohyogiwa",t:"土俵際",x:"鼓舞役の補佐で踏みとどまり、そのまま勝つ",f:S=>!S.fall&&S.seats>=233&&!!S.kobuUsed},
 ];
 const REC="ieyasu_cabinet_records";
 /* v92 前の政権の遺産：前回取った称号から1つを次の1年へ（小さな加点、代わりに西軍の勢い+3） */
-const LEG_ST={mukketsu:"coh",zaisei:"eco",rippou:"coh",hitotarashi:"coh",naku:"coh",fushin:"saf",kaikoku:"dip",tami:"wel",taisho:"sup",ransei:"sup",seichou:"coh",ronpa:"sup",scout:"coh",jiban:"sup",angya:"wel",sekigahara:"sup",yugen:"sup",chusai:"coh",fukaki:"coh",enmusubi:"coh",uragiri:"coh",shitenno:"coh",honnoji:"saf",yomikae:"sup",kokorozashi:"eco",sekkyo:"sup",sakiyomi:"coh"};
+const LEG_ST={mukketsu:"coh",zaisei:"eco",rippou:"coh",hitotarashi:"coh",naku:"coh",fushin:"saf",kaikoku:"dip",tami:"wel",taisho:"sup",ransei:"sup",seichou:"coh",ronpa:"sup",scout:"coh",jiban:"sup",angya:"wel",sekigahara:"sup",yugen:"sup",chusai:"coh",fukaki:"coh",enmusubi:"coh",uragiri:"coh",shitenno:"coh",honnoji:"saf",yomikae:"sup",kokorozashi:"eco",sekkyo:"sup",sakiyomi:"coh",kikimimi:"sup",hatafuri:"wel",dohyogiwa:"coh"};
 const LEG_N=3,LEG_OPP=3,LG_GAIN=8;let legacyPick=null;
 /* v124（二周目目標） 称号しばりの二周目目標：遺産の指標を始めから+8以上伸ばして勝てば、次の政権の初期支持+2（rec.lgb）。古いセーブは S.lgB 無し→出さない */
 /* v125（前政権の宿題カード） 前の政権の最後でいちばん低かった指標を rec.weak に残し、次の政権の2月に小さな案件「宿題」を出す。古いセーブは S.hw 無し→出さない */
