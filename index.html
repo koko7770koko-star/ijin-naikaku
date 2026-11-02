@@ -5496,7 +5496,9 @@ function title(){
     </div>
     <p>AIで蘇った偉人たちが内閣をつくる。総理大臣と閣僚を歴代の偉人から選び、一年の政権運営を経て解散総選挙で過半数を目指す。</p>
     ${hitoHTML(0)?`<div class="hito" id="hito" role="button" tabindex="0" aria-label="今日の一言（タップで別の人）">${hitoHTML(0)}</div>`:""}
-    ${(()=>{const r=loadRec();return r.plays?`<div class="recbox" id="recBox" role="button" tabindex="0" aria-controls="recHist"><div><span class="muted">最高議席</span><b>${r.best}</b></div><div><span class="muted">称号</span><b>${r.titles.length}<small>/${TITLES.length}</small></b></div><div><span class="muted">プレイ回数</span><b>${r.plays}</b></div></div><div class="rh-tap" id="recTap">▸ 過去5回の記録を見る</div><div class="rechist" id="recHist" hidden>${recHistHTML(r)}</div>${r.kn?`<div class="recline"><span>予想的中 <b>${r.khit||0}</b>/${r.kn}回</span><span>大逆転 <b>${r.kup||0}</b>地方</span><span>番狂わせ <b>${r.kups||0}</b>地方</span></div>`:""}`:""})()}
+    ${(()=>{const r=loadRec();return r.plays?`<div class="recbox" id="recBox" role="button" tabindex="0" aria-controls="recHist"><div><span class="muted">最高議席</span><b>${r.best}</b></div><div><span class="muted">称号</span><b>${r.titles.length}<small>/${TITLES.length}</small></b></div><div><span class="muted">プレイ回数</span><b>${r.plays}</b></div></div><div class="rh-tap" id="recTap">▸ 過去5回の記録を見る</div><div class="rechist" id="recHist" hidden>${recHistHTML(r)}</div>${(()=>{const L=[];if(r.kn)L.push(`<span>予想的中 <b>${r.khit||0}</b>/${r.kn}回</span><span>大逆転 <b>${r.kup||0}</b>地方</span><span>番狂わせ <b>${r.kups||0}</b>地方</span>`);
+      const wn=Array.isArray(r.ways)?r.ways.length:0;if(wn)L.push(`<span>勝ち方 <b>${wn}</b>/${WAYS.length}</span>`);if(r.vown>0)L.push(`<span>公約を果たす <b>${r.vown}</b>回</span>`);if(r.lgn>0)L.push(`<span>二周目目標 <b>${r.lgn}</b>回</span>`);
+      return L.length?`<div class="recline">${L.join("")}</div>`:""})()}`:""})()}
     <div class="lineup" aria-label="入閣候補">${Object.keys(C).filter(k=>!C[k].scout&&!C[k].agent).map(k=>portrait(k,44)).join("")}</div>
     <div class="howto" id="howto" hidden><h2>遊び方</h2>
     <ul class="rules">
