@@ -34,7 +34,8 @@ while(Date.now()-t0<(+process.env.LIM||600000)){steps++;
   /* env GOAL・VOW：その id の札があれば最初の物の代わりに押す */
   const G=ENV.GOAL&&pick(`[data-goal="${ENV.GOAL}"]`);if(G){G.click();return 'goal='+ENV.GOAL}
   const V=ENV.VOW&&pick(`[data-vow="${ENV.VOW}"]`);if(V){V.click();return 'vow='+ENV.VOW}
-  for(const s of ['[data-goal]','[data-focus]','[data-pet]','[data-fq]','[data-kj]','[data-kf]','[data-vow]','.choice','#toPolicy','#go','#autoCab','#next','#resume']){if(s==='.choice'&&ENV.PICK==='fa'&&typeof faEventPick==='function'&&pick('.choice[data-i]')){let i=0;try{i=faEventPick()}catch(x){}const c=[...document.querySelectorAll('.choice[data-i="'+i+'"]')].find(vis);if(c){c.click();return '.choice:fa'+i}}const e=pick(s);if(e){e.click();return s}}
+  /* 大臣が去った後の後任の任命（view kaizo）：候補 [data-new] を押す（押さないと上の「支持率」ボタンを押し続けて止まる） */
+  for(const s of ['[data-new]','[data-goal]','[data-focus]','[data-pet]','[data-fq]','[data-kj]','[data-kf]','[data-vow]','.choice','#toPolicy','#go','#autoCab','#next','#resume']){if(s==='.choice'&&ENV.PICK==='fa'&&typeof faEventPick==='function'&&pick('.choice[data-i]')){let i=0;try{i=faEventPick()}catch(x){}const c=[...document.querySelectorAll('.choice[data-i="'+i+'"]')].find(vis);if(c){c.click();return '.choice:fa'+i}}const e=pick(s);if(e){e.click();return s}}
   const e=[...document.querySelectorAll('button')].find(e=>vis(e)&&!BL.some(s=>e.matches(s)));if(e){e.click();return 'btn:'+(e.id||e.innerText.slice(0,12))}return '';},[BL,process.env.MODE||'auto',{PICK:process.env.PICK||'',RULE:process.env.RULE||'',TAG:process.env.TAG||'',GOAL:process.env.GOAL||'',VOW:process.env.VOW||''}]);
  if(clicked)last=clicked; if(process.env.TR)console.log(steps,JSON.stringify(st),clicked);
  await p.waitForTimeout(clicked?(FAST>1?120:250):(FAST>1?300:800));}
