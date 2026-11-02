@@ -2178,7 +2178,7 @@ function recHistHTML(r){const H=Array.isArray(r.hist)?r.hist:[];if(!H.length)ret
   return H.map((x,i)=>{const nm=(C[x.pm]&&C[x.pm].n)||"総理";const dn=(DIFF[x.d]&&DIFF[x.d].n)||"";const win=x.s!=null&&x.s>=233;
     const res=x.s==null?`<b class="rh-s lose">退陣</b>`:`<b class="rh-s ${win?"win":"lose"}">${x.s}<small>議席</small></b>`;
     const yo=x.lo!=null&&x.hi!=null?`予想 ${x.lo}〜${x.hi}${x.s!=null&&x.s>=x.lo&&x.s<=x.hi?" ◎":""}`:"予想 —";
-    return `<div class="rh-row"><span class="rh-n">${i+1}</span>${portrait(x.pm,32)}<div class="rh-m"><b>${nm}</b><small>${dn}・${yo}${x.lg&&legOf(x.lg)?`<br>遺産「${legOf(x.lg).t}」`:""}</small></div>${res}</div>`}).join("")}
+    return `<div class="rh-row"><span class="rh-n">${i+1}</span>${portrait(x.pm,32)}<div class="rh-m"><b>${nm}</b><small>${dn}・${yo}${x.lg&&legOf(x.lg)?`<br>遺産「${legOf(x.lg).t}」`:""}${(()=>{try{const a=[];if(x.gl&&GL[x.gl])a.push("目標"+GL[x.gl].n);if(x.ru&&ruleOf(x.ru))a.push("ルール"+ruleOf(x.ru).n);if(x.cn)a.push("合言葉"+x.cn);return a.length?`<br>${a.join("・")}`:""}catch(e){return ""}})()}</small></div>${res}</div>`}).join("")}
 
 function recIndex(e,key){ return e.o.findIndex(o=>o.s===C[key].st); }
 function getSk(key,f){ if(!key||!C[key])return 1; return Math.min(5,C[key].s[SKI[f]]+((S&&S.grow&&S.grow[key]&&S.grow[key][f])||0)); }
@@ -6159,7 +6159,7 @@ function ending(){
     try{const vv=vowOf(S.vow);if(vv&&!S.fall&&S.seats!=null){if(S.seats>=233){rec.vowL=vv.id;rec.vown=(rec.vown||0)+1}else{rec.vowX=[{id:vv.id,at:Date.now()},...(Array.isArray(rec.vowX)?rec.vowX:[])].slice(0,5);delete rec.vowL}}}catch(e){}
     try{const wn=waysNow(),have=Array.isArray(rec.ways)?rec.ways:[];S.newW=wn.filter(id=>!have.includes(id));rec.ways=[...have,...S.newW]}catch(e){}
     {const kc=kotaeCount();if(kc){rec.kn=(rec.kn||0)+1;if(kc.hit)rec.khit=(rec.khit||0)+1;rec.kup=(rec.kup||0)+kc.up;rec.kups=(rec.kups||0)+kc.ups}}
-    try{const kj=S.koji||{};rec.hist=[{pm:S.pm||"ieyasu",d:S.diff||"normal",s:S.fall?null:S.seats,m:S.month,lo:kj.lo==null?null:kj.lo,hi:kj.hi==null?null:kj.hi,lg:S.legacy||null,at:Date.now()},...(Array.isArray(rec.hist)?rec.hist:[])].slice(0,5)}catch(e){}
+    try{const kj=S.koji||{};rec.hist=[{pm:S.pm||"ieyasu",d:S.diff||"normal",s:S.fall?null:S.seats,m:S.month,lo:kj.lo==null?null:kj.lo,hi:kj.hi==null?null:kj.hi,lg:S.legacy||null,gl:S.goal||null,ru:S.rule||null,cn:(S.cn&&S.cn.n)||null,at:Date.now()},...(Array.isArray(rec.hist)?rec.hist:[])].slice(0,5)}catch(e){}
     earned.forEach(t=>{if(!rec.titles.includes(t.id)){rec.titles.push(t.id);newT.push(t.id)}}); rec.last=earned.map(t=>t.id); saveRec(rec); S.recorded=true; S.newT=newT; save(); }
   else newT.push(...(S.newT||[]));
   const qx=k=>{const t=lineOf(k,win?"w":"l")||lineOf(k,"q");return t?`<q>${t}</q>`:""};
