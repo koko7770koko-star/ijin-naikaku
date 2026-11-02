@@ -4327,7 +4327,7 @@ function autoPick(k){
   if(skA(k,"diplo")>=4&&S.st.dip<60&&!busy(t=>t.id==="gaiyu")){const r=["as","eu","na"].sort((a,b)=>hopsTo(k,a)-hopsTo(k,b))[0];consider(r,actionsFor(k,r).find(x=>x.id==="gaiyu"),(60-S.st.dip)*.6+skA(k,"diplo")*3)}
   DOM.forEach(r=>{const def=(62-supR(r))*Math.sqrt(RG[r].seats)/6;const A=actionsFor(k,r);
     const ra=A.find(x=>x.id==="rally");if(ra&&!busy(t=>t.id==="rally"&&t.r===r))consider(r,ra,def*(.5+skA(k,"speech")*.15)+(S.base[r]?6:0));
-    const low=Object.entries(S.rp[r]).sort((a,b)=>a[1]-b[1])[0];const da=A.find(x=>x.id==="dev"&&x.k===low[0]);if(da)consider(r,da,(60-low[1])*.5+da.sk*3+def*.2-(C[k]?.localFree?0:S.kokko<0?80:S.kokko<5?25:0))});
+    const low=Object.entries(S.rp[r]).sort((a,b)=>a[1]-b[1])[0];const da=A.find(x=>x.id==="dev"&&x.k===low[0]);if(da&&(C[k]?.localFree||S.kokko>=0))consider(r,da,(60-low[1])*.5+da.sk*3+def*.2-(C[k]?.localFree?0:S.kokko<0?80:S.kokko<5?25:0))});
   return best;
 }
 function autoTick(){
@@ -6112,9 +6112,10 @@ function autoCabinet(){
 }
 const FA={t:{},cmdM:0};
 function faWait(key,ms){const now=performance.now();const K=key+"@"+(S?S.month:0);if(FA.t[K]==null){FA.t[K]=now;const ks=Object.keys(FA.t);if(ks.length>300)ks.slice(0,150).forEach(x=>delete FA.t[x]);return false}if(now-FA.t[K]>=ms){delete FA.t[K];return true}return false}
+function faCw(){return S.kokko<0?2:S.kokko<5?1:.4}/* 全自動の選択で国庫(o.c)をどれだけ重く見るか：赤字なら重く */
 function faEventPick(){
   const e=EV[S.cur];if(!e)return null;let ri=-1;try{ri=recIndex(e,actor(e).key)}catch(_){}
-  const val=o=>{const d=o.d||{};let v=0;for(const k in d){const w=k==="sup"?1.4:k==="coh"?1.2:1;v+=d[k]*w*(S.st[k]!=null&&S.st[k]<35?1.5:1)}return v+(o.c||0)*.4-(o.opp||0)*.6};
+  const val=o=>{const d=o.d||{};let v=0;for(const k in d){const w=k==="sup"?1.4:k==="coh"?1.2:1;v+=d[k]*w*(S.st[k]!=null&&S.st[k]<35?1.5:1)}return v+(o.c||0)*faCw()-(o.opp||0)*.6};
   let best=null,bv=-1e9;e.o.forEach((o,i)=>{if(o.vote){const pr=o.vote==="coh"?S.st.coh:S.st.sup;if(pr<60)return}let v=val(o)+(i===ri?3:0)+Math.random()*1.5;if(v>bv){bv=v;best=i}});
   return best==null?0:best;
 }
@@ -6123,7 +6124,7 @@ function faTick(){
   const q=x=>document.querySelector(x);
   if(!(q(".mapsec")&&S.phase==="map"&&S.view==="main"))return;
   if(S.banter){if(S.banter.opts){if(faWait("kc"+S.banter.kc.r,2600))kukaiPick(S.banter.kc.rec);return}if(faWait("bt"+S.banter.n,3200)){const b=q("[data-bt]");if(b)b.click();else S.banter=null}return}
-  if(S.pend!=null&&typeof SOKUHO!=="undefined"){if(faWait("sk"+S.pend,2200)){const ev=SOKUHO[S.pend];let bi=0,bv=-1e9;ev.o.forEach((o,i)=>{const d=o.d||{};const v=Object.values(d).reduce((a,b)=>a+b,0)+(o.c||0)*.4-(o.opp||0)*.5-(o.risk?2:0);if(v>bv){bv=v;bi=i}});answerSoku(bi)}return}
+  if(S.pend!=null&&typeof SOKUHO!=="undefined"){if(faWait("sk"+S.pend,2200)){const ev=SOKUHO[S.pend];let bi=0,bv=-1e9;ev.o.forEach((o,i)=>{const d=o.d||{};const v=Object.values(d).reduce((a,b)=>a+b,0)+(o.c||0)*faCw()-(o.opp||0)*.5-(o.risk?2:0);if(v>bv){bv=v;bi=i}});answerSoku(bi)}return}
   Object.keys(S.pc).forEach(k=>S.auto[k]=true);
   if(S.paused&&S.day<30)S.paused=false;
   if(S.wd&&S.wd.kukai&&!S.wd.kukai.tapped&&faWait("kukai"+S.wd.kukai.r,1500))wandTap("kukai");
