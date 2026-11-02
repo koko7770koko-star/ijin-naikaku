@@ -534,7 +534,9 @@ button.cc .sk,.cc span.sk{white-space:normal;line-height:1.25;text-align:center;
 /* v58 組閣のタップミス対策 */
 .cc,.pseat,.plb,.cand,.dg,.choice,.act,.btn,.piece{touch-action:manipulation;-webkit-tap-highlight-color:rgba(212,178,95,.25)}
 .cgrid{gap:8px}
-.cc{min-height:132px;padding:9px 3px 8px}
+.cc{min-height:104px;padding:8px 3px 6px}
+.cc .ex{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.effbox details{margin:2px 0}.effbox details summary{font-size:.78rem;color:var(--kin);cursor:pointer;min-height:32px;display:flex;align-items:center}
 .pseats{gap:8px}
 .cgmore{width:100%;margin-top:8px;min-height:44px}
 #cpost{scroll-margin-top:8px}
@@ -5804,7 +5806,7 @@ function renderCabinet(){
       <div class="post-head"><h3>${p.name}</h3><span class="field">重視：${FIELDS[p.field]}</span></div>
       ${isX?`<p class="effbox" style="display:block"><b>このポストの効果</b>：${p.x}（●3以上で発動、●5なら2倍）。空席でも政権は発足できる。</p>`:""}<p class="legend">${isP?"誰でも総理になれます。札は「総理の特技」。●は発信力。":"得意な順に並んでいます。●がこのポストの能力、★は縁が生まれる人、⚡は相性が悪い人。"}${k?" 緑/赤の数字は任命中の人との差。タップすると並べて比べられます。":""}</p>
       ${lastPick&&lastPick.p!==p.id?`<div class="effbox last">${portrait(lastPick.k,44,"happy")}<div><div class="t">✔ ${ALLP().find(x=>x.id===lastPick.p).name}に任命</div><p><b>${CC(lastPick.k).n}</b>　<span class="sk2">${lastPick.p==="pm"?pmSk(lastPick.k).n:skN(lastPick.k)}</span></p><p>${lastPick.p==="pm"?pmSk(lastPick.k).x:skX(lastPick.k)}</p>${lastPick.gain.map(b=>`<p class="g">★縁「${b.n}」${b.x||""}</p>`).join("")}${lastPick.loss.map(b=>`<p class="r">⚡犬猿「${b.n}」${b.x||""}</p>`).join("")}</div></div>`:""}
-      ${k?(()=>{const mine=activeBonds(ids0).filter(b=>b.k.includes(k));return `<div class="effbox">${portrait(k,56,"happy")}<div><div class="t">任命中　${STYLE[CC(k).st]}派</div><p><b>${CC(k).n}</b>　<span class="sk2">${isP?pmSk(k).n:skN(k)}</span></p><p>${isP?pmSk(k).x:skX(k)}</p>${mine.map(b=>`<p class="${b.kind==="clash"?"r":"g"}">${b.kind==="clash"?"⚡犬猿":"★縁"}「${b.n}」${b.x||""}</p>`).join("")}<p class="muted">「${spTx(qOf(k)[0]||CC(k).q[0])}」</p></div></div>`})():""}
+      ${k?(()=>{const mine=activeBonds(ids0).filter(b=>b.k.includes(k));return `<div class="effbox">${portrait(k,56,"happy")}<div><div class="t">任命中　${STYLE[CC(k).st]}派</div><p><b>${CC(k).n}</b>　<span class="sk2">${isP?pmSk(k).n:skN(k)}</span></p><p>${isP?pmSk(k).x:skX(k)}</p>${(()=>{const li=b=>`<p class="${b.kind==="clash"?"r":"g"}">${b.kind==="clash"?"⚡犬猿":"★縁"}「${b.n}」${b.x||""}</p>`;return mine.slice(0,2).map(li).join("")+(mine.length>2?`<details><summary>ほかの縁 ${mine.length-2}件（タップで開く）</summary>${mine.slice(2).map(li).join("")}</details>`:"")})()}<p class="muted">「${spTx(qOf(k)[0]||CC(k).q[0])}」</p></div></div>`})():""}
       <div class="cands cgsort"><small class="muted">並び順</small>${[["nou","能力順"],["en","縁の数順"],["name","名前順"]].map(([v,t])=>`<button class="cand" data-cgsort="${v}" aria-pressed="${cgSort===v}">${t}</button>`).join("")}</div>
       <div class="cgrid">
       ${shown.map(([key,c])=>{
