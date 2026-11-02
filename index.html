@@ -2695,7 +2695,9 @@ const GOAL_GAIN=10,GOAL_N=3;
 /* 達成に要る伸び：ふつうは+10。掲げた時点で高い指標（結束など）は上の余地の半分まで（例 結束96→+2） */
 function goalNeed(){const b=S&&S.goalB!=null?S.goalB:50;const g=goalOf();return Math.max(0,Math.min((g&&g.gn)||GOAL_GAIN,Math.ceil((100-b)/2)))}
 /* v106 重点月間（7〜11月の月初に1つ掲げられる。S.focus={m,id}、掲げないと S.focusSkip=月） */
-const FOCUS=[{id:"bukka",n:"物価対策月間",s:"eco",p:"zaimu"},{id:"bosai",n:"防災月間",s:"saf",p:"boei"},{id:"gaiko",n:"外交月間",s:"dip",p:"gaimu"},{id:"fukushi",n:"暮らし安心月間",s:"wel",p:"koro"},{id:"yuwa",n:"党内融和月間",s:"coh",p:"kanbo"},{id:"koho",n:"広報強化月間",s:"sup",p:"kanbo"}];
+const FOCUS=[{id:"bukka",n:"物価対策月間",s:"eco",p:"zaimu"},{id:"bosai",n:"防災月間",s:"saf",p:"boei"},{id:"gaiko",n:"外交月間",s:"dip",p:"gaimu"},{id:"fukushi",n:"暮らし安心月間",s:"wel",p:"koro"},{id:"yuwa",n:"党内融和月間",s:"coh",p:"kanbo"},{id:"koho",n:"広報強化月間",s:"sup",p:"kanbo"},{id:"chiho",n:"地方創生月間",s:"wel",p:"soumu",tk:"dev",tl:"地域振興",tx:"民生の案+1・地域振興+1"},{id:"yuzei",n:"遊説強化月間",s:"sup",p:"kanbo",tk:"rally",tl:"遊説",tx:"支持の案+1・遊説+1"}];
+/* 11/03 tk のある月間：案件は s の伸びる案に+1、地図の任務は tk（dev＝地域振興・rally＝ふつうの遊説）だけに+1（ほかの月間の任務の上乗せは無し） */
+const focTk=id=>{const f=focusOf();return f&&f.tk===id?1:0};
 const FOCL=Object.fromEntries(FOCUS.map(f=>[f.id,f]));
 const FOCUS_M0=7,FOCUS_M1=11;
 function focusOf(){return S&&S.focus&&S.focus.m===S.month&&FOCL[S.focus.id]||null}
@@ -2706,7 +2708,7 @@ function focusBox(){try{if(!S||S.month<FOCUS_M0||S.month>FOCUS_M1)return "";cons
   if(f){const k=focusMin(f);return `<p class="goalln focln"><b>重点月間</b><span><em>${f.n}</em>　${KS[f.s]}の伸びる案・任務に+${focusAmt(f)}${focusAmt(f)>1?"（目標と同じ◎）":""}${k?`<i class="gln-n">　担当 ${C[k].n}</i>`:""}</span></p>`}
   if((S.focus&&S.focus.m===S.month)||S.focusSkip===S.month||S.cur==="sosaisen"||S.cur==="senkyo")return "";
   const g=goalOf();
-  return `<div class="goalpick focpick"><div class="gp-h"><b>今月の重点月間を掲げる</b><small>その分野の案・任務の効き+1。担当大臣は少し疲れる</small></div><div class="gp-g">${FOCUS.map(x=>{const k=focusMin(x);return `<button class="gpb fcb" data-focus="${x.id}"><b>${x.n}${g&&goalSs(g).includes(x.s)?`<span class="gmk">◎</span>`:""}</b><small>${KS[x.s]}+${focusAmt(x)}</small>${k?`<small>疲れ：${C[k].n}</small>`:""}</button>`}).join("")}<button class="gpb fcb fcno" data-focus="none"><b>掲げない</b><small>いつもどおり</small></button></div></div>`}catch(e){return ""}}
+  return `<div class="goalpick focpick"><div class="gp-h"><b>今月の重点月間を掲げる</b><small>その分野の案・任務の効き+1。担当大臣は少し疲れる</small></div><div class="gp-g">${FOCUS.map(x=>{const k=focusMin(x);return `<button class="gpb fcb" data-focus="${x.id}"><b>${x.n}${g&&goalSs(g).includes(x.s)?`<span class="gmk">◎</span>`:""}</b><small>${x.tx||`${KS[x.s]}+${focusAmt(x)}`}</small>${k?`<small>疲れ：${C[k].n}</small>`:""}</button>`}).join("")}<button class="gpb fcb fcno" data-focus="none"><b>掲げない</b><small>いつもどおり</small></button></div></div>`}catch(e){return ""}}
 function setFocus(id){if(!S||S.month<FOCUS_M0||S.month>FOCUS_M1||(S.focus&&S.focus.m===S.month)||S.focusSkip===S.month)return;
   if(id==="none"){S.focusSkip=S.month;save();render();return}
   const f=FOCL[id];if(!f)return;S.focus={m:S.month,id};S.focusH=S.focusH||{};S.focusH[id]=S.focusH[id]||{n:0,a:0};S.focusH[id].n++;const k=focusMin(f);
@@ -2720,7 +2722,7 @@ function focusWord(f,tot){try{const k=focusMin(f);if(!k||!C[k])return "";const n
   const t=tot>=3?`手応えがありました。${f.n}、現場に届いています`:tot>=1?`少しは動きました。次はもう一押ししたい`:`空回りでした。案を選ぶ月に合わせるべきでした`;
   return `<span class="fwd">${portrait(k,26)}<i><b>${n}</b>「${t}」</i></span>`}catch(e){return ""}}
 function focusSumHTML(){try{const f=focusOf();if(!f)return "";const M=S.focusM&&S.focusM.m===S.month?S.focusM:{e:0,t:0};const tot=M.e+M.t;
-  return `<p class="goalln focln fsum"><b>重点月間</b><span><em>${f.n}</em>　${tot?`${KS[f.s]} <em>+${tot}</em> 上乗せ（案件${M.e}・任務${M.t}）`:"今月は効く案・任務が無く、空回り"}</span>${focusWord(f,tot)}</p>`}catch(e){return ""}}
+  return `<p class="goalln focln fsum"><b>重点月間</b><span><em>${f.n}</em>　${tot?`${f.tl?KS[f.s]+"・"+f.tl:KS[f.s]} <em>+${tot}</em> 上乗せ（案件${M.e}・任務${M.t}）`:"今月は効く案・任務が無く、空回り"}</span>${focusWord(f,tot)}</p>`}catch(e){return ""}}
 function focusEndHTML(){try{const H=S.focusH;if(!H||S.fall)return "";const L=Object.entries(H).filter(([id])=>FOCL[id]);if(!L.length)return "";
   const n=L.reduce((x,[,h])=>x+(h.n||0),0),a=L.reduce((x,[,h])=>x+(h.a||0),0);const b=L.slice().sort((x,y)=>(y[1].a||0)-(x[1].a||0))[0];
   return `<p class="goalln focln fend"><b>重点月間</b><span>${n}か月掲げ、上乗せ計 <em>+${a}</em>${b&&b[1].a>0?`<i class="gln-n">　いちばん効いた：${FOCL[b[0]].n}（+${b[1].a}）</i>`:""}</span>${b&&b[1].a>0?focusWord(FOCL[b[0]],b[1].a):""}</p>`}catch(e){return ""}}
@@ -3515,12 +3517,12 @@ function finishTask(key){
       else if(C[key]?.noLoss){bubble(key,lineOf(key,"l"));ok=false;msg=`${R.n}の論戦で${nm}が${OPP[o].n}に押されたが、一歩も退かなかった`;fxT="立ち往生";}
       else{S.off[r]-=3;ok=false;stAdd(key,"lose");bubble(o,oppLine(o,"v"),true);setTimeout(()=>bubble(key,lineOf(key,"l")),700);msg=`${R.n}の論戦で${nm}が${OPP[o].n}に敗北`;fxT="敗北 -3";} }
     else if(S.base[r]){ if(Math.random()<.4+sk*.1){S.base[r]--;S.off[r]+=2;msg=`${nm}が${R.n}の西軍党の地盤を崩した`;fxT="地盤-1";msg+=gainXP(key,"speech");}else{ok=false;msg=`${R.n}の地盤は固い`;fxT="……";} }
-    else {const g=Math.max(1,Math.round((1.5+sk*.6+(C[key]?.rallyB||0))*dimin(r)));S.off[r]+=g;if(Math.random()<.45)bubble(key,lineOf(key,"q"));msg=`${nm}が${R.n}で遊説`;fxT=`支持+${g}`;if(sk>=4)msg+=gainXP(key,"speech");}
+    else {const fr=focTk("rally");if(fr)focusAdd(fr,'t');const g=Math.max(1,Math.round((1.5+sk*.6+(C[key]?.rallyB||0))*dimin(r)))+fr;S.off[r]+=g;if(Math.random()<.45)bubble(key,lineOf(key,"q"));msg=`${nm}が${R.n}で遊説`;fxT=`支持+${g}`;if(sk>=4)msg+=gainXP(key,"speech");}
   }
-  else if(t.id==="dev"){const g=Math.round(2+sk*.9);S.rp[r][t.k]=clamp(S.rp[r][t.k]+g);S.off[r]+=.5;if(!C[key]?.localFree)S.kokko-=.5;msg=`${nm}が${R.n}の${RPK[t.k]}を底上げ`;fxT=`${RPK[t.k]}+${g}`;if(sk>=4)msg+=gainXP(key,t.f);}
+  else if(t.id==="dev"){const fd=focTk("dev");if(fd)focusAdd(fd,'t');const g=Math.round(2+sk*.9)+fd;S.rp[r][t.k]=clamp(S.rp[r][t.k]+g);S.off[r]+=.5;if(!C[key]?.localFree)S.kokko-=.5;msg=`${nm}が${R.n}の${RPK[t.k]}を底上げ`;fxT=`${RPK[t.k]}+${g}`;if(sk>=4)msg+=gainXP(key,t.f);}
   else if(t.id==="fix"){const m=S.marks.find(x=>x.id===t.m);
     if(!m){ok=false;msg=`${R.n}の問題はすでに片づいていた`;}
-    else if(Math.random()<fixP(key,m)){const T=MK[m.t];S.marks=S.marks.filter(x=>x!==m);const ff=focusOf()&&focusOf().s===T.k?focusAmt(focusOf()):0;if(ff)focusAdd(ff,'t');apply({[T.k]:1+ff},true);
+    else if(Math.random()<fixP(key,m)){const T=MK[m.t];S.marks=S.marks.filter(x=>x!==m);const ff=focusOf()&&!focusOf().tk&&focusOf().s===T.k?focusAmt(focusOf()):0;if(ff)focusAdd(ff,'t');apply({[T.k]:1+ff},true);
       if(!R.ov){S.off[r]+=3;if(S.rp[r][T.k]!=null)S.rp[r][T.k]=clamp(S.rp[r][T.k]+4);}
       if(C[key]?.fixK)S.kokko+=C[key].fixK;
       S.fixN=(S.fixN||0)+1;bubble(key,lineOf(key,"f"));msg=`${nm}が${R.n}の「${m.tx}」を解決`;fxT="解決！";msg+=gainXP(key,T.f);}
@@ -5503,7 +5505,7 @@ function title(){
       <li><b>変則ルール</b>　組閣のときに今年の変則ルールを選べる（米価高騰・外圧・人材難・祝祭・災害の年・大博覧の年）。指標が少し上下した所から始まり、毎月その指標が低いと別の指標が下がり、高いと別の指標が上がる。選ばなくてもよい。</li>
       <li><b>最終公約の一枚札</b>　12月の公示のあとに「減税」「改革断行」「安定継続」「安全第一」「外交で国を開く」の5枚から一枚を切る。勝てば次の政権の初期値に+2が残る。</li>
       <li><b>国家目標</b>　1〜2月に8つの国家目標（産業再生・地方復興・外交安定・治安の要・挙党一致・信頼回復・富国安民・内外安定）から一つを掲げられる。合う案には◎が付く。その指標を掲げた時から+10伸ばせば達成（二つの指標を組にした富国安民〔経済と民生〕・内外安定〔外交と治安〕は、両方が伸びるか片方が+5以上の案に◎が付き、二つの平均を+8伸ばせば達成）（掲げた時点で高い指標は、上の余地の半分が目安。例：結束96なら+2）。</li>
-      <li><b>重点月間</b>　7〜11月の月初に6つの月間（物価対策・防災・外交・暮らし安心・党内融和・広報強化）から一つを掲げられる。その分野の案・任務の効きが+1（国家目標と同じ分野なら+2）、担当大臣は少し疲れる。</li>
+      <li><b>重点月間</b>　7〜11月の月初に8つの月間（物価対策・防災・外交・暮らし安心・党内融和・広報強化・地方創生・遊説強化）から一つを掲げられる。その分野の案・任務の効きが+1（国家目標と同じ分野なら+2）、担当大臣は少し疲れる。地方創生は民生の案と地図の地域振興に、遊説強化は支持の案と地図のふつうの遊説に効く。</li>
       <li><b>接戦区の陳情</b>　10〜11月、接戦区の地方から陳情が届く。受けるとその地方の支持が上がるが政治資本と担当大臣の体力を使い、断ると支持が少し下がる。</li>
       <li><b>西軍の作戦</b>　2〜10月、西軍党はこちらの弱い指標を狙って作戦（物価追及・地方行脚・失言攻めなど8種）を一つ打ってくる。12日ごろ判明（独自調査の月は月初）。月末にその指標が55未満なら支持が下がり、65以上なら空振りで西軍の勢いが落ちる。</li>
       <li><b>結果を共有</b>　結末の画面の「結果を共有」で、総理・議席・支持率・国家目標・称号・三大ニュースを短い文にまとめ、送ったり写したりできる。</li>
