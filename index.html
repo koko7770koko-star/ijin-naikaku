@@ -2528,7 +2528,7 @@ function rivalNews(){if(S.month<7||S.month>8||S.rivalNews)return;const R=rivalNo
 function facMonthly(L){
   const F=S.fac||(S.fac={});const n=facCount(S.cab,S.pm);const tot=Object.values(n).reduce((a,v)=>a+v,0)||1;
   const big=Object.keys(n).find(f=>n[f]/tot>.5);const seen=S.facSeen||(S.facSeen={});let coh=0,opp=0;const hot=[];
-  Object.keys(FAC).forEach(f=>{let d=n[f]===0?5:(big&&f!==big&&n[f]<=1)?2:-3;if(d>0)d=Math.max(0,d-aideN("chosei"));F[f]=Math.max(0,Math.min(100,(F[f]||0)+d));
+  Object.keys(FAC).forEach(f=>{let d=n[f]===0?5:(big&&f!==big&&n[f]<=1)?2:-3;if(d>0)d=Math.max(0,d-aideN("chosei"));if(d>0&&S.tag==="seiren"&&S.month%3===0)d+=1;F[f]=Math.max(0,Math.min(100,(F[f]||0)+d));
     const v=F[f];if(v>=40){coh+=1;hot.push(FAC[f].n)}if(v>=70){coh+=1;opp+=1}
     const lv=v>=70?2:v>=40?1:0;if(lv>(seen[f]||0)){S.news.push({m:S.month,h:lv>=2?`与党${FAC[f].n}、造反の構え`:`与党${FAC[f].n}が「冷遇」に不満`,c:lv>=2?"総裁選で対抗馬擁立の声も":`ポストを与えれば収まる見込み`});}
     seen[f]=lv;});
@@ -3289,7 +3289,7 @@ const SOKUHO=[
 ];
 function tkP(){try{return Math.max(.3,Math.min(.8,.5+Math.min(.15,(skA(PMK(),"speech")-3)*.05)+(S.st.sup>=60?.08:0)-(S.opp>=60?.1:0)))}catch(e){return .5}}
 function tkPick(){if(!S||!S.month||S.month<3||S.month>9||S.tkM===S.month||Math.random()>.55)return null;
-  const sc={zai:55-S.st.eco+((S.kokko||0)<=1?15:0)+((S.kokko||0)<0?10:0),chi:55-Math.min(S.st.wel,S.st.saf),man:manOn()?30:S.st.sup-55};
+  const sc={zai:55-S.st.eco+((S.kokko||0)<=1?15:0)+((S.kokko||0)<0?10:0)-(S.tag==="seiren"?6:0),chi:55-Math.min(S.st.wel,S.st.saf),man:manOn()?30:S.st.sup-55};
   const ids=Object.keys(sc).filter(k=>k!==S.tkLast).sort((x,y)=>(sc[y]+Math.random()*10)-(sc[x]+Math.random()*10));
   const id=ids[0];const i=SOKUHO.findIndex(e=>e.tk&&e.id===id);if(i<0)return null;S.tkM=S.month;S.tkLast=id;return i}
 const IE_SK=[4,3,3,3,3,3];
@@ -3682,7 +3682,7 @@ function mapTick(dd){
 function answerSoku(j){
   const ev=SOKUHO[S.pend],o=ev.o[j];
   let d={...o.d},opp=o.opp,pf=null;if(o.risk&&Math.random()<.5){d={saf:-4,sup:-3};}
-  if(o.pr!=null){pf=Math.random()>=tkP();if(pf){d={...o.f};opp=o.fo}S.tkH=S.tkH||{n:0,ok:0};S.tkH.n++;if(!pf)S.tkH.ok++}
+  if(o.pr!=null){pf=Math.random()>=tkP();if(pf){d={...o.f};opp=o.fo;if(S.tag==="seiren"&&ev.id==="zai"&&d.sup<0)d.sup+=1}S.tkH=S.tkH||{n:0,ok:0};S.tkH.n++;if(!pf)S.tkH.ok++}
   if(o.tire){S.tire=S.tire||{};const tk=Object.keys(S.pc||{}).filter(k=>!isPM(k)&&C[k]);if(tk.length){const k=tk[Math.random()*tk.length|0];S.tire[k]=Math.min(3,(S.tire[k]||0)+1)}}
   apply(d);if(o.c)S.kokko+=o.c;if(opp)S.opp=clamp(S.opp+opp);
   mlog(`${ev.k||"速報"}「${ev.t}」→ ${o.t}${o.risk&&d.saf<0?"（裏目に出た）":""}${pf===true?"（押し切れず）":pf===false?"（押し切った）":""}`,!(d.sup<0||d.saf<0));
@@ -4829,7 +4829,8 @@ const PMTAGS=[
  {id:"daitan",n:"大胆",x:"強行採決が通れば支持+2、否決なら支持-2",a:"「鳴かぬなら殺してしまえ」の句は、信長の気性を語るものと伝わる"},
  {id:"chosei",n:"調整",x:"西軍党の対決姿勢が和らぐのが1か月早い（3か月）",a:"聖徳太子の「和を以て貴しと為す」は、調整役の心得としてよく引かれる"},
  {id:"kenyaku",n:"倹約",x:"初期の国庫+1",a:"二宮尊徳は「分度」を守る暮らしを説いたと伝わる"},
- {id:"jinshin",n:"人心掌握",x:"初期の支持+2",a:"秀吉は人たらしと伝わる。草履を懐で温めた話は俗説とされる"}];
+ {id:"jinshin",n:"人心掌握",x:"初期の支持+2",a:"秀吉は人たらしと伝わる。草履を懐で温めた話は俗説とされる"},
+ {id:"seiren",n:"清廉",x:"野党の財政追及が出にくく、押し切りに失敗しても支持の下げが1軽い。代わりに派閥の不満が3か月ごとにたまりやすい",a:"西郷隆盛は「児孫のために美田を買わず」と詠んだと伝わる"}];
 const pmTagOf=id=>PMTAGS.find(t=>t.id===id)||null;
 function pledgeChips(S){return (S.pledges||[]).map(id=>{const p=PL[id];let ok=false;try{ok=p.f(S)}catch(e){}return `<div class="pl ${ok?"ok":""}"><b>${ok?"達成":"未達"}</b><span>${p.n}</span><small>${p.v(S)}</small></div>`}).join("")}
 
