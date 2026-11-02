@@ -2361,7 +2361,7 @@ const CTRYO=["us","cn","kr","ru","eu"];
 function ctryS(){if(!S.ctry){S.ctry={};CTRYO.forEach(k=>S.ctry[k]=CTRY[k].b)}return S.ctry}
 const ctryLv=v=>v>=70?2:v<=25?0:1;
 const ctryLab=v=>v>=70?"親密":v<=25?"冷え込み":v>=55?"良好":v<=40?"ぎくしゃく":"ふつう";
-function ctryGain(){const sk=skillOf("diplo");return 3+sk+(inCab("ryoma")?1:0)}
+function ctryGain(){const sk=skillOf("diplo");return 3+sk+(inCab("ryoma")?1:0)+aideN("gaiko")}
 function ctryAdd(k,v){const c=ctryS();c[k]=Math.max(0,Math.min(100,(c[k]||0)+v))}
 function ctryChips(){const c=ctryS();return `<div class="ctrys">${CTRYO.map(k=>{const v=c[k];return `<span class="ct l${ctryLv(v)}" style="--cc:${CTRY[k].c}"><b>${CTRY[k].s}</b>${v}</span>`}).join("")}</div>`}
 function doShuno(k){
@@ -4827,11 +4827,12 @@ const AIDE={
  chosei:{n:"調整役",x:"与党の派閥の不満が毎月-1（2人で-2）で増えにくい"},
  genba:{n:"現場派",x:"陳情を受けたときの支持が+1（2人で+2）"},
  zaimu:{n:"財務派",x:"国庫が赤字のときの打撃が軽くなる（経済・支持の下げが-1、2人で-2）"},
- kobu:{n:"鼓舞役",x:"支持か結束が10以下になっても一年に一度だけ踏みとどまる（2人なら20まで戻る）"}};
-const AIDE_OV={shibusawa:"zaimu",ninomiya:"genba",ryoma:"chosei",shotoku:"chosei",hideyoshi:"kobu",nobunaga:"kobu",koan:"genba"};
+ kobu:{n:"鼓舞役",x:"支持か結束が10以下になっても一年に一度だけ踏みとどまる（2人なら20まで戻る）"},
+ gaiko:{n:"外交通",x:"首脳会談で相手国との関係の伸びが+1（2人で+2）"}};
+const AIDE_OV={shibusawa:"zaimu",ninomiya:"genba",ryoma:"chosei",shotoku:"chosei",hideyoshi:"kobu",nobunaga:"kobu",koan:"genba",hiromoto:"chosei"};
 function aideOf(k){const c=C[k];if(!c)return null;if(AIDE_OV[k])return AIDE_OV[k];const s=c.s||[];
-  const v={zaimu:s[1]||0,chosei:(s[2]||0)+1,kobu:s[0]||0,genba:Math.max(s[3]||0,s[4]||0,s[5]||0)};
-  return ["zaimu","chosei","kobu","genba"].reduce((b,t)=>v[t]>v[b]?t:b,"zaimu")}
+  const v={zaimu:s[1]||0,chosei:(s[2]||0)+1,kobu:s[0]||0,genba:Math.max(s[3]||0,s[4]||0,s[5]||0),gaiko:(s[2]||0)>=5?(s[2]||0)+1.5:0};/* 外交5は外交通 */
+  return ["zaimu","chosei","kobu","genba","gaiko"].reduce((b,t)=>v[t]>v[b]?t:b,"zaimu")}
 const aideIdsOf=ids=>[...new Set((ids||[]).filter(k=>k&&C[k]))];
 const aideIds=()=>S?aideIdsOf([...Object.values(S.cab||{}),...(S.team||[])]):[];
 const aideN=t=>{try{return Math.min(2,aideIds().filter(k=>aideOf(k)===t).length)}catch(e){return 0}};
