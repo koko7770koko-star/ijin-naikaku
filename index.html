@@ -5611,10 +5611,10 @@ function renderCabinet(){
     else if(cgSort==='name')list=list.slice().sort((a,b)=>yomiOf(a[0],a[1].n).localeCompare(yomiOf(b[0],b[1].n),'ja'));
     const isX=XPOSTS.includes(p);
     const postOf=key=>key===pmPick?PMPOST:[...POSTS,...XPOSTS].find(x=>pick[x.id]===key);
-    const CGN=12;let shown=list,hid=0;
-    if(!cgAll&&cgSort==='nou'){const keep=[];let n=0;for(const e of list){const key=e[0],on=k===key,dis=!!(!on&&postOf(key))&&!isP,isPv=pv&&pv.p===p.id&&pv.k===key;
+    const CGN=12,CGB=8;let shown=list,hid=0;
+    if(!cgAll&&cgSort==='nou'){const keep=[];let n=0,nbN=0;for(const e of list){const key=e[0],on=k===key,dis=!!(!on&&postOf(key))&&!isP,isPv=pv&&pv.p===p.id&&pv.k===key;
         if(on||isPv){keep.push(e);continue}if(dis)continue;if(n<CGN){keep.push(e);n++;continue}
-        const nb=activeBonds([...ids0,key]).filter(b=>!activeBonds(ids0).includes(b)&&b.kind!=="clash");if(nb.length)keep.push(e)}
+        const nb=activeBonds([...ids0,key]).filter(b=>!activeBonds(ids0).includes(b)&&b.kind!=="clash");if(nb.length&&nbN<CGB){keep.push(e);nbN++}}/* 11/03 qa04：縁で残す人も8人まで（おまかせ組閣の後にほぼ全員が残っていた） */
       hid=list.length-keep.length;shown=keep}
     return `<div class="post" id="cpost">
       <div class="post-head"><h3>${p.name}</h3><span class="field">重視：${FIELDS[p.field]}</span></div>
