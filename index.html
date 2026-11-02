@@ -5860,7 +5860,11 @@ const OSAKU=[
  {id:"zaisei",t:"財政批判",k:"eco",x:"国庫の赤字と借金の山を国会で突く",q:"蔵を空にして何が天下泰平か"},
  {id:"ninki",t:"人気取り",k:"sup",x:"党首が祭りや寄席に顔を出し、人気を集める",q:"民と同じ目線に立つのは我らぞ"},
  {id:"bunretsu",t:"与党の切り崩し",k:"coh",x:"与党の派閥に手を回し、造反を誘う",q:"派閥の不満、我らが受け止めようぞ"},
- {id:"kinrin",t:"独自の訪問団",k:"dip",x:"党の訪問団を隣国に出し、対話の党を名乗る",q:"話の通じる外交は我らが示す"}];
+ {id:"kinrin",t:"独自の訪問団",k:"dip",x:"党の訪問団を隣国に出し、対話の党を名乗る",q:"話の通じる外交は我らが示す"},
+ {id:"saigai",t:"災害対応批判",k:"saf",x:"被災地の遅れを取り上げ、国会で連日問いただす",q:"民が困っている時に、政府はどこにおった"},
+ {id:"bouei",t:"守りの不安",k:"saf",x:"国境の警備の手薄さを演説で繰り返す",q:"この国の守り、今のままで本当によいのか"},
+ {id:"gaitou",t:"街頭演説合戦",k:"sup",x:"党首が駅前で毎朝演説し、総理との差を見せる",q:"毎朝ここに立つ。それが我らの誠意ぞ"},
+ {id:"bakuro",t:"疑惑の暴露",k:"sup",x:"政権の古い疑惑を週刊誌に流し、人気を削る",q:"清い顔をして、裏では何をしておったか"}];
 const OS_HIT=40,OS_OK=55,OS_MISS=65,OS_DAY=12;
 function osakuOf(){const o=S.osaku;return o&&o.m===S.month?OSAKU.find(x=>x.id===o.id)||null:null}
 function osakuPick(){if(!S.off||S.month<2||S.month>10){return}if(S.osaku&&S.osaku.m===S.month)return;
