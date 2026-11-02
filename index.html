@@ -2169,7 +2169,9 @@ const VOWS=[
  {id:"kaikaku",t:"改革断行",s:"eco",h:"全地方の支持+2・結束-1（派閥の不満）",q:"痛みを恐れず、やり抜く",f:()=>{DOM.forEach(r=>S.off[r]=Math.min(40,(S.off[r]||0)+2));apply({coh:-1},true)}},
  {id:"antei",t:"安定継続",s:"coh",h:"西軍の勢い-2・結束+1",q:"変えぬことも、また勇気",f:()=>{S.opp=clamp((S.opp??45)-2);apply({coh:1},true)}},
  {id:"anpo",t:"安全第一",s:"saf",h:"治安+3・経済-1",q:"夜道を安んじて歩ける国を",f:()=>apply({saf:3,eco:-1},true)},
- {id:"hiraku",t:"外交で国を開く",s:"dip",h:"外交+3・結束-1（内向きの声が反発）",q:"海の向こうに、明日がある",f:()=>apply({dip:3,coh:-1},true)}];
+ {id:"hiraku",t:"外交で国を開く",s:"dip",h:"外交+3・結束-1（内向きの声が反発）",q:"海の向こうに、明日がある",f:()=>apply({dip:3,coh:-1},true)},
+ {id:"kurashi",t:"暮らし第一",s:"wel",h:"民生+3・国庫-1兆円",q:"台所の明日を守る",f:()=>{apply({wel:3},true);S.kokko=(S.kokko||0)-1}},
+ {id:"zaisei",t:"財政再建",s:"eco",h:"国庫+2兆円・支持-1",q:"子や孫に借金を残さぬ",f:()=>{S.kokko=(S.kokko||0)+2;apply({sup:-1},true)}}];
 function vowOf(id){return VOWS.find(v=>v.id===id)||null}
 function vowDone(){return !!(S&&S.vow)}
 function vowPick(id){if(S.cur!=="senkyo"||!kojiDone()||vowDone())return;const v=vowOf(id);if(!v)return;S.delta={};v.f();S.vow=id;
