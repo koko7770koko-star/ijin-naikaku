@@ -3371,8 +3371,10 @@ const OLEAD={
  mitsunari:{t:"論戦型",x:"三成みずから論戦に強く、西軍全員も少し負けにくい",lead:.15,deb:.04,q:"義はまだ死なず。論で国を正してみせる"},
  yukimura:{t:"論戦型",x:"西軍の全員が論戦で負けにくい",deb:.09,q:"これより真田の戦。一人ひとりが論客と思え"},
  kanetsugu:{t:"地方型",x:"遊説で支持を削る力が強く、地盤を築きやすい",chiho:1,q:"愛の一字を掲げ、地方から一軒ずつ回る"},
- yoshitsugu:{t:"共闘型",x:"他党と共闘し、西軍の顔ぶれが1人増える。仲間と並ぶと強い",kyoto:1,q:"一人では勝てぬ。手を組める者とは組む"}};
-const OLEAD_PEN={mitsunari:"負けたのは党首の責任。だが、退けば義が絶える",yukimura:"三成殿、ここは若い者に任されよ",kanetsugu:"殿の義は受け継ぐ。やり方を変えるのみ",yoshitsugu:"三成、お主は前に出すぎる。わしが表に立とう"};
+ yoshitsugu:{t:"共闘型",x:"他党と共闘し、西軍の顔ぶれが1人増える。仲間と並ぶと強い",kyoto:1,q:"一人では勝てぬ。手を組める者とは組む"},
+ shimazu:{t:"突破型",x:"義弘みずから論戦に強く、地方の地盤も築きやすい",lead:.12,chiho:1,q:"退くも進むも敵の中。島津の退き口を見せてくれよう"},
+ terumoto:{t:"大所帯型",x:"共闘で西軍の顔ぶれが1人増え、全員が少し論戦に強い",kyoto:1,deb:.03,q:"西軍の総大将は毛利にあり。大所帯で押し包む"}};
+const OLEAD_PEN={mitsunari:"負けたのは党首の責任。だが、退けば義が絶える",yukimura:"三成殿、ここは若い者に任されよ",kanetsugu:"殿の義は受け継ぐ。やり方を変えるのみ",yoshitsugu:"三成、お主は前に出すぎる。わしが表に立とう",shimazu:"三成殿、関ヶ原の借りはこの島津が返そう",terumoto:"総大将は毛利のはず。今度こそ城を出て戦おう"};
 function oppLeadK(){return (S&&S.oppLead&&S.oppLead.k)||"mitsunari"}
 function oppLeadN(){return OPP[oppLeadK()].n.slice(-2)}
 function ldQ(t){return `${oppLeadN()}党首「${t}」`}
