@@ -2295,7 +2295,7 @@ function startGov(){
      log:[],used:[],phase:"event",view:"main",cur:null,res:null,delta:{},done:false,reshuffle:null,history:[],
      bills:{},flags:{},grow:{},xp:{},once:[],resigned:0,news:[],opp:45,qaSeen:[],qaWin:0,team:[...team],pledges:[...pledges],fixN:0,banterSeen:[],banterSeen2:[],banterM:{},banter:null,bl:{},recon:{},auto:{}};
   {const ps=PMSK[pmPick]||{};if(ps.coh0)S.st.coh=clamp(S.st.coh+ps.coh0);if(ps.sup0)S.st.sup=clamp(S.st.sup+ps.sup0);}
-  {const tg=pmTagOf(pmTag);if(tg){S.tag=tg.id;if(tg.id==="kenyaku")S.kokko=(S.kokko||0)+1;if(tg.id==="jinshin")S.st.sup=clamp(S.st.sup+2);S.log.push([S.month,`総理の口ぐせ方針「${tg.n}」（${tg.x}）`])}}
+  {const tg=pmTagOf(pmTag);if(tg){S.tag=tg.id;if(tg.id==="kenyaku")S.kokko=(S.kokko||0)+1;if(tg.id==="jinshin")S.st.sup=clamp(S.st.sup+2);if(tg.id==="taiwa")S.st.dip=clamp(S.st.dip+2);if(tg.id==="anshin")S.st.wel=clamp(S.st.wel+2);S.log.push([S.month,`総理の口ぐせ方針「${tg.n}」（${tg.x}）`])}}
   {const c=cnOf([...ids,...team,pmPick],pmTag);if(c){S.cn={n:c.n,t:c.t,b:c.b,wk:c.wk};S.cnW=c.wk;S.st[c.b]=clamp(S.st[c.b]+2);S.log.push([S.month,`内閣の合言葉「${c.n}」（${KS[c.b]}+2・苦手${KS[c.wk]}）`])}}
   {const ru=ruleOf(ruleSel);if(ru){S.rule=ru.id;Object.entries(ru.st).forEach(([k,d])=>{S.st[k]=clamp(S.st[k]+d)});if(ru.kk)S.kokko=(S.kokko||0)+ru.kk;ruleQ();S.log.push([S.month,`今年の変則ルール「${ru.n}」（${ru.x}）`])}}
   initMap();
@@ -2968,7 +2968,7 @@ function kotaeRuleHTML(){try{const L=[],sg=v=>(v>0?"+":"")+v;
     L.push(`<b>変則ルール「${r.n}」</b>：はじめ ${st.join("・")||"なし"}／毎月 ${m.length?m.join("・"):"動きなし"}（恩恵${S.ruleN||0}回・罰${S.ruleB||0}回）`)}
   const c=S.cn;if(c)L.push(`<b>合言葉「${c.n}」</b>：初期${KS[c.b]}+2／苦手の${KS[c.wk]}が弱まったのは${S.cnWn||0}回`);
   const t=S.tag?pmTagOf(S.tag):null;if(t){const H=S.tagH||{p:0,m:0};
-    const e={daitan:H.p+H.m?`強行採決が通った${H.p}回（支持+${H.p*2}）・裏目${H.m}回（支持-${H.m*2}）`:"強行採決はしなかった（効きなし）",chosei:`西軍党の対決姿勢が1か月早く和らいだ${H.p}回`,kenyaku:"初期の国庫+1",jinshin:"初期の支持+2",
+    const e={daitan:H.p+H.m?`強行採決が通った${H.p}回（支持+${H.p*2}）・裏目${H.m}回（支持-${H.m*2}）`:"強行採決はしなかった（効きなし）",chosei:`西軍党の対決姿勢が1か月早く和らいだ${H.p}回`,kenyaku:"初期の国庫+1",jinshin:"初期の支持+2",taiwa:"初期の外交+2",anshin:"初期の福祉+2",
       seiren:`財政の追及で支持の下げが軽く済んだ${H.p}回／派閥の不満が余分にたまった${H.m}回`,jimoto:`陳情に応えて支持が余分に+1伸びた${H.p}回／断って余分に-1下がった${H.m}回`}[t.id]||t.x;
     L.push(`<b>口ぐせ「${t.n}」</b>：${e}`)}
   return L.length?`<div class="kt-rl">${L.map(x=>`<p>${x}</p>`).join("")}</div>`:""}catch(e){return ""}}
@@ -4935,7 +4935,7 @@ const aideTag=k=>{const t=aideOf(k);return t?`<small class="aidet">${AIDE[t].n}<
 const CNAME={zaimu:{w:"殖産",b:"eco",wk:"wel"},chosei:{w:"協調",b:"coh",wk:"dip"},genba:{w:"現場",b:"wel",wk:"eco"},kobu:{w:"奮起",b:"sup",wk:"coh"},
   gaiko:{w:"開国",b:"dip",wk:"saf"},/* 補佐の型「外交通」が多数のとき（aide-5 で型を足したら効く） */
   anei:{w:"安寧",b:"saf",wk:"eco"}};/* 多数の型が2つ並んだとき（どちらにも寄らない釣り合いの内閣） */
-const CNTAG={daitan:"改革",chosei:"融和",kenyaku:"節約",jinshin:"人望",seiren:"清廉",jimoto:"地元"};
+const CNTAG={daitan:"改革",chosei:"融和",kenyaku:"節約",jinshin:"人望",seiren:"清廉",jimoto:"地元",taiwa:"対話",anshin:"安心"};
 function cnOf(ids,tag){try{ids=aideIdsOf(ids);const cnt={};ids.forEach(k=>{const t=aideOf(k);if(t)cnt[t]=(cnt[t]||0)+1});
   const T=["zaimu","chosei","genba","kobu","gaiko"];let t=T.reduce((b,x)=>(cnt[x]||0)>(cnt[b]||0)?x:b,"zaimu");if(!cnt[t])return null;
   if(cnt[t]>=2&&T.filter(x=>cnt[x]===cnt[t]).length>=2)t="anei";
@@ -4951,7 +4951,9 @@ const PMTAGS=[
  {id:"kenyaku",n:"倹約",x:"初期の国庫+1",a:"二宮尊徳は「分度」を守る暮らしを説いたと伝わる"},
  {id:"jinshin",n:"人心掌握",x:"初期の支持+2",a:"秀吉は人たらしと伝わる。草履を懐で温めた話は俗説とされる"},
  {id:"seiren",n:"清廉",x:"野党の財政追及が出にくく、押し切りに失敗しても支持の下げが1軽い。代わりに派閥の不満が3か月ごとにたまりやすい",a:"西郷隆盛は「児孫のために美田を買わず」と詠んだと伝わる"},
- {id:"jimoto",n:"地元",x:"接戦区の陳情に応えると支持+1多く、断ると-1多い",a:"伊能忠敬は五十を過ぎて全国を歩き、日本の海岸線を測ったと伝わる"}];
+ {id:"jimoto",n:"地元",x:"接戦区の陳情に応えると支持+1多く、断ると-1多い",a:"伊能忠敬は五十を過ぎて全国を歩き、日本の海岸線を測ったと伝わる"},
+ {id:"taiwa",n:"対話",x:"初期の外交+2",a:"聖徳太子は隋に使者を送り、対等な国交を求めたと伝わる"},
+ {id:"anshin",n:"安心",x:"初期の福祉+2",a:"徳川吉宗は小石川養生所を設け、貧しい人の医療を支えたと伝わる"}];
 const pmTagOf=id=>PMTAGS.find(t=>t.id===id)||null;
 function pledgeChips(S){return (S.pledges||[]).map(id=>{const p=PL[id];let ok=false;try{ok=p.f(S)}catch(e){}return `<div class="pl ${ok?"ok":""}"><b>${ok?"達成":"未達"}</b><span>${p.n}</span><small>${p.v(S)}</small></div>`}).join("")}
 
