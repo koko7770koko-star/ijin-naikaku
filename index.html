@@ -2792,14 +2792,19 @@ const PETS=[
   {id:"handotai",t:"新工場の水と道を",x:"半導体の工場に人が集まり、道も水も足りない",p:"keisan",r:"kyu"},
   {id:"beika",t:"米の値を安定させて",x:"豊作でも値が崩れ、作るほど苦しくなる",p:"nosui",r:"toh,hok"},
   {id:"shuden",t:"終電のあとの帰り道を",x:"夜勤明けの足がなく、駅で朝を待つ人がいる",p:"kokudo",r:"kan"},
-  {id:"fukkojutaku",t:"復興住宅に見守りを",x:"仮設から移った年寄りが、独りで部屋にこもっている",p:"koro",r:"toh,chu"}];
+  {id:"fukkojutaku",t:"復興住宅に見守りを",x:"仮設から移った年寄りが、独りで部屋にこもっている",p:"koro",r:"toh,chu"},
+  {id:"jikiso",t:"町の声を官邸へ直に",x:"陳情に上京しても、窓口をたらい回しにされる",p:"kanbo",r:"toh,shi,chg"},
+  {id:"shimai",t:"姉妹都市の交流を続けたい",x:"海の向こうの町との行き来が、予算の削減で途絶えそう",p:"gaimu",r:"kyu,chu,kan"},
+  {id:"shobo",t:"消防団の人手を",x:"若い団員がいなくなり、夜の火事に間に合わない",p:"boei",r:"shi,toh,kin"}];
 function petOf(){try{if(!S||!sekOn()||S.cur==="sosaisen"||S.cur==="senkyo")return null;
   if(S.pet&&S.pet.m===S.month)return S.pet;
   const L=sekRegs();if(!L.length)return null;
   const prev=S.pet&&S.pet.r;const C2=L.filter(x=>x.r!==prev);const x=(C2.length?C2:L)[Math.random()*(C2.length?C2:L).length|0];
   const used=(S.petUsed||[]);const P0=PETS.filter(q=>!used.includes(q.id)),P1=P0.filter(q=>!q.r||q.r.split(",").includes(x.r)),P=P1.length?P1:P0;const q=(P.length?P:PETS)[Math.random()*(P.length?P:PETS).length|0];
   S.pet={m:S.month,r:x.r,id:q.id,a:null};return S.pet}catch(e){return null}}
-function petMin(q){const k=S.cab&&S.cab[q.p];return k&&C[k]&&!isPM(k)?k:null}
+/* 陳情の担当。任意ポスト（XPOSTS）が空なら同じ分野の主要ポストに回す */
+const PET_ALT={monka:"koro",kokudo:"soumu",nosui:"soumu",keisan:"zaimu",houmu:"boei",digital:"kanbo"};
+function petMin(q){const ok=p=>{const k=S.cab&&S.cab[p];return k&&C[k]&&!isPM(k)?k:null};return ok(q.p)||(PET_ALT[q.p]?ok(PET_ALT[q.p]):null)}
 function petSw(r,d){try{const op=S.opp??45,R=RG[r],b=S.base[r]||0,sr=supR(r);return Math.round(R.seats*(seatShare(clamp(sr+d),op,b,0)-seatShare(sr,op,b,0)))}catch(e){return 0}}
 function petBox(){const P=petOf();if(!P)return "";const q=PETS.find(x=>x.id===P.id);if(!q)return "";const R=RG[P.r];const k=petMin(q);
   if(P.a!=null)return `<p class="goalln petln"><b>陳情</b><span><em>${R.n}</em>「${q.t}」を${P.a?`受けた（支持+${petUp()}）`:`断った（支持-${PET_DN}）`}</span></p>`;
