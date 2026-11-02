@@ -1213,6 +1213,7 @@ function goalIco(id,cls){const u=GOALI[id];return u?`<img class="gico${cls?" "+c
 const SETK="ijin_settings_v1";
 let SET={fx:"full",speed:1,mapAuto:true};
 try{const v=JSON.parse(localStorage.getItem(SETK)||"null");if(v)SET={...SET,...v}}catch(e){}
+function vibe(ms){try{if(SET.vib!==false&&navigator.vibrate)navigator.vibrate(ms||60)}catch(e){}}
 const FSZ={s:92,m:100,l:112};
 function applyFs(){document.documentElement.style.fontSize=(FSZ[SET.fs]||100)+"%"}
 function saveSet(){try{localStorage.setItem(SETK,JSON.stringify(SET))}catch(e){}document.documentElement.dataset.fx=SET.fx;applyFs()}
@@ -1271,6 +1272,7 @@ function openSettings(){
     <h3>地図の全自動（新しいゲームの最初）</h3><div class="opt">${[[true,"ON"],[false,"OFF"]].map(([v,n])=>`<button data-ma="${v}" aria-pressed="${SET.mapAuto===v}">${n}</button>`).join("")}</div>
     <h3>参謀の助言（計器の下の一行）</h3><div class="opt">${[[true,"表示"],[false,"隠す"]].map(([v,n])=>`<button data-adv="${v}" aria-pressed="${(SET.adv!==false)===v}">${n}</button>`).join("")}</div>
     <h3>はじめての案内（各画面の使い方）</h3><div class="opt">${[[true,"表示"],[false,"隠す"]].map(([v,n])=>`<button data-tut="${v}" aria-pressed="${(SET.tut!==false)===v}">${n}</button>`).join("")}<button data-tutre="1">最初から見直す</button></div>
+    <h3>振動（開票・総裁選・退陣・結末）</h3><div class="opt">${[[true,"入"],[false,"切"]].map(([v,n])=>`<button data-vib="${v}" aria-pressed="${(SET.vib!==false)===v}">${n}</button>`).join("")}</div>
     <p class="muted">設定はこのスマホに保存されます。セーブデータには影響しません。</p>
     <div class="pvbtns"><button class="btn" data-close="1">閉じる</button></div></div>`;
     box.querySelectorAll("[data-fx]").forEach(b=>b.onclick=()=>{SET.fx=b.dataset.fx;saveSet();draw()});
@@ -1278,6 +1280,7 @@ function openSettings(){
     box.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{SET.speed=+b.dataset.sp;saveSet();draw()});
     box.querySelectorAll("[data-ma]").forEach(b=>b.onclick=()=>{SET.mapAuto=b.dataset.ma==="true";saveSet();draw()});
     box.querySelectorAll("[data-adv]").forEach(b=>b.onclick=()=>{SET.adv=b.dataset.adv==="true";saveSet();draw();if(S&&!S.done&&document.querySelector(".dash"))render()});
+    box.querySelectorAll("[data-vib]").forEach(b=>b.onclick=()=>{SET.vib=b.dataset.vib==="true";saveSet();draw();vibe(40)});
     box.querySelectorAll("[data-tut]").forEach(b=>b.onclick=()=>{SET.tut=b.dataset.tut==="true";saveSet();draw();tutRefresh()});
     box.querySelector("[data-tutre]").onclick=()=>{SET.tut=true;SET.tutSeen=[];saveSet();draw();tutRefresh()};
     box.querySelector("[data-close]").onclick=()=>box.remove();};
@@ -2277,7 +2280,7 @@ function chooseEvent(i){
     if(o.sosai!=null){const pr=sosaiPr(o);S.sosaiP=Math.round(pr*100);const R=rivalNow();
       if(o.kiri&&R){const F=S.fac||(S.fac={});F[R.f]=Math.max(0,(F[R.f]||0)-30)}
       if(Math.random()>=pr){apply(o.d||{});S.done=true;S.fall="sosai";S.log.push([S.month,`総裁選で敗北（勝算${S.sosaiP}%）`]);save();ending();return}
-      S.news.push({m:S.month,h:`${pmName()}総理、総裁選を制す`,c:`${R?C[R.k].n+"（"+FAC[R.f].n+"）を退けた。":""}勝算は${S.sosaiP}%だった。政権は続投へ`});S.log.push([S.month,`総裁選に勝利（勝算${S.sosaiP}%）`]);S.flags.sosaiWin=true;}
+      vibe(50);S.news.push({m:S.month,h:`${pmName()}総理、総裁選を制す`,c:`${R?C[R.k].n+"（"+FAC[R.f].n+"）を退けた。":""}勝算は${S.sosaiP}%だった。政権は続投へ`});S.log.push([S.month,`総裁選に勝利（勝算${S.sosaiP}%）`]);S.flags.sosaiWin=true;}
     if(o.kaiki){const deb=BILLS.filter(b=>S.bills[b.id]?.st==="debate");
       if(o.kaiki==="force"&&deb.length)tkUp();if(o.kaiki==="force")deb.forEach(b=>{S.bills[b.id].st="passed";S.bills[b.id].since=S.month;mkVote(b.t+"（強行採決）",true,true);S.votes[S.votes.length-1].ev=1});
       else if(o.kaiki==="half"){deb.forEach((b,j)=>{if(j===0){S.bills[b.id].st="passed";S.bills[b.id].since=S.month}else S.bills[b.id].st="failed"})}
@@ -6069,6 +6072,7 @@ function bind(){
 
 /* v53 開票速報：総選挙の結果を地方ごとに読み上げてから結末へ */
 function kaihyo(){
+  vibe(60);
   const rr=[...(S.regRes||[])].sort((a,b)=>a.seats-b.seats);
   try{if(typeof stopLoop==="function")stopLoop()}catch(e){}
   if(!rr.length){ending();return}
@@ -6132,6 +6136,7 @@ function election(){
   save();kaihyo();
 }
 function ending(){
+  vibe(80);
   const st=S.st; const avg=Math.round(K.reduce((a,k)=>a+st[k],0)/6);
   let rank,txt;
   if(S.fall){
