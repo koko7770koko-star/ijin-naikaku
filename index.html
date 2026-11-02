@@ -2775,7 +2775,8 @@ function focusEndHTML(){try{const H=S.focusH;if(!H||S.fall)return "";const L=Obj
   return `<p class="goalln focln fend"><b>重点月間</b><span>${n}か月掲げ、上乗せ計 <em>+${a}</em>${b&&b[1].a>0?`<i class="gln-n">　いちばん効いた：${FOCL[b[0]].n}（+${b[1].a}）</i>`:""}</span>${b&&b[1].a>0?focusWord(FOCL[b[0]],b[1].a):""}</p>`}catch(e){return ""}}
 /* v107 接戦区の陳情（10〜11月、接戦区の1地方から。受ける＝その地方の支持+・政治資本-1・担当大臣が疲れる／断る＝支持-少し） */
 const PET_UP=4,PET_DN=2;
-const petUp=()=>PET_UP+aideN("genba");
+const petUp=()=>PET_UP+aideN("genba")+(S&&S.tag==="jimoto"?1:0);
+const petDn=()=>PET_DN+(S&&S.tag==="jimoto"?1:0);
 const PETS=[
   {id:"fukkyu",t:"災害復旧を急げ",x:"崩れた堤と道の復旧を年内に",p:"soumu",r:"toh,shi,kyu"},
   {id:"kojo",t:"工場を呼んでほしい",x:"若い者が残れる働き口を",p:"zaimu",r:"chg,chu"},
@@ -2806,15 +2807,15 @@ function petOf(){try{if(!S||!sekOn()||S.cur==="sosaisen"||S.cur==="senkyo")retur
 function petMin(q){const k=S.cab&&S.cab[q.p];return k&&C[k]&&!isPM(k)?k:null}
 function petSw(r,d){try{const op=S.opp??45,R=RG[r],b=S.base[r]||0,sr=supR(r);return Math.round(R.seats*(seatShare(clamp(sr+d),op,b,0)-seatShare(sr,op,b,0)))}catch(e){return 0}}
 function petBox(){const P=petOf();if(!P)return "";const q=PETS.find(x=>x.id===P.id);if(!q)return "";const R=RG[P.r];const k=petMin(q);
-  if(P.a!=null)return `<p class="goalln petln"><b>陳情</b><span><em>${R.n}</em>「${q.t}」を${P.a?`受けた（支持+${petUp()}）`:`断った（支持-${PET_DN}）`}</span></p>`;
-  const up=petSw(P.r,petUp()),dn=petSw(P.r,-PET_DN);const ok=S.ap>=1;
+  if(P.a!=null)return `<p class="goalln petln"><b>陳情</b><span><em>${R.n}</em>「${q.t}」を${P.a?`受けた（支持+${petUp()}）`:`断った（支持-${petDn()}）`}</span></p>`;
+  const up=petSw(P.r,petUp()),dn=petSw(P.r,-petDn());const ok=S.ap>=1;
   return `<div class="goalpick petpick">${BGI.ev_chinjo?`<div class="pet-art" style="background-image:url(${BGI.ev_chinjo})"></div>`:""}<div class="gp-h"><b>接戦区の陳情　${R.n}</b><small>「${q.t}」${q.x}</small></div><div class="gp-g"><button class="gpb fcb" data-pet="1"${ok?"":" disabled"}><b>受ける</b><small>${R.n}支持+${petUp()}${up>0?`（約+${up}席）`:""}</small><small>政治資本-1${k?`・疲れ：${C[k].n}`:""}</small></button><button class="gpb fcb fcno" data-pet="0"><b>断る</b><small>${R.n}支持-${PET_DN}${dn<0?`（約${dn}席）`:""}</small><small>資本は使わない</small></button></div></div>`}
 function petAnswer(yes){const P=petOf();if(!P||P.a!=null)return;const q=PETS.find(x=>x.id===P.id);const R=RG[P.r];
   if(yes&&S.ap<1)return;
   S.off=S.off||{};S.petUsed=[...(S.petUsed||[]),q.id];
-  if(yes){S.ap-=1;S.off[P.r]=(S.off[P.r]||0)+petUp();const k=petMin(q);if(k){S.tire=S.tire||{};S.tire[k]=Math.min(3,(S.tire[k]||0)+1)}
+  if(yes){S.ap-=1;S.off[P.r]=(S.off[P.r]||0)+petUp();if(S.tag==="jimoto"){S.tagH=S.tagH||{p:0,m:0};S.tagH.p++}const k=petMin(q);if(k){S.tire=S.tire||{};S.tire[k]=Math.min(3,(S.tire[k]||0)+1)}
     P.a=1;S.petH=[...(S.petH||[]),{r:P.r,a:1,t:q.t}];S.log.push([S.month,`${R.n}の陳情「${q.t}」を受ける${k?`（${C[k].n}が対応）`:""}`]);S.news.push({m:S.month,h:`政府、${R.n}の「${q.t}」に応える`,c:k?`${C[k].n}が現地入り　地元は歓迎`:"地元は歓迎"});}
-  else{S.off[P.r]=(S.off[P.r]||0)-PET_DN;P.a=0;S.petH=[...(S.petH||[]),{r:P.r,a:0,t:q.t}];S.log.push([S.month,`${R.n}の陳情「${q.t}」を断る`]);S.news.push({m:S.month,h:`${R.n}の陳情、政府は応じず`,c:ldQ(`${R.n}の声を聞かぬ政府だ`)});}
+  else{S.off[P.r]=(S.off[P.r]||0)-petDn();if(S.tag==="jimoto"){S.tagH=S.tagH||{p:0,m:0};S.tagH.m++}P.a=0;S.petH=[...(S.petH||[]),{r:P.r,a:0,t:q.t}];S.log.push([S.month,`${R.n}の陳情「${q.t}」を断る`]);S.news.push({m:S.month,h:`${R.n}の陳情、政府は応じず`,c:ldQ(`${R.n}の声を聞かぬ政府だ`)});}
   save();render()}
 /* 選択肢の題を「」で包むとき、題がもともと「…」だけの物は外側を外す（二重かっこ防止） */
 function optT(t){t=String(t==null?"":t);const m=t.match(/^「([^「」]*)」$/);return m?m[1]:t}
@@ -3004,7 +3005,7 @@ function kotaeRuleHTML(){try{const L=[],sg=v=>(v>0?"+":"")+v;
   const c=S.cn;if(c)L.push(`<b>合言葉「${c.n}」</b>：初期${KS[c.b]}+2／苦手の${KS[c.wk]}が弱まったのは${S.cnWn||0}回`);
   const t=S.tag?pmTagOf(S.tag):null;if(t){const H=S.tagH||{p:0,m:0};
     const e={daitan:H.p+H.m?`強行採決が通った${H.p}回（支持+${H.p*2}）・裏目${H.m}回（支持-${H.m*2}）`:"強行採決はしなかった（効きなし）",chosei:`西軍党の対決姿勢が1か月早く和らいだ${H.p}回`,kenyaku:"初期の国庫+1",jinshin:"初期の支持+2",
-      seiren:`財政の追及で支持の下げが軽く済んだ${H.p}回／派閥の不満が余分にたまった${H.m}回`}[t.id]||t.x;
+      seiren:`財政の追及で支持の下げが軽く済んだ${H.p}回／派閥の不満が余分にたまった${H.m}回`,jimoto:`陳情に応えて支持が余分に+1伸びた${H.p}回／断って余分に-1下がった${H.m}回`}[t.id]||t.x;
     L.push(`<b>口ぐせ「${t.n}」</b>：${e}`)}
   return L.length?`<div class="kt-rl">${L.map(x=>`<p>${x}</p>`).join("")}</div>`:""}catch(e){return ""}}
 function kojiHTML(){if(S.cur!=="senkyo")return "";const k=S.koji,ok=kojiDone(),O=kojiOpts(),lk=oppLeadK();
@@ -4959,7 +4960,7 @@ const aideTag=k=>{const t=aideOf(k);return t?`<small class="aidet">${AIDE[t].n}<
 const CNAME={zaimu:{w:"殖産",b:"eco",wk:"wel"},chosei:{w:"協調",b:"coh",wk:"dip"},genba:{w:"現場",b:"wel",wk:"eco"},kobu:{w:"奮起",b:"sup",wk:"coh"},
   gaiko:{w:"開国",b:"dip",wk:"saf"},/* 補佐の型「外交通」が多数のとき（aide-5 で型を足したら効く） */
   anei:{w:"安寧",b:"saf",wk:"eco"}};/* 多数の型が2つ並んだとき（どちらにも寄らない釣り合いの内閣） */
-const CNTAG={daitan:"改革",chosei:"融和",kenyaku:"節約",jinshin:"人望",seiren:"清廉"};
+const CNTAG={daitan:"改革",chosei:"融和",kenyaku:"節約",jinshin:"人望",seiren:"清廉",jimoto:"地元"};
 function cnOf(ids,tag){try{ids=aideIdsOf(ids);const cnt={};ids.forEach(k=>{const t=aideOf(k);if(t)cnt[t]=(cnt[t]||0)+1});
   const T=["zaimu","chosei","genba","kobu","gaiko"];let t=T.reduce((b,x)=>(cnt[x]||0)>(cnt[b]||0)?x:b,"zaimu");if(!cnt[t])return null;
   if(cnt[t]>=2&&T.filter(x=>cnt[x]===cnt[t]).length>=2)t="anei";
@@ -4974,7 +4975,8 @@ const PMTAGS=[
  {id:"chosei",n:"調整",x:"西軍党の対決姿勢が和らぐのが1か月早い（3か月）",a:"聖徳太子の「和を以て貴しと為す」は、調整役の心得としてよく引かれる"},
  {id:"kenyaku",n:"倹約",x:"初期の国庫+1",a:"二宮尊徳は「分度」を守る暮らしを説いたと伝わる"},
  {id:"jinshin",n:"人心掌握",x:"初期の支持+2",a:"秀吉は人たらしと伝わる。草履を懐で温めた話は俗説とされる"},
- {id:"seiren",n:"清廉",x:"野党の財政追及が出にくく、押し切りに失敗しても支持の下げが1軽い。代わりに派閥の不満が3か月ごとにたまりやすい",a:"西郷隆盛は「児孫のために美田を買わず」と詠んだと伝わる"}];
+ {id:"seiren",n:"清廉",x:"野党の財政追及が出にくく、押し切りに失敗しても支持の下げが1軽い。代わりに派閥の不満が3か月ごとにたまりやすい",a:"西郷隆盛は「児孫のために美田を買わず」と詠んだと伝わる"},
+ {id:"jimoto",n:"地元",x:"接戦区の陳情に応えると支持+1多く、断ると-1多い",a:"伊能忠敬は五十を過ぎて全国を歩き、日本の海岸線を測ったと伝わる"}];
 const pmTagOf=id=>PMTAGS.find(t=>t.id===id)||null;
 function pledgeChips(S){return (S.pledges||[]).map(id=>{const p=PL[id];let ok=false;try{ok=p.f(S)}catch(e){}return `<div class="pl ${ok?"ok":""}"><b>${ok?"達成":"未達"}</b><span>${p.n}</span><small>${p.v(S)}</small></div>`}).join("")}
 
