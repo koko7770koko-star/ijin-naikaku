@@ -732,6 +732,8 @@ body.sosup::after{content:"";position:fixed;inset:0;z-index:40;pointer-events:no
 .setsheet .opt button{border:1px solid var(--ai3);background:var(--ai);border-radius:999px;padding:6px 14px;font-size:.88rem}
 .setsheet .opt button[aria-pressed="true"]{background:var(--kin);color:var(--ai);border-color:var(--kin)}
 .setsheet h3{font-size:.95rem;margin-top:6px}
+.setsheet .recx{display:block;width:100%;box-sizing:border-box;min-height:5.5em;max-width:100%;font-size:.72rem;word-break:break-all;overflow-wrap:anywhere;background:var(--ai);color:inherit;border:1px solid var(--ai3);border-radius:6px;padding:6px;margin:4px 0}
+.setsheet .recmsg{font-size:.82rem;color:var(--kin)}
 /* 閣議室 */
 .cab-scene{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--kin-dim);background-size:cover;background-position:center;padding:10px 8px 12px;display:flex;flex-direction:column;gap:8px;min-height:180px}
 .cab-scene::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,29,51,.55),rgba(15,29,51,.82));backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
@@ -1282,8 +1284,14 @@ function voteCards(list){if(!list.length)return "";
   return h;}
 function dietBand(t){return `<div class="diet-band" style="background-image:url(${BGI.diet})"><span>${t}</span></div>`}
 function isDietScene(){const e=EV[S.cur];return ["kokkai","kokkaiRes"].includes(S.phase)||S.view==="bill"||(S.phase==="event"&&e&&(["shoshin","yosan","kaiki"].includes(S.cur)||e.o.some(o=>o.vote)))}
+/* 戦績の引っ越し（機種変更用）：loadRec() の JSON を "IJIN1:"＋base64 にして書き出し、貼り付けで読み込む */
+function recExport(){try{return "IJIN1:"+btoa(unescape(encodeURIComponent(JSON.stringify(loadRec()))))}catch(e){return ""}}
+function recImport(t){try{t=String(t||"").replace(/\s+/g,"");if(!t.startsWith("IJIN1:"))return null;
+  const r=JSON.parse(decodeURIComponent(escape(atob(t.slice(6)))));if(!r||typeof r!=="object"||Array.isArray(r))return null;
+  if(r.titles!=null&&!Array.isArray(r.titles))return null;if(r.best!=null&&!isFinite(+r.best))return null;if(r.plays!=null&&!isFinite(+r.plays))return null;
+  saveRec(r);return loadRec()}catch(e){return null}}
 function openSettings(){
-  const box=document.createElement("div");
+  const box=document.createElement("div");let rx="",rmsg="";
   const draw=()=>{box.innerHTML=`<div class="pvsheet setsheet" role="dialog" aria-label="設定"><div class="hd"><b>設定</b></div>
     <h3>演出の強さ</h3><div class="opt">${[["full","豪華"],["lite","控えめ"],["off","なし"]].map(([v,n])=>`<button data-fx="${v}" aria-pressed="${SET.fx===v}">${n}</button>`).join("")}</div>
     <h3>文字の大きさ</h3><div class="opt">${[["s","小"],["m","中"],["l","大"]].map(([v,n])=>`<button data-fs="${v}" aria-pressed="${(SET.fs||"m")===v}">${n}</button>`).join("")}</div>
@@ -1292,8 +1300,18 @@ function openSettings(){
     <h3>参謀の助言（計器の下の一行）</h3><div class="opt">${[[true,"表示"],[false,"隠す"]].map(([v,n])=>`<button data-adv="${v}" aria-pressed="${(SET.adv!==false)===v}">${n}</button>`).join("")}</div>
     <h3>はじめての案内（各画面の使い方）</h3><div class="opt">${[[true,"表示"],[false,"隠す"]].map(([v,n])=>`<button data-tut="${v}" aria-pressed="${(SET.tut!==false)===v}">${n}</button>`).join("")}<button data-tutre="1">最初から見直す</button></div>
     <h3>振動（開票・総裁選・退陣・結末）</h3><div class="opt">${[[true,"入"],[false,"切"]].map(([v,n])=>`<button data-vib="${v}" aria-pressed="${(SET.vib!==false)===v}">${n}</button>`).join("")}</div>
+    <h3>戦績の引っ越し（機種変更用）</h3><div class="opt"><button data-rx="out" aria-pressed="${rx==="out"}">文字で書き出す</button><button data-rx="in" aria-pressed="${rx==="in"}">読み込む</button></div>
+    ${rx==="out"?`<textarea class="recx" readonly aria-label="戦績の文字">${recExport()}</textarea><div class="opt"><button data-rcopy="1">写す（コピー）</button></div><p class="muted">この文字を新しいスマホの「読み込む」に貼り付けると、最高議席・称号・プレイ回数などが移る。</p>`:""}
+    ${rx==="in"?`<textarea class="recx" aria-label="戦績の文字を貼り付け" placeholder="IJIN1: で始まる文字を貼り付け"></textarea><div class="opt"><button data-rin="1">この文字で読み込む</button></div><p class="muted">今のスマホの戦績は、読み込んだ物に置き換わる。</p>`:""}
+    ${rmsg?`<p class="recmsg" role="status">${rmsg}</p>`:""}
     <p class="muted">設定はこのスマホに保存されます。セーブデータには影響しません。</p>
     <div class="pvbtns"><button class="btn" data-close="1">閉じる</button></div></div>`;
+    box.querySelectorAll("[data-rx]").forEach(b=>b.onclick=()=>{rx=rx===b.dataset.rx?"":b.dataset.rx;rmsg="";draw();const t=box.querySelector(".recx");if(t)t.scrollIntoView({block:"nearest"})});
+    {const c=box.querySelector("[data-rcopy]");if(c)c.onclick=()=>{const t=box.querySelector(".recx");const ok=()=>{rmsg="写した。新しいスマホで貼り付けてください";draw()};
+      try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t.value).then(ok,()=>{t.select();try{document.execCommand("copy")}catch(e){}ok()});return}}catch(e){}
+      t.select();try{document.execCommand("copy")}catch(e){}ok()}}
+    {const c=box.querySelector("[data-rin]");if(c)c.onclick=()=>{const r=recImport(box.querySelector(".recx").value);
+      if(r){rx="";rmsg=`読み込んだ（最高${r.best}議席・称号${r.titles.length}・${r.plays}回）。トップに戻ると表示が変わる`;if($("#howBtn"))title()}else rmsg="形が違うので読み込まなかった（IJIN1: で始まる文字を丸ごと貼り付けてください）";draw()}}
     box.querySelectorAll("[data-fx]").forEach(b=>b.onclick=()=>{SET.fx=b.dataset.fx;saveSet();draw()});
     box.querySelectorAll("[data-fs]").forEach(b=>b.onclick=()=>{SET.fs=b.dataset.fs;saveSet();draw()});
     box.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{SET.speed=+b.dataset.sp;saveSet();draw()});
