@@ -4900,7 +4900,9 @@ const RULES=[
  {id:"saigai",n:"災害の年",k:"wel",st:{wel:2},kk:-2,lo:["sup","支持"],hi:["coh","結束"],x:"国庫-2・民生+2で始まり、地震・台風・豪雨が出やすい。毎月、民生が45未満なら支持-1、55以上なら結束+1"},
  {id:"hakuran",n:"大博覧の年",k:"dip",st:{dip:2,eco:2},kk:-3,lo:["sup","支持"],hi:["eco","経済"],x:"国庫-3・外交+2・経済+2で始まる。毎月、外交が50未満なら支持-1、60以上なら経済+1"},
  {id:"fukyo",n:"不況の年",k:"eco",st:{eco:-4},lo:["sup","支持"],hi:["wel","民生"],x:"経済-4で始まる。毎月、経済が50未満なら支持-1、60以上なら民生+1"},
- {id:"chian",n:"治安の年",k:"saf",st:{saf:-4},lo:["sup","支持"],hi:["coh","結束"],x:"治安-4で始まる。毎月、治安が50未満なら支持-1、60以上なら結束+1"}];
+ {id:"chian",n:"治安の年",k:"saf",st:{saf:-4},lo:["sup","支持"],hi:["coh","結束"],x:"治安-4で始まる。毎月、治安が50未満なら支持-1、60以上なら結束+1"},
+ {id:"jinkou",n:"人口減の年",k:"wel",st:{wel:-3,sup:-1},lo:["eco","経済"],hi:["sup","支持"],x:"民生-3・支持-1で始まる。毎月、民生が50未満なら経済-1、60以上なら支持+1"},
+ {id:"kakushin",n:"技術革新の年",k:"eco",st:{eco:3,wel:-3},lo:["coh","結束"],hi:["dip","外交"],x:"経済+3・民生-3で始まる。毎月、経済が50未満なら結束-1、60以上なら外交+1"}];
 const RULE_HI={shukusai:65,saigai:55},RULE_LO={saigai:45};
 /* 災害の年：地震・台風・豪雨を案件の山の前の方へ（位置を 1/1.5 に＝出やすさ約1.5倍） */
 function ruleQ(){try{if(S.rule!=="saigai"||!Array.isArray(S.queue))return;["jishin","taifu","gouu"].forEach(id=>{const i=S.queue.indexOf(id);if(i>0){S.queue.splice(i,1);S.queue.splice(Math.floor(i/1.5),0,id)}})}catch(e){}}
