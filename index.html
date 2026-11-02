@@ -1444,6 +1444,10 @@ const PMSK={
  masanori:{n:"猛将の総理",x:"論戦に強い（+2）。ただし結束が毎月-1",deb:2,per:{coh:-1}},
  tanuma:{n:"重商主義",x:"毎月 国庫+2。ただし支持-1",kokko:2,per:{sup:-1}},
  sadanobu:{n:"寛政の改革",x:"毎月 国庫+1、治安+1。ただし支持-1",kokko:1,per:{saf:1,sup:-1}},
+ niijima:{n:"良心教育",x:"毎月 民生+1、結束+1",per:{wel:1,coh:1}},
+ tenshin:{n:"東洋の理想",x:"毎月 外交+1、支持+1",per:{dip:1,sup:1}},
+ imoko:{n:"日出づる処の国書",x:"毎月 外交+2",per:{dip:2}},
+ maejima:{n:"郵便の父",x:"毎月 支持+1、全地方の暮らし+1",per:{sup:1},rp:{wel:1}},
 };
 const pmSk=k=>PMSK[k||PMK()]||{n:"総理",x:"",wait:1};
 const PMK=()=>S&&S.month?(S.pm||"ieyasu"):(typeof pmPick!=="undefined"?pmPick:"ieyasu");
