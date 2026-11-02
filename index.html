@@ -2883,7 +2883,7 @@ function kojiAnswer(i){if(S.cur!=="senkyo"||kojiDone())return;const k={ans:i};S.
   else if(i===1){const R=kojiRegs();k.rs=R;if(R.length){R.forEach(r=>S.off[r]=Math.min(40,(S.off[r]||0)+5));k.res=`${R.map(r=>RG[r].n).join("・")}の駅前に黒山の人だかり（支持+5）`}else{["kan","kin","chu"].forEach(r=>S.off[r]=Math.min(40,(S.off[r]||0)+4));k.res="大票田を回り切った（支持+4）"}}
   else{const F=kojiF();k.rs=F;S.kokko-=2;if(F.length){F.forEach(r=>{S.base[r]=Math.max(0,(S.base[r]||0)-1);S.off[r]=Math.min(40,(S.off[r]||0)+2)});k.res=`${F.map(r=>RG[r].n).join("・")}で後援会を締め直し、西軍の地盤に食い込んだ（旗-1）`}else{DOM.forEach(r=>S.off[r]=Math.min(40,(S.off[r]||0)+1));k.res="全国の後援会を引き締めた（支持+1）"}}
   S.koji=k;S.log.push([S.month,`公示：${kojiOpts()[i].t}`]);
-  try{const [lo,hi]=shubanRange();k.lo=lo;k.hi=hi;k.post=projSeats();try{k.sr=shubanRegs().map(x=>({r:x.r,p:Math.round(x.p*100)/100,w:x.w,t:x.t}))}catch(e){}S.news.push({m:S.month,h:`終盤情勢　与党${lo}〜${hi}議席の見通し`,c:hi<233?"過半数割れの公算。西軍は政権交代を視野に":lo>=233?"与党の過半数は確実な情勢":"過半数をめぐり、接戦区の行方が鍵に"})}catch(e){}
+  try{const [lo,hi]=shubanRange();k.lo=lo;k.hi=hi;k.post=projSeats();try{k.sr=shubanRegs().map(x=>({r:x.r,p:Math.round(x.p*100)/100,w:x.w,t:x.t}))}catch(e){}S.news.push({m:S.month,h:`終盤情勢　与党${rngT(lo,hi)}議席の見通し`,c:hi<233?"過半数割れの公算。西軍は政権交代を視野に":lo>=233?"与党の過半数は確実な情勢":"過半数をめぐり、接戦区の行方が鍵に"})}catch(e){}
   S.news.push({m:S.month,h:`総選挙公示　${pmName()}「${["党首討論で決着","接戦区で最後の訴え","組織を固め抜く"][i]}」`,c:k.res});
   save();render();const el=document.querySelector(".koji");if(el&&el.scrollIntoView)el.scrollIntoView({block:"start"});}
 /* v128 最後の重点演説：公示のあと、地方を1つ選んで最後の訴え（1回だけ） */
@@ -2906,6 +2906,8 @@ function finHTML(){if(!kojiDone())return "";const k=S.koji;
 /* v83 終盤情勢：公示のあと、投票日前の議席予測の幅と接戦区の優劣 */
 function shubanAdj(){const pr=(S.pledges||[]).map(id=>{try{return PL[id].f(S)}catch(e){return false}});const ok=pr.filter(Boolean).length,ng=pr.length-ok;
   let t=DIFF[S.diff||"normal"].seat+ok*10-ng*8+(pr.length&&!ng?6:0)+Object.values(S.bills||{}).filter(b=>b.st==="passed").length*2;if(S.kokko<0)t-=10;return t}
+/* 予想の幅が一点に縮んだとき（支持が飽和）は「322〜322」でなく「322」と書く */
+const rngT=(lo,hi)=>lo===hi?`${lo}`:`${lo}〜${hi}`;
 function shubanRange(){const op=S.opp??45,a=shubanAdj();let lo=a,hi=a;
   DOM.forEach(r=>{const R=RG[r],sr=supR(r),b=S.base[r]||0;lo+=R.seats*seatShare(sr,op,b,-.04);hi+=R.seats*seatShare(sr,op,b,.04)});
   const f=x=>Math.max(30,Math.min(440,Math.round(x)));return [f(lo),f(hi)]}
@@ -2916,7 +2918,7 @@ function shubanHTML(){const k=S.koji;if(!k)return "";const c=projSeats(),[lo,hi]
   const X=v=>Math.max(0,Math.min(100,v/465*100)),R=shubanRegs();
   const lab=p=>p>=.55?["優勢","g"]:p>=.47?["互角","y"]:["劣勢","r"];
   return `<div class="shuban"><div class="sb-h"><b>終盤情勢</b><small>投票日前の世論調査</small></div>
-   <div class="sb-n"><span>与党</span><em>${lo}〜${hi}</em><span>議席</span><i class="${ev[1]}">${ev[0]}</i></div>
+   <div class="sb-n"><span>与党</span><em>${rngT(lo,hi)}</em><span>議席</span><i class="${ev[1]}">${ev[0]}</i></div>
    <div class="sb-bar"><u style="left:${X(lo)}%;width:${Math.max(1,X(hi)-X(lo))}%"></u><b style="left:${X(c)}%"></b><s style="left:${X(233)}%"></s></div>
    <div class="sb-k">中心は${c}議席（線は過半数233）。${k.pre!=null?`公示の一押しで<b>${d>0?"+":""}${d}</b>議席。`:""}西軍の勢い${Math.round(S.opp??45)}</div>
    ${R.length?`<div class="sb-r">${R.map(x=>{const L=lab(x.p);return `<div><b>${RG[x.r].n}</b><i><u style="width:${Math.round(x.p*100)}%"></u></i><em class="${L[1]}">${L[0]} ${x.w}/${x.t}</em>${x.f||x.k?`<small>${[x.f?"西軍総力":"",x.k?"公示で手当て":""].filter(Boolean).join("・")}</small>`:""}</div>`}).join("")}</div>`:""}
@@ -2936,7 +2938,7 @@ function kotaeHTML(){try{const k=S.koji;if(!k||k.lo==null||S.fall||S.seats==null
     return `<div><b>${RG[x.r].n}</b><span>${pl}${x.w}→${a.w}/${a.seats}</span><p class="kt-j"><em class="${j[1]}">${j[0]}</em>${tt?`<i class="kt-t" title="称号「${tt[1]}」">${tt[0]}</i>`:""}</p></div>`}).filter(Boolean).join("");
   const ttL=ttU?`<div class="kt-tl">${ttY?`<span><i class="kt-t">覆</i>称号「読み筋を覆す者」の決め手</span>`:""}${ttS?`<span><i class="kt-t">鬼</i>称号「接戦の鬼」の決め手</span>`:""}</div>`:"";
   return `<div class="shuban kotae"><div class="sb-h"><b>答え合わせ</b><small>終盤情勢と開票結果</small></div>
-   <div class="sb-n"><span>予想${lo}〜${hi}</span><span>→</span><em>${s}</em><span>議席</span><i class="${v[1]==="y"?"":v[1]}">${v[0]}</i></div>
+   <div class="sb-n"><span>予想${rngT(lo,hi)}</span><span>→</span><em>${s}</em><span>議席</span><i class="${v[1]==="y"?"":v[1]}">${v[0]}</i></div>
    <div class="sb-bar"><u style="left:${X(lo)}%;width:${Math.max(1,X(hi)-X(lo))}%"></u><b style="left:${X(s)}%"></b><s style="left:${X(233)}%"></s></div>
    <div class="sb-k">${cm}（帯が予想の幅、赤線が結果）</div>
    ${rows?`<div class="kt-r">${rows}</div>${ttL}`:""}</div>`}catch(e){return ""}}
