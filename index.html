@@ -1242,7 +1242,7 @@ const GOALI={"sangyo": "data:image/webp;base64,UklGRq4cAABXRUJQVlA4IKIcAAAQUQCdA
 const EVSC={bukka:"ev_bukka",kome:"ev_bukka",enyasu:"ev_bukka",denryoku:"ev_bukka",jishin:"ev_saigai",taifu:"ev_saigai",summit:"ev_gaiyu",senkyo:"ev_kaisan",sosaisen:"ev_sosai",gouu:"ev_saigai",fukko:"ev_saigai",yosan:"ev_kessan",fukkozei:"ev_kessan",shohizei:"ev_kessan",enjo:"ev_yoron",aigiwaku:"ev_yoron",kansen:"ev_kansen",mousho:"ev_kansen",hokensho:"ev_kansen",cyber:"ev_cyber",deepfake:"ev_cyber",shoshi:"ev_kosodate",kyoshi:"ev_kosodate",kaigo:"ev_kaigo",nenkin:"ev_kaigo",rodo:"ev_kaigo",kaso:"ev_chiho",akiya:"ev_chiho",butsuryu:"ev_chiho",nouka:"ev_chiho",yami:"ev_chian",sagi:"ev_chian",kuma:"ev_chian",cr_chian:"ev_chian",bubble:"ev_kabu",crash:"ev_kabu",cr_kabu:"ev_kabu",fusei:"ev_kabu",gorin:"ev_gorin",shoshin:"ev_kokkai",kaiki:"ev_kokkai",shitsugen:"ev_kokkai",ailog:"ev_kokkai",cr_zouhan:"ev_kokkai",cr_fushin:"ev_kokkai",cr_demo:"ev_demo",boei:"ev_boei",jieikan:"ev_boei",cr_koritsu:"ev_koritsu",kousoku:"ev_koritsu",hantai:"ev_kojo",ai:"ev_kojo",cr_kakusage:"ev_kokusai",inu:"ev_inu",wave2:"ev_kansen",ev_ryoma:"ev_ryoma",ev_kaishu:"ev_kaishu",ev_shibusawa:"ev_shibusawa",gyogyo:"ev_gyojo",kanko:"ev_kanko",tsusho:"ev_kanzei",ev_nobunaga:"ev_nobunaga",ev_hideyoshi:"ev_hideyoshi",ev_mitsuhide:"ev_mitsuhide",honnoji:"ev_honnoji",ev_yoshimune:"ev_yoshimune",ev_masako:"ev_masako",ev_shotoku:"ev_shotoku",ev_koan:"ev_koan"};
 function evScene(){if(S.view!=="main"||!["event","result"].includes(S.phase))return "";const k=EVSC[S.cur];return k&&BGI[k]?k:""}
 /* 紋の無い目標は既存の紋を使い回す */
-const GOALI_ALT={kyoto:"chian",shinrai:"chiho",fukoku:"sangyo",naigai:"gaiko"};
+const GOALI_ALT={kyoto:"chian",shinrai:"chiho",fukoku:"sangyo",naigai:"gaiko",tsusho:"sangyo",seiken:"chiho"};
 function goalIco(id,cls){const u=GOALI[id]||GOALI[GOALI_ALT[id]];return u?`<img class="gico${cls?" "+cls:""}" src="${u}" alt="" aria-hidden="true">`:""}
 const SETK="ijin_settings_v1";
 let SET={fx:"full",speed:1,mapAuto:true};
@@ -2666,7 +2666,7 @@ function doReshuffle(postId,newKey){
   save();render();
 }
 /* v90 国家目標（S.goal 無し＝目標なし） */
-const GOALS=[{id:"sangyo",n:"産業再生",s:"eco",th:4,x:"経済が伸びる案に◎"},{id:"chiho",n:"地方復興",s:"wel",th:4,x:"民生が伸びる案に◎"},{id:"gaiko",n:"外交安定",s:"dip",th:3,x:"外交が伸びる案に◎"},{id:"chian",n:"治安の要",s:"saf",th:3,x:"治安が伸びる案に◎"},{id:"kyoto",n:"挙党一致",s:"coh",th:3,x:"結束が伸びる案に◎"},{id:"shinrai",n:"信頼回復",s:"sup",th:5,x:"支持が大きく伸びる案に◎"},{id:"fukoku",n:"富国安民",s:"eco",s2:"wel",th:5,gn:8,x:"経済と民生が共に伸びる案に◎"},{id:"naigai",n:"内外安定",s:"dip",s2:"saf",th:5,gn:8,x:"外交と治安が共に伸びる案に◎"}];
+const GOALS=[{id:"sangyo",n:"産業再生",s:"eco",th:4,x:"経済が伸びる案に◎"},{id:"chiho",n:"地方復興",s:"wel",th:4,x:"民生が伸びる案に◎"},{id:"gaiko",n:"外交安定",s:"dip",th:3,x:"外交が伸びる案に◎"},{id:"chian",n:"治安の要",s:"saf",th:3,x:"治安が伸びる案に◎"},{id:"kyoto",n:"挙党一致",s:"coh",th:3,x:"結束が伸びる案に◎"},{id:"shinrai",n:"信頼回復",s:"sup",th:5,x:"支持が大きく伸びる案に◎"},{id:"fukoku",n:"富国安民",s:"eco",s2:"wel",th:5,gn:8,x:"経済と民生が共に伸びる案に◎"},{id:"naigai",n:"内外安定",s:"dip",s2:"saf",th:5,gn:8,x:"外交と治安が共に伸びる案に◎"},{id:"tsusho",n:"通商立国",s:"eco",s2:"dip",th:5,gn:8,x:"経済と外交が共に伸びる案に◎"},{id:"seiken",n:"政権安定",s:"sup",s2:"coh",th:5,gn:8,x:"支持と結束が共に伸びる案に◎"}];
 /* 11/03 二つの指標を組にした目標（s2）：値は二つの平均、◎は両方が下がらず「両方が伸びる」か「片方が th 以上」、◎の上乗せは1ずつ */
 const goalSs=g=>g?(g.s2?[g.s,g.s2]:[g.s]):[];
 function goalV(g){const L=goalSs(g);return L.length?L.reduce((a,k)=>a+(S.st[k]||0),0)/L.length:0}
@@ -5647,7 +5647,7 @@ function title(){
     </ul><button type="button" class="htop" data-hs="top">▲目次へ</button>
     <h3 class="hsec" id="hs4">一年の山場</h3>
     <ul class="rules">
-      <li><b>国家目標</b>　1〜2月に8つの国家目標（産業再生・地方復興・外交安定・治安の要・挙党一致・信頼回復・富国安民・内外安定）から一つを掲げられる。合う案には◎が付く。その指標を掲げた時から+10伸ばせば達成（二つの指標を組にした富国安民〔経済と民生〕・内外安定〔外交と治安〕は、両方が伸びるか片方が+5以上の案に◎が付き、二つの平均を+8伸ばせば達成）（掲げた時点で高い指標は、上の余地の半分が目安。例：結束96なら+2）。</li>
+      <li><b>国家目標</b>　1〜2月に10の国家目標（産業再生・地方復興・外交安定・治安の要・挙党一致・信頼回復・富国安民・内外安定・通商立国・政権安定）から一つを掲げられる。合う案には◎が付く。その指標を掲げた時から+10伸ばせば達成（二つの指標を組にした富国安民〔経済と民生〕・内外安定〔外交と治安〕は、両方が伸びるか片方が+5以上の案に◎が付き、二つの平均を+8伸ばせば達成）（掲げた時点で高い指標は、上の余地の半分が目安。例：結束96なら+2）。</li>
       <li><b>重点月間</b>　7〜11月の月初に10の月間（物価対策・防災・外交・暮らし安心・党内融和・広報強化・地方創生・遊説強化・交通安全・地場産業）から一つを掲げられる。その分野の案・任務の効きが+1（国家目標と同じ分野なら+2）、担当大臣は少し疲れる。地方創生は民生の案と地図の地域振興に、遊説強化は支持の案と地図のふつうの遊説に効く。</li>
       <li><b>野党の追及</b>　3〜9月の月半ばには、速報の代わりに西軍党の追及（財政・地方・慢心）が来ることがある。丁寧に答えれば確実だが閣僚が疲れ、押し切れば成功で西軍の勢いを削げるが、失敗すると痛い。</li>
       <li><b>西軍の作戦</b>　2〜10月、西軍党はこちらの弱い指標を狙って作戦（物価追及・地方行脚・失言攻め・与党の切り崩しなど10種）を一つ打ってくる。12日ごろ判明（独自調査の月は月初）。月末にその指標が55未満なら支持が下がり、65以上なら空振りで西軍の勢いが落ちる。</li>
