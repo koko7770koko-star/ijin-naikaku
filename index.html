@@ -6137,6 +6137,7 @@ function kaizoView(){
   const recall=R.forced&&!free.length;
   if(recall)free=S.gone.filter(k=>!usedK.includes(k)&&!isPM(k));
   const post=R.post?POSTS.find(p=>p.id===R.post):null;
+  if(post){const f=SKI[post.field];free=free.map((k,i)=>[k,i]).sort((a,b)=>(C[b[0]].s[f]||0)-(C[a[0]].s[f]||0)||a[1]-b[1]).map(x=>x[0])}/* 候補はそのポストで重視する適性の高い順（同じなら元の順） */
   return `<section style="display:flex;flex-direction:column;gap:10px">
     <h2>${R.forced?"後任の任命":"内閣改造"}</h2>
     ${R.forced?`<p class="muted">${post.name}が空席。後任を選ぶまで政権は進まない。${recall?"在野の人材が尽きたため、一度去った者を呼び戻すしかない。":""}</p>`:`<p class="muted">入れ替えるポストを選び、新しい大臣を起用する。支持+3、結束-4。辞めた大臣は戻らない。</p>
