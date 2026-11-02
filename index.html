@@ -2325,9 +2325,9 @@ function chooseEvent(i){
         grew=` ${m.n}は経験を積み、${FIELDS[A.field]}が一段上がった。`;S.log.push([S.month,`${m.n}が成長（${FIELDS[A.field]}+1）`])}
     }
     const quote=followed||noOpinion?spTx((q=>q[Math.random()*q.length|0])(qOf(key))):spTx(m.qn);
-    const msg= sk>=5?`${m.n}の手腕が冴え、「${o.t}」は狙い以上の成果を上げた。`
-      : sk>=3?`「${o.t}」はおおむね狙いどおりに進んだ。`
-      : `${m.n}には荷が重かった。「${o.t}」は空回りし、評価は割れた。`;
+    const msg= sk>=5?`${m.n}の手腕が冴え、「${optT(o.t)}」は狙い以上の成果を上げた。`
+      : sk>=3?`「${optT(o.t)}」はおおむね狙いどおりに進んだ。`
+      : `${m.n}には荷が重かった。「${optT(o.t)}」は空回りし、評価は割れた。`;
     S.res={pk:key,mood:followed?"happy":noOpinion?"normal":"angry",quote,who:`${A.post.name}　${m.n}`,msg:msg+(ctx?` 各国の反応：${ctx}。`:"")+(followed?" 大臣の進言を採ったことで、本人の士気も高い。":noOpinion?"":` 進言を退けられた${m.n}は不満げだ。`)+grew+(gH?` 国家目標「${goalOf().n}」に沿う一手（${KS[goalOf().s]}+2）。`:"")+(fH?` 重点月間「${focusOf().n}」で${KS[focusOf().s]}+${focusAmt(focusOf())}。`:""),d:{...S.delta},c:o.c||0,flag:!!o.fl,grew:!!grew};
     const tot=Object.values(S.delta).reduce((a,b)=>a+b,0);
     const cm=tot>=12?"識者「近年まれに見る英断」":tot>=5?"街の声「まずは評価したい」":tot>=0?"識者「効果は未知数」":"野党「場当たり的だ」と批判";
@@ -2441,7 +2441,7 @@ function resolveVote(o){
   if(!ok){S.done=true;S.fall="vote";save();ending();return}
   apply({sup:5,coh:5});S.opp=clamp(S.opp-12);S.flags.survived=true;
   S.res={pk:PMK(),mood:"happy",quote:PMK()==="ieyasu"?"人の一生は重荷を負うて遠き道を行くが如し。まだ道半ばじゃ。":(C[PMK()].q[1]||C[PMK()].q[0]),who:"内閣総理大臣　"+pmName(),
-    msg:`「${o.t}」が功を奏し、不信任案は否決された。（成功の見込み ${Math.round(Math.min(.92,p)*100)}%）西軍党の勢いは削がれた。`,d:{...S.delta}};
+    msg:`「${optT(o.t)}」が功を奏し、不信任案は否決された。（成功の見込み ${Math.round(Math.min(.92,p)*100)}%）西軍党の勢いは削がれた。`,d:{...S.delta}};
   S.news.push({m:S.month,h:"内閣不信任案を否決　偉人内閣、首の皮一枚",c:ldQ("次は必ず")});
   S.phase="result";save();render();
 }
@@ -2731,6 +2731,8 @@ function petAnswer(yes){const P=petOf();if(!P||P.a!=null)return;const q=PETS.fin
     P.a=1;S.petH=[...(S.petH||[]),{r:P.r,a:1,t:q.t}];S.log.push([S.month,`${R.n}の陳情「${q.t}」を受ける${k?`（${C[k].n}が対応）`:""}`]);S.news.push({m:S.month,h:`政府、${R.n}の「${q.t}」に応える`,c:k?`${C[k].n}が現地入り　地元は歓迎`:"地元は歓迎"});}
   else{S.off[P.r]=(S.off[P.r]||0)-PET_DN;P.a=0;S.petH=[...(S.petH||[]),{r:P.r,a:0,t:q.t}];S.log.push([S.month,`${R.n}の陳情「${q.t}」を断る`]);S.news.push({m:S.month,h:`${R.n}の陳情、政府は応じず`,c:ldQ(`${R.n}の声を聞かぬ政府だ`)});}
   save();render()}
+/* 選択肢の題を「」で包むとき、題がもともと「…」だけの物は外側を外す（二重かっこ防止） */
+function optT(t){t=String(t==null?"":t);const m=t.match(/^「([^「」]*)」$/);return m?m[1]:t}
 /* v94 国家目標の中間評価（6月の決算で一度だけ） */
 const GOAL_MID_M=6;
 function goalMid(L,news){const g=goalOf();if(!g||S.month!==GOAL_MID_M||S.goalMid)return;
@@ -3673,7 +3675,7 @@ function answerSoku(j){
   if(o.tire){S.tire=S.tire||{};const tk=Object.keys(S.pc||{}).filter(k=>!isPM(k)&&C[k]);if(tk.length){const k=tk[Math.random()*tk.length|0];S.tire[k]=Math.min(3,(S.tire[k]||0)+1)}}
   apply(d);if(o.c)S.kokko+=o.c;if(opp)S.opp=clamp(S.opp+opp);
   mlog(`${ev.k||"速報"}「${ev.t}」→ ${o.t}${o.risk&&d.saf<0?"（裏目に出た）":""}${pf===true?"（押し切れず）":pf===false?"（押し切った）":""}`,!(d.sup<0||d.saf<0));
-  S.news.push({m:S.month,h:ev.t,c:`政府「${o.t}」`});
+  S.news.push({m:S.month,h:ev.t,c:`政府「${optT(o.t)}」`});
   S.pend=null;S.paused=false;save();
 }
 function endMapTurn(){
@@ -5629,9 +5631,9 @@ function osakuSettle(L,news){const o=osakuOf();if(!o||S.osaku.res)return;const v
   else{res="none";txt="不発（変化なし）"}
   S.osaku.res=res;S.osaku.v=v;
   try{const H=S.osakuH=S.osakuH||{n:0,miss:0,hit:0,by:{}};H.n++;if(res==="miss")H.miss++;if(res==="hit"||res==="ok"){H.hit++;H.by[o.id]=(H.by[o.id]||0)+1}}catch(e){}
-  L.push([`西軍の作戦「${o.t}」（${nm}${v}）`,txt]);
-  if(res==="hit"||res==="ok")news.push({h:`西軍「${o.t}」が奏功　${nm}の弱さ突く`,c:ldQ(o.q)});
-  else if(res==="miss")news.push({h:`西軍「${o.t}」空振り`,c:`${nm}は${v}。「的外れ」と瓦版`});}
+  L.push([`西軍の作戦「${optT(o.t)}」（${nm}${v}）`,txt]);
+  if(res==="hit"||res==="ok")news.push({h:`西軍「${optT(o.t)}」が奏功　${nm}の弱さ突く`,c:ldQ(o.q)});
+  else if(res==="miss")news.push({h:`西軍「${optT(o.t)}」空振り`,c:`${nm}は${v}。「的外れ」と瓦版`});}
 /* v117 派閥の要求の振り返り */
 const FACH_Y=3;
 /* v119 陳情の後日談 */
