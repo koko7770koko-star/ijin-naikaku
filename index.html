@@ -321,7 +321,7 @@ button:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
 .cal12 i.ev{opacity:.95;color:var(--kin);border:1px solid rgba(214,178,94,.5)}
 .cal12 i.now{opacity:1;background:var(--kin);color:var(--ai)}
 .cal12 i.past{opacity:.3}
-.cal12 i small{display:block;font-size:.5rem;white-space:nowrap;overflow:hidden;text-overflow:clip}
+.cal12 i small{display:block;font-size:.5rem;line-height:1.1;white-space:nowrap;overflow:hidden;max-height:2.3em}
 .turnline{flex-wrap:wrap}
 .yoron{border:1px solid var(--ai3);border-radius:10px;padding:12px;background:var(--ai2);display:flex;flex-direction:column;gap:6px}
 .yoron .hd{display:flex;align-items:baseline;gap:8px}.yoron .hd b{font-size:1.6rem;color:var(--kin)}
@@ -795,6 +795,8 @@ body.sosup::after{content:"";position:fixed;inset:0;z-index:40;pointer-events:no
 .end-hero{position:relative;margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));aspect-ratio:16/9;background-size:cover;background-position:center;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:14px max(16px,env(safe-area-inset-left,0px))}
 .end-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(15,29,51,.85) 85%,var(--ai))}
 .end-hero>*{position:relative;z-index:2}
+.nw{white-space:nowrap;display:inline-block}
+.end-hero .eyebrow{align-self:flex-start;color:#fff4d6;background:rgba(15,29,51,.6);padding:2px 10px;border-radius:999px;text-shadow:0 1px 3px #000;letter-spacing:.12em}
 .end-hero.win{animation:glow 2.4s ease-in-out infinite alternate}
 @keyframes glow{from{box-shadow:inset 0 0 0 rgba(255,214,110,0)}to{box-shadow:inset 0 0 60px rgba(255,214,110,.45)}}
 .end-hero.lose::after{background:linear-gradient(180deg,rgba(10,16,30,.2) 20%,rgba(15,29,51,.9) 85%,var(--ai))}
@@ -2880,7 +2882,7 @@ function billView(){
     <button class="btn ghost" id="closeBill">内政に戻る</button>
   </section>`;
 }
-function calStrip(){return `<div class="cal12">${Array.from({length:12},(_,i)=>{const m=i+1;const ev=CAL[m];return `<i class="${m===S.month?"now":m<S.month?"past":""} ${ev?"ev":""}"><b>${m}</b><small>${ev||"・"}</small></i>`}).join("")}</div>`}
+function calStrip(){return `<div class="cal12">${Array.from({length:12},(_,i)=>{const m=i+1;const ev=CAL[m];const sv=ev&&ev.length>=4?ev.slice(0,2)+"<br>"+ev.slice(2):ev;return `<i class="${m===S.month?"now":m<S.month?"past":""} ${ev?"ev":""}"><b>${m}</b><small>${sv||"・"}</small></i>`}).join("")}</div>`}
 /* 地方の支持→議席の取り分。支持が高いほど上積みは伸びにくい（接戦区・西軍の地盤）。v60 */
 function seatShare(sr,op,base,nz){const x=(sr-54)/55-(op-45)/300-base*.04+nz;let cp=.8;try{cp=(DIFF[(S&&S.diff)||"normal"]||{}).cap||.8}catch(e){}return Math.max(.03,Math.min(cp,.5+.24*Math.tanh(x*1.6)));}
 /* v80 接戦区：議席の取り分が五分に近い地方、西軍の地盤（旗）が残り競り合う地方 */
@@ -5684,7 +5686,7 @@ function renderCabinet(){
   const ids0=[...Object.values(pick),...team,pmPick];const ps=pairScore(ids0);const near=nearBonds(ids0);
   app.innerHTML=`
   <div class="eyebrow">組閣</div>
-  <h2>内閣総理大臣 ${CC(pmPick).n}、閣僚を任命する</h2>
+  <h2>内閣総理大臣 <span class="nw">${CC(pmPick).n}</span>、<span class="nw">閣僚を任命する</span></h2>
   ${cabScene(pmPick,pick,{team,sel:pv&&!pv.tm?pv.k:null,fresh:lastPick&&lastPick.fresh?lastPick.k:null,bubble:lastPick&&lastPick.fresh?banterFor(lastPick.gain,[...Object.values(pick),...team,pmPick]):null})}
   <p class="muted">まず総理を選び、次に主要6ポストに一人ずつ（必須）。法務・経産などその他6ポストは任意。●はそのポストで使う能力。</p>
   <div class="post">
