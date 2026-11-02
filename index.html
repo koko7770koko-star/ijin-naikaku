@@ -2191,6 +2191,8 @@ const WAYS=[
  {id:"ichi",t:"六つの柱",x:"6つの指標がすべて50以上で過半数を取る",f:S=>K.every(k=>S.st[k]>=50)}, {id:"mimi",t:"民の声に応える",x:"陳情を3件以上受け、ひとつも断らずに過半数を取る",f:S=>{const P=S.petH||[];return P.length>=3&&P.every(x=>x&&x.a)}},
  {id:"hata",t:"旗を降ろさず",x:"重点月間を合わせて5か月以上掲げて過半数を取る",f:S=>Object.values(S.focusH||{}).reduce((a,x)=>a+((x&&x.n)||0),0)>=5},
  {id:"kara",t:"西軍の手を読み切る",x:"西軍党の作戦が3回以上ある年に、一度も当てさせずに過半数を取る",f:S=>{const H=S.osakuH||{};return (H.n||0)>=3&&!(H.hit||0)}},
+ {id:"wazawai",t:"災いを越えて",x:"変則ルール「災害の年」で、年末の民生を55以上にして過半数を取る",f:S=>S.rule==="saigai"&&S.st.wel>=55},
+ {id:"kiyoki",t:"清き財布で勝つ",x:"口ぐせ方針「清廉」で、国庫を赤字にせずに過半数を取る",f:S=>S.tag==="seiren"&&S.kokko>=0},
 ];
 function waysNow(){try{if(S.fall||S.seats==null||S.seats<233)return [];return WAYS.filter(w=>{try{return w.f(S)}catch(e){return false}}).map(w=>w.id)}catch(e){return []}}
 function waysHTML(){try{if(S.fall||S.seats==null)return "";const rec=loadRec(),have=Array.isArray(rec.ways)?rec.ways:[],nw=S.newW||[];
