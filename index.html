@@ -6390,6 +6390,7 @@ function election(){
 function shareText(rank,avgG,earned){try{const T=x=>String(x==null?"":x).replace(/<[^>]+>/g,"").trim();const L=["【偉人内閣シミュレータ】"];
   L.push(`総理：${T(pmName())}（難易度：${T(DIFF[S.diff||"normal"].n)}）`);
   try{const a=[];const tg=S.tag&&pmTagOf(S.tag),ru=S.rule&&ruleOf(S.rule);if(tg)a.push(`口ぐせ「${tg.n}」`);if(ru)a.push(`変則「${ru.n}」`);if((S.cn&&S.cn.n)||a.length)L.push(`内閣：${S.cn&&S.cn.n?T(S.cn.n):"—"}${a.length?`（${a.join("・")}）`:""}`)}catch(e){}
+  try{const v=S.vow&&vowOf(S.vow);if(v&&!S.fall&&S.seats!=null)L.push(`公約「${T(v.t)}」：${S.seats>=233?"果たした":"果たせず"}`)}catch(e){}
   L.push(S.fall?`結末：${rank}（${S.month}月に退陣）`:`結末：${rank}　獲得議席 ${S.seats}／465`);
   L.push(`支持率 ${S.st.sup}%・政権評価 ${avgG}`);
   const g=goalOf();if(g&&!S.fall)L.push(`国家目標：${g.n}（${goalDone()?"達成":"届かず"}）`);
