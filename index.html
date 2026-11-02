@@ -104,6 +104,7 @@ button:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
 .bd .bloom{display:block;color:var(--midori);font-size:.7rem}
 .rivalbox{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--ai);border-left:4px solid var(--fc)}.rivalbox>div{display:flex;flex-direction:column;min-width:0;gap:1px}.rivalbox small{font-size:.66rem;color:var(--fc);font-weight:800}.rivalbox b{font-family:var(--f-disp);font-size:1.02rem}.rivalbox q{font-size:.76rem;color:var(--sumi);quotes:"「" "」"}.rivalbox span{font-size:.74rem}.rivalbox em{font-style:normal;color:var(--kin);font-weight:800}.choice .sopr{color:var(--kin)}
 .bk.syn{border-left-color:#c9a4ff}.bk.syn .bk-k{background:#c9a4ff;color:var(--ai)}.bk.syn.on{box-shadow:0 0 0 1px #c9a4ff inset}.synon{font-style:normal;margin-left:auto;font-size:.66rem;font-weight:800;color:#c9a4ff}.synbk-h{margin:12px 0 6px;font-size:.92rem;color:#c9a4ff}.synbook .book{grid-template-columns:minmax(0,1fr);gap:6px}.bk.syn{padding:8px 12px}.bk.syn summary{cursor:pointer;min-height:36px;list-style:none}.bk.syn summary::-webkit-details-marker{display:none}.bk.syn summary h3{font-size:.95rem}.bk.syn[open] summary{margin-bottom:4px}
+.share-out{margin:6px 0}.share-tx{width:100%;box-sizing:border-box;font-size:.82rem;line-height:1.5;padding:8px;border-radius:8px;border:1px solid var(--kin);background:rgba(0,0,0,.25);color:inherit}
 .goalpick{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--kin);border-radius:10px;background:rgba(212,178,95,.07)}.gp-h{display:flex;flex-direction:column;gap:1px}.gp-h b{font-family:var(--f-disp);font-size:1.02rem;color:var(--kin)}.gp-h small{font-size:.74rem;color:var(--sumi)}.gp-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.gpb{display:flex;flex-direction:column;gap:1px;text-align:left;padding:9px 10px;min-height:52px;border:1px solid var(--ai3);border-radius:8px;background:var(--ai);color:var(--washi);touch-action:manipulation}.gpb b{font-size:.9rem}.gpb small{font-size:.68rem;color:var(--sumi)}.gpb:active{background:var(--ai3)}.gpb{position:relative;padding-left:52px}.gpb .gico{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:38px;height:38px}.gico{border-radius:50%;flex:none;display:block;box-shadow:0 0 0 1px var(--kin-dim)}.gico.sm{width:24px;height:24px;align-self:center}.gico.md{width:32px;height:32px;align-self:center}
 .goalln{display:flex;gap:8px;align-items:baseline;font-size:.78rem;color:var(--sumi);margin:0}.goalln b{flex:none;font-size:.66rem;font-weight:800;background:var(--kin);color:var(--ai);border-radius:4px;padding:1px 7px}.goalln em{font-style:normal;color:var(--kin);font-weight:700}
 .goalln{align-items:center}.pet-art{aspect-ratio:16/6;border-radius:8px;background-size:cover;background-position:center 55%;border:1px solid rgba(255,159,196,.45)}.petpick{border-color:#ff9fc4;background:rgba(255,159,196,.07)}.petpick .gp-h b{color:#ff9fc4}.petln b{background:#ff9fc4}.gpb:disabled{opacity:.4}.focpick{border-color:#7fb0ff;background:rgba(127,176,255,.07)}.focpick .gp-h b{color:#9cc2ff}.gpb.fcb{padding-left:10px;min-height:48px}.fcb b{display:flex;gap:6px;align-items:center}.fcno{border-style:dashed}.focln b{background:#7fb0ff}.choice .gmk.fmk{color:#9cc2ff;border-color:#7fb0ff}.goalln.legln b{background:var(--ai3);color:var(--kin);border:1px solid var(--kin-dim)}.goalln .gln-n{font-style:normal;font-size:.7rem;color:var(--washi)}.glre small{display:block;font-size:.56rem;color:var(--sumi);line-height:1}.glre{margin-left:auto;line-height:1.2;flex:none;font-size:.7rem;padding:4px 10px;min-height:32px;border:1px solid var(--kin-dim);border-radius:999px;background:none;color:var(--kin);touch-action:manipulation}
@@ -6192,6 +6193,22 @@ function election(){
   S.seats=Math.max(30,Math.min(440,Math.round(tot)));
   save();kaihyo();
 }
+/* 結末の「結果を共有」：総理・結末・議席・支持率・国家目標・称号・三大ニュースを短い文に */
+function shareText(rank,avgG,earned){try{const T=x=>String(x==null?"":x).replace(/<[^>]+>/g,"").trim();const L=["【偉人内閣シミュレータ】"];
+  L.push(`総理：${T(pmName())}（難易度：${T(DIFF[S.diff||"normal"].n)}）`);
+  L.push(S.fall?`結末：${rank}（${S.month}月に退陣）`:`結末：${rank}　獲得議席 ${S.seats}／465`);
+  L.push(`支持率 ${S.st.sup}%・政権評価 ${avgG}`);
+  const g=goalOf();if(g&&!S.fall)L.push(`国家目標：${g.n}（${goalDone()?"達成":"届かず"}）`);
+  if(earned&&earned.length)L.push(`称号：${earned.slice(0,4).map(t=>t.t).join("・")}${earned.length>4?` ほか${earned.length-4}`:""}`);
+  const KEY=/総裁選|不信任|成立|可決|否決|選挙|辞任|改造|サミット|議席/;const N=(S.news||[]).filter(n=>n&&n.h);
+  const top=[...N.filter(n=>KEY.test(n.h)),...N.filter(n=>!KEY.test(n.h))].slice(0,3).sort((a,b)=>(a.m||0)-(b.m||0));
+  if(top.length){L.push("今年の三大ニュース");top.forEach(n=>L.push(`・${n.m||"?"}月 ${T(n.h)}`))}
+  return L.join("\n")}catch(e){return "【偉人内閣シミュレータ】"}}
+function shareRes(tx){const out=$("#shareOut");const show=m=>{if(out)out.innerHTML=m};
+  const area=()=>show(`<textarea class="share-tx" readonly rows="9">${tx.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</textarea><small class="muted">長押しでコピーしてください</small>`);
+  try{if(navigator.share){navigator.share({title:"偉人内閣シミュレータ",text:tx}).catch(()=>{});return}}catch(e){}
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(tx).then(()=>show(`<small class="muted">結果の文をコピーした</small>`),area);return}}catch(e){}
+  area()}
 function ending(){
   vibe(80);
   const st=S.st; const avg=Math.round(K.reduce((a,k)=>a+st[k],0)/6);
@@ -6252,6 +6269,7 @@ function ending(){
     <div class="titles"><div class="muted">今回の称号</div>${earned.length?earned.map(t=>`<div class="title-chip on"><b>${t.t}</b><small>${t.x}${newT.includes(t.id)?"　初獲得":""}</small></div>`).join(""):`<p class="muted">称号なし</p>`}
       <details><summary class="muted">すべての称号（${rec.titles.length}/${TITLES.length}）</summary>${TITLES.map(t=>`<div class="title-chip ${rec.titles.includes(t.id)?"on":""}"><b>${rec.titles.includes(t.id)?t.t:"？？？"}</b><small>${t.x}</small></div>`).join("")}</details></div>
     <details><summary class="muted">政権の記録</summary><div class="log">${S.log.map(l=>`<div><span>${l[0]}月</span><span>${l[1]}</span></div>`).join("")}</div></details>
+    <div class="row"><button class="btn ghost" id="share">結果を共有</button></div><div id="shareOut" class="share-out"></div>
     <div class="row">
       <button class="btn" id="again">同じ顔ぶれで再挑戦</button>
       <button class="btn ghost" id="re">組閣からやり直す</button>
@@ -6259,6 +6277,7 @@ function ending(){
   const sb=$("#sb"); if(sb)requestAnimationFrame(()=>requestAnimationFrame(()=>sb.style.width=(S.seats/465*100)+"%"));
   const scn=$("#seatCount");if(scn){const tgt=S.seats,t0=performance.now(),D=SET.fx==="off"?1:1400;const stp=t=>{const k=Math.min(1,(t-t0)/D);scn.textContent=Math.round(tgt*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(stp)};requestAnimationFrame(stp)}
   pageFade("end");
+  {const sh=$("#share");if(sh)sh.onclick=()=>shareRes(shareText(rank,avgG,earned))}
   $("#again").onclick=()=>{ team=[...(S.team||[])]; pledges=[...(S.pledges||[])]; pick={...(S.startCab||S.cab)}; if(Object.keys(pick).length<POSTS.length){renderCabinet();return} startGov(); };
   $("#re").onclick=()=>{clearSave();pick={};pmPick="ieyasu";curPost="pm";lastPick=null;pv=null;renderCabinet()};
   window.scrollTo(0,0);
