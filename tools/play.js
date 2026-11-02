@@ -11,8 +11,8 @@ await p.screenshot({path:shot+'-title.png'});
 const BL=['#setBtn','#howBtn','#book','#faStop','#kantei','#pp','#spd','#viewCab','#recTap','#back','#bkBack','#backMap','#cancelKaizo','#cancelSel','#again','#re'];
 let steps=0,shots={},t0=Date.now(),last='';
 while(Date.now()-t0<(+process.env.LIM||600000)){steps++;
- const st=await p.evaluate(()=>typeof S!=='undefined'&&S?{done:!!S.done,ph:S.phase,view:S.view,m:S.month,fa:!!S.fullAuto,d:Math.round(S.day||0),pa:!!S.paused,pe:S.pend,bt:!!S.banter,sp:S.speed}:null);
- if(st&&st.done&&await p.$('#seatCount')){await p.waitForTimeout(2500);break}
+ const st=await p.evaluate(()=>typeof S!=='undefined'&&S?{done:!!S.done,fall:S.fall||'',ph:S.phase,view:S.view,m:S.month,fa:!!S.fullAuto,d:Math.round(S.day||0),pa:!!S.paused,pe:S.pend,bt:!!S.banter,sp:S.speed}:null);
+ if(st&&st.done&&(st.fall||await p.$('#seatCount'))){await p.waitForTimeout(2500);break}
  if(st&&!shots[st.ph]&&st.ph){shots[st.ph]=1;await p.screenshot({path:shot+'-'+st.ph+'.png'})}
  const clicked=await p.evaluate(([BL,MODE])=>{const vis=e=>e&&e.offsetParent&&!e.disabled&&!e.hidden;
   const pick=s=>[...document.querySelectorAll(s)].find(vis);
