@@ -41,4 +41,5 @@ while(Date.now()-t0<(+process.env.LIM||600000)){steps++;
  await p.waitForTimeout(clicked?(FAST>1?120:250):(FAST>1?300:800));}
 const fin=await p.evaluate(()=>({diff:S.diff,done:S.done,fall:S.fall||'',seats:S.seats,month:S.month,br:(()=>{try{const R=S.regRes||[];const reg=R.reduce((a,x)=>a+x.w,0);const pr=S.pledgeRes||[];const ok=pr.filter(x=>x.ok).length;return {reg,dif:DIFF[S.diff||'normal'].seat,pl:ok*10-(pr.length-ok)*8+(pr.length&&ok===pr.length?6:0),bill:Object.values(S.bills||{}).filter(b=>b.st==='passed').length*2,kok:S.kokko<0?-10:0,sup:S.st&&S.st.sup,opp:S.opp}}catch(e){return null}})(),img:document.querySelectorAll('img').length,bgi:Object.keys(BGI).length,imgk:Object.keys(IMG).length,rule:S.rule||'',tag:S.tag||'',goal:S.goal||'',vow:S.vow||''}));
 await p.screenshot({path:shot+'-end.png'});
+if(process.env.KT)console.log("KT:",await p.evaluate(()=>{const e=document.querySelector(".kt-rl");return e?e.innerText:"(なし)"}));
 console.log(JSON.stringify({seed,fin,steps,secs:Math.round((Date.now()-t0)/1000),last,errs:errs.slice(0,5)}));await b.close()})();
