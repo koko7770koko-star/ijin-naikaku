@@ -2531,7 +2531,7 @@ function rivalNow(){if(!S.rival||!C[S.rival.k]){const r=rivalPick();if(!r)return
 function hyogaOk(){return S.month>=7&&S.month<=8&&!S.flags.sosaiWin&&(S.hyoga||0)<2&&!!rivalNow()}
 function kiriB(){const R=rivalNow();if(!R)return .08;const v=(S.fac||{})[R.f]||0;return v>=70?.2:v>=40?.15:.08}
 function sosaiPr(o){const R=rivalNow();const v=R?((S.fac||{})[R.f]||0):0;
-  return Math.max(.05,Math.min(.95,.3+S.st.coh/250+S.st.sup/250+(o.kiri?kiriB():o.sosai)+facSosai()+Math.min(2,S.hyoga||0)*.04-(v>=70?.04:0)))}
+  return Math.max(.05,Math.min(.95,.3+(S.st.coh+S.st.sup)/500+(o.kiri?kiriB():o.sosai)+facSosai()+Math.min(2,S.hyoga||0)*.04-(v>=70?.04:0)))}
 function sosaiBox(){const R=rivalNow();if(!R)return "";const F=FAC[R.f],v=(S.fac||{})[R.f]||0,m=C[R.k];
   const base=Math.round(sosaiPr({sosai:0})*100);
   return `<div class="rivalbox" style="--fc:${F.c}">${portrait(R.k,48,"angry")}<div><small>対抗馬　${F.n}の領袖</small><b>${m.n}</b><q>${pmTx(m.q[0])}</q><span>${F.n}の不満 <em>${v}</em>　素の勝算 <em>${base}%</em></span></div></div>`}
