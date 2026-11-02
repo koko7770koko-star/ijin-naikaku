@@ -257,6 +257,7 @@ button:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
 .rechist{display:flex;flex-direction:column;gap:6px;margin:0 0 10px}
 .rh-row{display:flex;align-items:center;gap:8px;background:var(--ai2);border-radius:6px;padding:6px 10px}
 .rh-row svg,.rh-row img{flex:none}
+.rh-t{display:inline-block;white-space:nowrap;margin-right:4px}
 .rh-n{font-family:var(--f-disp);color:var(--sumi);width:1em;text-align:center}
 .rh-m{flex:1;min-width:0;display:flex;flex-direction:column}.rh-m b{font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rh-m small{font-size:.72rem;color:var(--sumi)}
 .rh-s{font-family:var(--f-disp);font-size:1.15rem;font-variant-numeric:tabular-nums;white-space:nowrap}.rh-s small{font-size:.68rem;margin-left:1px}.rh-s.win{color:var(--kin)}.rh-s.lose{color:var(--sumi)}
@@ -2212,7 +2213,7 @@ function recHistHTML(r){const H=Array.isArray(r.hist)?r.hist:[];if(!H.length)ret
   return H.map((x,i)=>{const nm=(C[x.pm]&&C[x.pm].n)||"総理";const dn=(DIFF[x.d]&&DIFF[x.d].n)||"";const win=x.s!=null&&x.s>=233;
     const res=x.s==null?`<b class="rh-s lose">退陣</b>`:`<b class="rh-s ${win?"win":"lose"}">${x.s}<small>議席</small></b>`;
     const yo=x.lo!=null&&x.hi!=null?`予想 ${x.lo}〜${x.hi}${x.s!=null&&x.s>=x.lo&&x.s<=x.hi?" ◎":""}`:"予想 —";
-    return `<div class="rh-row"><span class="rh-n">${i+1}</span>${portrait(x.pm,32)}<div class="rh-m"><b>${nm}</b><small>${dn}・${yo}${x.lg&&legOf(x.lg)?`<br>遺産「${legOf(x.lg).t}」`:""}${(()=>{try{const a=[];if(x.gl&&GL[x.gl])a.push("目標"+GL[x.gl].n);if(x.ru&&ruleOf(x.ru))a.push("ルール"+ruleOf(x.ru).n);if(x.cn)a.push("合言葉"+x.cn);return a.length?`<br>${a.join("・")}`:""}catch(e){return ""}})()}</small></div>${res}</div>`}).join("")}
+    return `<div class="rh-row"><span class="rh-n">${i+1}</span>${portrait(x.pm,32)}<div class="rh-m"><b>${nm}</b><small>${dn}・${yo}${x.lg&&legOf(x.lg)?`<br>遺産「${legOf(x.lg).t}」`:""}${(()=>{try{const a=[];const q=(l,v)=>`<span class="rh-t">${l}「${v}」</span>`;if(x.gl&&GL[x.gl])a.push(q("目標",GL[x.gl].n));if(x.ru&&ruleOf(x.ru))a.push(q("ルール",ruleOf(x.ru).n));if(x.cn)a.push(q("",x.cn));return a.length?`<br>${a.join(" ")}`:""}catch(e){return ""}})()}</small></div>${res}</div>`}).join("")}
 
 function recIndex(e,key){ return e.o.findIndex(o=>o.s===C[key].st); }
 function getSk(key,f){ if(!key||!C[key])return 1; return Math.min(5,C[key].s[SKI[f]]+((S&&S.grow&&S.grow[key]&&S.grow[key][f])||0)); }
