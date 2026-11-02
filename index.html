@@ -2032,8 +2032,8 @@ const QA=[
 /* ---------- 拡張データ：難易度・法案・人物イベント・称号 ---------- */
 const DIFF={
  easy:{n:"天下泰平",x:"指標の目減りが小さく、国庫に余裕",dec:.6,kokko:25,seat:15},
- normal:{n:"戦国",x:"標準の難しさ",dec:1.15,kokko:15,seat:-10},
- hard:{n:"乱世",x:"目減りが大きく、国庫も乏しい",dec:1.4,kokko:8,seat:-40},
+ normal:{n:"戦国",x:"標準の難しさ",dec:1.15,kokko:15,seat:-10,cap:.66},
+ hard:{n:"乱世",x:"目減りが大きく、国庫も乏しい",dec:1.4,kokko:8,seat:-40,cap:.63},
 };
 let diff="normal";
 let team=[];
@@ -2828,7 +2828,7 @@ function billView(){
 }
 function calStrip(){return `<div class="cal12">${Array.from({length:12},(_,i)=>{const m=i+1;const ev=CAL[m];return `<i class="${m===S.month?"now":m<S.month?"past":""} ${ev?"ev":""}"><b>${m}</b><small>${ev||"・"}</small></i>`}).join("")}</div>`}
 /* 地方の支持→議席の取り分。支持が高いほど上積みは伸びにくい（接戦区・西軍の地盤）。v60 */
-function seatShare(sr,op,base,nz){const x=(sr-54)/55-(op-45)/300-base*.04+nz;return Math.max(.03,Math.min(.8,.5+.24*Math.tanh(x*1.6)));}
+function seatShare(sr,op,base,nz){const x=(sr-54)/55-(op-45)/300-base*.04+nz;let cp=.8;try{cp=(DIFF[(S&&S.diff)||"normal"]||{}).cap||.8}catch(e){}return Math.max(.03,Math.min(cp,.5+.24*Math.tanh(x*1.6)));}
 /* v80 接戦区：議席の取り分が五分に近い地方、西軍の地盤（旗）が残り競り合う地方 */
 function sekRegs(){const op=S.opp??45;return DOM.map(r=>{const R=RG[r],sr=supR(r),b=S.base[r]||0,p=seatShare(sr,op,b,0);
   const sw=Math.max(1,Math.round(R.seats*(seatShare(sr+6,op,Math.max(0,b-1),0)-p)));
