@@ -7,7 +7,7 @@
 - **作業員 A・B・C**：決まった担当なし。仕事の列（統合改良ボードの db `ijin_requests` の status:new → `ijin_backlog` の todo）から1つずつ取り、`wA/…`・`wB/…`・`wC/…` の枝に push して、ボードの db `ijin_patches/<枝名の / を - に>` に `{at, by, branch, base, title, files, tests, status:"submitted"}` を書く。取るときは backlog の項目に `owner` を書く。
 
 ## 直し方
-- index.html は 8MB あり、絵の行（IMG・BGI）は1行が数 MB。直すときは Python で文字列を置き換え（rep で回数を確かめる）、絵の行は触らない。
+- 絵（IMG・BGI）は img/gazou.js（7.6MB、1行が数 MB）。index.html は約 0.8MB。直すときは Python で文字列を置き換え（rep で回数を確かめる）、絵の行は触らない。公開のときは img/gazou.js も files に入れる。
 - 新しい人物の顔・場面の絵は ijin-chara-gazou スキルのとおり。絵は OpenAI の画像 API（ボードの tools/oai_image.py、キーは db data/users/me の openai。キーはどこにも書かない）。
 - 直したら `node tools/check.js`（390px で読み込み・エラーなし）を通し、自動対戦で最後まで進むか確かめる。
 
