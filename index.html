@@ -5285,7 +5285,7 @@ function banterHTML(){const B=S.banter;return `<div class="sheet banter ${B.kind
   ${B.note?`<p class="muted">${B.note}</p>`:""}${B.opts?`<div class="kc-opts">${B.opts.map((o,i)=>`<button class="choice kc" data-kc="${i}"><b>${o.t}${B.kc&&B.kc.rec===i?'<span class="kc-rec">おすすめ</span>':""}</b><small>${o.x}</small></button>`).join("")}</div>`:`<button class="btn small" data-bt="1">つづける</button>`}</div>`}
 
 // v78 結果画面「この一年の瓦版」：月ごとの大見出しを最大6件
-function histChartHTML(){try{const H=(S.history||[]).filter(h=>h&&typeof h.sup==="number");if(H.length<3)return "";
+function histChartHTML(cur){try{const H=(S.history||[]).filter(h=>h&&typeof h.sup==="number");if(cur&&S.st){const c={m:S.month,sup:S.st.sup,kokko:S.kokko};if(H.length&&H[H.length-1].m===c.m)H[H.length-1]=c;else H.push(c)}if(H.length<3)return "";
   const w=300,h=128,L=26,R=8,T=12,B=26,n=H.length;
   const X=i=>L+i*(w-L-R)/(n-1);
   const sv=H.map(x=>x.sup),kv=H.map(x=>+x.kokko||0);
@@ -6195,8 +6195,7 @@ function ending(){
     ${pledgeHtml}
     ${S.regRes&&!S.fall?`<div class="regtab">${S.regRes.map(x=>`<div><span>${RG[x.r].n}</span><span class="muted">支持${x.sr}%</span><b>${x.w}<small>/${x.seats}</small></b></div>`).join("")}</div>`:""}
     <div class="final">${K.map(k=>`<div><span class="muted">${KL[k]}</span><b>${st[k]}</b></div>`).join("")}<div><span class="muted">国庫</span><b>${Math.round(S.kokko)}</b></div></div>
-    <div class="poll"><div class="row"><span class="muted">内閣支持率の推移</span></div>${spark(S.history.map(h=>h.sup).concat([S.st.sup]))}</div>
-    ${histChartHTML()}
+    ${histChartHTML(1)||`<div class="poll"><div class="row"><span class="muted">内閣支持率の推移</span></div>${spark(S.history.map(h=>h.sup).concat([S.st.sup]))}</div>`}
     ${yearNewsHTML()}
     ${macYearHTML()}
     ${cast}
