@@ -5606,7 +5606,9 @@ const OSAKU=[
  {id:"wakamono",t:"若者向け公約",k:"wel",x:"学費と子育ての公約で若い票を狙う",q:"若い者の明日を守るのは我らじゃ"},
  {id:"chian",t:"治安不安",k:"saf",x:"事件を取り上げ「守れぬ政権」と訴える",q:"民の安心を守れぬ者に国は任せられぬ"},
  {id:"gaiko",t:"弱腰外交批判",k:"dip",x:"外交の失点を突き、演説で繰り返す",q:"他国に頭を下げるばかりの政権よ"},
- {id:"shitsugen",t:"失言攻め",k:"coh",x:"閣僚の失言と内輪もめを狙い撃ち",q:"閣内がまとまらぬ政権に何ができる"}];
+ {id:"shitsugen",t:"失言攻め",k:"coh",x:"閣僚の失言と内輪もめを狙い撃ち",q:"閣内がまとまらぬ政権に何ができる"},
+ {id:"zaisei",t:"財政批判",k:"eco",x:"国庫の赤字と借金の山を国会で突く",q:"蔵を空にして何が天下泰平か"},
+ {id:"ninki",t:"人気取り",k:"sup",x:"党首が祭りや寄席に顔を出し、人気を集める",q:"民と同じ目線に立つのは我らぞ"}];
 const OS_HIT=40,OS_OK=55,OS_MISS=65,OS_DAY=12;
 function osakuOf(){const o=S.osaku;return o&&o.m===S.month?OSAKU.find(x=>x.id===o.id)||null:null}
 function osakuPick(){if(!S.off||S.month<2||S.month>10){return}if(S.osaku&&S.osaku.m===S.month)return;
