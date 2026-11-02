@@ -2759,7 +2759,10 @@ const PETS=[
   {id:"fukkojutaku",t:"復興住宅に見守りを",x:"仮設から移った年寄りが、独りで部屋にこもっている",p:"koro",r:"toh,chu"},
   {id:"jikiso",t:"町の声を官邸へ直に",x:"陳情に上京しても、窓口をたらい回しにされる",p:"kanbo",r:"toh,shi,chg"},
   {id:"shimai",t:"姉妹都市の交流を続けたい",x:"海の向こうの町との行き来が、予算の削減で途絶えそう",p:"gaimu",r:"kyu,chu,kan"},
-  {id:"shobo",t:"消防団の人手を",x:"若い団員がいなくなり、夜の火事に間に合わない",p:"boei",r:"shi,toh,kin"}];
+  {id:"shobo",t:"消防団の人手を",x:"若い団員がいなくなり、夜の火事に間に合わない",p:"boei",r:"shi,toh,kin"},
+  {id:"kazan",t:"火山の灰に備えを",x:"降灰の掃除と避難の道を、町だけでは賄えない",p:"kokudo",r:"kyu"},
+  {id:"oroshi",t:"市場の荷さばきを",x:"卸売市場の冷蔵庫が古く、朝の競りに間に合わない",p:"nosui",r:"chu,kin"},
+  {id:"yamasato",t:"山里に光の回線を",x:"回線が来ず、在宅の仕事も遠隔の診察も受けられない",p:"soumu",r:"kin,kyu,chu"}];
 function petOf(){try{if(!S||!sekOn()||S.cur==="sosaisen"||S.cur==="senkyo")return null;
   if(S.pet&&S.pet.m===S.month)return S.pet;
   const L=sekRegs();if(!L.length)return null;
