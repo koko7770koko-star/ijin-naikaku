@@ -3005,6 +3005,7 @@ function pollUpdate(L){
 /* v89 月例世論調査の誤差の幅（独自調査で狭まる） */
 function pollRange(e){const op=S.opp??45,a=shubanAdj();let lo=a,hi=a;
   DOM.forEach(r=>{const R=RG[r],sr=supR(r),b=S.base[r]||0;lo+=R.seats*seatShare(sr,op,b,-e);hi+=R.seats*seatShare(sr,op,b,e)});
+  {const w=Math.round(e*100);if(hi-lo<2*w){const m=(lo+hi)/2;lo=m-w;hi=m+w}}/* poll-range0：支持率が天井で幅0になっていた。最小の幅はふつう±6・独自調査の月は±2 */
   const f=x=>Math.max(30,Math.min(440,Math.round(x)));return [f(lo),f(hi)]}
 function pollHTML(){const P=S.poll;if(!P)return "";const H=S.projHist||[];const rg=P.lo!=null&&P.hi!=null,X=v=>Math.max(0,Math.min(100,v/465*100));
   const ev=!rg?"":P.lo>=233?["過半数は堅い","g"]:P.hi<233?["過半数割れ濃厚","r"]:["過半数は幅の中","y"];
