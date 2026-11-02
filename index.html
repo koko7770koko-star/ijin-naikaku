@@ -1189,6 +1189,7 @@ const CMDS=[
 
 const SAVE="ieyasu_cabinet_v7";
 let S=null, pick={}, curPost="pm", lastPick=null, pv=null, pmPick="ieyasu";
+let cgSort="nou"; // 候補の並べ替え（画面の中だけ・保存しない）
 let cgAll=false, tmAll=false; // v58 候補の折りたたみ（保存しない）
 const skN=k=>(CC(k).p||"").split("：")[0];const skX=k=>(CC(k).p||"").split("：").slice(1).join("：")||CC(k).p||"";
 const $=s=>document.querySelector(s);
@@ -5454,10 +5455,12 @@ function renderCabinet(){
   </div>
   ${(()=>{const p=ALLP().find(x=>x.id===curPost)||PMPOST;const k=pickOf(p.id);const fi=SKI[p.field];const isP=p.id==="pm";
     let list=Object.entries(C).filter(([key,c])=>!c.scout&&!c.agent).sort((a,b)=>b[1].s[fi]-a[1].s[fi]);
+    if(cgSort==='en'){const ec={};list.forEach(([key])=>{ec[key]=activeBonds([...ids0,key]).filter(b=>!activeBonds(ids0).includes(b)&&b.kind!=='clash').length});list=list.map((e,i)=>[e,i]).sort((a,b)=>(ec[b[0][0]]-ec[a[0][0]])||(a[1]-b[1])).map(x=>x[0])}
+    else if(cgSort==='name')list=list.slice().sort((a,b)=>a[1].n.localeCompare(b[1].n,'ja'));
     const isX=XPOSTS.includes(p);
     const postOf=key=>key===pmPick?PMPOST:[...POSTS,...XPOSTS].find(x=>pick[x.id]===key);
     const CGN=12;let shown=list,hid=0;
-    if(!cgAll){const keep=[];let n=0;for(const e of list){const key=e[0],on=k===key,dis=!!(!on&&postOf(key))&&!isP,isPv=pv&&pv.p===p.id&&pv.k===key;
+    if(!cgAll&&cgSort==='nou'){const keep=[];let n=0;for(const e of list){const key=e[0],on=k===key,dis=!!(!on&&postOf(key))&&!isP,isPv=pv&&pv.p===p.id&&pv.k===key;
         if(on||isPv){keep.push(e);continue}if(dis)continue;if(n<CGN){keep.push(e);n++;continue}
         const nb=activeBonds([...ids0,key]).filter(b=>!activeBonds(ids0).includes(b)&&b.kind!=="clash");if(nb.length)keep.push(e)}
       hid=list.length-keep.length;shown=keep}
@@ -5466,6 +5469,7 @@ function renderCabinet(){
       ${isX?`<p class="effbox" style="display:block"><b>このポストの効果</b>：${p.x}（●3以上で発動、●5なら2倍）。空席でも政権は発足できる。</p>`:""}<p class="legend">${isP?"誰でも総理になれます。札は「総理の特技」。●は発信力。":"得意な順に並んでいます。●がこのポストの能力、★は縁が生まれる人、⚡は相性が悪い人。"}${k?" 緑/赤の数字は任命中の人との差。タップすると並べて比べられます。":""}</p>
       ${lastPick&&lastPick.p!==p.id?`<div class="effbox last">${portrait(lastPick.k,44,"happy")}<div><div class="t">✔ ${ALLP().find(x=>x.id===lastPick.p).name}に任命</div><p><b>${CC(lastPick.k).n}</b>　<span class="sk2">${lastPick.p==="pm"?pmSk(lastPick.k).n:skN(lastPick.k)}</span></p><p>${lastPick.p==="pm"?pmSk(lastPick.k).x:skX(lastPick.k)}</p>${lastPick.gain.map(b=>`<p class="g">★縁「${b.n}」${b.x||""}</p>`).join("")}${lastPick.loss.map(b=>`<p class="r">⚡犬猿「${b.n}」${b.x||""}</p>`).join("")}</div></div>`:""}
       ${k?(()=>{const mine=activeBonds(ids0).filter(b=>b.k.includes(k));return `<div class="effbox">${portrait(k,56,"happy")}<div><div class="t">任命中　${STYLE[CC(k).st]}派</div><p><b>${CC(k).n}</b>　<span class="sk2">${isP?pmSk(k).n:skN(k)}</span></p><p>${isP?pmSk(k).x:skX(k)}</p>${mine.map(b=>`<p class="${b.kind==="clash"?"r":"g"}">${b.kind==="clash"?"⚡犬猿":"★縁"}「${b.n}」${b.x||""}</p>`).join("")}<p class="muted">「${spTx(qOf(k)[0]||CC(k).q[0])}」</p></div></div>`})():""}
+      <div class="cands cgsort"><small class="muted">並び順</small>${[["nou","能力順"],["en","縁の数順"],["name","名前順"]].map(([v,t])=>`<button class="cand" data-cgsort="${v}" aria-pressed="${cgSort===v}">${t}</button>`).join("")}</div>
       <div class="cgrid">
       ${shown.map(([key,c])=>{
         const on=k===key, other=!on&&postOf(key), dis=!!other&&!isP;
@@ -5507,6 +5511,7 @@ function renderCabinet(){
   app.querySelectorAll("[data-pvok]").forEach(b=>b.onclick=cabConfirm);
   app.querySelectorAll("[data-pvno]").forEach(b=>b.onclick=()=>{pv=null;renderCabinet()});
   app.querySelectorAll("[data-seat]").forEach(b=>b.onclick=()=>{curPost=b.dataset.seat;pv=null;cgAll=false;renderCabinet();const t=app.querySelector("#cpost");if(t&&t.scrollIntoView)t.scrollIntoView({block:"start",behavior:"smooth"})});
+  app.querySelectorAll("[data-cgsort]").forEach(b=>b.onclick=()=>{cgSort=b.dataset.cgsort;renderCabinet()});
   app.querySelectorAll("[data-cgmore]").forEach(b=>b.onclick=()=>{cgAll=b.dataset.cgmore==="1";renderCabinet();if(!cgAll){const t=app.querySelector("#cpost");if(t&&t.scrollIntoView)t.scrollIntoView({block:"start"})}});
   app.querySelectorAll("[data-tmmore]").forEach(b=>b.onclick=()=>{tmAll=b.dataset.tmmore==="1";renderCabinet()});
   $("#go").onclick=startGov;
