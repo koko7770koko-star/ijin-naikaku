@@ -4841,10 +4841,13 @@ function aideBox(ids){ids=aideIdsOf(ids);const cnt={};ids.forEach(k=>{const t=ai
   <div class="pick-note">${on.length?on.map(t=>`<div><b>${AIDE[t].n}</b>×${cnt[t]}　${AIDE[t].x}</div>`).join(""):"まだ補佐の型がそろっていない（大臣・特命を選ぶと出る）"}</div></div>`}
 const aideTag=k=>{const t=aideOf(k);return t?`<small class="aidet">${AIDE[t].n}</small>`:""};
 /* v133 内閣の合言葉：補佐の型の多数派と口ぐせ方針から内閣名が決まる。小さな初期ボーナスと苦手1つ */
-const CNAME={zaimu:{w:"殖産",b:"eco",wk:"wel"},chosei:{w:"協調",b:"coh",wk:"dip"},genba:{w:"現場",b:"wel",wk:"eco"},kobu:{w:"奮起",b:"sup",wk:"coh"}};
-const CNTAG={daitan:"改革",chosei:"融和",kenyaku:"節約",jinshin:"人望"};
+const CNAME={zaimu:{w:"殖産",b:"eco",wk:"wel"},chosei:{w:"協調",b:"coh",wk:"dip"},genba:{w:"現場",b:"wel",wk:"eco"},kobu:{w:"奮起",b:"sup",wk:"coh"},
+  gaiko:{w:"開国",b:"dip",wk:"saf"},/* 補佐の型「外交通」が多数のとき（aide-5 で型を足したら効く） */
+  anei:{w:"安寧",b:"saf",wk:"eco"}};/* 多数の型が2つ並んだとき（どちらにも寄らない釣り合いの内閣） */
+const CNTAG={daitan:"改革",chosei:"融和",kenyaku:"節約",jinshin:"人望",seiren:"清廉"};
 function cnOf(ids,tag){try{ids=aideIdsOf(ids);const cnt={};ids.forEach(k=>{const t=aideOf(k);if(t)cnt[t]=(cnt[t]||0)+1});
-  const t=["zaimu","chosei","genba","kobu"].reduce((b,x)=>(cnt[x]||0)>(cnt[b]||0)?x:b,"zaimu");if(!cnt[t])return null;
+  const T=["zaimu","chosei","genba","kobu","gaiko"];let t=T.reduce((b,x)=>(cnt[x]||0)>(cnt[b]||0)?x:b,"zaimu");if(!cnt[t])return null;
+  if(cnt[t]>=2&&T.filter(x=>cnt[x]===cnt[t]).length>=2)t="anei";
   const c=CNAME[t];return {t,n:c.w+(CNTAG[tag]||"")+"内閣",b:c.b,wk:c.wk}}catch(e){return null}}
 function cnLine(){try{const c=S&&S.cn;if(!c)return "";
   return `<p class="goalln legln"><b>合言葉</b><span><em>${c.n}</em><br><small>初期${KS[c.b]}+2／${KS[c.wk]}を伸ばす案件は月に一度、効きが1つ弱い</small></span></p>`}catch(e){return ""}}
