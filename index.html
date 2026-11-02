@@ -2792,7 +2792,7 @@ function petOf(){try{if(!S||!sekOn()||S.cur==="sosaisen"||S.cur==="senkyo")retur
   if(S.pet&&S.pet.m===S.month)return S.pet;
   const L=sekRegs();if(!L.length)return null;
   const prev=S.pet&&S.pet.r;const C2=L.filter(x=>x.r!==prev);const x=(C2.length?C2:L)[Math.random()*(C2.length?C2:L).length|0];
-  const used=(S.petUsed||[]);const P=PETS.filter(q=>!used.includes(q.id));const q=(P.length?P:PETS)[Math.random()*(P.length?P:PETS).length|0];
+  const used=(S.petUsed||[]);const P0=PETS.filter(q=>!used.includes(q.id)),P1=P0.filter(q=>!q.r||q.r.split(",").includes(x.r)),P=P1.length?P1:P0;const q=(P.length?P:PETS)[Math.random()*(P.length?P:PETS).length|0];
   S.pet={m:S.month,r:x.r,id:q.id,a:null};return S.pet}catch(e){return null}}
 function petMin(q){const k=S.cab&&S.cab[q.p];return k&&C[k]&&!isPM(k)?k:null}
 function petSw(r,d){try{const op=S.opp??45,R=RG[r],b=S.base[r]||0,sr=supR(r);return Math.round(R.seats*(seatShare(clamp(sr+d),op,b,0)-seatShare(sr,op,b,0)))}catch(e){return 0}}
