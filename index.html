@@ -6162,7 +6162,7 @@ function faCw(){return S.kokko<0?2:S.kokko<5?1:.4}/* 全自動の選択で国庫
 function faEventPick(){
   const e=EV[S.cur];if(!e)return null;let ri=-1;try{ri=recIndex(e,actor(e).key)}catch(_){}
   const val=o=>{const d=o.d||{};let v=0;for(const k in d){const w=k==="sup"?1.4:k==="coh"?1.2:1;v+=d[k]*w*(S.st[k]!=null&&S.st[k]<35?1.5:1)}return v+(o.c||0)*faCw()-(o.opp||0)*.6};
-  let best=null,bv=-1e9;e.o.forEach((o,i)=>{if(o.vote){const pr=o.vote==="coh"?S.st.coh:S.st.sup;if(pr<60)return}let v=val(o)+(i===ri?3:0)+Math.random()*1.5;if(v>bv){bv=v;best=i}});
+  let best=null,bv=-1e9;e.o.forEach((o,i)=>{if(o.vote){const pr=o.vote==="coh"?S.st.coh:S.st.sup;if(pr<60)return}let v=val(o)+(i===ri?3:0)+Math.random()*1.5;if(o.sosai!=null){let pr=.5;try{pr=sosaiPr(o)}catch(_){}v+=pr*100}/* 総裁選は勝算をいちばんに見る */if(v>bv){bv=v;best=i}});
   return best==null?0:best;
 }
 function faTick(){
