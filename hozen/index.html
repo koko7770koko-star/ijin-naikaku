@@ -486,6 +486,7 @@ nav button.on::before{content:'';position:absolute;top:0;left:22%;right:22%;heig
 .tiles.t4 .tile .tv{font-size:22px}.tiles.t4 .tile .tv.s{font-size:15px}
 .tiles.t4 .tile .ts{font-size:10.5px;color:var(--mut);line-height:1.3;margin-top:2px}
 @media (max-width:400px){.tiles.t4{grid-template-columns:repeat(2,1fr)}}
+@media screen{.tiles.wkt{grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}.tiles.wkt .tile{padding:6px 2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-top-width:3px;text-align:center}.tiles.wkt .tile .tl{font-size:11px;line-height:1.2}.tiles.wkt .tile .tv{font-size:18px;line-height:1.2}.tiles.wkt .tile.on{outline:2px solid var(--accent);outline-offset:-2px}}
 details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center}
 details.fold>summary::-webkit-details-marker{display:none}
 details.fold>summary h2{margin:0;flex:1}
@@ -4925,7 +4926,7 @@ function vWorks(){
   const f=V.wkF||'open',L=(S.works||[]).filter(w=>f==='all'||(f==='open'?!['完了','中止'].includes(w.status):w.status===f)).sort((a,b)=>f==='open'?a.date.localeCompare(b.date):b.date.localeCompare(a.date));
   const cnt=s=>(S.works||[]).filter(w=>w.status===s).length;
   return `<div class="row" style="margin-bottom:8px"><select onchange="V.wkF=this.value;render()" class="grow"><option value="open" ${f==='open'?'selected':''}>未完了（予定順）</option>${WORK_STAT.map(s=>`<option ${f===s?'selected':''}>${s}</option>`).join('')}<option value="all" ${f==='all'?'selected':''}>すべて</option></select><button class="btn sm" onclick="editWork()">＋ 作業指示</button></div>
-    <div class="tiles">${['承認待ち','承認済み','実施中','保留'].map(s=>`<div class="tile ${s==='承認待ち'&&cnt(s)?'warn':''}" onclick="V.wkF='${s}';render()"><div class="tl">${s}</div><div class="tv">${cnt(s)}<small>件</small></div></div>`).join('')}</div>`
+    <div class="tiles wkt">${['承認待ち','承認済み','実施中','保留'].map(s=>`<div class="tile ${s==='承認待ち'&&cnt(s)?'warn':''} ${f===s?'on':''}" role="button" onclick="V.wkF='${s}';render()"><span class="tl">${s}</span> <span class="tv">${cnt(s)}</span></div>`).join('')}</div>`
     +card(`🧰 作業指示 <span class="muted">${L.length}件</span>`,(L.slice(0,V.wkMore||100).map(workRow).join('')||emptyBox('該当する作業はありません'))+(L.length>(V.wkMore||100)?`<button class="btn sec wide" onclick="V.wkMore=(V.wkMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.wkMore||100)}件）</button>`:''),`<button class="btn sec sm" onclick="exportWorksCsv()">CSV</button>`)
     +card('📋 作業表（14日間・印刷用）',`<button class="btn sec sm" onclick="go('workSheet')">作業表を開く</button>`);
 }
