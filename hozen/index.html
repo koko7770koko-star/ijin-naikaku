@@ -2725,6 +2725,7 @@ function editIssue(id,preset){
     ${recentPl.length?`<div class="muted" style="margin-top:8px;font-size:12px">最近の場所（押すと入ります）</div><div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">${recentPl.map(pl=>`<button type="button" class="btn sec sm" style="min-height:44px" onclick="setIssuePlace(${esc(JSON.stringify(pl))})">${esc(pl)}</button>`).join('')}</div>`:''}</div>`;
   // 新規は「場所・内容・写真」だけを先に出し、状態・発見日・設備・詳細・処置・担当・期限・費用などは「詳しく入れる」に畳む（消さない。保存の形は変えない）
   const stHTML=`<label class="f">状態</label><div class="seg tabs istep" id="is_steps" style="margin-bottom:4px">${step}</div><input type="hidden" id="is_status" value="${esc(i.status)}">
+    ${id&&i.status==='完了'?`<button type="button" id="is_reopen" class="btn sec wide" style="min-height:44px;margin-bottom:6px" onclick="issueReopen()">↩ 間違いで完了にした：「対応中」に戻す</button>`:''}
     <div id="is_done" style="display:${i.status==='完了'?'block':'none'}" class="grp"><b>完了の確認（人が確認してください）</b>
       <label class="f">確認者 *</label><input id="is_by" list="dl_is" value="${esc(i.confirmedBy||'')}" maxlength="60">${staffList('dl_is')}
       <label class="chkl"><input type="checkbox" id="is_chk" ${i.status==='完了'&&i.confirmedBy?'checked':''}>処置の結果を現場で確認し、異常が解消したことを確かめた</label>
@@ -2769,6 +2770,8 @@ function issuePhrases(){const base=['球切れ','発熱','異音','破損','漏�
   return [...base,...past]}
 function setIssuePhrase(t){const e=$('#is_title');if(!e)return;const v=e.value.trim();e.value=!v?t:v.includes(t)?v:v+'、'+t;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))}
 function setIssuePlace(pl){const e=$('#is_place');if(e)e.value=pl}
+/* 完了にした案件を 1 タップで「対応中」に戻す：状態を対応中にして理由欄へ。保存すると状態の履歴・修正履歴に「再開：理由」が残る（saveIssue の既存の動き） */
+function issueReopen(){setIssueStep('対応中');const m=$('#is_memo');if(m){try{m.scrollIntoView({block:'center'})}catch(e){}try{m.focus()}catch(e){}}toast('理由を書いて「保存」を押すと戻ります')}
 function setIssueStep(x){$('#is_status').value=x;document.querySelectorAll('#is_steps button').forEach(b=>b.classList.toggle('on',b.textContent.endsWith(x)));$('#is_done').style.display=x==='完了'?'block':'none';
   if(x==='完了'){ // 完了にするときの手間を減らす：確認者に自分の名前・完了日に今日を先に入れ、確認の欄が見える所まで動かす（「確かめた」のチェックは人が付ける）
     const by=$('#is_by'),cl=$('#is_closed');if(by&&!by.value.trim()){const w=who();if(w)by.value=w}if(cl&&!cl.value)cl.value=TODAY;
