@@ -5047,17 +5047,26 @@ function savePart(id,silent){const g=k=>$('#pt_'+k).value.trim();
 }
 function stockMove(id,type,ref){
   if($('#pt_name')&&!savePart(id,true))return;
-  const p=partById(id);if(!p)return;
-  const v=prompt(type==='棚卸'?`実際の在庫数（現在の記録 ${p.qty}${p.unit}）`:`${type}する数（現在 ${p.qty}${p.unit}）`,'');if(v===null)return;
-  const n=Number(v);if(!Number.isFinite(n)||n<0||(type!=='棚卸'&&n===0)){toast('数を正しく入れてください');return}
-  if(type==='出庫'&&n>p.qty&&!confirm(`記録上の在庫（${p.qty}）より多く出庫します。よろしいですか？（記録との差は棚卸で直してください）`))return;
-  const by=prompt('担当者',who());if(by===null)return;
-  const note=prompt(type==='出庫'?'用途（例：○○盤の修理）':'メモ（任意）','')||'';
+  const p=partById(id);if(!p)return;const from=!!$('#pt_name');
+  openModal(`<h3>${esc(type)}：${esc(p.name)}</h3><div class="muted" style="margin-bottom:6px">現在の記録 ${esc(p.qty)}${esc(p.unit)}</div>
+    <label class="f">${type==='棚卸'?'実際の在庫数':type+'する数'} *</label><input id="sm_n" type="number" inputmode="decimal" step="any" min="0" style="min-height:48px" oninput="stockChk('${id}','${type}')">
+    <div id="sm_w" style="min-height:20px;font-size:13px;margin-top:4px"></div>
+    <label class="f">担当者</label><input id="sm_by" list="dl_staff" value="${esc(who())}" maxlength="60">${staffList('dl_staff')}
+    <label class="f">${type==='出庫'?'用途（例：○○盤の修理）':'メモ（任意）'}</label><input id="sm_note" maxlength="500">
+    ${modalFoot(`<button class="btn" onclick="stockDo('${id}','${type}','${esc(ref||'')}',${from})">${type}を記録</button>`,`<button class="btn sec" onclick="closeModal(true);${from?`editPart('${id}')`:''}">やめる</button>`)}`);
+  setTimeout(()=>{const i=$('#sm_n');if(i)i.focus()},50);
+}
+function stockChk(id,type){const p=partById(id),w=$('#sm_w'),i=$('#sm_n');if(!p||!w||!i)return;
+  w.innerHTML=type==='出庫'&&String(i.value).trim()!==''&&Number(i.value)>p.qty?`<span style="color:var(--ng);font-weight:700">記録上の在庫（${esc(p.qty)}）より多い出庫です</span>（記録との差は棚卸で直してください）`:''}
+function stockDo(id,type,ref,from){
+  const p=partById(id);if(!p)return;const v=$('#sm_n').value,n=Number(v);
+  if(!String(v).trim()||!Number.isFinite(n)||n<0||(type!=='棚卸'&&n===0)){toast('数を正しく入れてください');return}
+  const by=$('#sm_by').value,note=$('#sm_note').value;
   const before=p.qty,r6=x=>Math.round(x*1e6)/1e6;p.qty=r6(type==='入庫'?before+n:type==='出庫'?before-n:n);
   S.moves.push({id:uid(),partId:id,date:TODAY,type,qty:type==='棚卸'?r6(n-before):n,after:p.qty,ref:ref||'',by:txt(by,60),note:txt(note,500)});
-  logEdit('part',id,`在庫（${type}）`,before,p.qty);save();
+  logEdit('part',id,`在庫（${type}）`,before,p.qty);save();closeModal(true);
   if(p.min!==''&&p.qty<=p.min)toast(`在庫が最低在庫数（${p.min}）以下になりました`);else toast(`${type}を記録しました（残 ${p.qty}${p.unit}）`);
-  if($('#pt_name')){closeModal(true);editPart(id)}else render();
+  if(from)editPart(id);else render();
 }
 function delPart(id){const i=S.parts.findIndex(p=>p.id===id),p=S.parts[i];if(!confirm(`予備品「${p.name}」を削除しますか？（入出庫履歴も一緒に外れます）`))return;const mv=S.moves.filter(m=>m.partId===id);S.parts.splice(i,1);S.moves=S.moves.filter(m=>m.partId!==id);save();closeModal(true);render();undoBar(`予備品「${p.name}」を削除しました`,()=>{S.parts.splice(i,0,p);S.moves.push(...mv)})}
 function exportStockCsv(){download(`予備品_${TODAY}.csv`,csvBlob([['品番','品名','仕様','メーカー','保管場所','在庫','単位','最低在庫','単価','使用設備'],...(S.parts||[]).map(p=>[p.code,p.name,p.spec,p.maker,p.place,p.qty,p.unit,p.min,p.price,p.equipIds.map(equipName).join('、')]),[],['日付','区分','品名','数','残','担当','関連','メモ'],...(S.moves||[]).map(m=>[m.date,m.type,partName(m.partId),m.qty,m.after,m.by,m.ref,m.note])]))}
@@ -5087,11 +5096,22 @@ function editTool(id){
 }
 function saveTool(id,silent){const g=k=>$('#tl_'+k).value.trim();const o={kind:g('kind'),code:txt(g('code'),30),name:txt(g('name'),80),maker:txt(g('maker'),60),model:txt(g('model'),60),serial:txt(g('serial'),60),place:txt(g('place'),80),calDue:isDate(g('calDue'))?g('calDue'):'',calCycleM:num16(g('calCycleM')),note:txt(g('note'),1000)};
   if(!o.name){toast('名称を入れてください');return false}const t=(S.tools||[]).find(x=>x.id===id);if(t){logEdit('tool',id,'校正期限',t.calDue,o.calDue);Object.assign(t,o)}else S.tools.push({id:uid(),...o,calHist:[],loans:[]});save();if(silent)return true;closeModal(true);render();toast('保存しました');return true}
-function toolLoan(id){if($('#tl_name')&&!saveTool(id,true))return;const t=S.tools.find(x=>x.id===id),to=prompt('貸出先（名前）',who());if(!to||!to.trim())return;const due=prompt('返却予定日（例：2026-11-30。空欄可）','');if(due===null)return;if(due&&!isDate(due)){toast('日付は 2026-11-30 の形で入れてください');return}
+function toolLoan(id){if($('#tl_name')&&!saveTool(id,true))return;const t=S.tools.find(x=>x.id===id);if(!t)return;
+  openModal(`<h3>貸出：${esc(t.name)}</h3><label class="f">貸出先（名前）*</label><input id="tn_to" list="dl_staff" value="${esc(who())}" maxlength="60" style="min-height:48px">${staffList('dl_staff')}
+    <label class="f">返却予定日（空欄可）</label><input id="tn_due" type="date" style="min-height:48px">
+    ${modalFoot(`<button class="btn" onclick="toolLoanDo('${id}')">貸出を記録</button>`,`<button class="btn sec" onclick="closeModal(true);editTool('${id}')">やめる</button>`)}`)}
+function toolLoanDo(id){const t=S.tools.find(x=>x.id===id);if(!t)return;const to=$('#tn_to').value,due=$('#tn_due').value;
+  if(!to.trim()){toast('貸出先を入れてください');return}if(due&&!isDate(due)){toast('日付は 2026-11-30 の形で入れてください');return}
   t.loans.push({id:uid(),to:txt(to.trim(),60),out:TODAY,due,back:'',note:''});save();closeModal(true);editTool(id);toast('貸出を記録しました')}
 function toolReturn(id){if($('#tl_name')&&!saveTool(id,true))return;const t=S.tools.find(x=>x.id===id),l=t.loans.find(x=>!x.back);if(!l)return;l.back=TODAY;save();closeModal(true);editTool(id);toast('返却を記録しました')}
-function toolCal(id){if($('#tl_name')&&!saveTool(id,true))return;const t=S.tools.find(x=>x.id===id);const by=prompt('校正実施者・機関','');if(by===null)return;const result=prompt('結果（例：合格、成績書No.）','')||'';
-  const def=t.calCycleM?addM(TODAY,Number(t.calCycleM)):'';const next=prompt('次回の校正期限（例：2027-10-31）',def);if(next===null)return;if(next&&!isDate(next)){toast('日付の形が正しくありません');return}
+function toolCal(id){if($('#tl_name')&&!saveTool(id,true))return;const t=S.tools.find(x=>x.id===id);if(!t)return;
+  const def=t.calCycleM?addM(TODAY,Number(t.calCycleM)):'';
+  openModal(`<h3>校正を記録：${esc(t.name)}</h3><label class="f">校正実施者・機関</label><input id="tc_by" maxlength="80" style="min-height:48px">
+    <label class="f">結果（例：合格、成績書No.）</label><input id="tc_res" maxlength="200">
+    <label class="f">次回の校正期限</label><input id="tc_next" type="date" value="${esc(def)}" style="min-height:48px">
+    ${modalFoot(`<button class="btn" onclick="toolCalDo('${id}')">校正を記録</button>`,`<button class="btn sec" onclick="closeModal(true);editTool('${id}')">やめる</button>`)}`)}
+function toolCalDo(id){const t=S.tools.find(x=>x.id===id);if(!t)return;const by=$('#tc_by').value,result=$('#tc_res').value,next=$('#tc_next').value;
+  if(next&&!isDate(next)){toast('日付の形が正しくありません');return}
   t.calHist.push({date:TODAY,by:txt(by,80),result:txt(result,200),next});logEdit('tool',id,'校正期限',t.calDue,next);t.calDue=next||t.calDue;save();closeModal(true);editTool(id);toast('校正を記録しました')}
 function delTool(id){const i=S.tools.findIndex(x=>x.id===id),t=S.tools[i];if(!confirm(`「${t.name}」を削除しますか？`))return;S.tools.splice(i,1);save();closeModal(true);render();undoBar(`「${t.name}」を削除しました`,()=>S.tools.splice(i,0,t))}
 
