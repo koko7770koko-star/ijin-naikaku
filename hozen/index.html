@@ -4560,16 +4560,30 @@ function issueApprovals(i){
   return `<div class="grp" id="is_appr"><b>作業結果の承認履歴</b>${A.length?A.map(a=>`<div class="meta">${new Date(a.at).toLocaleString('ja-JP')}・${esc(a.role)} ${esc(a.by)}：${esc(a.act)}${a.note?'（'+esc(a.note)+'）':''}<span class="pill">${esc(a.method||AUTH_NAME)}</span></div>`).join(''):'<div class="muted">まだありません</div>'}
     <button type="button" class="btn sec sm" style="margin-top:6px" onclick="approveIssue('${i.id}')">承認・差し戻しを記録</button></div>`;
 }
+/* 承認・確認の記録：名前・役職・（日付）・コメントと大きいボタンを1つの窓（または枠）にまとめる（prompt を連続で出さない） */
+let SG=null;
+function signHTML(o){SG=o;
+  return `${o.title?`<h3>${esc(o.title)}</h3>`:''}${o.sub?`<div class="muted" style="margin-bottom:6px">${o.sub}</div>`:''}
+    <label class="f">${esc(o.byLabel||'名前')} *</label><input id="sg_by" list="dl_staff" value="${esc(o.by==null?who():o.by)}" maxlength="60" style="min-height:48px">${staffList('dl_staff')}
+    ${o.role===false?'':'<label class="f">役職・立場（例：電気主任技術者）</label><input id="sg_role" maxlength="40" style="min-height:48px">'}
+    ${o.date?`<label class="f">${esc(o.dateLabel||'日付')}</label><input id="sg_date" type="date" value="${TODAY}" style="min-height:48px">`:''}
+    ${o.noteLabel?`<label class="f">${esc(o.noteLabel)}</label><input id="sg_note" maxlength="500" style="min-height:48px">`:''}
+    <div class="row" style="margin-top:10px;gap:8px"><button type="button" class="btn sec" style="min-height:48px" onclick="${o.cancel}">やめる</button><span class="sp"></span>${o.acts.map(([k,l,c])=>`<button type="button" class="btn ${c||''}" style="min-height:48px" onclick="signGo('${k}')">${esc(l)}</button>`).join('')}</div>`}
+function signGo(k){const o=SG;if(!o)return;const by=$('#sg_by').value.trim();if(!by){toast('名前を入れてください');return}
+  const r={act:k,by:txt(by,60),role:$('#sg_role')?txt($('#sg_role').value,40):'',date:$('#sg_date')?$('#sg_date').value:'',note:$('#sg_note')?$('#sg_note').value.trim():''};
+  if(o.date&&!isDate(r.date)){toast('日付を入れてください');return}
+  if((o.noteReq||[]).includes(k)&&!r.note){toast('理由を入れてください');return}
+  r.note=txt(r.note,500);SG=null;o.done(r)}
+function signModal(o){openModal(signHTML(o))}
+function issueApprRestore(id){const i=S.issues.find(x=>x.id===id),box=$('#is_appr');SG=null;if(!i||!box)return;const clean=box.dataset.clean==='1';box.outerHTML=issueApprovals(i);if(clean)MODAL_SIG=modalSig()}
 function approveIssue(id){
-  const i=S.issues.find(x=>x.id===id);if(!i)return;
-  const by=prompt('承認者の名前（必須）',who());if(by===null)return;if(!by.trim()){toast('名前が必要です');return}
-  const role=prompt('役職・立場（例：電気主任技術者、係長）','')||'';
-  const a=prompt('承認なら 1、差し戻しなら 2 を入れてください','1');if(a===null)return;if(!['1','2'].includes(String(a).trim())){toast('1 か 2 を入れてください');return}
-  const act=String(a).trim()==='1'?'承認':'差し戻し';
-  const note=prompt(act==='差し戻し'?'差し戻しの理由':'コメント（任意）','')||'';
-  i.approvals=i.approvals||[];i.approvals.push({at:nowIso(),by:txt(by.trim(),60),role:txt(role,40),act,note:txt(note,500),method:AUTH_NAME});
-  logEdit('issue',id,'承認','',`${act}（${by.trim()}）`);save();toast(act+'を記録しました（入力中の内容は「保存」で保存してください）');
-  const box=$('#is_appr');if(box){const sig=modalSig()===MODAL_SIG;box.outerHTML=issueApprovals(i);if(sig)MODAL_SIG=modalSig()}
+  const i=S.issues.find(x=>x.id===id),box=$('#is_appr');if(!i||!box)return;
+  const clean=modalSig()===MODAL_SIG;
+  box.dataset.clean=clean?'1':'0';
+  box.innerHTML=signHTML({byLabel:'承認者の名前',acts:[['承認','承認','ok'],['差し戻し','差し戻し','red']],noteLabel:'コメント（差し戻しのときは理由。任意）',cancel:`issueApprRestore('${id}')`,
+    done:r=>{i.approvals=i.approvals||[];i.approvals.push({at:nowIso(),by:r.by,role:r.role,act:r.act,note:r.note,method:AUTH_NAME});
+      logEdit('issue',id,'承認','',`${r.act}（${r.by}）`);save();toast(r.act+'を記録しました（入力中の内容は「保存」で保存してください）');issueApprRestore(id)}});
+  if(clean)MODAL_SIG=modalSig();
 }
 
 /* ---------- 画面：診断 ---------- */
@@ -4888,26 +4902,28 @@ function workAct(id,act){
   const w=workById(id);if(!w)return;
   if(w.status!==st0){save();closeModal(true);render();toast('内容が変わったため起案に戻しました。承認を申請し直してください');editWork(id);return}
   const step=(to,actName,note,by)=>{w.hist.push({at:nowIso(),act:actName,from:w.status,to,by:by||who(),note:note||''});if(to!=='再開')w.status=to};
+  const fin=()=>{opLog('作業の状態変更',`${w.no} ${w.title}：${w.hist.at(-1).act}`);save();closeModal(true);render();toast(`${w.hist.at(-1).act}を記録しました`);editWork(id);};
   const ask=(q,req)=>{const v=prompt(q,'');if(v===null)return null;if(req&&!v.trim()){toast('入力が必要です');return null}return txt(v.trim(),500)};
   if(act==='req'){if((w.kind==='停電作業'||w.outage.on)&&!stdOk(stdById(w.stdId))){msgModal('承認を申請できません','停電作業は、施設で承認済みの作業標準を選んで「適用」してから申請してください（作業管理 → 作業標準）。');return}step('承認待ち','承認申請')}
   else if(act==='ok'&&(w.kind==='停電作業'||w.outage.on)&&!stdOk(stdById(w.stdId))){msgModal('承認できません','停電作業は、施設で承認済みの作業標準が適用されている必要があります（作業標準が未承認・削除されています）。差し戻してください。');return}
-  else if(act==='ok'||act==='back'){const by=prompt('承認者の名前（必須）',who());if(!by||!by.trim())return;const role=prompt('役職・立場（例：電気主任技術者）','')||'';const note=act==='back'?ask('差し戻しの理由',true):(prompt('コメント（任意）','')||'');if(note===null)return;
-    w.approvals.push({at:nowIso(),by:txt(by.trim(),60),role:txt(role,40),act:act==='ok'?'承認':'差し戻し',note,method:AUTH_NAME});step(act==='ok'?'承認済み':'起案',act==='ok'?'承認':'差し戻し',note,txt(by.trim(),60))}
+  else if(act==='ok'||act==='back'){const nm=act==='ok'?'承認':'差し戻し';
+    signModal({title:`作業の${nm}`,sub:esc(w.no+' '+w.title),byLabel:'承認者の名前',acts:[[nm,nm+'を記録',act==='ok'?'ok':'red']],noteLabel:act==='back'?'差し戻しの理由 *':'コメント（任意）',noteReq:act==='back'?[nm]:[],cancel:`closeModal(true);editWork('${id}')`,
+      done:r=>{w.approvals.push({at:nowIso(),by:r.by,role:r.role,act:nm,note:r.note,method:AUTH_NAME});step(act==='ok'?'承認済み':'起案',nm,r.note,r.by);fin()}});return}
   else if(act==='start'){const reqP=w.pre.filter(c=>c.req!==false&&!c.done);
     if(reqP.length){msgModal('作業開始を記録できません',`作業前の必須確認が終わっていません：<br>${reqP.map(c=>'・'+esc(c.text)).join('<br>')}<br><br>現場で確認し、確認した人の名前でチェックしてから記録してください。`);return}
     if((w.kind==='停電作業'||w.outage.on)&&!stdOk(stdById(w.stdId))){msgModal('作業開始を記録できません','停電作業は、承認済みの作業標準が必要です。');return}
     if(isImportant(w)&&!w.resp){msgModal('作業開始を記録できません','重要作業です。作業開始の前に「責任者確認を記録」してください（作業責任者が、作業標準・必須確認・人員を確かめた記録です）。');return}
     const pend=w.pre.filter(c=>!c.done),ng=workChecks(w).filter(c=>c.lv==='ng');
     if((pend.length||ng.length)&&!confirm(`${pend.length?`作業前チェックに未確認の項目が${pend.length}つあります。\n`:''}${ng.length?`確認が必要な事項が${ng.length}件あります。\n`:''}アプリは安全を判断しません。責任者が現場で確認したうえで開始を記録しますか？`))return;
-    const by=prompt('作業開始を記録する人の名前（作業責任者）',who());if(!by||!by.trim())return;step('実施中','作業開始',pend.length?`未確認の作業前チェック${pend.length}項目のまま開始`:'',txt(by.trim(),60))}
+    signModal({title:'作業開始を記録',sub:esc(w.no+' '+w.title),byLabel:'作業責任者の名前',role:false,acts:[['開始','作業開始を記録','ok']],cancel:`closeModal(true);editWork('${id}')`,done:r=>{step('実施中','作業開始',pend.length?`未確認の作業前チェック${pend.length}項目のまま開始`:'',r.by);fin()}});return}
   else if(act==='done'){const reqP=w.post.filter(c=>c.req!==false&&!c.done);
     if(reqP.length){msgModal('作業完了を記録できません',`作業後の必須確認（復電の確認など）が終わっていません：<br>${reqP.map(c=>'・'+esc(c.text)).join('<br>')}`);return}
     const pend=w.post.filter(c=>!c.done);if(!w.result.trim()){toast('作業結果を入れて保存してから完了にしてください');return}
     if(pend.length&&!confirm(`作業後チェックに未確認の項目が${pend.length}つあります。責任者が確認したうえで完了にしますか？`))return;
-    const by=prompt('作業完了を確認した人の名前',who());if(!by||!by.trim())return;step('完了','作業完了',pend.length?`未確認の作業後チェック${pend.length}項目`:'',txt(by.trim(),60))}
+    signModal({title:'作業完了を記録',sub:esc(w.no+' '+w.title),byLabel:'作業完了を確認した人の名前',role:false,acts:[['完了','作業完了を記録','ok']],cancel:`closeModal(true);editWork('${id}')`,done:r=>{step('完了','作業完了',pend.length?`未確認の作業後チェック${pend.length}項目`:'',r.by);fin()}});return}
   else if(act==='hold'||act==='stop'){const note=ask(act==='hold'?'保留の理由':'中止（取消）の理由',true);if(note===null)return;step(act==='hold'?'保留':'中止',act==='hold'?'保留':'中止',note)}
   else if(act==='resume'){const note=ask('再開の理由',true);if(note===null)return;const prev=[...w.hist].reverse().find(h=>h.to===w.status&&h.from&&!['保留','中止'].includes(h.from));let to=prev?prev.from:'起案';if(to==='実施中')to='承認済み';w.hist.push({at:nowIso(),act:'再開',from:w.status,to,by:who(),note});w.status=to}
-  opLog('作業の状態変更',`${w.no} ${w.title}：${w.hist.at(-1).act}`);save();closeModal(true);render();toast(`${w.hist.at(-1).act}を記録しました`);editWork(id);
+  fin();
 }
 function delWork(id){const i=S.works.findIndex(w=>w.id===id);if(i<0)return;const w=S.works[i];if(!confirm(`作業「${w.title}」を削除しますか？（中止にすれば記録として残せます）`))return;S.works.splice(i,1);save();closeModal(true);render();undoBar(`作業「${w.title}」を削除しました`,()=>S.works.splice(i,0,w))}
 function vWorks(){
@@ -5125,11 +5141,9 @@ function saveStd(id){
 function approveStd(id){
   const t=stdById(id);if(!t)return;
   if(!t.pre.length){toast('作業前の確認項目がありません');return}
-  const by=prompt('承認者の名前（施設で作業標準を承認した人）','');if(!by||!by.trim())return;
-  const role=prompt('役職・立場（例：電気主任技術者）','')||'';
-  const d=prompt('承認日（例：2026-10-31）',TODAY);if(d===null)return;if(!isDate(d)){toast('日付の形が正しくありません');return}
-  Object.assign(t,{approvedBy:txt(by.trim(),60),approvedRole:txt(role,40),approvedDate:d,method:AUTH_NAME});t.hist.push({at:nowIso(),act:'承認の記録',by:txt(by.trim(),60),note:`${d}・${AUTH_NAME}`});
-  opLog('作業標準の承認',`${t.name} 版${t.ver}（${by.trim()}）`);save();closeModal(true);render();toast('承認を記録しました');
+  signModal({title:'作業標準の承認を記録',sub:esc(t.name+' 版'+t.ver),byLabel:'承認者の名前（施設で作業標準を承認した人）',by:'',date:true,dateLabel:'承認日',acts:[['承認','承認を記録','ok']],cancel:`closeModal(true);editStd('${id}')`,
+    done:r=>{const d=r.date;Object.assign(t,{approvedBy:r.by,approvedRole:r.role,approvedDate:d,method:AUTH_NAME});t.hist.push({at:nowIso(),act:'承認の記録',by:r.by,note:`${d}・${AUTH_NAME}`});
+      opLog('作業標準の承認',`${t.name} 版${t.ver}（${r.by}）`);save();closeModal(true);render();toast('承認を記録しました')}});
 }
 function delStd(id){const i=S.stds.findIndex(t=>t.id===id),t=S.stds[i];const used=S.works.filter(w=>w.stdId===id).length;if(!confirm(`作業標準「${t.name}」を削除しますか？${used?`\n（${used}件の作業指示が使っています。作業指示の確認項目は残ります）`:''}`))return;S.stds.splice(i,1);save();closeModal(true);render();undoBar(`作業標準「${t.name}」を削除しました`,()=>S.stds.splice(i,0,t))}
 function applyStd(){
@@ -5146,11 +5160,10 @@ const stdInfo=w=>{if(!w.stdId)return '<span class="muted">作業標準を選ん�
 function workResp(id){
   if($('#wk_title')&&!saveWork(id,true))return;const w=workById(id);if(!w)return;
   if(w.status!=='承認済み'){toast('内容が変わったため起案に戻りました。承認を受け直してください');closeModal(true);render();editWork(id);return}
-  const by=prompt('責任者の名前（作業責任者・電気主任技術者など）','');if(!by||!by.trim())return;
-  const role=prompt('役職・立場','')||'';const note=prompt('確認した内容（例：作業標準・停電範囲・人員・保護具を確認）','')||'';
-  w.resp={by:txt(by.trim(),60),role:txt(role,40),at:nowIso(),note:txt(note,500),method:AUTH_NAME};
-  w.hist.push({at:nowIso(),act:'責任者確認',from:'',to:'',by:txt(by.trim(),60),note:txt(note,500)});
-  opLog('責任者確認',`${w.no} ${w.title}（${by.trim()}）`);save();closeModal(true);render();toast('責任者確認を記録しました');editWork(id);
+  signModal({title:'責任者確認を記録',sub:esc(w.no+' '+w.title),byLabel:'責任者の名前（作業責任者・電気主任技術者など）',by:'',noteLabel:'確認した内容（例：作業標準・停電範囲・人員・保護具を確認）',acts:[['確認','責任者確認を記録','ok']],cancel:`closeModal(true);editWork('${id}')`,
+    done:r=>{w.resp={by:r.by,role:r.role,at:nowIso(),note:r.note,method:AUTH_NAME};
+      w.hist.push({at:nowIso(),act:'責任者確認',from:'',to:'',by:r.by,note:r.note});
+      opLog('責任者確認',`${w.no} ${w.title}（${r.by}）`);save();closeModal(true);render();toast('責任者確認を記録しました');editWork(id)}});
 }
 
 /* =====================================================================
