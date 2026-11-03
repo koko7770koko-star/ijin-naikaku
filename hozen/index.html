@@ -3629,6 +3629,17 @@ function aiMonthlyNote(y,m){
 /* 空の日だけ：直近（30日以内）の特記事項のある日。写したあとは普通に直せる（入力済みは上書きしない） */
 function prevDnoteDate(ds){const d=S.dnotes||{};for(let i=1;i<=30;i++){const q=addD(ds,-i);if(d[q])return q}return ''}
 function copyPrevDnote(ds){if((S.dnotes||{})[ds])return;const q=prevDnoteDate(ds);if(!q)return;setDnote(ds,S.dnotes[q])}
+/* 記録から特記事項の下書きを作る（AIは使わない）。書いてある文は消さず、後ろに足す */
+function dnoteDraftText(ds){
+  const r=S.daily[ds]||{},I=dailyIssues(ds),ts=tasksBetween(ds,ds),h=hasRec(r);
+  const iss=S.issues.filter(i=>i.date<=ds&&(!i.closed||i.closed>=ds));
+  const a=[];
+  if(h)a.push('日常点検：'+dayState(ds).st+(I.ng.length?'（異常：'+I.ng.join('、')+'）':'（異常なし）')+'。');
+  if(ts.length)a.push('作業：'+ts.map(t=>t.title+(t.status?'['+t.status+(t.result?'・'+t.result:'')+']':'')).join('、')+'。');
+  if(iss.length)a.push('異常案件：'+iss.map(i=>i.title+'['+(i.closed&&i.closed<=ds?'完了':i.status)+']').join('、')+'。');
+  return a.join('\n');
+}
+function addDnoteDraft(ds){const t=dnoteDraftText(ds);if(!t){toast('入れる記録がありません');return}const cur=(S.dnotes||{})[ds]||'';setDnote(ds,cur?cur+'\n'+t:t)}
 function setDnote(ds,v){S.dnotes=S.dnotes||{};const t=txt(v,2000).trim();logEdit('report',ds,'日報の特記事項',S.dnotes[ds]||'',t);if(t)S.dnotes[ds]=t;else delete S.dnotes[ds];save();render();toast('保存しました')}
 function aiDailyNote(ds){
   const r=S.daily[ds]||{},I=dailyIssues(ds);
@@ -3656,6 +3667,7 @@ function vDailyRep(){
   window._sh=n=>{V.day=addD(V.day,n);render()};
   return mnav(mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div>
     <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">特記事項（日報に印刷）</label><button class="btn sec sm" style="min-height:44px" onclick="aiDailyNote('${ds}')">🤖 下書き</button></div>
+    <button class="btn sec wide" id="dnDraft" style="min-height:44px;margin-top:6px" onclick="addDnoteDraft('${ds}')">📝 今日の記録から入れる（ネット不要・あとで直せます）</button>
     <textarea maxlength="2000" onchange="setDnote('${ds}',this.value)">${esc((S.dnotes||{})[ds]||'')}</textarea>
     ${(S.dnotes||{})[ds]?'':(()=>{const q=prevDnoteDate(ds);return q?`<button class="btn sec wide" id="dnCopy" style="min-height:44px;margin-top:6px" onclick="copyPrevDnote('${ds}')">⧉ ${md(q)}の特記事項を写す（あとで直せます）</button>`:''})()}</div>
   <div class="card"><div class="rep">${repHead('電気設備 日報',`${ds.replace(/-/g,'/')}（${WD[pd(ds).getDay()]}）`)}
