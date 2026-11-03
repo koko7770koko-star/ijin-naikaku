@@ -507,7 +507,7 @@ details summary{cursor:pointer;padding:4px 0}
 .tbl{border-collapse:collapse;width:100%;font-size:13px}
 .tbl th,.tbl td{border-bottom:1px solid #e3e8ee;padding:6px 4px;text-align:left;white-space:nowrap}
 .tbl th{color:var(--mut);font-weight:600}
-.tbl tr[onclick]{cursor:pointer}
+.tbl tr[onclick]{cursor:pointer}@media screen{.rep tr.lk{cursor:pointer}}
 .bars{display:flex;align-items:flex-end;gap:3px;height:112px;padding:4px 0}
 .bars .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:0}
 .bars .bar .bv{width:70%;background:var(--accent);border-radius:3px 3px 0 0;min-height:1px}
@@ -3783,7 +3783,7 @@ function vMonthly(){
     <div class="sec">4. 異常・指摘事項（当月）</div>
     ${repTable('<th style="width:28px">No</th><th style="width:44px">日付</th><th>内容</th><th>結果</th><th>備考・処置</th>',abn.map((x,i)=>`<tr><td class="c">${i+1}</td><td class="c">${md(x[0])}</td><td>${esc(x[1])}</td><td class="c red">${esc(x[2])}</td><td>${esc(x[3])}</td></tr>`),'異常なし')}
     <div class="sec">5. 異常案件の対応状況（継続中を含む）</div>
-    ${repTable('<th style="width:28px">No</th><th style="width:44px">発生日</th><th>内容</th><th>月末時点</th><th>処置・経過</th>',IS.map((i,k)=>`<tr><td class="c">${k+1}</td><td class="c">${md(i.date)}</td><td>${esc(i.title)}${i.place?'（'+esc(i.place)+'）':''}<div class="small">${esc(i.detail||'')}</div></td><td class="c ${i.st.startsWith('完了')?'grn':'red'}">${esc(i.st)}</td><td>${esc(i.action||'')}</td></tr>`),'該当なし')}
+    ${repTable('<th style="width:28px">No</th><th style="width:44px">発生日</th><th>内容</th><th>月末時点</th><th>処置・経過</th>',IS.map((i,k)=>`<tr class="lk" onclick="editIssue('${i.id}')"><td class="c">${k+1}</td><td class="c">${md(i.date)}</td><td>${esc(i.title)}${i.place?'（'+esc(i.place)+'）':''}<div class="small">${esc(i.detail||'')}</div>${i.equipId&&eqById(i.equipId)?`<button class="btn sec sm noprint mlk" style="min-height:44px" onclick="event.stopPropagation();go('equipDetail',{eq:'${i.equipId}'})">設備のカルテを開く ›</button>`:''}</td><td class="c ${i.st.startsWith('完了')?'grn':'red'}">${esc(i.st)}</td><td>${esc(i.action||'')}</td></tr>`),'該当なし')}
     <div class="sec">6. 来月（${nm}月）の主な予定</div>
     ${repTable('<th style="width:28px">No</th><th>点検・作業項目</th><th>予定日</th><th>委託/自主・担当</th>',nextRows.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${esc(r[0])}</td><td class="c">${esc(r[1])}</td><td class="c">${esc(r[2])}</td></tr>`),'予定なし')}
     ${banReportHTML(y,m)}
