@@ -14,7 +14,7 @@ const toSjis=t=>execFileSync('python3',['-I','-c','import sys;sys.stdout.buffer.
   S.locs=[mk('b1','A棟','建屋',''),mk('f1','1階','階','b1'),mk('r1','第1電気室','電気室','f1'),mk('p1','動力盤-1','盤','r1')];
   S.equipment=[
    {id:'e0',code:'E-001',name:'受電盤',place:'A棟 1階',maker:'甲',model:'M1',serial:'S1',installed:'2015-04',cycle:'年1回',note:'',locId:'p1',photos:[],docs:[],repairs:[{id:'r1',date:'2026-01-05',kind:'修理',content:'端子の増し締め',vendor:'○○電気',cost:12000,photos:[]}],health:[]},
-   {id:'e1',code:'',name:'照明分電盤',place:'A棟 1階 廊下',maker:'',model:'',serial:'',installed:'2010-10',cycle:'',note:'',locId:'r1',photos:[],docs:[],repairs:[{id:'r2',date:'2026-02-01',kind:'部品交換',content:'ブレーカー交換',vendor:'',cost:'',photos:[]}],health:[]},
+   {id:'e1',code:'',name:'照明分電盤〜3㎾',place:'A棟 1階 廊下',maker:'',model:'',serial:'',installed:'2010-10',cycle:'',note:'',locId:'r1',photos:[],docs:[],repairs:[{id:'r2',date:'2026-02-01',kind:'部品交換',content:'ブレーカー交換',vendor:'',cost:'',photos:[]}],health:[]},
    {id:'e2',code:'',name:'換気扇',place:'屋上',maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[]},
    {id:'e3',code:'',name:'換気扇',place:'屋上',maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[]}];
   save();go('equip')});
@@ -29,14 +29,14 @@ const toSjis=t=>execFileSync('python3',['-I','-c','import sys;sys.stdout.buffer.
   await p.evaluate(a=>{PENDING_EQCSV=planEquipCsv(csvDecode(new Uint8Array(a).buffer));return applyEquipCsv()},[...buf]);await p.waitForTimeout(500);
   const after=await p.evaluate(()=>({n:S.equipment.length,ls:JSON.parse(localStorage.getItem('hospElecSched_v1')).equipment.length,
    e0:S.equipment.find(e=>e.id==='e0'),e1:S.equipment.find(e=>e.id==='e1'),fan:S.equipment.filter(e=>e.name==='換気扇').length}));
-  // 受電盤・照明分電盤は 1 台ずつのまま（二重にならない）。換気扇は見分けられないので 2+2=4 台（勝手に寄せない）
+  // 受電盤・照明分電盤〜3㎾は 1 台ずつのまま（二重にならない）。換気扇は見分けられないので 2+2=4 台（勝手に寄せない）
   if(after.n!==6||after.ls!==6)bad.push(label+'：読み込み後の台数 '+after.n+'/'+after.ls+'（6 のはず）');
   if(after.fan!==4)bad.push(label+'：換気扇 '+after.fan);
   const chk=(e,exp,nm)=>{if(!e){bad.push(label+'：'+nm+' が消えた');return}
    for(const k of ['name','place','installed','locId'])if((e[k]||'')!==exp[k])bad.push(label+'：'+nm+' の '+k+' が変わった '+JSON.stringify([e[k],exp[k]]));
    if((e.repairs||[]).length!==exp.rep)bad.push(label+'：'+nm+' の修理履歴 '+(e.repairs||[]).length);};
   chk(after.e0,{name:'受電盤',place:'A棟 1階',installed:'2015-04',locId:'p1',rep:1},'受電盤');
-  chk(after.e1,{name:'照明分電盤',place:'A棟 1階 廊下',installed:'2010-10',locId:'r1',rep:1},'照明分電盤（IDなし）');
+  chk(after.e1,{name:'照明分電盤〜3㎾',place:'A棟 1階 廊下',installed:'2010-10',locId:'r1',rep:1},'照明分電盤〜3㎾（IDなし）');
   // 元に戻すと読み込み前と同じ
   await p.evaluate(()=>{document.querySelector('#undobar button').click()});await p.waitForTimeout(200);
   if(await snap()!==before)bad.push(label+'：元に戻しても同じにならない');
@@ -46,5 +46,5 @@ const toSjis=t=>execFileSync('python3',['-I','-c','import sys;sys.stdout.buffer.
  // 2 回続けて読み込んでも増えない（IDなしの 1 台）
  await setup();await p.waitForTimeout(200);const csv=await exportCsv();
  for(let i=0;i<2;i++){await p.evaluate(t=>{PENDING_EQCSV=planEquipCsv(t);return applyEquipCsv()},csv);await p.waitForTimeout(400)}
- const n2=await p.evaluate(()=>S.equipment.filter(e=>e.name==='照明分電盤').length);if(n2!==1)bad.push('2 回読み込むと照明分電盤が '+n2+' 台');
+ const n2=await p.evaluate(()=>S.equipment.filter(e=>e.name==='照明分電盤〜3㎾').length);if(n2!==1)bad.push('2 回読み込むと照明分電盤〜3㎾が '+n2+' 台');
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
