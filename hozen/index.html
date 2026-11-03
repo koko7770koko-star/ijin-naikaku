@@ -172,7 +172,8 @@ table.yr .cat td{text-align:left;background:#f0f4f8;font-weight:700;color:var(--
 table.yr .cat span{position:sticky;left:8px}
 /* 盤の点検表 */
 .banrow{display:flex;gap:4px;align-items:center;margin:4px 0}.banrow .bn{flex:1 1 auto;min-width:0;font-weight:700;overflow-wrap:anywhere}
-.banrow .bi,.banrow .bm{flex:0 0 58px;width:58px}.banrow.bh .bi{font-size:12px;line-height:1.2;text-align:center;color:var(--mut,#667)}
+.banrow .bi,.banrow .bm{flex:0 0 58px;width:58px}.banrow.flash{outline:3px solid #e0b000;outline-offset:1px;background:#fff6d6;transition:background .3s}
+.banrow.bh .bi{font-size:12px;line-height:1.2;text-align:center;color:var(--mut,#667)}
 .bm{height:44px;font-size:20px;font-weight:700;border:1px solid var(--bd,#cbd5e1);border-radius:10px;background:#fff;padding:0}.bm.bw{flex-basis:44px;width:44px;font-size:16px}
 table.yr td.mk{width:34px;height:44px;font-size:18px;font-weight:700;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .mk-o{background:var(--a-bg);color:var(--navy)}.mk-d{background:#c6efce;color:var(--ok)}.mk-e{background:var(--ng-bg);color:var(--ng)}
@@ -4220,6 +4221,17 @@ function floorKey(n){const m=/^B(\d+)/i.exec(n);if(m)return -(+m[1]);const k=/^(
 function banBoards(rootId){const ids=locDesc(rootId);return (S.locs||[]).filter(l=>l.type==='盤'&&ids.has(l.id)).sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}))}
 function banVal(ym,id,k){const r=((S.banChk||{})[ym]||{})[id];return r&&r[k]||''}
 function banCount(ym,boards){let d=0;boards.forEach(b=>{for(let k=0;k<3;k++)if(banVal(ym,b.id,k)==='済')d++});return {d,t:boards.length*3}}
+const banDone=(ym,b)=>[0,1,2].every(k=>banVal(ym,b.id,k)==='済');
+const banPend=(ym,b)=>[0,1,2].some(k=>{const v=banVal(ym,b.id,k);return v!=='済'&&v!=='延'});
+function banOrder(bid){const fl=(S.locs||[]).filter(l=>l.type==='階'&&l.parent===bid).sort((a,b)=>floorKey(b.name)-floorKey(a.name)||a.name.localeCompare(b.name,'ja')),seen=new Set(),o=[];fl.forEach(f=>banBoards(f.id).forEach(b=>{if(!seen.has(b.id)){seen.add(b.id);o.push(b)}}));banBoards(bid).forEach(b=>{if(!seen.has(b.id)){seen.add(b.id);o.push(b)}});return o}
+/* 次の未点検の盤へ：この棟の上から順に、全部 ● ではない盤へ。この棟が終わっていれば次の棟へ移る。画面の動きだけで、保存は変えない */
+function banNext(){
+  const ym=V.banYm||TODAY.slice(0,7),B=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}));if(!B.length)return;
+  const cur=Math.max(0,B.findIndex(x=>x.id===V.banB));
+  for(let n=0;n<B.length;n++){const b=B[(cur+n)%B.length],t=banOrder(b.id).find(x=>banPend(ym,x));
+    if(t){if(b.id!==V.banB){V.banB=b.id;render()}const el=document.getElementById('ban-'+t.id);if(el){el.scrollIntoView({block:'center',behavior:'smooth'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1800)}return}}
+  toast('この月の盤は、すべて ●（実施済み）か延期です');
+}
 function banSet(ym,id,k,v){S.banChk=S.banChk||{};const m=S.banChk[ym]=S.banChk[ym]||{};const r=m[id]=m[id]||['','',''];r[k]=v}
 function banTap(id,k){const ym=V.banYm||TODAY.slice(0,7),cur=banVal(ym,id,k),nv=cur===''?'○':cur==='○'?'済':'';banSet(ym,id,k,nv);save();render();
   if(nv==='済'){const b=locById(id);undoBar(`「${b?b.name:'盤'}」の「${BAN_ITEMS[k]}」を ●（実施済み）にしました`,()=>{banSet(ym,id,k,cur)},'印')}}
@@ -4241,10 +4253,10 @@ function vBan(){
   const floors=(S.locs||[]).filter(l=>l.type==='階'&&l.parent===bid).sort((a,b)=>floorKey(b.name)-floorKey(a.name)||a.name.localeCompare(b.name,'ja'));
   const inFloor=new Set();floors.forEach(f=>banBoards(f.id).forEach(b=>inFloor.add(b.id)));
   const rest=allB.filter(b=>!inFloor.has(b.id));
-  const row=b=>`<div class="banrow"><div class="bn">${esc(b.name)}</div>${[0,1,2].map(k=>{const v=banVal(ym,b.id,k);return `<button class="bm ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''}" aria-label="${esc(BAN_ITEMS[k])}" onclick="banTap('${b.id}',${k})">${banShow(v)||'&nbsp;'}</button>`}).join('')}<button class="bm bw" aria-label="異常を記録" onclick="banIssue('${b.id}')">⚠</button></div>`;
-  const grp=(title,bs,fid)=>{const c=banCount(ym,bs);return `<div class="card"><div class="hd-row"><h2 style="margin:0">${esc(title)} <span class="muted">${c.t?c.d+'/'+c.t:'盤なし'}</span></h2>${fid&&bs.length?`<button class="btn sec sm" onclick="banAll('${fid}')">全部 ●</button>`:''}</div>
+  const row=b=>`<div class="banrow" id="ban-${b.id}"><div class="bn">${esc(b.name)}</div>${[0,1,2].map(k=>{const v=banVal(ym,b.id,k);return `<button class="bm ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''}" aria-label="${esc(BAN_ITEMS[k])}" onclick="banTap('${b.id}',${k})">${banShow(v)||'&nbsp;'}</button>`}).join('')}<button class="bm bw" aria-label="異常を記録" onclick="banIssue('${b.id}')">⚠</button></div>`;
+  const grp=(title,bs,fid)=>{const c=banCount(ym,bs);return `<div class="card"><div class="hd-row"><h2 style="margin:0">${esc(title)} <span class="muted">${c.t?c.d+'/'+c.t+'（'+bs.filter(x=>banDone(ym,x)).length+'/'+bs.length+'面）':'盤なし'}</span></h2>${fid&&bs.length?`<button class="btn sec sm" onclick="banAll('${fid}')">全部 ●</button>`:''}</div>
     ${bs.length?`<div class="banrow bh"><div class="bn"></div>${BAN_ITEMS.map(n=>`<div class="bi">${esc(n)}</div>`).join('')}<div class="bi"></div></div>${bs.map(row).join('')}`:`<div class="muted" style="margin-top:6px">この階にはまだ盤がありません。</div>`}</div>`};
-  return head+tabs+`<div class="card" style="padding:8px 12px"><b>${esc(bl.name)}</b>：${tot.t?`${tot.d}/${tot.t} 実施済み（●）`:'盤がまだ登録されていません'}</div>`
+  return head+tabs+`<div class="card" style="padding:8px 12px"><div class="row" style="flex-wrap:nowrap"><span class="grow"><b>${esc(bl.name)}</b>：${tot.t?`${tot.d}/${tot.t} 実施済み（●）・${allB.filter(x=>banDone(ym,x)).length}/${allB.length}面が完了`:'盤がまだ登録されていません'}</span>${tot.t?`<button class="btn sm" style="min-height:44px;white-space:nowrap" onclick="banNext()">次の未点検へ ▼</button>`:''}</div></div>`
     +floors.map(f=>grp(f.name,banBoards(f.id),f.id)).join('')+(rest.length?grp('階なし',rest,''):'')
     +(!floors.length&&!rest.length?card('階がありません','<button class="btn wide" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button>'):'')
     +`<div class="row" style="margin:8px 0"><button class="btn sec grow" onclick="banAddWizard()">＋ 盤をまとめて足す</button></div>
