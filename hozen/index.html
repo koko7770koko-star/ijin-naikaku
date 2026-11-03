@@ -172,6 +172,7 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .cal .t.ex{background:#eceff1;color:#607080;text-decoration:line-through}
 .cal .t.ok{background:var(--ok-bg);color:var(--ok)}.cal .t.ng{background:var(--ng-bg);color:var(--ng)}
 .cal .more{font-size:10px;color:var(--accent)}
+.cal .wkm{font-size:10px;color:var(--warn,#b26a00);font-weight:700;white-space:nowrap}
 .aisend{font-size:12px;color:#456}
 .lgd{display:flex;flex-wrap:wrap;gap:4px 6px;width:100%}.lgd .lg{font-size:12px;font-weight:600;border-radius:4px;padding:3px 8px;background:#e9eff6;color:#1f3b57}.lgd .lg.ok{background:var(--ok-bg);color:var(--ok)}.lgd .lg.ng{background:var(--ng-bg);color:var(--ng)}.lgd .lg.ex{background:#eceff1;color:#607080;text-decoration:line-through}
 @media screen{.repscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}}
@@ -2525,6 +2526,8 @@ function monthPrintHTML(y,m){
     <table class="mpt"><thead><tr>${[...WD].map((w,i)=>`<th class="${i===0?'sun':i===6?'sat':''}">${w}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 const pStamp='<table class="pstamp"><tr><th>担当</th><th>確認</th><th>承認</th></tr><tr><td></td><td></td><td></td></tr></table>';
+// その日にかかる工事・作業指示（中止は除く。複数日の工事は期間中の毎日に出す。表示だけで保存はしない）
+function worksOn(s){return (S.works||[]).filter(w=>w.date&&w.date<=s&&(w.endDate||w.date)>=s&&w.status!=='中止').sort((a,b)=>((a.start||'')+a.title).localeCompare((b.start||'')+b.title))}
 function pickDay(s){V.sel=s;render();const e=document.getElementById('dayCard');if(e&&e.scrollIntoView)e.scrollIntoView({block:'center'})}
 function vMonth(){
   const {y,m}=V,first=new Date(y,m-1,1),start=new Date(y,m-1,1-first.getDay()),st=S.settings;
@@ -2538,7 +2541,7 @@ function vMonth(){
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);const s=ymd(d),wd=d.getDay();
     if(i>=35&&d.getMonth()!==m-1)break;
-    const ts=S.tasks.filter(t=>t.date===s),cf=ts.some(t=>conflicts(t).length),o=crewDay(s);
+    const ts=S.tasks.filter(t=>t.date===s),cf=ts.some(t=>conflicts(t).length),o=crewDay(s),wn=worksOn(s).length;
     let crew='';
     if(o&&st.showCrew!==false)crew+=o.A.map(n=>`<span class="w a">${esc(sn(n))}</span>`).join('')+o.B.map(n=>`<span class="w b">${esc(sn(n))}</span>`).join('');
     if(o&&st.calDay)crew+=o.D.map(n=>`<span class="w d">${esc(sn(n))}</span>`).join('');
@@ -2546,13 +2549,13 @@ function vMonth(){
     if(crew)crew=`<div class="wc">${crew}</div>`;
     h+=`<div class="d ${d.getMonth()!==m-1?'o':''} ${s===TODAY?'today':''} ${s===V.sel?'sel':''}" onclick="pickDay('${s}')">
       <div class="n ${wd===0||holName(s)?'sun':wd===6?'sat':''}" ${holName(s)?`title="${holName(s)}"`:''}>${d.getDate()}${s===TODAY?'<small class="tdl">今日</small>':''}${holName(s)?'<small class="hlb">祝</small>':''}${cf?' <span style="color:var(--ng)">⚠</span>':''}</div>
-      ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件 ${ts.filter(t=>t.status==='完了').length}/${ts.length}</div>`:''}${crew}</div>`;
+      ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件 ${ts.filter(t=>t.status==='完了').length}/${ts.length}</div>`:''}${wn?`<div class="wkm" aria-label="工事・作業 ${wn}件">🔧${wn}</div>`:''}${crew}</div>`;
   }
-  h+=`</div><div class="tags" style="margin-top:10px">${st.showCrew!==false?'<span class="tag a" style="font-size:12px">A夜勤</span><span class="tag b" style="font-size:12px">B夜勤</span>':''}${st.calDay?'<span class="tag d" style="font-size:12px">日勤</span>':''}<span class="tag task" style="font-size:12px">点検・作業</span><span class="lgd" id="calLg"><span class="lg pl">◯ 予定</span><span class="lg ok">● 実施済み</span><span class="lg ex">延期・中止</span><span class="lg ng">⚠ 衝突・異常</span></span></div>
+  h+=`</div><div class="tags" style="margin-top:10px">${st.showCrew!==false?'<span class="tag a" style="font-size:12px">A夜勤</span><span class="tag b" style="font-size:12px">B夜勤</span>':''}${st.calDay?'<span class="tag d" style="font-size:12px">日勤</span>':''}<span class="tag task" style="font-size:12px">点検・作業</span>${(S.works||[]).length?'<span class="wkm" style="font-size:12px;align-self:center">🔧 工事・作業指示</span>':''}<span class="lgd" id="calLg"><span class="lg pl">◯ 予定</span><span class="lg ok">● 実施済み</span><span class="lg ex">延期・中止</span><span class="lg ng">⚠ 衝突・異常</span></span></div>
     <div class="row" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div>
     <button class="btn sm sec wide" style="margin-top:8px" onclick="window.print()">🖨 この月の予定表を印刷（A4 縦）</button></div>${monthPrintHTML(y,m)}`;
-  const dayT=S.tasks.filter(t=>t.date===V.sel).sort(byDate);
-  h+=`<div class="card noprint" id="dayCard"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.filter(t=>t.status==='予定').length>=2?`<button class="btn sec sm wide" id="dayAllDone" style="min-height:44px;margin:4px 0 8px" onclick="dayAllDone('${V.sel}')">この日の ◯ ${dayT.filter(t=>t.status==='予定').length}件を全部 ●</button>`:''}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):'<div class="empty">予定はありません</div>'}</div>`;
+  const dayT=S.tasks.filter(t=>t.date===V.sel).sort(byDate),dayW=worksOn(V.sel);
+  h+=`<div class="card noprint" id="dayCard"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.filter(t=>t.status==='予定').length>=2?`<button class="btn sec sm wide" id="dayAllDone" style="min-height:44px;margin:4px 0 8px" onclick="dayAllDone('${V.sel}')">この日の ◯ ${dayT.filter(t=>t.status==='予定').length}件を全部 ●</button>`:''}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):(dayW.length?'':'<div class="empty">予定はありません</div>')}${dayW.length?`<div id="dayWorks"><b class="muted" style="display:block;margin:8px 0 4px">🔧 この日の工事・作業指示 ${dayW.length}件</b>${dayW.map(w=>`<div class="item" onclick="editWork('${w.id}')"><div class="dt" style="min-width:64px">${esc(w.start||'')}</div><div class="bd"><div class="ti">${esc(w.title)}</div><div class="meta">${esc([w.no,w.status,w.date!==(w.endDate||w.date)?md(w.date)+'〜'+md(w.endDate):'',w.place].filter(Boolean).join('・'))}</div></div></div>`).join('')}</div>`:''}</div>`;
   const mt=tasksOf(y,m);
   h+=`<div class="card noprint"><div class="hd-row"><h2>${m}月の一覧</h2><span class="muted">完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件</span></div>${mt.length?mt.map(taskRow).join(''):'<div class="empty">この月の予定はまだありません</div>'}</div>`;
   return h;
