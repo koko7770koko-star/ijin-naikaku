@@ -5078,7 +5078,7 @@ function vStock(){
   let h=tabs16('stTab',[['parts','予備品'],['tools','工具・測定器'],['budget','予算・費用']]);
   if(t==='parts'){const q=(V.ptQ||'').trim(),P=(S.parts||[]).filter(p=>!q||[p.name,p.code,p.spec,p.maker,p.place].join(' ').includes(q)).map((p,k)=>[p,k]).sort((a,b)=>((b[0].min!==''&&b[0].qty<=b[0].min)-(a[0].min!==''&&a[0].qty<=a[0].min))||a[1]-b[1]).map(x=>x[0]),low=P.filter(p=>p.min!==''&&p.qty<=p.min);
     h+=`<input placeholder="品名・型番・保管場所で検索" value="${esc(q)}" onchange="V.ptQ=this.value;render()" style="margin-bottom:8px">`;
-    if(low.length)h+=`<div class="al ng">在庫不足 ${low.length}品目：${low.map(p=>esc(p.name)).join('、')}</div>`;
+    if(low.length)h+=`<div class="al ng">在庫不足 ${low.length}品目：${low.slice(0,3).map(p=>esc(p.name)).join('、')}${low.length>3?` ほか${low.length-3}品目（下の一覧の上に並んでいます）`:''}</div>`;
     h+=card(`📦 予備品 <span class="muted">${P.length}品目</span>`,P.map(partRow).join('')||emptyGuide('予備品はまだありません。登録しておくと、在庫が最低在庫数を下回ったときにホームで知らせます。','予備品を登録','editPart()'),`<button class="btn sm" style="min-height:40px" onclick="editPart()">＋ 追加</button>`);
     const M=(S.moves||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
     h+=card('🔄 入出庫履歴（最近20件）',M.map(m=>`<div class="item"><div class="dt">${md(m.date)}</div><div class="bd"><div class="ti">${esc(m.type)}：${esc(partName(m.partId))} ${m.type==='棚卸'?'→ '+m.after:(m.type==='出庫'?'−':'+')+m.qty}</div><div class="meta">${esc([m.by,m.ref.startsWith('issue:')?'異常案件':m.ref.startsWith('work:')?'作業':'',m.note].filter(Boolean).join('・'))}</div></div></div>`).join('')||emptyBox('まだありません'),`<button class="btn sec sm" onclick="exportStockCsv()">CSV</button>`);
