@@ -26,4 +26,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  if(!R.strVals||R.strVals.days!==60)bad.push('文字の値でも数として読む '+JSON.stringify(R.strVals));
  if(!R.nanVals||R.nanVals.n!==4)bad.push('NaN の値は飛ばして4件で計算 '+JSON.stringify(R.nanVals));
  const txt=JSON.stringify(R);if(/NaN|Infinity/.test(txt))bad.push('NaN/Infinity が出た '+txt);
+ // グラフの最後の値の文字に 3.3499999999999996 のような計算の誤差が出ない（390px）
+ await p.evaluate(()=>{const n=numDefs()[0];n.min=1.5;n.max=12.5;n.unit='kV';S.daily={};[...Array(20)].forEach((_,i)=>{S.daily[addD(TODAY,-19+i)]={[n.id]:11.9-i*0.45}});save();go('hist',{hItem:n.id,hRange:'90'})});await p.waitForTimeout(400);
+ const lab=await p.evaluate(()=>[...document.querySelectorAll('svg text')].map(t=>t.textContent));if(lab.some(t=>/\d\.\d{5,}/.test(t)))bad.push('グラフの文字に長い小数 '+lab.filter(t=>/\d\.\d{5,}/.test(t)).join(','));
+ const sw=await p.evaluate(()=>document.documentElement.scrollWidth);if(sw>392)bad.push('はみ出す '+sw);
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
