@@ -13,7 +13,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
     {id:'i3',date:'2026-11-03',title:'電気室なし',place:'A棟 › 2階 › 分電盤-2',status:'発見',equipId:'',detail:'',action:'',photos:[]},
     {id:'i4',date:'2026-11-04',title:'場所の文字が違う',place:'B棟のどこか',status:'発見',equipId:'',detail:'',action:'',photos:[]},
     {id:'i5',title:'日付なし（古い記録）',place:'',status:'発見',equipId:'',detail:'',action:'',photos:[]}];return JSON.stringify(S.issues)});
- const out=await p.evaluate(async()=>{window.__out=null;window.hzSave=async(n,bl)=>{const u=new Uint8Array(await bl.arrayBuffer());window.__out={n,t:await bl.text(),bom:u[0]===0xEF&&u[1]===0xBB&&u[2]===0xBF};return true};exportIssuesCsv();await new Promise(r=>setTimeout(r,300));return window.__out});
+ const out=await p.evaluate(async()=>{window.__out=null;window.hzSave=async(n,bl)=>{const u=new Uint8Array(await bl.arrayBuffer());window.__out={n,t:await bl.text(),bom:u[0]===0xEF&&u[1]===0xBB&&u[2]===0xBF};return true};exportIssuesCsv();for(let k=0;k<100&&!window.__out;k++)await new Promise(r=>setTimeout(r,50));return window.__out});
  if(!out)bad.push('書き出されない');else{
   if(!out.bom)bad.push('BOM が無い');
   const L=out.t.replace(/^\uFEFF/,'').split('\r\n').filter(Boolean).map(l=>l.split(',').map(x=>x.replace(/^"|"$/g,'')));const H=L[0];
