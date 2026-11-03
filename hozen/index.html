@@ -2671,6 +2671,8 @@ function vDay(){
   window._sh=n=>{V.day=addD(V.day,n);render()};
   let h=(NAV_STACK.length>=2&&NAV_STACK[NAV_STACK.length-2]==='hist'?'<button type="button" class="btn sec noprint" id="dayBackHist" style="min-height:44px;margin-bottom:8px" onclick="goBack(\'hist\')">‹ 点検履歴にもどる（絞り込みはそのまま）</button>':'')+mnav(`${mdw(s)}${s===TODAY?' 今日':''}`,'_sh(-1)','_sh(1)');
   if(s!==TODAY)h+=`<div class="al warn noprint" style="cursor:default;display:flex;gap:8px;align-items:center;flex-wrap:wrap" id="dayNotToday"><span class="grow"><b>${md(s)}（${'日月火水木金土'[new Date(s+'T00:00:00').getDay()]}）の記録を入力中</b><br>今日（${md(TODAY)}）ではありません。</span><button class="btn sm" style="min-height:44px" onclick="V.day=TODAY;render()">今日に戻る</button></div>`;
+  // 夜勤で日付をまたいだ（0〜5時台に「今日」を開いている）とき：前日の夜勤の記録なら昨日に入れる、と案内する（表示だけ。日付を選ぶだけで記録の形は変えない）
+  if(s===TODAY&&now.getHours()<6&&!((S.daily[addD(TODAY,-1)]||{}).done))h+=`<div class="al info noprint" id="dayCross" style="cursor:default;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="grow">いまは ${now.getHours()}時台です。<b>前日の夜勤の記録</b>なら、昨日（${md(addD(TODAY,-1))}）に入れてください。</span><button class="btn sm" style="min-height:44px" onclick="V.day=addD(TODAY,-1);render()">昨日の記録を開く</button></div>`;
   h+=`<div class="row noprint" style="margin:-4px 0 10px;flex-wrap:nowrap">${[[-1,'昨日'],[0,'今日'],[1,'明日']].map(([n,l])=>`<button class="btn ${addD(TODAY,n)===s?'':'sec'} sm grow" onclick="V.day=addD(TODAY,${n});render()">${l}</button>`).join('')}<button class="btn sec sm grow" onclick="go('dailyRep')">📄 日報</button></div>`;
   h+=`<div class="quick">
     <button class="btn ok full" onclick="quickOK()">✓ 異常なしで記録</button>
