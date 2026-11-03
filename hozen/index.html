@@ -3283,7 +3283,9 @@ async function wipe(){
   const w=prompt('スケジュールのデータ（予定・点検記録・異常案件・年間計画）をすべて消去します。シフト表・設備台帳・点検項目の設定・写真は残ります。\n消去前の状態はバックアップ履歴に残します。\n\n実行する場合は「消去」と入力してください。');
   if(w!=='消去'){if(w!==null)toast('入力が一致しないため中止しました');return}
   if(!await safeSnap('全消去の前'))return;
-  const devS={apiMode:S.settings.apiMode,apiUrl:S.settings.apiUrl,facType:S.settings.facType},model=S.settings.model,dn=S.settings.dnums,dc=S.settings.dchecks,eq=S.equipment,keepLog=S.opLog||[];S=fillDefaults(clone(DEF));S.opLog=keepLog;S.lastVer=APP_VER;opLog('全データ消去','消去前の状態はバックアップ履歴に保存');S.schema=SCHEMA;Object.assign(S.settings,{model,dnums:dn,dchecks:dc},devS);S.equipment=eq;syncDefs();save();render();toast('消去しました（履歴から戻せます）');
+  /* 説明どおり、消すのは予定・点検記録・異常案件・年間計画（DEF の settings 以外の項目）だけ。設定・設備台帳・測定・作業指示・予備品・工具・図面・技術資料・場所の階層・作業標準などは残す */
+  for(const k in DEF){if(k==='settings')continue;S[k]=clone(DEF[k])}
+  opLog('全データ消去','消去前の状態はバックアップ履歴に保存');S.lastVer=APP_VER;S.schema=SCHEMA;syncDefs();save();render();toast('消去しました（履歴から戻せます）');
 }
 function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800)}
 function photoOwners(){return photoOwnersOf(S)}
