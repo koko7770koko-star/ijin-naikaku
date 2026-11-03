@@ -192,7 +192,8 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
 .num input.bad{background:var(--ng-bg);color:var(--ng)}
 .num input.chg{background:var(--warn-bg)}
 .num .hint{font-size:12px;color:var(--mut);min-height:16px}
-.num .hint.tapprev{text-decoration:underline dotted;padding:6px 0;min-height:32px;cursor:pointer}
+.num .hint.tapprev{border:1px dashed var(--accent);border-radius:8px;padding:8px 4px;min-height:44px;cursor:pointer;color:var(--accent);text-align:center;display:flex;align-items:center;justify-content:center}
+.daysaved{font-size:12px;color:var(--ok);font-weight:700;white-space:nowrap}
 .chk{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eef1f4}
 .chk .l{flex:1;font-size:15px}
 .chk.flash{background:#fff2c2;transition:background .3s}
@@ -2651,7 +2652,7 @@ function vDay(){
     ${fileBtn('<b>📷</b>写真から読み取り','ocrFiles','sec full')}
   </div>`;
   const I=dailyIssues(s);
-  h+=`<div class="card"><div class="hd-row"><h2>日常点検</h2><span id="dayBadge">${dayBadge(s)}</span></div>
+  h+=`<div class="card"><div class="hd-row"><h2>日常点検</h2><span class="daysaved" id="daySaved">${daySavedHTML(s)}</span><span id="dayBadge">${dayBadge(s)}</span></div>
     ${crewTags(crewDay(s))}
     <div class="row" style="margin-bottom:4px"><input type="date" value="${s}" onchange="if(isDate(this.value)){V.day=this.value;render()}" class="grow" style="width:auto">${s!==TODAY?'<button class="btn sec sm" onclick="V.day=TODAY;render()">今日</button>':''}</div>
     ${dHas||dFl?`<div class="row noprint" style="margin:6px 0"><select class="grow" aria-label="場所で絞り込む" onchange="V.dayLoc=this.value;render()">${locOptions(dFl).replace('（指定しない）','場所：すべて')}</select></div>${dFl?`<div class="muted" style="margin-bottom:6px">絞り込み中：場所の合わない・未設定の ${dHide} 件は隠れています（記録は残ります）</div>`:''}`:''}
@@ -2726,11 +2727,11 @@ function monthGrid(s){
 // 数値・文字は画面を作り直さずに部分更新（入力中のフォーカスを保つ）
 function refreshDay(){
   const s=V.day;if(!$('#dayBadge'))return;
-  $('#dayBadge').innerHTML=dayBadge(s);$('#dayAl').innerHTML=dayAlerts(s);$('#dayGrid').innerHTML=monthGrid(s);
+  $('#dayBadge').innerHTML=dayBadge(s);if($('#daySaved'))$('#daySaved').textContent=daySavedHTML(s);$('#dayAl').innerHTML=dayAlerts(s);$('#dayGrid').innerHTML=monthGrid(s);
   const I=dailyIssues(s),r=S.daily[s]||{};
   numDefs().forEach(n=>{const e=$('#n_'+n.id);if(!e)return;
     e.classList.toggle('bad',I.ng.some(x=>x.startsWith(n.name+' ')));e.classList.toggle('chg',I.warn.some(x=>x.startsWith(n.name+' ')));e.classList.toggle('copied',!!(r.cp||{})[n.id]);
-    const hh=$('#h_'+n.id);if(hh)hh.textContent=numHint(s,n)});
+    const hh=$('#h_'+n.id);if(hh){hh.textContent=numHint(s,n);const tp=r[n.id]==null&&!!prevVal(s,n.id);hh.classList.toggle('tapprev',tp);hh.onclick=tp?()=>useNumPrev(n.id):null}});
   updateNavBadge();
 }
 function delDay(ds){
@@ -2743,7 +2744,10 @@ function delDay(ds){
   undoBar(`${md(ds)}の記録を削除しました`,()=>{S.daily[ds]=r;if(issCopy&&!S.issues.some(i=>i.id===issCopy.id))S.issues.push(issCopy);logEdit('daily',ds,'記録の削除を取り消し','（削除）','復元')});
 }
 function dayRec(ds=V.day){if(!S.daily[ds])S.daily[ds]={c:{},by:nightCrew(ds)};return S.daily[ds]}
-function commitDay(full){syncDailyIssue(V.day);save();if(full)render();else refreshDay()}
+/* 入れた直後に「✓ 保存済み 21:30」を見出しの横に出す（表示だけ。保存できなかったときは出さず、いつもの赤い帯が出る） */
+let DAY_SAVED={day:'',at:''};
+const daySavedHTML=s=>DAY_SAVED.day===s&&DAY_SAVED.at&&!SAVE_FAIL.app?`✓ ${DAY_SAVED.at} 保存済み`:'';
+function commitDay(full){syncDailyIssue(V.day);save();if(!SAVE_FAIL.app){const d=new Date();DAY_SAVED={day:V.day,at:pad(d.getHours())+':'+pad(d.getMinutes())}}if(full)render();else refreshDay()}
 function markMod(r,field,from,to){if(r.done){logEdit('daily',V.day,field,from,to);if(String(from??'')!==String(to??''))r.mod=new Date().toISOString()}}
 /* 未入力の数値欄の下の「前回 ○○」をタップすると、前回の値を入れる（黄色・要確認の印つき。copyPrev と同じ扱い） */
 function useNumPrev(k){
