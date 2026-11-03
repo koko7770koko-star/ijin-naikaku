@@ -1252,7 +1252,25 @@ let V={view:'home',y:now.getFullYear(),m:now.getMonth()+1,sel:TODAY,fy:fyOf(now.
   day:TODAY,ry:now.getFullYear(),rm:now.getMonth()+1,rmode:'m',rfy:fyOf(now.getFullYear(),now.getMonth()+1),allIss:false,moreAl:false};
 
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200)}
-function openModal(h){$('#modal').innerHTML=h;$('#mask').classList.add('on');MODAL_SIG=modalSig()}
+/* 長い入力の窓の書きかけ：入力するたびに sessionStorage へ（再読み込みで消えない）。同じ窓を開くと「戻す／捨てる」を聞く。保存したら消す。本体の記録（localStorage）は変えない */
+let MD={key:'',ids:[],t:0,on:false},MD_NEXT=null;
+const mdKey=k=>'hes_mdraft_'+k;
+function mdraftNext(key,ids){MD_NEXT={key,ids}}
+function mdSave(){clearTimeout(MD.t);MD.t=setTimeout(()=>{if(!MD.key||!MD.ids.length||!$('#'+MD.ids[0]))return;try{const v={};MD.ids.forEach(i=>{const e=$('#'+i);if(e)v[i]=e.value});sessionStorage.setItem(mdKey(MD.key),JSON.stringify({at:Date.now(),v}))}catch(e){}},400)}
+function mdraftClear(){clearTimeout(MD.t);try{if(MD.key)sessionStorage.removeItem(mdKey(MD.key))}catch(e){}}
+function mdraftApply(){let d=null;try{d=JSON.parse(sessionStorage.getItem(mdKey(MD.key))||'null')}catch(e){}if(d&&d.v)for(const [i,v] of Object.entries(d.v)){const e=$('#'+i);if(e&&e.value!==v)e.value=v}const b=$('#dr_bar');if(b)b.remove();toast('書きかけの入力を戻しました（未保存。「保存」で保存してください）')}
+function mdraftDrop(){mdraftClear();const b=$('#dr_bar');if(b)b.remove()}
+function mdraftBind(key,ids){
+  MD.key='';const m=$('#modal');if(!m||!ids.length||!$('#'+ids[0]))return;MD.key=key;MD.ids=ids;
+  if(!MD.on){MD.on=true;m.addEventListener('input',mdSave)}
+  let d=null;try{d=JSON.parse(sessionStorage.getItem(mdKey(key))||'null')}catch(e){}
+  if(d&&d.v&&ids.some(i=>$('#'+i)&&d.v[i]!=null&&d.v[i]!==$('#'+i).value)&&!m.querySelector('#dr_bar')){
+    const h=m.querySelector('h3'),bar=document.createElement('div');bar.className='al info';bar.id='dr_bar';bar.style.cursor='default';
+    const t=d.at?new Date(d.at).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}):'';
+    bar.innerHTML=`書きかけの入力が残っています${t?'（'+esc(t)+'）':''}<div class="row" style="margin-top:6px;gap:8px"><button type="button" class="btn sm" style="min-height:44px" onclick="mdraftApply()">戻す</button><button type="button" class="btn sec sm" style="min-height:44px" onclick="mdraftDrop()">捨てる</button></div>`;
+    if(h)h.after(bar);else m.prepend(bar)}
+}
+function openModal(h){MD.key='';$('#modal').innerHTML=h;$('#mask').classList.add('on');MODAL_SIG=modalSig();if(MD_NEXT){const n=MD_NEXT;MD_NEXT=null;mdraftBind(n.key,n.ids)}}
 function closeModal(force){
   if(force!==true&&$('#mask').classList.contains('on')&&MODAL_SIG!==null&&modalSig()!==MODAL_SIG&&!confirm('入力中の内容を保存せずに閉じますか？'))return false;
   if(typeof qrStop==='function')qrStop();$('#mask').classList.remove('on');MODAL_SIG=null;return true;
@@ -2254,6 +2272,7 @@ function dupTask(id){const t=S.tasks.find(x=>x.id===id);const n={...t,id:uid(),s
 
 // 異常案件
 function editIssue(id,preset){
+  mdraftNext('issue-'+(id||'new'),['is_title','is_place','is_detail','is_action','is_memo']);
   const i=S.issues.find(x=>x.id===id)||{date:TODAY,title:'',place:'',detail:'',status:'発見',action:'',closed:'',photos:[],equipId:'',...(preset||{})};
   TP=[...(i.photos||[])];
   const step=ISTAT.map((x,k)=>`<button type="button" class="${x===i.status?'on':''}" onclick="setIssueStep('${x}')">${k+1}.${x}</button>`).join('');
@@ -2320,7 +2339,7 @@ function saveIssue(id){
     const log=[...(old.log||[])];if(from!==o.status||memo)log.push({at:new Date().toISOString(),from,to:o.status,by:who,note:reopenNote||memo});
     Object.assign(old,o,{log});
   }else S.issues.push({id:uid(),src:'manual:'+uid(),...o,log:[{at:new Date().toISOString(),from:'',to:o.status,by:who,note:memo||'手入力で登録'}]});
-  save();closeModal(true);render();toast(o.status==='完了'?`完了にしました（確認者：${o.confirmedBy}）`:'保存しました');
+  save();mdraftClear();closeModal(true);render();toast(o.status==='完了'?`完了にしました（確認者：${o.confirmedBy}）`:'保存しました');
 }
 function delIssue(id){
   if(!confirm('この案件を削除しますか？'))return;
@@ -4816,6 +4835,7 @@ function workChecks(w){
 /* ---------- 作業指示書 ---------- */
 let WK=null;
 function editWork(id,preset){
+  mdraftNext('work-'+(id||'new'),['wk_title','wk_place','wk_content','wk_result','wk_oaffect','wk_ocontact']);
   const base={no:nextWorkNo(),title:'',kind:'点検',status:'起案',date:TODAY,start:'09:00',endDate:'',end:'17:00',equipIds:[],locId:'',place:'',staff:[],vendor:'',vendorStaff:'',needQuals:[],needN:0,content:'',
     outage:{on:false,range:'',from:'',to:'',affect:'',contact:''},ky:[],kyBy:'',pre:S.chkPre.map(text=>({text,req:true,done:false,by:'',at:''})),post:S.chkPost.map(text=>({text,req:true,done:false,by:'',at:''})),stdId:'',stdVer:'',stdName:'',result:'',cost:'',photos:[],docs:[],approvals:[],hist:[],issueId:''};
   const w=workById(id)?clone(workById(id)):{...base,...(preset||{})};
@@ -4894,7 +4914,7 @@ function saveWork(id,silent){
   if(w){for(const [f,l] of [['title','件名'],['date','作業日'],['content','作業内容'],['result','作業結果']])logEdit('work',id,l,w[f],o[f]);
     const ch=w.__re?[]:workDiff(w,o);delete w.__re;if(ch.length)w.hist.push({at:nowIso(),act:'変更',from:'',to:'',by:who(),note:txt(ch.join('／'),500)});Object.assign(w,o)}
   else{const n={id:uid(),status:'起案',approvals:[],hist:[{at:nowIso(),act:'起案',from:'',to:'起案',by:who(),note:''}],issueId:(WK&&WK.issueId)||'',...o};S.works.push(n);V.lastWork=n.id}
-  save();if(!silent){closeModal(true);render();toast('保存しました')}return true;
+  save();mdraftClear();if(!silent){closeModal(true);render();toast('保存しました')}return true;
 }
 function workDiff(a,b){
   const F=[['title','件名'],['kind','種別'],['date','作業日'],['endDate','終了日'],['start','開始'],['end','終了'],['place','場所'],['vendor','協力会社'],['vendorStaff','協力会社の作業者'],['needN','必要人数'],['stdName','作業標準']];

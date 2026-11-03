@@ -39,5 +39,21 @@ const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
  if(!dn.shown)bad.push('完了の確認欄が出ない');if(dn.by!=='確認担当')bad.push('確認者に自分の名前が入らない：'+dn.by);if(!dn.cl)bad.push('完了日が空');if(dn.chk)bad.push('確かめたチェックが勝手に付いている');if(dn.sw>392)bad.push('はみ出す');
  await p.evaluate(()=>saveIssue('zz1'));await p.waitForTimeout(300);
  if(await p.evaluate(()=>S.issues.find(x=>x.id==='zz1').status)==='完了')bad.push('確認のチェックが無いのに完了で保存できた');
+ // 書きかけ：入力→再読み込み→同じ窓を開くと「戻す」が出る・戻せる・保存すると消える（異常・工事）
+ await p.evaluate(()=>{closeModal(true);editIssue('')});await p.waitForTimeout(400);
+ await p.fill('#is_title','書きかけの題');await p.fill('#is_detail','書きかけの詳細');await p.waitForTimeout(700);
+ await p.reload();await p.waitForTimeout(1500);await p.evaluate(()=>editIssue(''));await p.waitForTimeout(500);
+ if(!await p.evaluate(()=>!!document.querySelector('#dr_bar')))bad.push('異常：再読み込み後に書きかけの案内が出ない');
+ else{if(await p.inputValue('#is_title')!=='')bad.push('異常：勝手に戻っている');
+  await p.click('#dr_bar button:has-text("戻す")');await p.waitForTimeout(200);
+  if(await p.inputValue('#is_title')!=='書きかけの題'||await p.inputValue('#is_detail')!=='書きかけの詳細')bad.push('異常：書きかけが戻らない');
+  const sz=await p.evaluate(()=>[...document.querySelectorAll('#dr_bar button')].length);if(sz)bad.push('異常：戻したあとも案内が残る');
+  await p.evaluate(()=>saveIssue(''));await p.waitForTimeout(300);
+  if(await p.evaluate(()=>sessionStorage.getItem('hes_mdraft_issue-new')))bad.push('異常：保存しても書きかけが残る');
+  await p.evaluate(()=>editIssue(''));await p.waitForTimeout(400);if(await p.evaluate(()=>!!document.querySelector('#dr_bar')))bad.push('異常：保存したのに書きかけの案内が出る')}
+ await p.evaluate(()=>{closeModal(true);editWork('')});await p.waitForTimeout(400);await p.fill('#wk_content','書きかけの作業内容');await p.waitForTimeout(700);
+ await p.reload();await p.waitForTimeout(1500);await p.evaluate(()=>editWork(''));await p.waitForTimeout(500);
+ if(!await p.evaluate(()=>!!document.querySelector('#dr_bar')))bad.push('工事：再読み込み後に書きかけの案内が出ない');
+ else{await p.click('#dr_bar button:has-text("捨てる")');await p.waitForTimeout(150);if(await p.evaluate(()=>sessionStorage.getItem('hes_mdraft_work-new')))bad.push('工事：捨てても残る');if(await p.inputValue('#wk_content')!=='')bad.push('工事：捨てたのに入っている')}
  console.log('新規登録の手数（＋・緊急度・場所・保存。内容は自動で入力待ち）:',taps);
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0);})();
