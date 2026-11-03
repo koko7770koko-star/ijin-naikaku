@@ -148,7 +148,7 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .cal .d.today{background:#fffbe8;border:2px solid #e0b000}
 .cal .d.sel{outline:2.5px solid var(--accent);outline-offset:-1px}
 .cal .n{font-size:13px;font-weight:700;margin-bottom:2px}
-.cal .n.sun{color:#c00000}.cal .n.sat{color:var(--accent)}
+.cal .n.sun{color:#c00000}.hlb{font-size:11px;font-weight:700;margin-left:2px;color:#c00000}.cal .n.sat{color:var(--accent)}
 .cal .wc{display:flex;flex-wrap:wrap;gap:1px;margin-top:2px}
 .cal .wc .w{font-size:10px;font-weight:600;line-height:1.3;border-radius:3px;padding:0 2px;margin:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal .w,.cal .t{font-size:11px;font-weight:600;line-height:1.35;border-radius:4px;padding:1px 2px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1293,6 +1293,19 @@ const addD=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return ymd(d)};
 const diffD=(a,b)=>Math.round((pd(a)-pd(b))/864e5);
 const addM=(s,n)=>{const d=pd(s),day=d.getDate(),x=new Date(d.getFullYear(),d.getMonth()+n,1);x.setDate(Math.min(day,new Date(x.getFullYear(),x.getMonth()+1,0).getDate()));return ymd(x)};
 const md=s=>{const d=pd(s);return `${d.getMonth()+1}/${d.getDate()}`};
+// 日本の祝日（内蔵の計算。通信しない）：固定日・ハッピーマンデー・春分/秋分・振替休日・国民の休日。2000〜2099年
+const _HOLC={};
+function holMap(y){if(_HOLC[y])return _HOLC[y];const M={},P=n=>String(n).padStart(2,'0'),k=(m,d)=>y+'-'+P(m)+'-'+P(d);
+  const wd=(m,d)=>new Date(y,m-1,d).getDay(),nth=(m,n)=>{const f=(8-wd(m,1))%7+1;return f+(n-1)*7};
+  const ex=(a,b)=>Math.floor(a+0.242194*(y-1980)-Math.floor((y-1980)/4));
+  M[k(1,1)]='元日';M[k(1,nth(1,2))]='成人の日';M[k(2,11)]='建国記念の日';if(y>=2020)M[k(2,23)]='天皇誕生日';
+  M[k(3,ex(20.8431))]='春分の日';M[k(4,29)]='昭和の日';M[k(5,3)]='憲法記念日';M[k(5,4)]='みどりの日';M[k(5,5)]='こどもの日';
+  M[k(7,nth(7,3))]='海の日';if(y>=2016)M[k(8,11)]='山の日';M[k(9,nth(9,3))]='敬老の日';M[k(9,ex(23.2488))]='秋分の日';
+  M[k(10,nth(10,2))]='スポーツの日';M[k(11,3)]='文化の日';M[k(11,23)]='勤労感謝の日';
+  for(const d of Object.keys(M).sort()){if(new Date(d+'T00:00:00').getDay()===0){const t=new Date(d+'T00:00:00');do{t.setDate(t.getDate()+1)}while(M[ymd(t)]);M[ymd(t)]='振替休日'}}
+  for(let m=1;m<=12;m++)for(let d=2;d<=30;d++){const x=new Date(y,m-1,d);if(x.getMonth()!==m-1||M[ymd(x)]||x.getDay()===0)continue;const a=new Date(y,m-1,d-1),b=new Date(y,m-1,d+1);if(M[ymd(a)]&&M[ymd(b)]&&M[ymd(a)]!=='振替休日')M[ymd(x)]='国民の休日'}
+  return _HOLC[y]=M}
+const holName=s=>{const y=+String(s).slice(0,4);return y>=2000&&y<=2099?(holMap(y)[s]||''):''};
 const mdw=s=>`${md(s)}（${WD[pd(s).getDay()]}）`;
 const slash=s=>s?s.replace(/-/g,'/'):'－';
 const fyOf=(y,m)=>m>=4?y:y-1;
@@ -2188,7 +2201,7 @@ function monthPrintHTML(y,m){
       const ts=S.tasks.filter(t=>t.date===s).sort(byDate),o=crewDay(s);let crew='';
       if(o&&st.showCrew!==false)crew+=o.A.map(n=>`<span>A:${esc(sn(n))}</span>`).join('')+o.B.map(n=>`<span>B:${esc(sn(n))}</span>`).join('');
       if(o&&st.calDay)crew+=o.D.map(n=>`<span>日:${esc(sn(n))}</span>`).join('');
-      tds+=`<td><div class="n ${k===0?'sun':k===6?'sat':''}">${d.getDate()}</div>${ts.map(t=>`<div class="t">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${crew?`<div class="wc">${crew}</div>`:''}</td>`;
+      tds+=`<td><div class="n ${k===0||holName(s)?'sun':k===6?'sat':''}">${d.getDate()}${holName(s)?'<small class="hlb">祝</small>':''}</div>${ts.map(t=>`<div class="t">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${crew?`<div class="wc">${crew}</div>`:''}</td>`;
     }
     rows+=`<tr>${tds}</tr>`;
   }
@@ -2213,7 +2226,7 @@ function vMonth(){
     if(o&&o.lack&&st.showCrew!==false)crew+=`<span class="w ng">${esc(o.lack)}</span>`;
     if(crew)crew=`<div class="wc">${crew}</div>`;
     h+=`<div class="d ${d.getMonth()!==m-1?'o':''} ${s===TODAY?'today':''} ${s===V.sel?'sel':''}" onclick="V.sel='${s}';render()">
-      <div class="n ${wd===0?'sun':wd===6?'sat':''}">${d.getDate()}${cf?' <span style="color:var(--ng)">⚠</span>':''}</div>
+      <div class="n ${wd===0||holName(s)?'sun':wd===6?'sat':''}" ${holName(s)?`title="${holName(s)}"`:''}>${d.getDate()}${holName(s)?'<small class="hlb">祝</small>':''}${cf?' <span style="color:var(--ng)">⚠</span>':''}</div>
       ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件 ${ts.filter(t=>t.status==='完了').length}/${ts.length}</div>`:''}${crew}</div>`;
   }
   h+=`</div><div class="tags" style="margin-top:10px">${st.showCrew!==false?'<span class="tag a" style="font-size:12px">A夜勤</span><span class="tag b" style="font-size:12px">B夜勤</span>':''}${st.calDay?'<span class="tag d" style="font-size:12px">日勤</span>':''}<span class="tag task" style="font-size:12px">点検・作業</span><span class="muted">青◯予定　緑●完了　灰＝延期　⚠＝衝突</span></div>
@@ -5121,7 +5134,7 @@ function vWorkSheet(){
   const from=V.wsFrom||TODAY,to=addD(from,13),L=(S.works||[]).filter(w=>w.date<=to&&(w.endDate||w.date)>=from&&w.status!=='中止').sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
   return `<div class="noprint row" style="margin-bottom:8px;flex-wrap:wrap;gap:6px"><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=addD('${from}',-14);render()">‹ 前の2週</button><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=TODAY;render()">今日</button><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=addD('${from}',14);render()">次の2週 ›</button><input type="date" class="grow" value="${from}" onchange="if(this.value){V.wsFrom=this.value;render()}"><button class="btn grow" style="min-height:44px" onclick="window.print()">🖨 印刷</button></div>
   <div class="rep"><h1 style="text-align:center;font-size:18px">作業予定表（${slash(from)}〜${slash(to)}）</h1><table><thead><tr><th>日付</th><th>時間</th><th>作業</th><th>担当・協力会社</th><th>勤務</th><th>状態</th></tr></thead><tbody>
-  ${L.map(w=>{const o=crewDay(w.date);return `<tr><td style="white-space:nowrap">${md(w.date)}${w.endDate&&w.endDate!==w.date?'〜<br>'+md(w.endDate):''}</td><td style="white-space:nowrap">${esc(w.start)}〜<br>${esc(w.end)}</td><td>${esc(w.no)} ${esc(w.title)}${w.outage.on?'【停電】':''}</td><td>${w.staff.map(n=>`<span style="white-space:nowrap">${esc(n)}</span>`).join('、')}${w.vendor?'<br>'+esc(w.vendor):''}</td><td style="font-size:11px">${o?`<span style="white-space:nowrap">A:${esc(o.A.join('・'))}</span><br><span style="white-space:nowrap">B:${esc(o.B.join('・'))}</span>`:''}</td><td style="white-space:nowrap">${esc(w.status)}</td></tr>`}).join('')||'<tr><td colspan="6">予定はありません</td></tr>'}</tbody></table></div>${L.length?'':`<div class="noprint card"><div class="muted" style="margin-bottom:8px">この2週間に作業の予定はありません。前後の2週間を見るか、予定を足してください。</div><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sec sm grow" style="min-height:44px" onclick="go('month')">📅 カレンダーで予定を足す</button><button class="btn sec sm grow" style="min-height:44px" onclick="go('works')">📝 作業指示書を作る</button></div></div>`}`;
+  ${L.map(w=>{const o=crewDay(w.date);return `<tr><td style="white-space:nowrap">${md(w.date)}${holName(w.date)?'<small class="hlb">祝</small>':''}${w.endDate&&w.endDate!==w.date?'〜<br>'+md(w.endDate):''}</td><td style="white-space:nowrap">${esc(w.start)}〜<br>${esc(w.end)}</td><td>${esc(w.no)} ${esc(w.title)}${w.outage.on?'【停電】':''}</td><td>${w.staff.map(n=>`<span style="white-space:nowrap">${esc(n)}</span>`).join('、')}${w.vendor?'<br>'+esc(w.vendor):''}</td><td style="font-size:11px">${o?`<span style="white-space:nowrap">A:${esc(o.A.join('・'))}</span><br><span style="white-space:nowrap">B:${esc(o.B.join('・'))}</span>`:''}</td><td style="white-space:nowrap">${esc(w.status)}</td></tr>`}).join('')||'<tr><td colspan="6">予定はありません</td></tr>'}</tbody></table></div>${L.length?'':`<div class="noprint card"><div class="muted" style="margin-bottom:8px">この2週間に作業の予定はありません。前後の2週間を見るか、予定を足してください。</div><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sec sm grow" style="min-height:44px" onclick="go('month')">📅 カレンダーで予定を足す</button><button class="btn sec sm grow" style="min-height:44px" onclick="go('works')">📝 作業指示書を作る</button></div></div>`}`;
 }
 function exportWorksCsv(){download(`作業指示_${TODAY}.csv`,csvBlob([['作業番号','件名','種別','状態','作業日','終了日','開始','終了','設備','担当','協力会社','停電','費用','承認'],...(S.works||[]).map(w=>[w.no,w.title,w.kind,w.status,w.date,w.endDate,w.start,w.end,w.equipIds.map(equipName).join('、'),w.staff.join('、'),w.vendor,w.outage.on?'あり':'',w.cost,w.approvals.map(a=>a.by+':'+a.act).join(' / ')])]))}
 
