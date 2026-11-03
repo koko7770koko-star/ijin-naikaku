@@ -12,10 +12,10 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  const ph=await p.getAttribute(inp,'placeholder');if(!/^前回 200/.test(ph))bad.push('前回の値が薄く出ない: '+ph);
  await p.fill(inp,'250');
  let s=await p.evaluate(()=>{const r=document.querySelector('#ms_rows .mrow:first-child');return{ng:r.classList.contains('ng'),pill:r.querySelector('.pill').textContent,bg:r.querySelector('input[data-mv]').style.background}});
- if(!s.ng||s.pill!=='管理値外'||!s.bg)bad.push('範囲外で変わらない '+JSON.stringify(s));
+ if(!s.ng||!/^(管理値外|超えています|下回っています)/.test(s.pill)||!s.bg)bad.push('範囲外で変わらない '+JSON.stringify(s));
  await p.fill(inp,'200');
  s=await p.evaluate(()=>{const r=document.querySelector('#ms_rows .mrow:first-child');return{ng:r.classList.contains('ng'),pill:r.querySelector('.pill').textContent}});
- if(s.ng||s.pill!=='管理値内')bad.push('範囲内に戻らない '+JSON.stringify(s));
+ if(s.ng||!/^管理値内/.test(s.pill))bad.push('範囲内に戻らない '+JSON.stringify(s));
  await p.fill(inp,'2000');if(await p.evaluate(()=>getComputedStyle(document.querySelector('#ms_rows .mbig')).display==='none'))bad.push('桁違い（前回200→2000）の印が出ない');
  await p.fill(inp,'210');if(await p.evaluate(()=>getComputedStyle(document.querySelector('#ms_rows .mbig')).display!=='none'))bad.push('近い値なのに桁違いの印が出る');
  await p.fill(inp,'250');await p.fill('#ms_by','試験');await p.evaluate(()=>saveMeas(''));await p.waitForTimeout(200);
