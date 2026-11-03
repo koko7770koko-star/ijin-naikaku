@@ -368,6 +368,7 @@ details summary{cursor:pointer;padding:4px 0}
 #shiftApp .judge{border-left:5px solid #2e7d32;border-radius:var(--r-s);padding:10px 12px;font-weight:700;margin-bottom:10px;color:#1b5e20;background:#f1f8e9}
 #shiftApp .judge.ng{border-color:#9c0006;color:#9c0006;background:#ffe3e6}
 #shiftApp .shper{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:10px}
+@media screen and (max-width:480px){#shiftApp .shper{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-bottom:6px}#shiftApp .shper .pc{padding:3px 8px}#shiftApp .shper .pc b{font-size:12px}#shiftApp .shper .pc span{font-size:12px}}
 #shiftApp .shper .pc{background:#fff;border:1px solid var(--field);border-radius:var(--r-s);padding:6px 10px;min-width:0}
 #shiftApp .shper .pc b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
 #shiftApp .shper .pc span{font-size:13px;color:var(--sub);white-space:nowrap}
@@ -617,7 +618,7 @@ details.fold[open]>summary{margin-bottom:8px}
   </div>
   <div class="judge" id="judge"></div>
   <div class="shper noprint" id="shPer" aria-label="一人ずつの回数"></div>
-  <div class="shhint noprint">左右・上下にスクロールできます（日付と見出しは固定）。マスを押すと勤務を選べます。</div>
+  <div class="shhint noprint">左右・上下にスクロールできます（日付と見出しは固定）。マスを押すと勤務を選べます。<button type="button" class="btn sec sm" id="shLegBtn" style="min-height:44px;margin-left:6px;vertical-align:middle" onclick="document.querySelector('#pg-shift .legend').scrollIntoView({block:'center',behavior:'smooth'})">色の意味へ ↓</button></div>
   <div class="tblwrap"><table class="sh" id="shTable"></table></div>
   <div class="legend">
     <span><i style="background:#DDEBF7"></i>A日夜勤</span><span><i style="background:#F4B183"></i>B日夜勤</span>
