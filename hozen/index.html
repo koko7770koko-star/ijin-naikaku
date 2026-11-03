@@ -2654,7 +2654,7 @@ function vDay(){
   h+=`<div class="card"><div class="hd-row"><h2>日常点検</h2><span id="dayBadge">${dayBadge(s)}</span></div>
     ${crewTags(crewDay(s))}
     <div class="row" style="margin-bottom:4px"><input type="date" value="${s}" onchange="if(isDate(this.value)){V.day=this.value;render()}" class="grow" style="width:auto">${s!==TODAY?'<button class="btn sec sm" onclick="V.day=TODAY;render()">今日</button>':''}</div>
-    ${dHas||dFl?`<div class="row noprint" style="margin:6px 0"><select class="grow" aria-label="場所で絞り込む" onchange="V.dayLoc=this.value;render()">${locOptions(dFl).replace('（指定しない）','場所：すべて')}</select></div>${dFl?`<div class="muted" style="margin-bottom:6px">絞り込み中：場所の合わない・未設定の ${dHide} 件は隠れています（記録は残ります）</div>`:''}`:''}
+    ${dHas||dFl?`<div class="row noprint" style="margin:6px 0;flex-wrap:wrap;gap:6px">${dayLocSelects(dFl)}</div>${dFl?`<div class="muted" style="margin-bottom:6px">絞り込み中：場所の合わない・未設定の ${dHide} 件は隠れています（記録は残ります）</div>`:''}`:''}
     <div class="grid3">${nums.map((n,i)=>{
       const longN=nums.some(x=>(x.short||x.name).length>7); // 名前が長い項目があるときだけ、ラベルを2行まで出す（短い名前のときは今までどおり1行）
       const lblSt=longN?'overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.25;min-height:2.5em;word-break:break-all':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
@@ -2679,6 +2679,25 @@ function vDay(){
   h+=`<div class="card"><h2>${pd(s).getMonth()+1}月の記録状況</h2><div id="dayGrid">${monthGrid(s)}</div>
     <div class="tags" style="margin-top:8px"><span class="tag" style="background:var(--ok-bg);color:var(--ok)">完了</span><span class="tag" style="background:#fff2c2;color:#8a5a00">入力中</span><span class="tag ng">異常</span><span class="tag" style="background:#eceff1;color:#c0261e">未実施</span><span class="tag" style="background:#fff;border:1px solid var(--line)">未入力</span></div></div>`;
   return h;
+}
+/* 日常点検の場所の絞り込み：棟 → 階 → 電気室 の順に選ぶ（選んだ段の下だけ次の欄が出る）。保存するのは画面だけの V.dayLoc（いちばん下に選んだ場所の id）。
+   階が無い形（棟→電気室）・施設→建屋の形でも、ある段だけが並ぶ */
+function dayLocSelects(cur){
+  const L=S.locs||[],by=id=>L.find(l=>l.id===id),hasB=L.some(l=>l.type==='建屋');
+  const chain=[];let x=by(cur),n=0;while(x&&n++<10){chain.unshift(x);x=by(x.parent)}
+  const ch=hasB?chain.filter(l=>l.type!=='施設'):chain;
+  let opts=hasB?L.filter(l=>l.type==='建屋'):L.filter(l=>!l.parent),parentId='',out='';
+  for(let i=0;i<4;i++){
+    opts=opts.slice().sort((a,b)=>(a.type==='階'&&b.type==='階'?floorKey(a.name)-floorKey(b.name):0)||a.name.localeCompare(b.name,'ja',{numeric:true}));
+    if(!opts.length)break;
+    const sel=ch[i]&&opts.some(o=>o.id===ch[i].id)?ch[i].id:'',lab={'建屋':'棟'}[opts[0].type]||opts[0].type;
+    out+=`<select class="grow" style="min-width:${i?'120':'150'}px" aria-label="${i?lab+'で絞り込む':'場所で絞り込む'}" onchange="V.dayLoc=this.value||${esc(JSON.stringify(parentId))};render()"><option value="">${i?lab+'：すべて':'場所：すべて'}</option>${opts.map(o=>`<option value="${o.id}" ${o.id===sel?'selected':''}>${esc(o.name)}</option>`).join('')}</select>`;
+    if(!sel)break;
+    const node=by(sel);if(!node||['電気室','盤'].includes(node.type))break;
+    const kids=L.filter(l=>l.parent===sel&&l.type!=='盤');if(!kids.length)break;
+    opts=kids;parentId=sel;
+  }
+  return out;
 }
 function numHint(s,n){
   const r=S.daily[s]||{},p=prevVal(s,n.id),v=r[n.id];
@@ -5081,7 +5100,7 @@ function genCard(){
   const last=id=>gens.filter(m=>m.equipId===id).sort((a,b)=>b.date.localeCompare(a.date))[0];
   const doneThis=id=>gens.some(m=>m.equipId===id&&String(m.date||'').startsWith(ym));
   // 棟・階は場所の階層（建屋・階）をたどって決める。無ければ「場所未設定」
-  const where=e=>{let l=locById(e.locId),n=0,b='',f='';while(l&&n<10){if(l.type==='階'&&!f)f=l.name;if(l.type==='建屋'&&!b)b=l.name;l=locById(l.parent);n++}return{b:b||(e.locId?'（棟の指定なし）':'場所未設定'),f}};
+  const where=e=>{let l=locById(e.locId),n=0,b='',f='',r='';while(l&&n<10){if(l.type==='階'&&!f)f=l.name;if(l.type==='電気室'&&!r)r=l.name;if(l.type==='建屋'&&!b)b=l.name;l=locById(l.parent);n++}return{b:b||(e.locId?'（棟の指定なし）':'場所未設定'),f,r}};
   const W=G.map(e=>({e,w:where(e),d:doneThis(e.id)}));
   const blds=[...new Set(W.map(x=>x.w.b))].sort((a,b)=>a.localeCompare(b,'ja'));
   const sel=blds.includes(V.genB)?V.genB:'';
@@ -5096,9 +5115,12 @@ function genCard(){
     for(const b of bs){
       const inB=shown.filter(x=>x.w.b===b),fs=[...new Set(inB.map(x=>x.w.f))].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}));
       for(const f of fs){
-        const L=inB.filter(x=>x.w.f===f).sort((a,b)=>(a.d-b.d)||eqLabel(a.e).localeCompare(eqLabel(b.e),'ja'));
-        const h2=`${esc(b)}${f?' › '+esc(f):''}`;
-        body+=`<div class="grp"><b>${h2}</b> <span class="muted">今月 ● ${L.filter(x=>x.d).length}/${L.length}</span>${L.map(row).join('')}</div>`;
+        const inF=inB.filter(x=>x.w.f===f),rs=[...new Set(inF.map(x=>x.w.r))].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}));
+        for(const r of rs){
+          const L=inF.filter(x=>x.w.r===r).sort((a,b)=>(a.d-b.d)||eqLabel(a.e).localeCompare(eqLabel(b.e),'ja'));
+          const h2=`${esc(b)}${f?' › '+esc(f):''}${r?' › '+esc(r):''}`;
+          body+=`<div class="grp"><b>${h2}</b> <span class="muted">今月 ● ${L.filter(x=>x.d).length}/${L.length}</span>${L.map(row).join('')}</div>`;
+        }
       }
     }
     body+=`<button class="btn sec sm wide" style="min-height:44px;margin-bottom:6px" onclick="V.ry=now.getFullYear();V.rm=now.getMonth()+1;go('report')">🖨 今月の点検表を印刷（月報の「6の4」・A4）</button><div class="muted" style="font-size:12px">台を押すと月次点検の入力が開きます。前回値との差が出ます。◯＝今月まだ、●＝今月点検済み（今月の測定記録があるか）。</div>`;
