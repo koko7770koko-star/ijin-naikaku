@@ -751,7 +751,7 @@ html.night [style*="border:2px solid #c00000"]{border-color:var(--ng-line)!impor
 </head>
 <body>
 <div id="sysbar"></div>
-<header><button id="hback" onclick="go('menu')">‹</button><h1 id="hd">電気設備スケジュール</h1></header>
+<header><button id="hback" aria-label="メニューにもどる" onclick="go('menu')">‹</button><h1 id="hd">電気設備スケジュール</h1></header>
 <main id="app"></main>
 <nav id="nav">
   <button data-v="home"><b>🏠</b>ホーム</button>
@@ -1544,7 +1544,7 @@ function closeModal(force){
   if(bk&&$('#mt_rows'))setTimeout(()=>measResume(bk),0);return true;
 }
 const opts=(arr,cur)=>arr.map(v=>`<option${v===cur?' selected':''}>${esc(v)}</option>`).join('');
-const mnav=(label,prev,next)=>`<div class="mnav noprint"><button onclick="${prev}">‹</button><div class="t">${label}</div><button onclick="${next}">›</button></div>`;
+const mnav=(label,prev,next)=>`<div class="mnav noprint"><button aria-label="前へ" onclick="${prev}">‹</button><div class="t">${label}</div><button aria-label="次へ" onclick="${next}">›</button></div>`;
 const fileBtn=(label,fn,cls='sec sm',accept='image/*,application/pdf')=>`<label class="btn ${cls}">${label}<input type="file" accept="${accept}" multiple onchange="${fn}(this)"></label>`;
 const modalFoot=(right,left='')=>`<div class="row end mfoot">${left}<span class="sp"></span>${right}</div>`;
 const msgModal=(title,body)=>openModal(`<h3>${title}</h3><p>${body}</p>${modalFoot('<button class="btn" onclick="closeModal(true)">OK</button>')}`);
@@ -2891,7 +2891,7 @@ function vDay(){
       <input id="n_${n.id}" class="${cl}" type="number" inputmode="decimal" step="any" enterkeyhint="${i<nums.length-1?'next':'done'}" value="${esc(v??'')}" placeholder="${p?esc(p[1]):''}" onchange="setNum('${n.id}',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();${next}}">
       <div class="hint${v==null&&p?' tapprev':''}" id="h_${n.id}" ${v==null&&p?`onclick="useNumPrev('${n.id}')" title="タップで前回の値を入れる"`:''}>${numHint(s,n)}</div></div>`}).join('')}</div>
     <div id="dayAl">${dayAlerts(s)}</div>
-    <div style="margin-top:6px">${chkDefs().filter(dOk).map(c=>{const v=(r.c||{})[c.id]||'';return `<div class="chk" data-ck="${c.id}"><div class="l">${esc(c.name)}${c.req?'<span style="color:var(--ng)">*</span>':''}</div><div class="seg">${[['○','on-ok'],['×','on-ng'],['－','on-na']].map(([x,cl])=>`<button class="${v===x?cl:''}" onclick="setCheck('${c.id}','${x}')">${x}</button>`).join('')}</div></div>`}).join('')}</div>
+    <div style="margin-top:6px">${chkDefs().filter(dOk).map(c=>{const v=(r.c||{})[c.id]||'';return `<div class="chk" data-ck="${c.id}"><div class="l">${esc(c.name)}${c.req?'<span style="color:var(--ng)">*</span>':''}</div><div class="seg">${[['○','on-ok'],['×','on-ng'],['－','on-na']].map(([x,cl])=>`<button class="${v===x?cl:''}" aria-label="${esc(c.name)}：${x==='○'?'良好':x==='×'?'異常':'対象外'}" aria-pressed="${v===x}" onclick="setCheck('${c.id}','${x}')">${x}</button>`).join('')}</div></div>`}).join('')}</div>
     <div class="row" style="margin-top:10px"><span class="muted grow"><span style="color:var(--ng)">*</span>＝必須</span>${fileBtn('📎 写真を添付','addDayPhoto','sec sm','image/*')}</div>
     ${thumbs(r.photos,'rmDayPhoto')}
     <label class="f">点検者${!r.by&&nightCrew(s)?'（シフトから自動）':''}</label><input list="dl_by" value="${esc(r.by||nightCrew(s))}" maxlength="100" onchange="setText('by',this.value)">${staffList('dl_by')}
