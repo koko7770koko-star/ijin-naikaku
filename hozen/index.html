@@ -81,7 +81,7 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .grp{background:#f6f8fa;border-radius:12px;padding:4px 12px 12px;margin-top:12px}
 .grp>b{display:block;font-size:13px;color:var(--mut);margin-top:8px}
 
-.mbig[hidden]{display:none!important}
+.mbig[hidden],.modd[hidden]{display:none!important}
 .pill{display:inline-block;font-size:12px;border-radius:10px;padding:2px 9px;margin:2px 4px 0 0;background:#eef1f4;color:var(--mut)}
 .pill.ok{background:var(--ok-bg);color:var(--ok)}
 .pill.ng{background:var(--ng-bg);color:var(--ng);font-weight:700}
@@ -5311,10 +5311,18 @@ function measPrev(r){
 }
 /* 前回と桁が違う（5倍超・1/5未満）：入れ間違いに気づくための印（保存は止めない） */
 function measBig(p,cur){return !!p&&cur!=null&&Number.isFinite(cur)&&p.v>0&&cur>0&&(cur/p.v>5||cur/p.v<.2)}
+/* 打ち間違いらしい値（止めずに知らせるだけ）：累計の行（運転時間計・アワーメータ・起動回数など）が前回より減った／燃料が前回より大きく増えた。
+   どの行が累計かは行の名前で見分け、分からなければ出さない */
+const isCumRow=r=>!r.ck&&/累計|積算|アワー|運転時間計|起動回数|始動回数|カウンタ/.test(String(r.name||''));
+function measOdd(r,p,cur){if(!p||cur==null||!Number.isFinite(cur))return '';
+  if(isCumRow(r)&&cur<p.v)return `前回 ${p.v}${r.unit||''} より少ないです。打ち間違い？（累計は減りません）`;
+  if(isFuelRow(r)&&cur-p.v>Math.max(30,p.v*.5))return `前回 ${p.v}${r.unit||''} より大きく増えています（給油しましたか？）`;
+  return ''}
 function measPrevHTML(r){
   const p=measPrev(r);if(!p)return '';
   const cur=r.v===''||r.v==null?null:Number(r.v),d=cur==null?null:Math.round((cur-p.v)*1000)/1000;
-  return `<span class="pill">前回 ${esc(p.v)}${esc(r.unit)}（${md(p.date)}）</span><span class="pill ng mbig" ${measBig(p,cur)?'':'hidden'}>⚠ 前回と桁が違います</span>${d==null?'':`<span class="pill ${d===0?'':'plan'}">差 ${d>0?'+':''}${d}${esc(r.unit)}</span>`}`;
+  const odd=measOdd(r,p,cur);
+  return `<span class="pill">前回 ${esc(p.v)}${esc(r.unit)}（${md(p.date)}）</span><span class="pill ng mbig" ${measBig(p,cur)?'':'hidden'}>⚠ 前回と桁が違います</span><span class="pill warn modd" ${odd?'':'hidden'}>⚠ ${esc(odd)}</span>${d==null?'':`<span class="pill ${d===0?'':'plan'}">差 ${d>0?'+':''}${d}${esc(r.unit)}</span>`}`;
 }
 /* 入力欄の薄い文字：前回の値があればそれを、なければ「測定値」 */
 /* 判定の言葉：管理値を外れたら「超えています（管理値 ○以下）」「下回っています（管理値 ○以上）」と、その場で言葉で出す（色だけにしない） */
@@ -5341,7 +5349,7 @@ function measLive(inp,k){
   const r=MEAS_ROWS[k];if(!r)return;const v=inp.value===''?'':Number(inp.value);if(v!==''&&!Number.isFinite(v))return;
   const fu=inp.closest('.mrow')&&inp.closest('.mrow').querySelector('.mfuel');if(fu){const f=genFuelHours(eqById(($('#ms_eq')||{}).value||''),v,r.unit);fu.style.display=f?'':'none';fu.textContent='⛽ '+fuelText(f)}
   const st=rowJudge({...r,v});inp.style.borderColor=st==='ng'?'var(--ng,#c0392b)':'';inp.style.background=st==='ng'?'#fdecea':st==='ok'?'#eaf6ec':'';
-  const row=inp.closest('.mrow');if(row){const bg=row.querySelector('.mbig');if(bg)bg.hidden=!measBig(measPrev(r),v===''?null:v);row.classList.toggle('ng',st==='ng');const pl=row.querySelector('.pill');if(pl){pl.className='pill '+(st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':'');pl.textContent=judgeWord(r,st,v)}}
+  const row=inp.closest('.mrow');if(row){const pv=measPrev(r),bg=row.querySelector('.mbig');if(bg)bg.hidden=!measBig(pv,v===''?null:v);const od=row.querySelector('.modd');if(od){const t=measOdd(r,pv,v===''?null:v);od.hidden=!t;od.textContent='⚠ '+t}row.classList.toggle('ng',st==='ng');const pl=row.querySelector('.pill');if(pl){pl.className='pill '+(st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':'');pl.textContent=judgeWord(r,st,v)}}
 }
 function measRenderRows(){
   const box=$('#ms_rows');if(!box)return;
