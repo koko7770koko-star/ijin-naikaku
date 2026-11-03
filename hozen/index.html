@@ -4382,7 +4382,12 @@ function planEquipCsv(text){
   const v=(r,n)=>{const k=ix(n);return k<0?'':String(r[k]==null?'':r[k]).trim()};
   const cur=S.equipment||[],byCode=new Map(),skip=[],eqs=[],reps=[];let noLoc=0;
   cur.forEach(e=>{if(e.code)byCode.set(normCode(e.code),e)});
-  const seen=new Set(),locMap=new Map();(S.locs||[]).forEach(l=>locMap.set(locPath(l.id),l.id));
+  /* 階層の区切り「›」は Shift_JIS に無く、Excel で保存し直すと「?」になる。「›」「?」「>」（全角も）を同じ区切りとして見る */
+  const lpk=x=>String(x||'').normalize('NFKC').replace(/\s*[›?>]\s*/g,'›').trim();
+  const seen=new Set(),locMap=new Map();(S.locs||[]).forEach(l=>locMap.set(lpk(locPath(l.id)),l.id));
+  /* 設備IDの無い設備：名前と設置場所が同じで1台だけなら同じ設備とみなす（書き出して読み戻しても二重にしない） */
+  const nk=(n,pl)=>String(n||'').trim()+'\u0000'+String(pl||'').trim(),byNP=new Map(),usedNP=new Set();
+  cur.forEach(e=>{if(!e.code){const k=nk(e.name,e.place);byNP.set(k,byNP.has(k)?null:e)}});
   rows.slice(1).forEach((r,i)=>{const ln=i+2,kb=v(r,'区分');
     if(r.length<H.length-8&&r.length<6){skip.push(`${ln}行目：列が足りません`);return}
     if(kb==='設備'){
@@ -4399,8 +4404,9 @@ function planEquipCsv(text){
       if(EQ_STATUS.includes(st))o.status=st;
       for(const [f,h] of [['life','耐用年数'],['renewYear','更新予定'],['renewCost','更新費用']]){const n=num16(csvNum(v(r,h)));if(n!=='')o[f]=n}
       if(Object.keys(spec).length)o.spec=spec;
-      const lp=v(r,'階層');if(lp&&locMap.has(lp))o.locId=locMap.get(lp);else if(lp)noLoc++;
-      const ex=code?byCode.get(normCode(code)):null;
+      const lp=lpk(v(r,'階層'));if(lp&&locMap.has(lp))o.locId=locMap.get(lp);else if(lp)noLoc++;
+      let ex=code?byCode.get(normCode(code)):null;
+      if(!code){const k=nk(o.name,o.place),c=byNP.get(k);if(c&&!usedNP.has(c)){ex=c;usedNP.add(c)}}
       eqs.push({o,ex,ln});
     }else if(kb==='履歴'){
       const code=v(r,'設備ID'),date=v(r,'日付'),content=txt(v(r,'内容'),2000);
@@ -4449,7 +4455,7 @@ async function applyEquipCsv(){
     const e=code?byCode.get(normCode(code)):S.equipment.filter(x=>x.name===name).length===1?S.equipment.find(x=>x.name===name):null;
     if(!e){lost++;return}
     e.repairs=e.repairs||[];
-    if(e.repairs.some(r=>r.date===o.date&&r.kind===o.kind&&r.content===o.content)){dupRep++;return}
+    if(e.repairs.some(r=>r.date===o.date&&(REPAIR_KINDS.includes(r.kind)?r.kind:'その他')===o.kind&&r.content===o.content)){dupRep++;return}
     e.repairs.push({id:uid(),...o});nRep++;
   });
   opLog('設備台帳CSVの読み込み',`新規${nNew}・上書き${nUp}・履歴${nRep}件`);
