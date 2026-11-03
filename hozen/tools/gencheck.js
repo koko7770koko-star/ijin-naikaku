@@ -21,5 +21,21 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  await p.fill(inp,'250');await p.fill('#ms_by','試験');await p.evaluate(()=>saveMeas(''));await p.waitForTimeout(200);
  const k=await p.evaluate(()=>{const m=S.meas.filter(x=>x.id!=='mP1').slice(-1)[0];return m&&Object.keys(m.rows[0]).sort().join()});
  if(!k||!/ck,max,min,name,photo,src,unit,v/.test(k))bad.push('保存の形が変わった '+k);
+ // 打ち間違いらしい値（hz-gen-diff）：累計（運転時間計）が前回より減ったら「打ち間違い？」、燃料が大きく増えたら「給油しましたか？」。止めずに知らせるだけ・保存はできる
+ await p.evaluate(()=>{closeModal(true);const eq=S.equipment[0].id;S.meas.push({id:'mP2',equipId:eq,date:'2026-01-01',by:'',name:'',type:'その他',cond:{},rows:[{name:'運転時間計',v:1200,unit:'h',min:'',max:'',ck:false},{name:'燃料残量',v:40,unit:'%',min:'',max:'',ck:false},{name:'電圧',v:200,unit:'V',min:'',max:'',ck:false}],note:'',photos:[]});
+  editMeas(null,{equipId:eq,rows:[{name:'運転時間計',v:'',unit:'h',min:'',max:'',ck:false},{name:'燃料残量',v:'',unit:'%',min:'',max:'',ck:false},{name:'電圧',v:'',unit:'V',min:'',max:'',ck:false}]})});
+ await p.waitForSelector('#ms_rows input[data-mv]');await p.waitForTimeout(150);
+ const odd=i=>p.evaluate(i=>{const e=document.querySelectorAll('#ms_rows .mrow')[i].querySelector('.modd');return e&&!e.hidden?e.textContent:''},i);
+ // 入れた値は Tab で確定してから次へ（確定すると行を描き直すので、続けて別の行に打つと消える）
+ const put=async(i,v)=>{await p.locator('#ms_rows input[data-mv]').nth(i).fill(String(v));await p.waitForTimeout(40);};
+ const done=async i=>{await p.locator('#ms_rows input[data-mv]').nth(i).press('Tab');await p.waitForTimeout(80)};
+ await put(0,120);if(!/前回 1200h より少ないです。打ち間違い？/.test(await odd(0)))bad.push('累計が減ったのに知らせない（打っている間） '+(await odd(0)));
+ await done(0);if(!/打ち間違い？/.test(await odd(0)))bad.push('確定して描き直すと知らせが消える');
+ await put(0,1210);if(await odd(0))bad.push('累計が増えたのに知らせる');await put(0,120);await done(0);
+ await put(1,95);if(!/給油しましたか/.test(await odd(1)))bad.push('燃料が大きく増えたのに知らせない');
+ await put(1,45);if(await odd(1))bad.push('燃料が少し増えただけで知らせる');await done(1);
+ await put(2,150);if(await odd(2))bad.push('累計でない行で知らせる');await done(2);
+ await p.fill('#ms_by','試験');const n0=await p.evaluate(()=>S.meas.length);await p.evaluate(()=>saveMeas(''));await p.waitForTimeout(200);
+ if(await p.evaluate(()=>S.meas.length)!==n0+1)bad.push('知らせが出ていても保存できない');
  if(await p.evaluate(()=>document.documentElement.scrollWidth)>392)bad.push('横にはみ出す');
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
