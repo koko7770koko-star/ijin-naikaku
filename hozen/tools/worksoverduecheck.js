@@ -1,0 +1,21 @@
+// 作業管理：予定日を過ぎても完了していない作業に「○日超過」の札。完了・中止・今日以降の作業には出さない。終了日がある作業は終了日で数える。390pxではみ出さない・保存の形は変えない
+const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
+(async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
+ p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
+ await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
+ await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ const r=await p.evaluate(()=>{const mk=(i,st,date,end)=>({id:'w'+i,no:'W-00'+i,title:'作業'+i,kind:'点検',status:st,date,endDate:end||'',start:'09:00',end:'17:00',equipIds:[],staff:['職員甲'],vendor:'',outage:{on:false,range:''},cost:'',approvals:[],pre:[],post:[],ky:[],hist:[],photos:[],docs:[],needQuals:[]});
+  const keys0=Object.keys(mk(0,'起案',TODAY)).join();
+  S.works=[mk(1,'実施中',addD(TODAY,-3)),mk(2,'完了',addD(TODAY,-3)),mk(3,'中止',addD(TODAY,-3)),mk(4,'承認待ち',TODAY),mk(5,'起案',addD(TODAY,2)),mk(6,'実施中',addD(TODAY,-10),addD(TODAY,-1))];
+  V.wkF='all';go('works');
+  return keys0});await p.waitForTimeout(300);
+ const o=await p.evaluate(()=>{const t=id=>{const el=[...document.querySelectorAll('.item')].find(x=>x.textContent.includes(id));return el?[...el.querySelectorAll('.pill.ng')].map(x=>x.textContent.trim()).filter(x=>/超過/.test(x)).join():null};
+  return {w1:t('作業1'),w2:t('作業2'),w3:t('作業3'),w4:t('作業4'),w5:t('作業5'),w6:t('作業6'),sw:document.documentElement.scrollWidth}});
+ if(o.w1!=='3日超過')bad.push('作業1は3日超過のはず '+o.w1);
+ if(o.w4||o.w5)bad.push('今日・先の作業に出る');
+ if(o.w6!=='1日超過')bad.push('終了日で数えない '+o.w6);
+ await p.evaluate(()=>{V.wkF='open';render()});await p.waitForTimeout(200);
+ const first=await p.evaluate(()=>document.querySelector('.item .ti').textContent);if(!/作業(1|6)/.test(first))bad.push('超過が一覧の上に来ない '+first);
+ const fin=await p.evaluate(()=>[...document.querySelectorAll('.item')].filter(x=>/作業2|作業3/.test(x.textContent)).length);if(fin)bad.push('未完了の一覧に完了・中止が出る');
+ if(o.sw>392)bad.push('横にはみ出す');
+ console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();

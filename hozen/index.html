@@ -5796,9 +5796,9 @@ const partById=id=>(S.parts||[]).find(p=>p.id===id);
 const partName=id=>(partById(id)||{}).name||'(削除済み)';
 function workRow(w){
   const c=workChecks(w).filter(x=>x.lv==='ng').length;
-  const fin=['完了','中止'].includes(w.status);
-  return `<div class="item ${w.status==='中止'?'':c&&!fin?'ng':''}" ${fin?'style="opacity:.62"':''} onclick="editWork('${w.id}')"><div class="dt">${md(w.date)}<small>${esc(w.start||'')}</small></div><div class="bd"><div class="ti">${esc(w.title)}</div>
-    <div class="meta">${esc([w.place,w.no,w.kind,w.staff.join('・'),w.vendor].filter(Boolean).join('・'))}</div><span class="pill ${WORK_STAT_CLS[w.status]||''}">${esc(w.status)}</span>${w.outage.on?'<span class="pill ng">停電</span>':''}${c&&!['完了','中止'].includes(w.status)?`<span class="pill ng">要確認 ${c}</span>`:''}</div></div>`;
+  const fin=['完了','中止'].includes(w.status),od=!fin&&isDate(w.endDate||w.date)&&(w.endDate||w.date)<TODAY?diffD(TODAY,w.endDate||w.date):0; // 予定日（終了日があればそれ）を過ぎて未完了
+  return `<div class="item ${w.status==='中止'?'':(c||od)&&!fin?'ng':''}" ${fin?'style="opacity:.62"':''} onclick="editWork('${w.id}')"><div class="dt">${md(w.date)}<small>${esc(w.start||'')}</small></div><div class="bd"><div class="ti">${esc(w.title)}</div>
+    <div class="meta">${esc([w.place,w.no,w.kind,w.staff.join('・'),w.vendor].filter(Boolean).join('・'))}</div><span class="pill ${WORK_STAT_CLS[w.status]||''}">${esc(w.status)}</span>${od?`<span class="pill ng">${od}日超過</span>`:''}${w.outage.on?'<span class="pill ng">停電</span>':''}${c&&!['完了','中止'].includes(w.status)?`<span class="pill ng">要確認 ${c}</span>`:''}</div></div>`;
 }
 /* 作業の確認事項（人員・資格・勤務表との照合など）。判断材料を示すだけ */
 function workChecks(w){
