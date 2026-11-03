@@ -19,6 +19,16 @@
   --a-bg:#dceaf7; --a:#1f3b57; --b-bg:#fbe0cc; --b:#6b3300; --d-bg:#e3f1e0; --d:#2d5a22;
   --shadow:0 1px 2px rgba(16,24,40,.06); --r:14px; --r-s:10px;
 }
+/* 夜間（暗い画面）：設定の night='on'。色の変数だけを入れ替える。印刷（media print）には効かせない */
+@media screen{html.night{color-scheme:dark;
+  --navy:#9ccaf5; --accent:#7ab6f0; --bg:#10151c; --card:#1a222c; --line:#2c3744; --field:#44515f;
+  --txt:#e8edf3; --sub:#c8d1db; --mut:#9aa7b5;
+  --ok:#78cc88; --ok-bg:#17301d; --ok-line:#3a9a4f;
+  --ng:#ff9087; --ng-bg:#3b1b1b; --ng-line:#d0342c;
+  --warn:#f2c76a; --warn-bg:#3a2f12; --warn-line:#c28a00;
+  --info:#9ccaf5; --info-bg:#16293e;
+  --a-bg:#1b2f45; --a:#d3e6f8; --b-bg:#40291a; --b:#ffd5b0; --d-bg:#17301d; --d:#c4e8b8;
+  --shadow:0 1px 2px rgba(0,0,0,.5)}}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",Meiryo,sans-serif;font-size:16px;line-height:1.55}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -575,6 +585,147 @@ details.fold[open]>summary{margin-bottom:8px}
 .seg.tabs.ptabs:not(.istep) button:nth-child(-n+2){border-top:0}
 .mtile{text-align:left}.mtile .mt,.mtile .md{text-align:left}
 
+/* NIGHT-GEN-START */
+/* 夜間：固定の色（#fff など）を暗い色に置き換える（固定の色の一覧から作った物。印刷には効かせない） */
+@media screen{
+html.night header{background:#1f5a8e}
+html.night nav{background:#1a242d}
+html.night .btn{background:#1f5a8e}
+html.night .btn.sec{background:#1e2a37}
+html.night input,html.night select,html.night textarea{background:#1a242d}
+html.night .grp{background:#1f272f}
+html.night .pill{background:#242a30}
+html.night .badge{background:#202b37}
+html.night .tag.off{background:#433b20;color:#eed3a0}
+html.night .tag.task{background:#1e2a37;color:#b5cde5}
+html.night .alchip{background:#1a242d}
+html.night .al.ng{color:#ec9793}
+html.night .al.warn{color:#f1deaf}
+html.night .mnav button{background:#1a242d}
+html.night .item{background:#1d262f;border-left:4px solid #364554}
+html.night .item.dim{border-left-color:#2c3b4c}
+html.night .tile{background:#1a242d;border-top:4px solid #2a3642}
+html.night .tile.warn .tv{color:#ecd096}
+html.night .crewrow{border-bottom:1px solid #242a30}
+html.night .mitem{background:#1a242d}
+html.night .aibadge.free{background:#1f3a27;color:#a8e7bc}
+html.night .aibadge.need{background:#222931;color:#aab3be}
+html.night .aibadge.off{background:#371e1b;color:#e78989}
+html.night .cal .h.sun{color:#ea8787}
+html.night .cal .d{background:#1a242d;border:1px solid #282e35}
+html.night .cal .d.today{background:#37321b}
+html.night .cal .n.sun{color:#ea8787}
+html.night .hlb{color:#ea8787}
+html.night .askbox{background:#1a242d}
+html.night .cal .t{background:#1e2a37;color:#b5cde5}
+html.night .cal .t.ex{background:#272c30;color:#a4b0bb}
+html.night .aisend{color:#b1becb}
+html.night .lgd .lg{background:#1e2a37;color:#b5cde5}
+html.night .lgd .lg.ex{background:#272c30;color:#a4b0bb}
+html.night table.yr{background:#1a242d}
+html.night table.yr th{background:#1f5a8e}
+html.night table.yr .nm{background:#1a242d}
+html.night table.yr th.nm{background:#1f5a8e}
+html.night table.yr .cat td{background:#1e2933}
+html.night .banrow.flash{background:#3d361d}
+html.night .banrow.bh .bi{color:var(--mut,#aaaab6)}
+html.night .bm.mk-iss{background:#3a1d1c;color:#e8857f}
+html.night .bm{border:1px solid var(--bd,#2c3540);background:#1a242d}
+html.night .mk-d{background:#224629}
+html.night .chk{border-bottom:1px solid #242a30}
+html.night .chk.flash{background:#433b20}
+html.night .locn.flash>.item{background:#3d361d}
+html.night .seg button{background:#1a242d}
+html.night .seg button.on-na{background:#253341}
+html.night .seg.tabs button.on{background:#1f5a8e}
+html.night .mgrid div{background:#1a242d}
+html.night .mgrid .part{background:#433b20}
+html.night .mgrid .miss{background:#272c30;color:#e77e79}
+html.night #sysbar button{background:#1a242d;color:#ea8787}
+html.night .modal{background:#1a242d}
+html.night .modal .mfoot{background:#1a242d}
+html.night .rep{background:#1a242d;color:#ededed}
+html.night .rep th,html.night .rep td{border:1px solid #3c5168}
+html.night .rep .sec{background:#1f5a8e}
+html.night .rep .red{color:#ea8787}
+html.night .rep .small{color:#bebebe}
+html.night .rph img{border:1px solid #3c5168}
+html.night #shiftApp input,html.night #shiftApp select,html.night #shiftApp textarea{background:#1a242d}
+html.night #shiftApp .bar{background:#1f5a8e}
+html.night #shiftApp .bar button{background:#1f5a8e}
+html.night #shiftApp .tabs button{background:#1a242d}
+html.night #shiftApp .tabs button.on{background:#1f5a8e}
+html.night #shiftApp .card{background:#1a242d}
+html.night #shiftApp .btn{background:#1a242d}
+html.night #shiftApp .btn.blk{background:#1f5a8e}
+html.night #shiftApp .judge{color:#b0e8b4;background:#2b391b}
+html.night #shiftApp .judge.ng{color:#ed989b;background:#391b1e}
+html.night #shiftApp .shper .pc{background:#1a242d}
+html.night #shiftApp .shper .pc.hi{background:#39321c}
+html.night #shiftApp .tblwrap{background:#1a242d}
+html.night #shiftApp table.sh th,html.night #shiftApp table.sh td{border-right:1px solid #2b3a4a;border-bottom:1px solid #2b3a4a;background:#1a242d}
+html.night #shiftApp table.sh thead th{background:#1e2935}
+html.night #shiftApp table.sh .dc{background:#1a242d}
+html.night #shiftApp table.sh thead .dc{background:#1e2935}
+html.night #shiftApp table.sh tr.today td.dc,html.night #shiftApp table.sh tr.today td.wd{background:#4b4124}
+html.night #shiftApp td.v-A{background:#1d2e3d !important}
+html.night #shiftApp td.v-B{background:#593e2b !important}
+html.night #shiftApp td.v-公休{color:#ea8787}
+html.night #shiftApp td.v-有給{background:#4f4526 !important;color:#ea8787}
+html.night #shiftApp td.v-希望休{background:#3e291e !important;color:#ea8787}
+html.night #shiftApp td.v-日勤{color:#c7e1b6}
+html.night #shiftApp td.v-ng{background:#7e3c3c !important}
+html.night #shiftApp td.c-green{background:#577438 !important}
+html.night #shiftApp td.c-orange{background:#7e6e3c !important}
+html.night #shiftApp td.c-purple{background:#52356e !important}
+html.night #shiftApp td.c-blue{background:#2d3e5d !important}
+html.night #shiftApp td.lack{background:#4f2626 !important}
+html.night #shiftApp table.sh tr.hol td.dc,html.night #shiftApp table.sh tr.hol td.wd{color:#ea8787;background:#4f4526}
+html.night #shiftApp table.sh th.dayk{background:#2c3d22 !important}
+html.night #shiftApp table.sh tfoot tr.hl td{background:#3e291e}
+html.night #shiftApp table.sh tfoot td{background:#1d2732}
+html.night #shiftApp table.sh tfoot td.over{color:#ed989b;background:#4f2626}
+html.night #shiftApp .legend{color:#d1d1d1}
+html.night #shiftApp .legend span i{border:1px solid #415971}
+html.night #shiftApp .pop .box{background:#1a242d}
+html.night #shiftApp .pop .opts button{background:#1a242d}
+html.night #shiftApp .pop .opts button.cur{background:#1f5a8e}
+html.night #shiftApp .pop .swap>button{background:#1a242d}
+html.night #shiftApp table.lst th,html.night #shiftApp table.lst td{border-bottom:1px solid #253341}
+html.night #shiftApp .ok{color:#b1f1b1}
+html.night #shiftApp .warn{color:#ed989b;background:#411f24}
+html.night #shiftApp .ngt{color:#ed989b;background:#4f2626}
+html.night #shiftApp .mrow .no{color:#b5b5b5}
+html.night #shiftApp .sheet{background:#1a242d;color:#ededed}
+html.night #shiftApp .sheet table.sub th{background:#273543}
+html.night #shiftApp .sheet table.sub tr.we td.dt{background:#4f4526;color:#ea8787}
+html.night #shiftApp .sheet table.sub td.sA{background:#1d2e3d}
+html.night #shiftApp .sheet table.sub td.sB{background:#593e2b}
+html.night #shiftApp .sheet table.sub td.s休{color:#ea8787}
+html.night #shiftApp .sheet table.sub td.s有給{background:#4f4526;color:#ea8787}
+html.night #shiftApp .sheet table.sub td.s希望休{background:#3e291e;color:#ea8787}
+html.night #shiftApp .sheet table.sub td.sNG{background:#7e3c3c}
+html.night #shiftApp .sheet table.sub td.over{color:#ea8787}
+html.night .chkgrid{border:1px solid #262d36}
+html.night .tbl th,html.night .tbl td{border-bottom:1px solid #262d36}
+html.night .grp{border:1px solid #262d36}
+html.night .dwgv{background:#1a242d}
+html.night .dwgv .pin.hl{outline:3px solid #6c6634}
+html.night .mtrow{border-bottom:1px solid #262d36}
+html.night .qrl{border:1px dashed #3c5168;background:#1a242d}
+html.night mark{background:#4b4524}
+html.night .aisrc{background:#1e2530}
+html.night .wxh{background:#1e2530}
+html.night .wxh.wet{background:#1b2939}
+html.night .mtile{background:#1a242d}
+html.night .ptabs{background:var(--bg,#22272f)}
+html.night [style*="background:#fff;"],html.night [style*="'#fff'"],html.night [style*="background:#fff\""]{background:var(--card)!important}
+html.night [style*="background:#fff2c2"]{background:var(--warn-bg)!important;color:var(--warn)!important}
+html.night [style*="background:#eceff1"]{background:#232d38!important;color:var(--ng)!important}
+html.night [style*="color:#c00000"],html.night [style*="color:#c00;"],html.night [style*="color:#d0342c"],html.night [style*="color:#c0261e"]{color:var(--ng)!important}
+html.night [style*="border:2px solid #c00000"]{border-color:var(--ng-line)!important}
+}
+/* NIGHT-GEN-END */
 </style>
 <style id="pageStyle">@page{size:A4 portrait;margin:10mm}</style>
 </head>
@@ -1281,7 +1432,7 @@ const DEF={
     cats:['受変電設備','非常用電源','医用電気設備','消防・防災設備','照明・コンセント','空調・動力','昇降機','その他'],
     kinds:['日常','月次','年次','定期','臨時','工事','会議・届出'],
     model:'claude-sonnet-5-5',lim:{vMin:'',vMax:'',kwMax:'',tMax:'',chg:15},
-    lastBackup:'',fscale:'',showCrew:true,calDay:false,repPhotos:true,facType:'',apiMode:'direct',apiUrl:'',wx:{on:false,lat:null,lng:null,pref:'',label:''}},
+    lastBackup:'',fscale:'',night:'',showCrew:true,calDay:false,repPhotos:true,facType:'',apiMode:'direct',apiUrl:'',wx:{on:false,lat:null,lng:null,pref:'',label:''}},
   items:[],marks:{},tasks:[],daily:{},notes:{},issues:[],inbox:[]
 };
 const WD='日月火水木金土';
@@ -1526,6 +1677,7 @@ function validateData(d){
   if(o.settings.apiMode!==undefined&&o.settings.apiMode!=='server')o.settings.apiMode='direct';
   if(o.settings.apiUrl!==undefined&&!/^https:\/\/[^\s]{1,300}$/.test(o.settings.apiUrl))o.settings.apiUrl='';
   if(o.settings.facType!==undefined)o.settings.facType=txt(o.settings.facType,100);
+  if(o.settings.night!==undefined&&o.settings.night!=='on')o.settings.night='';
   if(o.settings.wx!==undefined){const w=validWx(o.settings.wx);if(w)o.settings.wx=w;else delete o.settings.wx}
   if(o.settings.lim!==undefined&&!isObj(o.settings.lim)){delete o.settings.lim;log.push('基準値を初期値に戻しました')}
   if(isObj(o.settings.lim))for(const k in o.settings.lim){const v=numOrBlank(o.settings.lim[k]);o.settings.lim[k]=v===undefined||v===null?'':v}
@@ -2193,7 +2345,7 @@ function homeBanLine(){
   const ym=TODAY.slice(0,7),all=[];banBldgs().forEach(b=>banBoardsOf(b.id).forEach(x=>all.push(x)));
   if(!all.length)return '';
   const n=all.filter(x=>banPend(ym,x)).length;
-  return `<button class="btn sec wide homeban" style="min-height:48px;margin:0 0 12px;text-align:left" onclick="homeBanGo()">⚡ 今月の盤の点検　${n?`あと<b>${n}面</b>（全${all.length}面）　次の盤へ ›`:`<span class="pill ok">全${all.length}面 済み</span>`}</button>`}
+  return `<button class="btn sec wide homeban" style="min-height:48px;margin:0 0 12px;text-align:left" onclick="homeBanGo()"><span>⚡ 今月の盤の点検　${n?`あと<b>${n}面</b>（全${all.length}面）　次の盤へ ›`:`<span class="pill ok">全${all.length}面 済み</span>`}</span></button>`}
 function homeBanGo(){V.banYm=TODAY.slice(0,7);V.banEdit=false;go('ban');setTimeout(banNext,60)}
 /* たたみ表示のカード（開閉は覚えておく） */
 function fold(k,title,body,openDef,id){const open=V['fold_'+k]??openDef??false;
@@ -3750,7 +3902,9 @@ function vSet(){
   const field=(k,l,ph,hp)=>`<label class="f">${l}</label><input value="${esc(st[k])}" placeholder="${ph}" maxlength="100" onchange="S.settings.${k}=txt(this.value,100).trim();save()">${hp?`<div class="muted sethelp" style="font-size:12px;margin-top:2px">${hp}</div>`:''}`;
   const list=(k,l,hp)=>`<label class="f">${l}（1行に1つ）</label><textarea style="min-height:80px" onchange="setList('${k}',this.value)">${esc(st[k].join('\n'))}</textarea>${hp?`<div class="muted sethelp" style="font-size:12px;margin-top:2px">${hp}</div>`:''}`;
   const lim=(k,l)=>`<div><label class="f">${l}</label><input type="number" step="any" inputmode="decimal" value="${esc(L[k])}" onchange="setLim('${k}',this)"></div>`;
-  return `<div class="card"><h2>文字の大きさ</h2><div class="muted sethelp" style="font-size:12px;margin-bottom:6px">画面の文字と部品を大きくします（印刷の大きさは変わりません）。</div>
+  return `<div class="card"><h2>画面の明るさ</h2><div class="muted sethelp" style="font-size:12px;margin-bottom:6px">暗い電気室・夜間の見回りでまぶしいときは「夜間」にします（印刷は今までどおり白地です）。</div>
+    <div class="seg" role="group" aria-label="画面の明るさ"><button type="button" class="${st.night==='on'?'':'on'}" style="min-height:48px" onclick="setNight('')">標準</button><button type="button" class="${st.night==='on'?'on':''}" style="min-height:48px" onclick="setNight('on')">🌙 夜間（暗い）</button></div></div>
+  <div class="card"><h2>文字の大きさ</h2><div class="muted sethelp" style="font-size:12px;margin-bottom:6px">画面の文字と部品を大きくします（印刷の大きさは変わりません）。</div>
     <div class="seg" role="group" aria-label="文字の大きさ">${FSCALES.map(([v,l])=>`<button type="button" class="${(st.fscale||'')===v?'on':''}" style="min-height:48px" onclick="setFScale('${v}')">${l}</button>`).join('')}</div></div>
   <div class="card"><h2>基本情報（報告書に表示）</h2>${field('name','施設名','例：○○総合病院','報告書・印刷物の見出しに出ます')}${field('facType','施設の種類（AIへの指示に使います）','例：病院、工場、事務所ビル','AIに質問するときの前提になります')}${field('dept','担当部署','例：施設管理課 電気係','報告書の担当部署の欄に出ます')}${field('reporter','報告者','氏名','報告書の「報告者」欄に出ます')}${field('to','提出先','例：施設管理課長','報告書の「提出先」欄に出ます')}${field('operator','この端末を使う人（修正履歴に残る名前）','氏名','記録を直したとき「誰が直したか」に使います')}</div>
   <div class="card"><h2>棟と階</h2><div class="muted">棟の名前（自分で入れる）と各階（地下も）を一度に足します。既にある物は重ねません。</div><button class="btn sec wide" style="margin-top:8px" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button></div>
@@ -4172,9 +4326,12 @@ let AL_CACHE=null;
 const FSCALES=[['','標準',1],['l','大',1.125],['xl','特大',1.25]];
 const FSCALE_OFF=['dailyRep','report','printDoc','workSheet'];/* 印刷の見本の画面（表が幅いっぱい）は大きくしない */
 function applyFScale(){const f=FSCALES.find(x=>x[0]===((S&&S.settings&&S.settings.fscale)||''))||FSCALES[0];document.documentElement.style.zoom=f[2]===1||FSCALE_OFF.includes(V.view)?'':String(f[2])}
+/* 夜間（設定の night：''=標準・'on'=暗い画面）。html に night の印を付けるだけ。保存は設定の1項目 */
+function applyNight(){document.documentElement.classList.toggle('night',!!(S&&S.settings&&S.settings.night==='on'))}
+function setNight(v){S.settings.night=v==='on'?'on':'';save();applyNight();render();toast(v==='on'?'夜間（暗い画面）にしました':'標準の明るさに戻しました')}
 function setFScale(v){if(!FSCALES.some(x=>x[0]===v))return;S.settings.fscale=v;save();applyFScale();render();toast('文字の大きさを変えました')}
 function render(){
-  applyFScale();
+  applyFScale();applyNight();
   CREW={};DL_CACHE=null;AL_CACHE=null;
   const shiftMode=V.view==='shift';
   document.body.classList.toggle('mode-shift',shiftMode);
