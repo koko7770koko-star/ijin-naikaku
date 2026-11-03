@@ -2416,7 +2416,7 @@ function homeTiles(tt,tst,oi,dl,over){
     +t(dl.some(x=>x.left<0)?'ng':dl.length?'warn':'ok','期限30日以内',dl.length,'件',"go('plan',{plTab:'legal'})")
     +t(wait?'warn':'ok','作業（今日）',tw,'件',"go('works',{wkF:'open'})",`承認待ちの作業 ${wait}`)
     +t(eqNg?'warn':'ok','要対応の設備',eqNg,'台',"go('diag',{dgTab:'rec'})",`健全度 要注意 ${weak}台`)
-    +t(low?'warn':'ok','在庫不足',low,'品',"go('stock',{stTab:'parts'})")
+    +t(low?'warn':'ok','在庫不足',low,'品',"go('stock',{stTab:'parts',ptLow:0})")
     +t(cal?'warn':'ok','校正期限30日内',cal,'点',"go('stock',{stTab:'tools'})")
     +`</div>`;
 }
@@ -6244,9 +6244,10 @@ function stockQuick(id,d){const p=partById(id);if(!p)return;
 function vStock(){
   const t=V.stTab||'parts';
   let h=tabs16('stTab',[['parts','予備品'],['tools','工具・測定器'],['budget','予算・費用']]);
-  if(t==='parts'){const q=(V.ptQ||'').trim(),P=(S.parts||[]).filter(p=>!q||[p.name,p.code,p.spec,p.maker,p.place].join(' ').includes(q)).map((p,k)=>[p,k]).sort((a,b)=>((b[0].min!==''&&b[0].qty<=b[0].min)-(a[0].min!==''&&a[0].qty<=a[0].min))||a[1]-b[1]).map(x=>x[0]),low=P.filter(p=>p.min!==''&&p.qty<=p.min);
+  if(t==='parts'){const q=(V.ptQ||'').trim(),P0=(S.parts||[]).filter(p=>!q||[p.name,p.code,p.spec,p.maker,p.place].join(' ').includes(q)),onlyLow=!!V.ptLow,P=P0.filter(p=>!onlyLow||(p.min!==''&&p.qty<=p.min)).map((p,k)=>[p,k]).sort((a,b)=>((b[0].min!==''&&b[0].qty<=b[0].min)-(a[0].min!==''&&a[0].qty<=a[0].min))||a[1]-b[1]).map(x=>x[0]),low=P.filter(p=>p.min!==''&&p.qty<=p.min);
     h+=`<input placeholder="品名・型番・保管場所で検索" value="${esc(q)}" onchange="V.ptQ=this.value;render()" style="margin-bottom:8px"><div class="row" style="margin-bottom:8px"><label class="btn sec sm" style="min-height:44px">📥 CSVを読み込む<input type="file" accept=".csv,text/csv" onchange="importStockCsv(this)"></label><span class="muted" style="font-size:12px">「CSV」で書き出した予備品のファイル</span></div>`;
     if(low.length)h+=`<div class="al ng">在庫不足 ${low.length}品目：${low.slice(0,3).map(p=>esc(p.name)).join('、')}${low.length>3?` ほか${low.length-3}品目（下の一覧の上に並んでいます）`:''}</div>`;
+    if(low.length||onlyLow)h+=`<div class="row" style="margin-bottom:8px"><button class="btn sec sm" style="min-height:44px" onclick="V.ptLow=${onlyLow?0:1};render()">${onlyLow?'すべての予備品を見る':'少ない物だけ見る（'+low.length+'品目）'}</button></div>`;
     if(low.length)h+=`<div class="row" style="margin-bottom:8px"><button class="btn sec sm" style="min-height:44px" onclick="copyOrderMemo()">📋 発注のメモをコピー（${low.length}品目）</button></div>`;
     h+=card(`📦 予備品 <span class="muted">${P.length}品目</span>`,P.map(partRow).join('')||emptyGuide('予備品はまだありません。登録しておくと、在庫が最低在庫数を下回ったときにホームで知らせます。','予備品を登録','editPart()'),`<button class="btn sm" style="min-height:40px" onclick="editPart()">＋ 追加</button>`);
     const M=(S.moves||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
@@ -6855,7 +6856,7 @@ function v16DashInner(){
   E.forEach(e=>{if(recommendFor(e.id).some(r=>r.lv==='ng'))measOver++;const H=healthOf(e),l=(e.health||[]).slice(-1)[0];if((H.score!=null&&H.score<50)||(l&&l.score<=2))weak++});
   if(!E.length&&!W.length&&!(S.parts||[]).length&&!(S.tools||[]).length)return `<div class="card" onclick="go('menu')"><h2>🏭 総合保全</h2><div class="muted">設備台帳・作業指示・予備品などを登録すると、ここに要対応の件数がまとまって表示されます（メニューから）。</div></div>`;
   const t=(cls,label,n,on,unit='件')=>`<div class="tile ${n?cls:'ok'}" onclick="${on}"><div class="tl">${label}</div><div class="tv">${n}<small>${unit}</small></div></div>`;
-  return `<div class="tiles">${t('ng','緊急・高の異常',urg,"go('issues',{isF:'open'})")}${t('ng','対応期限超過',over,"go('issues',{isF:'over'})")}${t('warn','承認待ちの作業',wait,"go('works',{wkF:'承認待ち'})")}${t('warn','要対応の設備',measOver,"go('diag',{dgTab:'rec'})",'台')}${t('warn','健全度 要注意',weak,"go('diag',{dgTab:'health'})",'台')}${t('warn','在庫不足',low,"go('stock',{stTab:'parts'})",'品')}${t('warn','校正期限30日内',cal,"go('stock',{stTab:'tools'})",'点')}${t('','今日の作業',today.length,"go('works',{wkF:'open'})")}</div>`
+  return `<div class="tiles">${t('ng','緊急・高の異常',urg,"go('issues',{isF:'open'})")}${t('ng','対応期限超過',over,"go('issues',{isF:'over'})")}${t('warn','承認待ちの作業',wait,"go('works',{wkF:'承認待ち'})")}${t('warn','要対応の設備',measOver,"go('diag',{dgTab:'rec'})",'台')}${t('warn','健全度 要注意',weak,"go('diag',{dgTab:'health'})",'台')}${t('warn','在庫不足',low,"go('stock',{stTab:'parts',ptLow:0})",'品')}${t('warn','校正期限30日内',cal,"go('stock',{stTab:'tools'})",'点')}${t('','今日の作業',today.length,"go('works',{wkF:'open'})")}</div>`
     +(today.length?card('🧰 今日の作業',today.map(workRow).join('')):'');
 }
 function v16Alerts(add){
@@ -6868,7 +6869,7 @@ function v16Alerts(add){
   (S.works||[]).filter(w=>!['完了','中止'].includes(w.status)&&w.date>=TODAY&&w.date<=addD(TODAY,3)).forEach(w=>{const wf=wxForWork(w);if(wf&&wf.level==='ng')add('warn',`${md(w.date)} 作業「${w.title}」：天気予報で${wf.reasons[0]}（屋外作業は中止・延期を検討）`,`editWork('${w.id}')`)});
   const wait=(S.works||[]).filter(w=>w.status==='承認待ち').length;if(wait)add('warn',`承認待ちの作業 ${wait}件`,"go('works',{wkF:'承認待ち'})");
   (S.works||[]).filter(w=>['承認済み','承認待ち','起案','実施中','保留'].includes(w.status)&&(w.endDate||w.date)<TODAY).forEach(w=>add('warn',`予定日を過ぎた作業（${w.status}）：${w.title}`,`editWork('${w.id}')`));
-  const low=(S.parts||[]).filter(p=>p.min!==''&&p.qty<=p.min);if(low.length)add('warn',`在庫不足 ${low.length}品目：${low.slice(0,3).map(p=>p.name).join('、')}`,"go('stock',{stTab:'parts'})");
+  const low=(S.parts||[]).filter(p=>p.min!==''&&p.qty<=p.min);if(low.length)add('warn',`在庫不足 ${low.length}品目：${low.slice(0,3).map(p=>p.name).join('、')}`,"go('stock',{stTab:'parts',ptLow:1,ptQ:''})");
   (S.tools||[]).forEach(t=>{if(t.calDue&&t.calDue<TODAY)add('ng',`測定器「${t.name}」の校正期限切れ（${slash(t.calDue)}）`,"go('stock',{stTab:'tools'})");else if(t.calDue&&diffD(t.calDue,TODAY)<=30)add('warn',`測定器「${t.name}」の校正期限まであと${diffD(t.calDue,TODAY)}日`,"go('stock',{stTab:'tools'})");
     const l=t.loans.find(x=>!x.back&&x.due&&x.due<TODAY);if(l)add('warn',`「${t.name}」の返却予定日を過ぎています（${l.to}）`,"go('stock',{stTab:'tools'})")});
   (S.equipment||[]).filter(e=>e.status!=='廃止').forEach(e=>recommendFor(e.id).filter(r=>r.lv==='ng'&&!r.text.startsWith('異常「')).slice(0,2).forEach(r=>add('warn',`${eqLabel(e)}：${r.text}`,`go('equipDetail',{eq:'${e.id}'})`)));
@@ -6897,7 +6898,7 @@ function v16Menu(){
    +g('🏭 設備',[it("go('equip')",'🏭','設備台帳','設備カルテ・仕様・修理履歴'),it("go('ban')",'⚡','盤の点検','棟→階→電気室→盤 を ◯/● で'),it("go('locs')",'🏢','設備の場所','棟→階→電気室→盤 を登録'),it("go('qr')",'🔳','QRラベル','印刷・読み取り'),it("go('dwgs')",'🗺','図面','単線結線図・配置図・版管理'),it("go('lib')",'📚','技術資料','登録・検索・根拠表示')])
    +g('🩺 保全・診断',[it("go('issues')",'🛠','異常・修理','緊急度・期限・原因・承認'),it("go('diag',{dgTab:'meas'})",'📏','測定記録','絶縁・接地・継電器・蓄電池'),it("go('diag',{dgTab:'meas'});setTimeout(()=>{const g=document.getElementById('genCard');if(g)g.scrollIntoView()},80)",'⚡','非常用発電機','棟・階ごとに今月の点検'),it("go('diag',{dgTab:'health'})",'💯','健全度','人の評価と参考指標'),it("go('diag',{dgTab:'rec'})",'🔎','推奨・異常傾向','管理値外・周期超過・傾向'),it("go('diag',{dgTab:'fail'})",'📉','故障分析','件数・MTBF・MTTR・CSV'),it("go('plan',{plTab:'legal'})",'⚖','点検期限（法定・社内）','期限の一覧'),it("go('plan',{plTab:'renew'})",'🏗','更新計画','10年の更新・改修'),it("go('plan',{plTab:'measdue'})",'⏱','測定の周期','次回期限')])
    +g('🧰 作業・人員',[it("go('works')",'🧰','作業指示書','承認・KY・停電計画・責任者確認'),it("go('workSheet')",'📋','作業表','14日間の作業と勤務'),it("go('stds')",'📘','作業標準','承認済みの手順・必須チェック'),it("go('shift')",'👥','勤務表（シフト）','A/B夜勤ローテーション'),it("go('staff')",'🪪','人員・資格','資格の登録・作業との照合')])
-   +g('📦 物品・費用',[it("go('stock',{stTab:'parts'})",'📦','予備品','在庫・最低在庫・入出庫'),it("go('stock',{stTab:'tools'})",'🔧','工具・測定器','貸出・校正期限'),it("go('stock',{stTab:'budget'})",'💴','予算・費用','予算・実績・更新費用')])
+   +g('📦 物品・費用',[it("go('stock',{stTab:'parts',ptLow:0})",'📦','予備品','在庫・最低在庫・入出庫'),it("go('stock',{stTab:'tools'})",'🔧','工具・測定器','貸出・校正期限'),it("go('stock',{stTab:'budget'})",'💴','予算・費用','予算・実績・更新費用')])
    +g('📄 報告書・AI',[it("go('report')",'📄','月報・年報','自動集計・印刷'),it("go('dailyRep',{day:TODAY})",'🗒','日報','A4印刷'),it("go('diag',{dgTab:'meas'})",'📏','点検報告書','測定記録から作成'),it("go('issues')",'🛠','修理報告書','異常案件から作成'),it("go('works')",'🧰','作業報告書','作業指示から作成'),it("go('ai')",'🤖','AI支援','読み取り・検索・下書き（人が確認）')])
    +g('⚙ 設定・データ',[it("go('set',{setTab:'data'})",'💾','バックアップ・復元','書き出し・検査・復元テスト'),it("dataCheck()",'🩺','データ点検','整合性・容量の検査'),it("go('set',{setTab:'basic'})",'⚙','基本設定','施設名・担当者・選択肢'),it("go('set',{setTab:'items'})",'✏️','日常点検の項目・管理値','項目の追加・判定の基準'),it("go('set',{setTab:'link'})",'☀','天気・AIの設定','地点・APIキー・接続方式'),it("go('mset')",'🔧','保全の設定','健全度の重み・チェックリスト'),it("go('mtpl')",'📐','測定のひな形','管理値・条件')])
    +`<div class="empty" id="mnone" style="display:none">見つかりません</div>`;
