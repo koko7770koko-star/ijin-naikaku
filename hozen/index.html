@@ -4430,6 +4430,14 @@ const SPEC_FIELDS={
   '配電盤・分電盤':['電気方式','主幹容量','回路数'],
   'その他':[]
 };
+/* 仕様の単位（表示だけ。保存のキーは SPEC_FIELDS の名前のまま）。種別ごと：同じ「定格電圧」でも遮断器は kV、コンデンサは V */
+const SPEC_UNIT={'受電設備':{'受電電圧':'kV','契約電力':'kW','設備容量':'kVA'},'変圧器':{'定格容量':'kVA','一次電圧':'V','二次電圧':'V'},
+  '遮断器':{'定格電圧':'kV','定格電流':'A','定格遮断電流':'kA'},'断路器':{'定格電圧':'kV','定格電流':'A'},'コンデンサ':{'定格容量':'kvar','定格電圧':'V'},
+  '蓄電池':{'公称電圧':'V'},'発電機':{'出力':'kVA','電圧':'V','燃料タンク容量':'L'},'UPS':{'容量':'kVA','バックアップ時間':'分'},'配電盤・分電盤':{'主幹容量':'A'}};
+const specUnit=(kind,k)=>((SPEC_UNIT[kind]||{})[k])||'';
+const specLabel=(kind,k)=>{const u=specUnit(kind,k);return u?`${k}（${u}）`:k};
+/* カルテの表示：値が数だけのときは見出しに単位を添える。値に単位が入っている（「990L」など）ときはそのまま */
+const specShowLabel=(kind,k,v)=>/^[\s\d.,，．\-－〜~]+$/.test(String(v||'').normalize('NFKC'))?specLabel(kind,k):k;
 const MEAS_TYPES=['絶縁抵抗','接地抵抗','保護継電器試験','蓄電池','電圧・電流・電力','温度','その他'];
 /* 測定のひな形（項目名と単位だけ。管理値は空欄＝人が設定するまで判定しない） */
 const GEN_TPL={id:'mt_gen',type:'電圧・電流・電力',name:'非常用発電機 月次点検（無負荷運転）',cycleM:1,kind:'発電機',rows:[{name:'電圧',unit:'V',min:'',max:''},{name:'周波数',unit:'Hz',min:'',max:''},{name:'電流',unit:'A',min:'',max:''},{name:'油圧',unit:'MPa',min:'',max:''},{name:'冷却水温',unit:'℃',min:'',max:''},{name:'燃料残量',unit:'%',min:'',max:''},{name:'始動用蓄電池電圧',unit:'V',min:'',max:''},{name:'運転時間計',unit:'h',min:'',max:''},{name:'始動時間',unit:'秒',min:'',max:''}]};
@@ -5074,7 +5082,7 @@ function eqEditExtra(e){EQ_EDIT_ID=e.id||'';
       <div><label class="f">重要度</label><select id="e_imp">${opsV(IMPORTANCE,e.importance||'')}</select></div>
       <div><label class="f">状態</label><select id="e_status">${opsV(EQ_STATUS,e.status||'稼働')}</select></div></div>
     <div class="muted" style="font-size:12px">重要度：A＝停止すると業務・安全に重大な影響／B＝影響あり／C＝影響小（施設の基準で人が決めてください）</div></div>
-    <div class="grp"><b>仕様</b><div id="e_spec">${specRows(fields,spec)}</div>
+    <div class="grp"><b>仕様</b><div id="e_spec">${specRows(fields,spec,e.kind)}</div>
       <div id="e_specx">${extra.map(k=>specFree(k,spec[k])).join('')}</div><button type="button" class="btn sec sm" onclick="$('#e_specx').insertAdjacentHTML('beforeend',specFree('',''))">＋ 仕様の項目を追加</button></div>
     <div class="grp"><b>稼働時間（MTBFの計算に使う）</b>
       <div class="grid2"><div><label class="f">登録方法</label><select id="e_runMode">${opsV(['','meter','perday','cont'],(e.run||{}).mode||'',RUN_LABEL)}</select></div><div><label class="f">1日あたりの運転時間（h）</label><input id="e_perDay" type="number" min="0" max="24" step="any" value="${esc((e.run||{}).perDay??'')}"></div></div>
@@ -5084,9 +5092,9 @@ function eqEditExtra(e){EQ_EDIT_ID=e.id||'';
       <div><label class="f">更新予定（年度）</label><input id="e_renewYear" type="number" step="1" value="${esc(e.renewYear??'')}"></div><div><label class="f">更新費用（円）</label><input id="e_renewCost" type="number" step="1" value="${esc(e.renewCost??'')}"></div></div>
       <div class="muted" style="font-size:12px">耐用年数は推測で入れず、施設の基準・メーカー資料の値を入れてください。空欄なら更新推奨の計算に使いません。</div></div>`;
 }
-const specRows=(fields,spec)=>fields.map(f=>`<div class="row" style="flex-wrap:nowrap;margin:3px 0"><span class="muted" style="min-width:110px;font-size:13px">${esc(f)}</span><input data-sk="${esc(f)}" value="${esc(spec[f]||'')}" maxlength="100"></div>`).join('');
+const specRows=(fields,spec,kind)=>fields.map(f=>`<div class="row" style="flex-wrap:nowrap;margin:3px 0"><span class="muted" style="min-width:110px;font-size:13px">${esc(specLabel(kind,f))}</span><input data-sk="${esc(f)}" value="${esc(spec[f]||'')}" maxlength="100"></div>`).join('');
 const specFree=(k,v)=>`<div class="row" style="flex-wrap:nowrap;margin:3px 0"><input data-sfk placeholder="項目名" value="${esc(k)}" maxlength="40" style="max-width:120px"><input data-sfv value="${esc(v||'')}" maxlength="100"></div>`;
-function eqSpecBox(kind){const cur={};document.querySelectorAll('#e_spec input[data-sk]').forEach(i=>{if(i.value.trim())cur[i.dataset.sk]=i.value});$('#e_spec').innerHTML=specRows(SPEC_FIELDS[kind]||[],cur);
+function eqSpecBox(kind){const cur={};document.querySelectorAll('#e_spec input[data-sk]').forEach(i=>{if(i.value.trim())cur[i.dataset.sk]=i.value});$('#e_spec').innerHTML=specRows(SPEC_FIELDS[kind]||[],cur,kind);
   Object.entries(cur).filter(([k])=>!(SPEC_FIELDS[kind]||[]).includes(k)).forEach(([k,v])=>$('#e_specx').insertAdjacentHTML('beforeend',specFree(k,v)))}
 function eqReadExtra(){
   const spec={};
@@ -5111,7 +5119,7 @@ function eqKarte(e){
     <div class="rep"><table>
       <tr><th style="width:96px">場所</th><td>${e.locId?`<a href="#" style="display:inline-block;padding:15px 0;min-height:20px;min-width:44px" onclick="go('locs');return false">${esc(locPath(e.locId))}</a>`:'<span class="muted">未設定</span>'}</td></tr>
       <tr><th>種別・重要度</th><td>${esc(e.kind||'未設定')}　${e.importance?`<span class="pill ${e.importance==='A'?'ng':e.importance==='B'?'warn':''}">重要度${esc(e.importance)}</span>`:'<span class="muted">重要度 未設定</span>'}　<span class="pill ${e.status==='稼働'?'ok':'warn'}">${esc(e.status||'稼働')}</span></td></tr>
-      ${sp.map(([k,v])=>`<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}
+      ${sp.map(([k,v])=>`<tr><th>${esc(specShowLabel(e.kind,k,v))}</th><td>${esc(v)}</td></tr>`).join('')}
     </table></div>
     <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn sec sm grow" style="white-space:nowrap" onclick="qrOne('${e.id}')">🔳 QRコード</button><button class="btn sec sm grow" style="white-space:nowrap" onclick="editMeas(null,{equipId:'${e.id}'})">＋ 測定記録</button><button class="btn sec sm grow" style="white-space:nowrap" onclick="editWork(null,{equipIds:['${e.id}']})">＋ 作業指示</button></div></div>`;
   // 健全度
