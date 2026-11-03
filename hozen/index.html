@@ -1961,7 +1961,7 @@ function alerts(){
   const tst=dayState(TODAY);
   if(!judge(TODAY))add('warn','今日の日常点検が未入力です',"go('day',{day:TODAY})");
   else if(!S.daily[TODAY].done)add('warn',`今日の日常点検が完了していません（${tst.st}）`,"go('day',{day:TODAY})");
-  const miss7=[],part7=[];for(let i=1;i<=7;i++){const k=addD(TODAY,-i),st=dayState(k);if(st.st==='未実施')miss7.push(k);else if(st.cls==='part'||(S.daily[k]&&!S.daily[k].done&&hasRec(S.daily[k])))part7.push(k)}
+  const miss7=[],part7=[];const firstDaily=Object.keys(S.daily).sort()[0];for(let i=1;i<=7;i++){const k=addD(TODAY,-i),st=dayState(k);if(st.st==='未実施'){if(firstDaily&&k>=firstDaily)miss7.push(k)}else if(st.cls==='part'||(S.daily[k]&&!S.daily[k].done&&hasRec(S.daily[k])))part7.push(k)}
   const dayChips=a=>({days:a.slice(0,3),more:Math.max(0,a.length-3)});
   if(miss7.length)add('ng',`日常点検の未実施 ${miss7.length}日（直近7日：${miss7.map(md).join('、')}）`,`go('day',{day:'${miss7[0]}'})`,dayChips(miss7));
   if(part7.length)add('warn',`日常点検が完了していない日 ${part7.length}日（${part7.map(md).join('、')}）`,`go('day',{day:'${part7[0]}'})`,dayChips(part7));
