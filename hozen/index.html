@@ -2347,6 +2347,7 @@ function vHome(){ // v16.4：上から「今すぐ対応すること → 今日�
   }
   if(S.inbox.length)h+=`<div class="card" id="inboxCard"><h2>📥 読み取り結果（確認待ち）</h2>${S.inbox.map(x=>`<div class="item" onclick="openInbox('${x.id}')"><div class="dt">${md(x.at.slice(0,10))}</div><div class="bd"><div class="ti">${x.kind==='daily'?'日常点検 '+x.recs.length+'日分':'点検名・日時の読み取り'}</div><div class="meta">${x.kind==='daily'?'タップして確認・反映':esc(x.summary||'')}</div></div></div>`).join('')}</div>`;
   // 2 今日やること
+  h+=homeCountLine();
   h+=homeBanLine();
   const tw=(S.works||[]).filter(w=>w.date<=TODAY&&(w.endDate||w.date)>=TODAY&&!['中止','完了'].includes(w.status));
   h+=`<div class="card"><div class="hd-row"><h2>📋 今日</h2><button class="btn sm" onclick="editTask(null,TODAY)">＋ 予定</button></div>
@@ -2367,6 +2368,17 @@ function vHome(){ // v16.4：上から「今すぐ対応すること → 今日�
   h+=fold('iss',`🛠 異常案件 <span class="muted">対応中 ${oi.length}件</span>`,`<div class="row" style="margin-bottom:6px"><label class="chkl" style="margin:0;color:var(--mut)"><input type="checkbox" ${V.allIss?'checked':''} onchange="V.allIss=this.checked;V.fold_iss=true;render()">完了も</label><span class="sp"></span>${oi.length?'<button class="btn sec sm" onclick="aiIssues()">🤖 要約</button>':''}<button class="btn sm" style="min-height:40px" onclick="editIssue(null)">＋ 追加</button></div>${list.length?(V.issMore?list:list.slice(0,10)).map(issueRow).join('')+(list.length>10?`<button class="linkbtn" style="min-height:44px" onclick="V.issMore=${!V.issMore};V.fold_iss=true;render()">${V.issMore?'▲ 10件だけ表示にする':`ほか ${list.length-10}件を表示`}</button>`:''):'<div class="empty">対応中の異常はありません</div>'}`,false,'issCard');
   return h;
 }
+/* ホーム：今日の点検の「済み n／全部 m」を日常点検・盤（今月）・発電機（今月）に分けて1行に。数が0の物は出さない。表示だけ・保存しない */
+function homeCountLine(){
+  const ym=TODAY.slice(0,7),cells=[],r=S.daily[TODAY];
+  const dm=chkDefs().filter(c=>c.req).length+numDefs().filter(n=>n.req).length;
+  if(dm){const dn=r&&r.done,miss=hasRec(r)?dailyIssues(TODAY).miss.length:dm;cells.push(['✅ 日常点検',dn?dm:Math.max(0,dm-miss),dm,"go('day',{day:TODAY})"])}
+  const bans=[];banBldgs().forEach(b=>banBoardsOf(b.id).forEach(x=>bans.push(x)));
+  if(bans.length)cells.push(['⚡ 盤',bans.filter(x=>!banPend(ym,x)).length,bans.length,'homeBanGo()']);
+  const G=(S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止');
+  if(G.length)cells.push(['🔌 発電機',G.length-genPending().length,G.length,'homeGen()']);
+  if(!cells.length)return '';
+  return `<div class="row homecount" style="gap:6px;margin:0 0 12px;flex-wrap:nowrap">${cells.map(([l,n,m,on])=>`<button class="btn sec grow" style="min-height:52px;flex:1 1 0;min-width:0;padding:4px 4px;line-height:1.25;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;white-space:nowrap;${n>=m?'background:var(--ok-bg);color:var(--ok)':''}" onclick="${on}"><small style="display:block">${l}</small><b style="font-size:14px">済み ${n}／全部 ${m}</b></button>`).join('')}</div>`}
 /* ホーム：今月の盤の点検の残り（盤が1面も無ければ出さない）。押すと盤の点検の「次の未点検の盤」へ。表示だけ・保存しない */
 function homeBanLine(){
   const ym=TODAY.slice(0,7),all=[],per=[];banBldgs().forEach(b=>{const bs=banBoardsOf(b.id);bs.forEach(x=>all.push(x));per.push([b,bs.filter(x=>banPend(ym,x)).length])});
