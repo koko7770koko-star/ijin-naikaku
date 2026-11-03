@@ -2715,10 +2715,23 @@ function vEquip(){
         <div>${open?`<span class="pill ng">対応中の異常 ${open}</span>`:''}${dl?`<span class="pill ${dl.left<0?'ng':dl.left<=30?'warn':'ok'}">${esc(dl.it.name)} ${dl.left<0?(-dl.left)+'日超過':'あと'+dl.left+'日'}</span>`:''}${(e.repairs||[]).length?`<span class="pill">修理等 ${e.repairs.length}</span>`:''}</div></div></div>`}).join(''):(filt?'<div class="empty">条件に合う設備がありません。「絞り込みをやめる」を押してください。</div>':'<div class="empty">設備がありません。「＋ 設備を追加」から登録してください。</div>')}</div></div>`;
 }
 let EQ_ST=0;function eqSearch(el){clearTimeout(EQ_ST);EQ_ST=setTimeout(()=>{V.eqQ=el.value;render();const n=document.getElementById('eqQ');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}},350)}
+// 設備カルテの先頭：次の点検・最後の点検・未完了の異常を1枚で（既存の記録から数えるだけ。保存はしない）
+function eqSummary(e,L){
+  const D=deadlines().filter(x=>x.it.equipId===e.id&&x.due),nx=D[0];
+  const done=(L.tasks||[]).filter(t=>t.status==='完了').map(t=>t.date).sort().pop()||D.map(x=>x.ld).filter(Boolean).sort().pop()||'';
+  const open=(L.issues||[]).filter(i=>i.status!=='完了');
+  const nxT=nx?`<span class="pill ${nx.left<0?'ng':nx.left<=30?'warn':'ok'}">${nx.left<0?`${-nx.left}日超過`:`あと${nx.left}日`}</span> ${esc(nx.it.name)}`:'<span class="muted">期限の分かる点検が未登録</span>';
+  return `<div class="card"><h2>📌 いまの状況</h2><div class="rep"><table>
+    <tr><th style="width:96px">次の点検</th><td>${nxT}</td></tr>
+    <tr><th>最後の点検</th><td>${done?slash(done):'<span class="muted">記録なし</span>'}</td></tr>
+    <tr><th>未完了の異常</th><td>${open.length?`<span class="pill ng">${open.length}件</span> ${esc(open[0].title)}${open.length>1?' ほか':''}`:'<span class="pill ok">なし</span>'}</td></tr></table></div>
+    <button class="btn wide" style="margin-top:8px;min-height:48px" onclick="editIssue(null,{equipId:'${e.id}',place:${esc(JSON.stringify(e.place||''))}})">⚠ この設備で異常を記録</button></div>`;
+}
 function vEquipDetail(){
   const e=eqById(V.eq);if(!e)return '<div class="empty">設備が見つかりません</div>';
   const L=eqLinks(e),f=(l,v)=>v?`<tr><th style="width:96px">${l}</th><td>${esc(v)}</td></tr>`:'';
-  let h=`<div class="card"><div class="hd-row"><h2>${esc(e.code?e.code+'　':'')}${esc(e.name)}</h2><button class="btn sec sm" onclick="editEquip('${e.id}')">編集</button></div>
+  let h=eqSummary(e,L);
+  h+=`<div class="card"><div class="hd-row"><h2>${esc(e.code?e.code+'　':'')}${esc(e.name)}</h2><button class="btn sec sm" onclick="editEquip('${e.id}')">編集</button></div>
     <div class="rep"><table>${f('設備ID',e.code)}${f('設置場所',e.place)}${f('メーカー',e.maker)}${f('型式',e.model)}${f('製造番号',e.serial)}${f('設置年月',e.installed?e.installed.replace('-','年')+'月':'')}${f('点検周期',e.cycle)}${f('備考',e.note)}</table></div>
     ${thumbs(e.photos)}${docsList(e.docs)}</div>`;
   h+=eqKarte(e);
