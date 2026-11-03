@@ -1,0 +1,30 @@
+// 盤の点検表：古い記録（banChk なし）が開く・押すと 空→◯→●→空・全部●・盤をまとめて足す・保存して読み直すと残る。
+// usage: node hozen/tools/bancheck.js
+const {chromium}=require('playwright');const path=require('path');
+const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1';
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:844}});const p=await ctx.newPage();const errs=[];
+ p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
+ await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
+ const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});
+ const old={settings:{name:'確認'},locs:[mk('l1','A棟','建屋',''),mk('l2','1F','階','l1'),mk('l3','B1F','階','l1'),mk('b1','盤1','盤','l2'),mk('b2','盤2','盤','l2')]};
+ await p.addInitScript(([k,v])=>{if(sessionStorage.getItem('__bn'))return;sessionStorage.setItem('__bn','1');localStorage.clear();localStorage.setItem(k,v)},[KEY,JSON.stringify(old)]);
+ await p.goto('file://'+FILE);await p.waitForTimeout(2000);
+ if(!(await p.evaluate(()=>S.banChk&&typeof S.banChk==='object')))errs.push('古い記録で banChk が空で補われない');
+ await p.evaluate(()=>go('ban'));await p.waitForTimeout(300);
+ const txt=()=>p.evaluate(()=>document.body.textContent);
+ if(!/B1F/.test(await txt())||!/盤1/.test(await txt()))errs.push('盤の表が出ない');
+ const cell=(i)=>p.locator('.banrow .bm:not(.bw)').nth(i);
+ await cell(0).click();await p.waitForTimeout(80);if((await cell(0).textContent()).trim()!=='◯')errs.push('1回目で ◯ にならない');
+ await cell(0).click();await p.waitForTimeout(80);if((await cell(0).textContent()).trim()!=='●')errs.push('2回目で ● にならない');
+ const ym=new Date().toISOString().slice(0,7);
+ let v=await p.evaluate(()=>JSON.stringify(S.banChk));if(!/"済"/.test(v))errs.push('保存値が 済 でない '+v);
+ await cell(0).click();await p.waitForTimeout(80);if((await cell(0).textContent()).trim()!=='')errs.push('3回目で空に戻らない');
+ await p.locator('button:has-text("全部 ●")').first().click();await p.waitForTimeout(150);
+ const dn=await p.evaluate(()=>{let n=0;for(const ym in S.banChk)for(const id in S.banChk[ym])n+=S.banChk[ym][id].filter(x=>x==='済').length;return n});if(dn!==6)errs.push('全部 ● が6件でない '+dn);
+ await p.evaluate(()=>banAddWizard());await p.waitForTimeout(150);await p.evaluate(()=>{document.querySelector('#ba_n').value=3;document.querySelector('#ba_floor').value='l2';applyBanAdd()});await p.waitForTimeout(200);
+ const names=await p.evaluate(()=>S.locs.filter(l=>l.parent==='l2').map(l=>l.name).sort().join());if(names!=='盤1,盤2,盤3')errs.push('盤の追加が違う（重ねない）: '+names);
+ if(process.argv[2])await p.screenshot({path:process.argv[2]});
+ await p.evaluate(()=>save());const ls=await p.evaluate(()=>(localStorage.getItem('hospElecSched_v1').match(/banChk.{0,80}/)||['なし'])[0]);if(process.env.DBG)console.log(ls);await p.reload();await p.waitForTimeout(1500);
+ const dn2=await p.evaluate(()=>{let n=0;for(const ym in S.banChk)for(const id in S.banChk[ym])n+=S.banChk[ym][id].filter(x=>x==='済').length;return n});if(dn2!==6)errs.push('読み直しで消えた '+dn2);
+ const w=await p.evaluate(()=>document.documentElement.scrollWidth);if(w>392)errs.push('横にはみ出す '+w);
+ console.log(errs.length?'NG\n  '+errs.join('\n  '):'OK 盤の点検表');await b.close();process.exit(errs.length?1:0)})();

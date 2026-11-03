@@ -156,6 +156,10 @@ table.yr th.nm{background:var(--navy);z-index:2}
 table.yr .nm small{color:var(--mut);display:block}
 table.yr .cat td{text-align:left;background:#f0f4f8;font-weight:700;color:var(--navy)}
 table.yr .cat span{position:sticky;left:8px}
+/* 盤の点検表 */
+.banrow{display:flex;gap:4px;align-items:center;margin:4px 0}.banrow .bn{flex:1 1 auto;min-width:0;font-weight:700;overflow-wrap:anywhere}
+.banrow .bi,.banrow .bm{flex:0 0 58px;width:58px}.banrow.bh .bi{font-size:11px;line-height:1.2;text-align:center;color:var(--mut,#667)}
+.bm{height:44px;font-size:20px;font-weight:700;border:1px solid var(--bd,#cbd5e1);border-radius:10px;background:#fff;padding:0}.bm.bw{flex-basis:44px;width:44px;font-size:16px}
 table.yr td.mk{width:34px;height:44px;font-size:18px;font-weight:700;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .mk-o{background:var(--a-bg);color:var(--navy)}.mk-d{background:#c6efce;color:var(--ok)}.mk-e{background:var(--ng-bg);color:var(--ng)}
 table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
@@ -3670,11 +3674,12 @@ const BUDGET_CATS=['修繕費','点検委託費','更新工事費','部品・消
 const DWG_KINDS=['単線結線図','設備配置図','系統図','その他'];
 const DEF_HEALTH={age:30,meas:25,fail:25,issue:20};
 
-const V16_KEYS=['stds','locs','meas','mtpl','plans','works','parts','moves','tools','budget','drawings','library','quals','qualList','healthCfg','chkPre','chkPost'];
+const V16_KEYS=['stds','locs','meas','mtpl','plans','works','parts','moves','tools','budget','drawings','library','quals','qualList','healthCfg','chkPre','chkPost','banChk'];
 function v16Fill(d){
   for(const k of ['stds','locs','meas','plans','works','parts','moves','tools','budget','drawings','library'])if(!Array.isArray(d[k]))d[k]=[];
   if(!Array.isArray(d.mtpl))d.mtpl=clone(DEF_MTPL);
   if(!isObj(d.quals))d.quals={};
+  if(!isObj(d.banChk))d.banChk={};
   if(!Array.isArray(d.qualList))d.qualList=[...DEF_QUALS];
   if(!isObj(d.healthCfg))d.healthCfg={...DEF_HEALTH};
   if(!Array.isArray(d.chkPre))d.chkPre=[...DEF_CHK_PRE];
@@ -3765,6 +3770,7 @@ function validateV16(o,log){
   if(o.qualList!==undefined)o.qualList=strs(o.qualList,60,100);
   if(o.healthCfg!==undefined){const h=isObj(o.healthCfg)?o.healthCfg:{};o.healthCfg={};for(const k in DEF_HEALTH){const v=Number(h[k]);o.healthCfg[k]=Number.isFinite(v)&&v>=0&&v<=100?v:DEF_HEALTH[k]}}
   for(const k of ['chkPre','chkPost'])if(o[k]!==undefined)o[k]=strs(o[k],200,40);
+  {const bc={};if(isObj(o.banChk))for(const [ym,row] of Object.entries(o.banChk).slice(0,240)){if(!RE_YM.test(ym)||!isObj(row))continue;const r={};for(const [id,a] of Object.entries(row)){if(!RE_ID.test(id)||!Array.isArray(a))continue;r[id]=[0,1,2].map(i=>MARKS.includes(a[i])?a[i]:'')}bc[ym]=r}o.banChk=bc}
 }
 
 /* 写真・資料の参照（バックアップ・整理・欠落検出で使う） */
@@ -3885,6 +3891,58 @@ function applyBldgWizard(){
   plan.forEach(p=>{if(p.type==='階'){const l={id:uid(),type:'階',parent:p.parent||ids[p.parentKey]||'',name:txt(p.name,60),note:'',pos:{floor:txt(p.floor,20),x:'',y:'',z:''}};S.locs.push(l);made.push(l)}});
   save();closeModal(true);render();
   undoBar(`棟・階を ${made.length}件 作りました`,()=>{const ids=new Set(made.map(l=>l.id));S.locs=S.locs.filter(l=>!ids.has(l.id))});
+}
+/* ---------- 盤ごとの点検表（棟→階→盤、3項目を ◯/● で） ----------
+   保存：S.banChk[年-月][盤の場所id]=[盤内 発熱, 端子および碍子, その他異常]（値は ''／'○'（予定・◯）／'済'（実施済み・●）／'延'）。足りない時は空で補う */
+const BAN_ITEMS=['盤内 発熱','端子および碍子','その他異常'];
+const banShow=v=>({'○':'◯','済':'●','延':'延'})[v]||'';
+function floorKey(n){const m=/^B(\d+)/i.exec(n);if(m)return -(+m[1]);const k=/^(\d+)/.exec(n);return k?+k[1]:1000}
+function banBoards(rootId){const ids=locDesc(rootId);return (S.locs||[]).filter(l=>l.type==='盤'&&ids.has(l.id)).sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}))}
+function banVal(ym,id,k){const r=((S.banChk||{})[ym]||{})[id];return r&&r[k]||''}
+function banCount(ym,boards){let d=0;boards.forEach(b=>{for(let k=0;k<3;k++)if(banVal(ym,b.id,k)==='済')d++});return {d,t:boards.length*3}}
+function banSet(ym,id,k,v){S.banChk=S.banChk||{};const m=S.banChk[ym]=S.banChk[ym]||{};const r=m[id]=m[id]||['','',''];r[k]=v}
+function banTap(id,k){const ym=V.banYm||TODAY.slice(0,7),cur=banVal(ym,id,k);banSet(ym,id,k,cur===''?'○':cur==='○'?'済':'');save();render()}
+function banAll(rootId){const ym=V.banYm||TODAY.slice(0,7),bs=banBoards(rootId);if(!bs.length)return;
+  const prev=bs.map(b=>[b.id,[0,1,2].map(k=>banVal(ym,b.id,k))]);
+  bs.forEach(b=>{for(let k=0;k<3;k++)banSet(ym,b.id,k,'済')});save();render();
+  undoBar('この階の盤を全部 ● にしました',()=>{prev.forEach(([id,a])=>a.forEach((v,k)=>banSet(ym,id,k,v)))})}
+function banIssue(id){const b=locById(id);if(!b)return;editIssue(null,{title:'盤の異常：'+b.name,place:locPath(id)})}
+function banMove(d){const ym=V.banYm||TODAY.slice(0,7);let y=+ym.slice(0,4),m=+ym.slice(5,7)+d;if(m<1){m=12;y--}if(m>12){m=1;y++}V.banYm=y+'-'+String(m).padStart(2,'0');render()}
+function vBan(){
+  const ym=V.banYm||TODAY.slice(0,7),B=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}));
+  const head=`<div class="card"><div class="hd-row"><button class="btn sec sm" onclick="banMove(-1)">‹</button><h2 style="margin:0">⚡ 盤の点検 ${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><button class="btn sec sm" onclick="banMove(1)">›</button></div>
+    <div class="muted" style="margin-top:6px">押すと 空 → ◯（予定）→ ●（実施済み）→ 空。異常があれば ⚠ でその場で記録できます。</div></div>`;
+  if(!B.length)return head+card('棟がありません',`<div class="muted" style="margin-bottom:8px">先に「棟と階」を作り、各階に盤を足します。</div><button class="btn wide" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button>`);
+  const bid=B.some(x=>x.id===V.banB)?V.banB:B[0].id,bl=locById(bid);
+  const allB=banBoards(bid),tot=banCount(ym,allB);
+  const tabs=`<div class="seg tabs" style="margin:8px 0;overflow-x:auto;white-space:nowrap">${B.map(b=>{const c=banCount(ym,banBoards(b.id));return `<button class="${b.id===bid?'on':''}" onclick="V.banB='${b.id}';render()">${esc(b.name)}<small style="display:block;font-weight:400">${c.t?c.d+'/'+c.t:'－'}</small></button>`}).join('')}</div>`;
+  const floors=(S.locs||[]).filter(l=>l.type==='階'&&l.parent===bid).sort((a,b)=>floorKey(b.name)-floorKey(a.name)||a.name.localeCompare(b.name,'ja'));
+  const inFloor=new Set();floors.forEach(f=>banBoards(f.id).forEach(b=>inFloor.add(b.id)));
+  const rest=allB.filter(b=>!inFloor.has(b.id));
+  const row=b=>`<div class="banrow"><div class="bn">${esc(b.name)}</div>${[0,1,2].map(k=>{const v=banVal(ym,b.id,k);return `<button class="bm ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''}" aria-label="${esc(BAN_ITEMS[k])}" onclick="banTap('${b.id}',${k})">${banShow(v)||'&nbsp;'}</button>`}).join('')}<button class="bm bw" aria-label="異常を記録" onclick="banIssue('${b.id}')">⚠</button></div>`;
+  const grp=(title,bs,fid)=>{const c=banCount(ym,bs);return `<div class="card"><div class="hd-row"><h2 style="margin:0">${esc(title)} <span class="muted">${c.t?c.d+'/'+c.t:'盤なし'}</span></h2>${fid&&bs.length?`<button class="btn sec sm" onclick="banAll('${fid}')">全部 ●</button>`:''}</div>
+    ${bs.length?`<div class="banrow bh"><div class="bn"></div>${BAN_ITEMS.map(n=>`<div class="bi">${esc(n)}</div>`).join('')}<div class="bi"></div></div>${bs.map(row).join('')}`:`<div class="muted" style="margin-top:6px">この階にはまだ盤がありません。</div>`}</div>`};
+  return head+tabs+`<div class="card" style="padding:8px 12px"><b>${esc(bl.name)}</b>：${tot.t?`${tot.d}/${tot.t} 実施済み（●）`:'盤がまだ登録されていません'}</div>`
+    +floors.map(f=>grp(f.name,banBoards(f.id),f.id)).join('')+(rest.length?grp('階なし',rest,''):'')
+    +(!floors.length&&!rest.length?card('階がありません','<button class="btn wide" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button>'):'')
+    +`<div class="row" style="margin:8px 0"><button class="btn sec grow" onclick="banAddWizard()">＋ 盤をまとめて足す</button></div>`;
+}
+function banAddWizard(){
+  const F=(S.locs||[]).filter(l=>l.type==='階').sort((a,b)=>locPath(a.id).localeCompare(locPath(b.id),'ja',{numeric:true}));
+  if(!F.length){msgModal('先に階を作ってください','「棟と階をまとめて作る」で棟と階を作ると、各階に盤を足せます。');return}
+  const cur=(S.locs||[]).find(l=>l.id===V.banB);
+  openModal(`<h3>＋ この階に盤をまとめて足す</h3><label class="f">階</label><select id="ba_floor">${F.map(f=>`<option value="${f.id}">${esc(locPath(f.id))}</option>`).join('')}</select>
+    <div class="grid2"><div><label class="f">盤の数</label><input id="ba_n" type="number" min="1" max="30" value="3"></div><div><label class="f">名前の頭</label><input id="ba_pre" value="盤" maxlength="20"></div></div>
+    <div class="muted">「盤1」「盤2」…の名前で作ります。同じ名前が既にあれば重ねません。</div>
+    ${modalFoot('<button class="btn sec" onclick="closeModal()">やめる</button><button class="btn" onclick="applyBanAdd()">作成する</button>')}`);
+}
+function applyBanAdd(){
+  const fid=$('#ba_floor').value,n=Math.max(1,Math.min(30,parseInt($('#ba_n').value,10)||0)),pre=txt($('#ba_pre').value,20).trim()||'盤';
+  if(!locById(fid))return;const made=[];
+  for(let i=1;i<=n;i++){const nm=pre+i;if((S.locs||[]).some(x=>x.parent===fid&&norm(x.name)===norm(nm)))continue;const l={id:uid(),type:'盤',parent:fid,name:nm,note:'',pos:{floor:'',x:'',y:'',z:''}};S.locs.push(l);made.push(l)}
+  if(!made.length){toast('すでに全部あります');return}
+  const f=locById(fid);V.banB=(locById(f.parent)||{}).id||V.banB;
+  save();closeModal(true);render();undoBar(`盤を ${made.length}件 足しました`,()=>{const ids=new Set(made.map(l=>l.id));S.locs=S.locs.filter(l=>!ids.has(l.id))});
 }
 function suggestLocs(){
   const E=(S.equipment||[]).filter(e=>!e.locId&&e.place.trim());
@@ -5229,7 +5287,7 @@ function v16Menu(){
   const g=(title,items)=>`<div class="mgrp">${title}</div><div class="mtgrid">${items.join('')}</div>`;
   return `<input class="msearch" placeholder="🔍 機能を探す（例：校正、QR、バックアップ）" oninput="menuFilter(this.value)">`
    +g('✅ 毎日の点検・予定',[it("go('day',{day:TODAY})",'✅','日常点検','入力・判定・写真読み取り'),it("go('month')",'🗓','カレンダー','予定・点検・勤務者'),it("go('year')",'📅','年間計画・期限','点検項目・周期・法定/社内'),it("go('hist')",'📈','点検履歴・グラフ','検索・トレンド・CSV'),it("go('dailyRep',{day:TODAY})",'🗒','日報','A4印刷'),it("go('home')",'🏠','ホーム','お知らせ・今日・全体の状況')])
-   +g('🏭 設備',[it("go('equip')",'🏭','設備台帳','設備カルテ・仕様・修理履歴'),it("go('locs')",'🏢','設備の階層','施設→建屋→電気室→盤'),it("go('qr')",'🔳','QRラベル','印刷・読み取り'),it("go('dwgs')",'🗺','図面','単線結線図・配置図・版管理'),it("go('lib')",'📚','技術資料','登録・検索・根拠表示')])
+   +g('🏭 設備',[it("go('equip')",'🏭','設備台帳','設備カルテ・仕様・修理履歴'),it("go('ban')",'⚡','盤の点検','棟→階→盤 を ◯/● で'),it("go('locs')",'🏢','設備の階層','施設→建屋→階→電気室→盤'),it("go('qr')",'🔳','QRラベル','印刷・読み取り'),it("go('dwgs')",'🗺','図面','単線結線図・配置図・版管理'),it("go('lib')",'📚','技術資料','登録・検索・根拠表示')])
    +g('🩺 保全・診断',[it("go('issues')",'🛠','異常・修理','緊急度・期限・原因・承認'),it("go('diag',{dgTab:'meas'})",'📏','測定記録','絶縁・接地・継電器・蓄電池'),it("go('diag',{dgTab:'health'})",'💯','健全度','人の評価と参考指標'),it("go('diag',{dgTab:'rec'})",'🔎','推奨・異常傾向','管理値外・周期超過・傾向'),it("go('diag',{dgTab:'fail'})",'📉','故障分析','件数・MTBF・MTTR・CSV'),it("go('plan',{plTab:'legal'})",'⚖','点検期限（法定・社内）','期限の一覧'),it("go('plan',{plTab:'renew'})",'🏗','更新計画','10年の更新・改修'),it("go('plan',{plTab:'measdue'})",'⏱','測定の周期','次回期限')])
    +g('🧰 作業・人員',[it("go('works')",'🧰','作業指示書','承認・KY・停電計画・責任者確認'),it("go('workSheet')",'📋','作業表','14日間の作業と勤務'),it("go('stds')",'📘','作業標準','承認済みの手順・必須チェック'),it("go('shift')",'👥','勤務表（シフト）','A/B夜勤ローテーション'),it("go('staff')",'🪪','人員・資格','資格の登録・作業との照合')])
    +g('📦 物品・費用',[it("go('stock',{stTab:'parts'})",'📦','予備品','在庫・最低在庫・入出庫'),it("go('stock',{stTab:'tools'})",'🔧','工具・測定器','貸出・校正期限'),it("go('stock',{stTab:'budget'})",'💴','予算・費用','予算・実績・更新費用')])
@@ -5240,9 +5298,9 @@ function v16Menu(){
 function menuFilter(q){q=String(q||'').trim();let n=0;document.querySelectorAll('.mtile').forEach(t=>{const ok=!q||t.dataset.q.includes(q);t.style.display=ok?'':'none';if(ok)n++});
   document.querySelectorAll('.mtgrid').forEach(g=>{const any=[...g.children].some(c=>c.style.display!=='none');g.style.display=any?'':'none';g.previousElementSibling.style.display=any?'':'none'});const e=$('#mnone');if(e)e.style.display=n?'none':''}
 /* ---------- 画面の登録 ---------- */
-Object.assign(VIEWS,{set:()=>tabify(vSet(),SET_TABS,'setTab','data'),equipDetail:()=>tabify(vEquipDetail(),EQ_TABS,'eqTab','ov'),stds:vStds,locs:vLocs,qr:vQr,diag:vDiag,mtpl:vMtpl,plan:vPlan,printDoc:vPrintDoc,works:vWorks,workSheet:vWorkSheet,issues:vIssues,staff:vStaff,stock:vStock,dwgs:vDwgList,dwg:vDwg,lib:vLib,ai:vAi,mset:vMset});
-Object.assign(TITLES,{stds:'作業標準',locs:'設備の階層',qr:'QRラベル',diag:'診断',mtpl:'測定のひな形',plan:'保全計画',printDoc:'報告書',works:'作業管理',workSheet:'作業表',issues:'異常・修理',staff:'人員・資格',stock:'予備品・工具・予算',dwgs:'図面',dwg:'図面',lib:'技術資料',ai:'AI支援',mset:'保全の設定',home:'電気設備 総合保全'});
-SUB_VIEWS.push('stds','locs','qr','diag','mtpl','plan','printDoc','works','workSheet','issues','staff','stock','dwgs','dwg','lib','ai','mset');
+Object.assign(VIEWS,{set:()=>tabify(vSet(),SET_TABS,'setTab','data'),equipDetail:()=>tabify(vEquipDetail(),EQ_TABS,'eqTab','ov'),stds:vStds,locs:vLocs,ban:vBan,qr:vQr,diag:vDiag,mtpl:vMtpl,plan:vPlan,printDoc:vPrintDoc,works:vWorks,workSheet:vWorkSheet,issues:vIssues,staff:vStaff,stock:vStock,dwgs:vDwgList,dwg:vDwg,lib:vLib,ai:vAi,mset:vMset});
+Object.assign(TITLES,{ban:'盤の点検',stds:'作業標準',locs:'設備の階層',qr:'QRラベル',diag:'診断',mtpl:'測定のひな形',plan:'保全計画',printDoc:'報告書',works:'作業管理',workSheet:'作業表',issues:'異常・修理',staff:'人員・資格',stock:'予備品・工具・予算',dwgs:'図面',dwg:'図面',lib:'技術資料',ai:'AI支援',mset:'保全の設定',home:'電気設備 総合保全'});
+SUB_VIEWS.push('ban','stds','locs','qr','diag','mtpl','plan','printDoc','works','workSheet','issues','staff','stock','dwgs','dwg','lib','ai','mset');
 Object.assign(BACK,{stds:'works',dwg:'dwgs',mtpl:'diag',workSheet:'works',qr:'locs'});
 
 /* ---------- 画面をタブに分ける（中身はすべて描いておき、表示だけ切り替える） ---------- */
