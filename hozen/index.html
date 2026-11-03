@@ -160,6 +160,7 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .cal .t.ex{background:#eceff1;color:#607080;text-decoration:line-through}
 .cal .t.ok{background:var(--ok-bg);color:var(--ok)}.cal .t.ng{background:var(--ng-bg);color:var(--ng)}
 .cal .more{font-size:10px;color:var(--accent)}
+.aisend{font-size:12px;color:#456}
 .lgd{display:flex;flex-wrap:wrap;gap:4px 6px;width:100%}.lgd .lg{font-size:12px;font-weight:600;border-radius:4px;padding:3px 8px;background:#e9eff6;color:#1f3b57}.lgd .lg.ok{background:var(--ok-bg);color:var(--ok)}.lgd .lg.ng{background:var(--ng-bg);color:var(--ng)}.lgd .lg.ex{background:#eceff1;color:#607080;text-decoration:line-through}
 
 /* ---------- 年間計画 ---------- */
@@ -6234,14 +6235,14 @@ function vAi(){
   const it=(ic,t,d,on,free)=>`<div class="mitem" onclick="${on}"><span class="ic">${ic}</span><div>${t} <small class="aibadge ${free?'free':'need'}${!free&&(!key||!net)?' off':''}">${free?'🔎 AIなしで使える':!key?'🔑 キー未設定（設定で入れる）':!net?'📵 今は通信なし':'🤖 APIキーが要る'}</small><div class="ds">${d}</div></div><span class="ar">›</span></div>`;
   return `<div class="al ${key&&net?'info':'warn'}" style="cursor:default">${key?'':'APIキーが未設定です（設定 → 写真読み取り）。'}${net?'':'今は通信できません。'}AIの結果は下書きです。人が確認するまで記録には入りません。<br>🔎 の機能はAIなしで使えます。
     <details style="margin-top:4px"><summary style="cursor:pointer;font-weight:700">詳しく</summary>設備の正常・異常の判定はAIではなく、設定した管理値で行います。APIがなくても、検索・判定・推奨・集計はすべて使えます。APIキーを入れるのは 設定 → 写真読み取り。</details></div>
-    <div class="mlist">${it('📷','手書き点検表の読み取り','写真から日常点検の値・点検名・日付を読み取り、確認してから反映',"go('day',{day:TODAY})")}
-    ${it('🔢','計器写真の数値読み取り','測定記録の各項目の「🤖 計器写真から読む」から使います',"editMeas()")}
-    ${it('⚠','異常候補の抽出','日常点検・測定の記録から、注意して見るべき点の候補を挙げる',"aiCandidates()")}
-    ${it('🔍','過去の故障・修理履歴の検索','キーワードで端末内を検索し、必要ならAIが要約',"aiSearchHist()",1)}
-    ${it('📚','技術資料の検索と根拠表示','登録した資料から検索し、その文章だけを根拠にAIが回答',"go('lib')",1)}
-    ${it('📝','報告書の下書き','月報の所見・日報の特記事項・申し送り（各画面の🤖ボタン）',"go('report')")}
-    ${it('🏭','設備診断の補助説明','設備カルテの記録をもとに、状態の説明文を下書き',"aiPickEq()")}
-    ${it('📆','保全計画の改善案','設備の経年・故障・健全度・更新計画から改善案を下書き',"aiPlan()")}</div>`;
+    <div class="mlist">${it('📷','手書き点検表の読み取り','写真から日常点検の値・点検名・日付を読み取り、確認してから反映<br><span class="aisend">送る物：選んだ写真</span>',"go('day',{day:TODAY})")}
+    ${it('🔢','計器写真の数値読み取り','測定記録の各項目の「🤖 計器写真から読む」から使います<br><span class="aisend">送る物：選んだ計器の写真</span>',"editMeas()")}
+    ${it('⚠','異常候補の抽出','日常点検・測定の記録から、注意して見るべき点の候補を挙げる<br><span class="aisend">送る物：直近の点検・測定の記録（送る前に中身を見せます）</span>',"aiCandidates()")}
+    ${it('🔍','過去の故障・修理履歴の検索','キーワードで端末内を検索し、必要ならAIが要約<br><span class="aisend">送る物：検索は送りません。要約するときだけ該当の履歴（送る前に中身を見せます）</span>',"aiSearchHist()",1)}
+    ${it('📚','技術資料の検索と根拠表示','登録した資料から検索し、その文章だけを根拠にAIが回答<br><span class="aisend">送る物：質問と、見つかった資料の文章（送る前に中身を見せます）</span>',"go('lib')",1)}
+    ${it('📝','報告書の下書き','月報の所見・日報の特記事項・申し送り（各画面の🤖ボタン）<br><span class="aisend">送る物：その月・その日の記録（送る前に中身を見せます）</span>',"go('report')")}
+    ${it('🏭','設備診断の補助説明','設備カルテの記録をもとに、状態の説明文を下書き<br><span class="aisend">送る物：その設備の記録（送る前に中身を見せます）</span>',"aiPickEq()")}
+    ${it('📆','保全計画の改善案','設備の経年・故障・健全度・更新計画から改善案を下書き<br><span class="aisend">送る物：設備の経年・故障などの記録（送る前に中身を見せます）</span>',"aiPlan()")}</div>`;
 }
 const AI_RULE2='\n・最後に「確認が必要な点」を箇条書きで挙げる。\n・数値や日付は与えた記録から引用し、記録にないことは「記録なし」と書く。';
 function aiCandidates(){
