@@ -1857,21 +1857,25 @@ async function dailySnapshot(){
     for(const k of keys){const g=await idb('b','readonly',s=>s.get(k));if(g&&g.reason==='自動（1日1回）'){if(g.at.slice(0,10)===new Date().toISOString().slice(0,10))return;break}}
     await snapshot('自動（1日1回）');}catch(e){}
 }
-async function listGenerations(){
+/* limit を渡すと、新しい limit 件だけ中身を読み、残りは件数だけ数える（中身の大きい世代を全部メモリに載せない） */
+async function listGenerations(limit){
   const keys=(await idb('b','readonly',s=>s.getAllKeys())).map(String).filter(k=>k.startsWith('b')||k.startsWith('r')).sort((a,b)=>b.slice(1).localeCompare(a.slice(1))),out=[];
-  for(const k of keys){const g=await idb('b','readonly',s=>s.get(k));if(g)out.push({key:k,...g})}
+  let i=0;for(const k of keys){if(limit&&i++>=limit){out.push({key:k,stub:true});continue}const g=await idb('b','readonly',s=>s.get(k));if(g)out.push({key:k,...g})}
   return out;
 }
 const genSummary=g=>{if(g.data.raw)return '読めなかった元データ';if(g.data.rawShift)return '読めなかったシフト表の元データ';const a=g.data.app||{};return `予定${(a.tasks||[]).length}・点検${Object.keys(a.daily||{}).length}日・項目${(a.items||[]).length}・異常${(a.issues||[]).length}`};
 async function showGenerations(){
-  const gs=await listGenerations();
+  if(!$('#mask').classList.contains('on'))GEN_ALL=false;
+  const all=await listGenerations(GEN_ALL?0:8),gs=all.filter(g=>!g.stub),rest=all.length-gs.length;
   openModal(`<h3>🕘 バックアップ履歴</h3><p class="muted">1日1回と、復元・全消去・読込の前に自動で作られます（最新${GEN_KEEP}件まで）。写真は端末内に残っている分が使われます。</p>
     <div class="al info">履歴には記録データだけを保存し、写真の本体は含みません（写真は端末内に残っているものを使います）。写真まで残すには「ファイルに保存」を使ってください。</div>
     <button class="btn sec sm wide" style="margin-bottom:10px" onclick="manualSnapshot()">＋ 今の状態を履歴に保存</button>
     ${gs.length?gs.map(g=>`<div class="item"><div class="bd"><div class="ti">${esc(new Date(g.at).toLocaleString('ja-JP'))}</div><div class="meta">${esc(g.reason)}・${esc(genSummary(g))}</div>
       <div class="row" style="margin-top:6px"><button class="btn sm" onclick="restoreGeneration('${g.key}')">${g.data.raw!=null?'この原本で戻す（修復して読込）':g.data.rawShift!=null?'シフト表をこの原本で戻す':'この時点に戻す'}</button><button class="btn sec sm" onclick="downloadGeneration('${g.key}')">ファイルに保存</button></div></div></div>`).join(''):'<div class="empty">まだありません</div>'}
+    ${rest?`<button class="btn sec wide" style="min-height:44px;margin-top:6px" onclick="GEN_ALL=true;showGenerations()">古い履歴をすべて表示（残り ${rest}件）</button>`:''}
     ${modalFoot('<button class="btn" onclick="closeModal(true)">閉じる</button>')}`);
 }
+let GEN_ALL=false;
 async function manualSnapshot(){const m=await askBox({title:'履歴に保存',label:'この履歴のメモ（例：月報提出前）',value:'手動保存',maxlength:40,okLabel:'保存',optional:true});if(m===null)return;if(await snapshot('手動：'+txt(m,40),null,true)){opLog('手動で履歴に保存',txt(m,40));save();toast('履歴に保存しました');showGenerations()}}
 async function downloadGeneration(key){
   const g=await idb('b','readonly',s=>s.get(key));if(!g)return;

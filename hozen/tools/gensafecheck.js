@@ -26,7 +26,13 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  await p.evaluate(()=>document.querySelector('#undobar button').click());await p.waitForTimeout(300);
  n=await p.evaluate(()=>S.issues.length);if(n!==1)bad.push('元に戻した後の異常 '+n);
  const ls=await p.evaluate(()=>JSON.parse(localStorage.getItem('hospElecSched_v1')).issues.length);if(ls!==1)bad.push('保存値 '+ls);
+ await p.evaluate(async()=>{for(let i=0;i<12;i++){await snapshot('一覧用'+i,null,true);await new Promise(r=>setTimeout(r,3))}});
  await p.evaluate(()=>showGenerations());await p.waitForTimeout(600);
+ // 一覧は新しい8件だけ読み、残りは「古い履歴をすべて表示」で読む（中身の大きい世代を全部メモリに載せない）
+ const g8=await p.evaluate(()=>({items:document.querySelectorAll('#modal .item').length,btn:[...document.querySelectorAll('#modal button')].filter(x=>x.textContent.includes('古い履歴をすべて表示')).map(x=>x.textContent+'|'+Math.round(x.getBoundingClientRect().height))}));
+ if(g8.items!==8||g8.btn.length!==1||!/残り \d+件/.test(g8.btn[0])||+g8.btn[0].split('|')[1]<44)bad.push('一覧の8件表示 '+JSON.stringify(g8));
+ await p.evaluate(()=>{[...document.querySelectorAll('#modal button')].find(x=>x.textContent.includes('古い履歴をすべて表示')).click()});await p.waitForTimeout(700);
+ const gAll=await p.evaluate(()=>document.querySelectorAll('#modal .item').length);if(gAll<=8)bad.push('すべて表示で増えない '+gAll);
  const m=await p.evaluate(()=>({sw:document.documentElement.scrollWidth,mw:document.querySelector('#modal').getBoundingClientRect().width}));if(m.sw>392||m.mw>390)bad.push('履歴の窓がはみ出す '+JSON.stringify(m));
  if(process.argv[2])await p.screenshot({path:process.argv[2]});
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
