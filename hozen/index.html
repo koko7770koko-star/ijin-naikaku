@@ -4819,8 +4819,19 @@ function bldgWizard(){
     <label class="f">新しい棟の名前</label><input id="bw_names" maxlength="300" placeholder="例：A棟 B棟">
     ${B.length?`<label class="f">既にある棟にも階を足す</label><div id="bw_rows" class="chkgrid">${B.map(b=>`<label class="chkl" style="margin:2px 0"><input type="checkbox" data-ex="${b.id}">${esc(locPath(b.id))}</label>`).join('')}</div>`:''}
     <label class="f">階（入れなければ棟だけ足します）</label>${floorRangeHTML('bw')}
+    <details id="bw_more" style="margin-top:10px"><summary>各階に電気室と盤もまとめて足す（任意）</summary>
+      <div class="muted" style="font-size:12px;margin:4px 0">上の範囲の階それぞれに、同じ名前の電気室を1つと、その中に盤を足します（初回の登録を1回で）。空なら足しません。同じ名前は重ねません。</div>
+      <label class="f">電気室の名前</label><input id="bw_room" maxlength="60" placeholder="例：第1電気室">
+      <div class="grid2"><div><label class="f">盤の名前の頭</label><input id="bw_bpre" maxlength="20" placeholder="例：動力盤-"></div><div><label class="f">盤の数（各電気室）</label><input id="bw_bn" type="number" min="0" max="60" inputmode="numeric"></div></div>
+      <div class="muted" style="font-size:12px">盤は「名前の頭」に 1・2・3… を付けた名前になります。電気室の名前が空なら、盤は階の下に直接足します。</div></details>
+    <div id="bw_sum" class="muted" style="font-size:12px;margin-top:6px"></div>
     ${modalFoot('<button class="btn sec" onclick="closeModal()">やめる</button><button class="btn" onclick="applyBldgWizard()">足す</button>')}`);
+  const m=$('#modal');if(m){m.addEventListener('input',bwSum);m.addEventListener('change',bwSum)}
 }
+/* 足す数の目安（多くて：既にある同じ名前の物は重ねないので、実際はこれ以下） */
+function bwSum(){const el=$('#bw_sum');if(!el)return;const fr=floorRangeVal('bw'),nb=splitNames(($('#bw_names')||{}).value).length,ne=document.querySelectorAll('#bw_rows input[data-ex]:checked').length,
+  nf=floorNames(fr.dn,fr.up,fr.fmt).length,room=String(($('#bw_room')||{}).value||'').trim(),bn=Math.max(0,Math.min(60,parseInt(($('#bw_bn')||{}).value,10)||0)),B=nb+ne;
+  el.textContent=B?`足す数（多くて）：棟 ${nb}・階 ${B*nf}${room?`・電気室 ${B*nf}`:''}${bn&&nf?`・盤 ${B*nf*bn}`:''}`:''}
 const splitNames=s=>[...new Set(String(s||'').split(/[\s、,，\/／]+/).map(x=>txt(x,60).trim()).filter(Boolean))];
 function bldgPlan(rows,parent,locs){
   /* rows:[{name|n, up, dn, fmt, id?}] → 作る物の一覧 [{type,name,parent,key|parentKey,floor}]。同じ親・同じ名前は作らない */
@@ -4834,13 +4845,23 @@ function applyBldgWizard(){
   const parent=$('#bw_parent').value||'',fr=floorRangeVal('bw');
   const rows=[...splitNames($('#bw_names').value).map(name=>({name,...fr})),...[...document.querySelectorAll('#bw_rows input[data-ex]:checked')].map(c=>({id:c.dataset.ex,name:(locById(c.dataset.ex)||{}).name,...fr}))];
   if(!rows.length){toast('棟の名前を入れるか、既にある棟を選んでください');return}
+  const room=txt(($('#bw_room')||{}).value||'',60).trim(),bpre=txt(($('#bw_bpre')||{}).value||'',20).trim(),bn=Math.max(0,Math.min(60,parseInt(($('#bw_bn')||{}).value,10)||0));
+  if(bn&&!bpre){toast('盤の名前の頭を入れてください');return}
+  if((room||bn)&&!fr.dn&&!fr.up){toast('電気室・盤を足すには、階の範囲を入れてください');return}
   const plan=bldgPlan(rows,parent,S.locs||[]);
-  if(!plan.length){toast('すでに全部あります');return}
   const made=[],ids={};
   plan.forEach(p=>{if(p.type==='建屋'){const l=locMk('建屋',p.name,p.parent);S.locs.push(l);ids[p.key]=l.id;made.push(l)}});
   plan.forEach(p=>{if(p.type==='階'){const l=locMk('階',p.name,p.parent||ids[p.parentKey]||'',p.floor);S.locs.push(l);made.push(l)}});
+  // 各階に電気室と盤（範囲の階すべて。既にある階・電気室・盤は使い、同じ名前は重ねない）
+  if(room||bn){const kid=(par,name)=>(S.locs||[]).find(l=>l.parent===par&&norm(l.name)===norm(name));
+    rows.forEach(r=>{const b=r.id?locById(r.id):(S.locs||[]).find(l=>l.type==='建屋'&&(!parent||(l.parent||'')===parent)&&norm(l.name)===norm(r.name));if(!b)return;
+      floorNames(fr.dn,fr.up,fr.fmt).forEach(fn=>{const f=kid(b.id,fn);if(!f)return;let host=f;
+        if(room){host=kid(f.id,room);if(!host){host=locMk('電気室',room,f.id);S.locs.push(host);made.push(host)}}
+        for(let i=1;i<=bn;i++){const nm=bpre+i;if(kid(host.id,nm))continue;const l=locMk('盤',nm,host.id);S.locs.push(l);made.push(l)}})})}
+  if(!made.length){toast('すでに全部あります');return}
   save();closeModal(true);render();
-  undoBar(`棟・階を ${made.length}件 足しました`,()=>{const ids=new Set(made.map(l=>l.id));S.locs=S.locs.filter(l=>!ids.has(l.id))},'追加');
+  const c={};made.forEach(l=>{const t=LOC_SHOW(l.type);c[t]=(c[t]||0)+1});
+  undoBar(`${Object.entries(c).map(([t,n])=>t+' '+n).join('・')} を足しました`,()=>{const ids=new Set(made.map(l=>l.id));S.locs=S.locs.filter(l=>!ids.has(l.id))},'追加');
 }
 /* ---------- 盤ごとの点検表（棟→階→盤、3項目を ◯/● で） ----------
    保存：S.banChk[年-月][盤の場所id]=[盤内 発熱, 端子および碍子, その他異常]（値は ''／'○'（予定・◯）／'済'（実施済み・●）／'延'）。足りない時は空で補う */
