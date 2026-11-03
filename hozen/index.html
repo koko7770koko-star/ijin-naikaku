@@ -6518,6 +6518,14 @@ function wxForWork(w){
 }
 const wxAge=c=>{const m=Math.round((Date.now()-c.at)/60000);return m<1?'たった今':m<60?m+'分前':Math.round(m/60)+'時間前'};
 /* ホーム：天気と屋外作業の目安 */
+/* 警報が出ているとき：非常用発電機の確認・停電時の資料へすぐ行ける（押すだけ。記録は変えない）。資料は題か本文に「停電」を含む物があるときだけ */
+function warnLinksHTML(){
+  const G=(S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止'),gp=genPending(),lib=(S.library||[]).some(d=>/停電/.test((d.title||'')+(d.tags||'')+(d.text||'')));
+  const bt=(on,l)=>`<button class="btn sec sm grow" style="min-height:44px" onclick="${on}">${l}</button>`;
+  const gb=G.length?bt(gp.length===1?`genStart('${gp[0].id}')`:"go('diag',{dgTab:'meas'});setTimeout(()=>scrollToId('genCard'),200)",`⚡ 非常用発電機の確認へ${gp.length?`（今月未入力 ${gp.length}台）`:''}`):'';
+  const lb=lib?bt("V.libQ='停電';go('lib')",'📚 停電時の資料へ'):'';
+  return gb||lb?`<div class="row warnlinks" style="gap:8px;margin:6px 0;flex-wrap:wrap">${gb}${lb}</div>`:'';
+}
 function wxCard(){
   if(!wxCfg().on)return '';
   if(!wxReady())return card('☀ 天気',`<div class="muted">天気を表示する地点が登録されていません。</div><button class="btn sec sm" style="margin-top:6px" onclick="go('set');setTimeout(()=>scrollToId('wxSet'),50)">地点を登録</button>`);
@@ -6535,6 +6543,7 @@ function wxCard(){
     <div class="row" style="align-items:baseline;gap:10px"><b style="font-size:26px">${cur.temperature_2m!=null?Math.round(cur.temperature_2m)+'℃':'—'}</b><span>${esc(WMO[cur.weather_code]||'')}</span><span class="muted">湿度 ${cur.relative_humidity_2m??'—'}%・風 ${windLabel(cur.wind_direction_10m)} ${cur.wind_speed_10m!=null?Math.round(cur.wind_speed_10m)+'m/s':'—'}</span></div>
     ${stale?`<div class="al warn wxstale" style="margin:6px 0"><b>${wxAge(c)}の古い情報です。</b>${WX_ERR?esc(WX_ERR)+'。':''}今の天気ではありません。「更新」で取り直してください。</div>`:''}
     ${warn?`<div class="al ${warn.length?'ng':'info'}" style="margin:6px 0">${warn.length?`⚠ ${esc(c.warn.pref)}で発表中：${esc(warn.join('、'))}<br><small>府県内のどこかに発表されているものを含みます（市町村ごとの区別はしていません）</small>`:`${esc(c.warn.pref)}：警報・注意報の発表なし`}</div>`:''}
+    ${warn&&warn.length?warnLinksHTML():''}
     ${adv?`<div class="al ${adv.level==='ng'?'ng':adv.level==='warn'?'warn':'info'}" style="margin:6px 0"><b>${esc(adv.title)}</b>（これから8時間）${adv.reasons.length?'<br>'+adv.reasons.map(esc).join('<br>'):''}<br><small>${WX_NOTE}</small></div>`:''}
     <div class="wxstrip">${hours.join('')}</div>
     <div class="muted" style="font-size:11px;margin-top:4px">取得 ${new Date(c.at).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}（${wxAge(c)}）${stale?'・<b>古い情報です</b>':''}${WX_ERR?'・'+esc(WX_ERR):''}・気象データ：Open-Meteo${c.warn?'／警報・注意報：気象庁':''}</div></div>`;
