@@ -3495,6 +3495,7 @@ async function aiDraftRun(title,prompt,useLabel,use){
       <textarea id="ai_text" style="min-height:220px">${esc(text)}</textarea>
       <details style="margin-top:6px"><summary class="muted">AIに渡した記録・資料（回答の根拠になる元のデータ）</summary><pre class="aisrc">${esc(prompt)}</pre></details>
       <div class="muted" style="font-size:12px">AIは読み違い・書き違いをすることがあります。数値・日付・設備名は元の記録と照らし合わせてください。根拠のない内容は「不明」と書かせていますが、必ず確認してください。</div>
+      ${use?'<button type="button" class="btn sec sm" id="ai_copy" style="min-height:44px;margin:6px 0" onclick="copyDraft()">📋 コピー（ほかの画面にも貼れます）</button>':''}
       ${use?'<label class="chkl"><input type="checkbox" id="ai_ack">内容を確認し、事実と違う点・不要な点を直しました</label>':''}
       ${modalFoot(`<button class="btn sec" onclick="closeModal()">使わない</button>${use?`<button class="btn" onclick="useDraft()">${esc(useLabel)}</button>`:'<button class="btn" onclick="copyDraft()">コピー</button>'}`)}`);
   }catch(e){if(k!==AI_SEQ)return;openModal(`<h3>AIの下書きを作れませんでした</h3><p>${esc(e.message)}</p><p class="muted">AIは使えなくても、記録は今までどおりできます。</p>${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="window.__aiGo()">もう一度</button>`)}`)}
