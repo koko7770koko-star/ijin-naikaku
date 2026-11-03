@@ -329,6 +329,7 @@ details summary{cursor:pointer;padding:4px 0}
 #shiftApp table.sh .dc{position:sticky;left:0;z-index:2;background:#fff;text-align:left;border-right:1px solid #000;min-width:62px}
 #shiftApp table.sh thead .dc{z-index:4;background:#f2f2f2}
 #shiftApp table.sh td.cell{min-width:46px;cursor:pointer;font-weight:700}
+#shiftApp table.sh tr.today td{box-shadow:inset 0 3px 0 #e0b000,inset 0 -3px 0 #e0b000}#shiftApp table.sh tr.today td.dc,#shiftApp table.sh tr.today td.wd{background:#ffe9a8;font-weight:700}#shiftApp table.sh tr.today td.dc small{font-size:10px}
 @media screen{#shiftApp table.sh td.cell{min-width:52px;height:44px}#shiftApp .shhint{font-size:12px;color:var(--mut);margin:6px 0 4px}}
 #shiftApp td.v-A{background:#ddebf7!important}
 #shiftApp td.v-B{background:#f4b183!important}
@@ -558,6 +559,7 @@ details.fold[open]>summary{margin-bottom:8px}
     <button type="button" class="btn" onclick="moveMonth(-1)">◀</button>
     <select id="monthSel"></select>
     <button type="button" class="btn" onclick="moveMonth(1)">▶</button>
+    <button type="button" class="btn sec" id="shTodayBtn" style="min-height:44px" onclick="SHIFT.toToday(false)">今日へ</button>
     <span class="period" id="periodTxt"></span>
   </div>
   <div class="judge" id="judge"></div>
@@ -864,6 +866,8 @@ function fillMonthSel(sel,val){
   sel.innerHTML=opts.filter(o=>/^\d{4}-\d{2}$/.test(o)).map(o=>'<option value="'+esc(o)+'"'+(o===val?' selected':'')+'>'+esc(ymLabel(o))+'</option>').join('');
 }
 let cur=null;
+const TODAY_N=(()=>{const n=new Date();return Math.round(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())/DAY)})();
+function shiftToToday(){const tr=document.querySelector('#shTable tr.today'),w=$('shTable').parentElement;if(!tr||!w)return false;w.scrollTop=Math.max(0,tr.offsetTop-w.querySelector('thead').offsetHeight-44);return true}
 function renderShift(){
   fillMonthSel($('monthSel'),S.view);
   const {from,to}=periodOf(S.view);
@@ -877,7 +881,7 @@ function renderShift(){
   h+='<tr><th class="dc">区分</th><th></th>'+M.map(m=>'<th class="'+(m.type==='日勤'?'dayk':'')+'" style="font-weight:400;font-size:11px">'+(m.type==='日勤'?'日勤':'夜勤')+'</th>').join('')+'<th></th><th></th><th></th><th></th><th></th></tr></thead><tbody>';
   a.rows.forEach(r=>{
     const t=ymd(r.d);
-    h+='<tr class="'+(r.off?'hol':'')+'"><td class="dc">'+t.m+'/'+t.d+'</td><td class="wd">'+WD[t.w]+'</td>';
+    h+='<tr class="'+(r.off?'hol':'')+(r.d===TODAY_N?' today':'')+'"><td class="dc">'+t.m+'/'+t.d+(r.d===TODAY_N?'<br><small>今日</small>':'')+'</td><td class="wd">'+WD[t.w]+'</td>';
     M.forEach((m,i)=>{
       const v=a.R[i][r.d];const ch=a.c.chg.has(m.name+'|'+r.d);
       let cls='cell';
@@ -895,6 +899,7 @@ function renderShift(){
   });
   h+='</tfoot>';
   $('shTable').innerHTML=h;
+  const tb=$('shTodayBtn');if(tb)tb.style.display='';tb.textContent=(TODAY_N>=from&&TODAY_N<=to)?'今日':'今日へ';
 }
 $('shTable').addEventListener('click',e=>{const td=e.target.closest('td.cell');if(td)openPop(+td.dataset.i,+td.dataset.d);});
 $('monthSel').addEventListener('change',e=>{S.view=e.target.value;save();renderShift();});
@@ -1167,7 +1172,7 @@ function dayInfo(fromS,toS){const c=ctx();const f=dn(fromS),t=dn(toS);const R=co
     c.mem.forEach((m,i)=>{const v=R[i][d];o.all[m.name]=v;if(v==='A日夜勤')o.A.push(m.name);else if(v==='B日夜勤')o.B.push(m.name);else if(v==='日勤')o.D.push(m.name);else if(v==='有給'||v==='希望休')o.off.push(m.name+'('+v+')');else if(v==='連続NG'||v==='明けNG')o.ng.push(m.name);});
     o.lack=c.nightCount?((o.A.length===0?'A欠員 ':'')+(o.B.length===0?'B欠員':'')).trim():'';out[ds(d)]=o;}
   return out;}
-window.SHIFT={dayInfo,holidays:()=>S.holidays.map(h=>h[0]),members:()=>S.members.filter(m=>m.name.trim()).map(m=>m.name),refresh:()=>renderAll(),get:()=>JSON.parse(JSON.stringify(S)),set:d=>{if(!shapeOk(d))return false;S=Object.assign(defaults(),JSON.parse(JSON.stringify(d)));sanitize();save();renderAll();return true;}};
+window.SHIFT={dayInfo,holidays:()=>S.holidays.map(h=>h[0]),members:()=>S.members.filter(m=>m.name.trim()).map(m=>m.name),refresh:()=>renderAll(),toToday:auto=>{const k=S.view,t=ymd(TODAY_N),cm=ym(t.y,t.m+(t.d>=11?1:0));if(k!==cm&&!auto){S.view=cm;save();renderShift()}return shiftToToday()},get:()=>JSON.parse(JSON.stringify(S)),set:d=>{if(!shapeOk(d))return false;S=Object.assign(defaults(),JSON.parse(JSON.stringify(d)));sanitize();save();renderAll();return true;}};
 load(); renderAll(); save();
 })();
 
@@ -3722,7 +3727,8 @@ function render(){
   document.body.classList.toggle('mode-shift',shiftMode);
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===V.view||(b.dataset.v==='menu'&&SUB_VIEWS.includes(V.view))));
   $('#pageStyle').textContent=shiftMode?'@page{size:A4 portrait;margin:0}':V.view==='year'?'@page{size:A4 landscape;margin:8mm}':'@page{size:A4 portrait;margin:10mm}';
-  if(shiftMode){if(hasShift())SHIFT.refresh();return}
+  if(shiftMode){if(hasShift()){SHIFT.refresh();if(!window.__shOpen){window.__shOpen=1;setTimeout(()=>{try{SHIFT.toToday(true)}catch(e){}},0)}}return}
+  window.__shOpen=0;
   $('#hd').textContent=TITLES[V.view]||'';
   $('#hback').style.display=SUB_VIEWS.includes(V.view)?'inline':'none';$('#hback').onclick=()=>goBack(BACK[V.view]||'menu');
   PH_NEED=[];
