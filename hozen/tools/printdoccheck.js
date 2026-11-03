@@ -3,7 +3,7 @@
 // usage: node hozen/tools/printdoccheck.js [画像の出力先の前半（例 /tmp/pd）]
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:794,height:1123}});const p=await c.newPage();const errs=[];
- p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
+ p.on('pageerror',e=>errs.push('PAGEERR '+e.message+' '+String(e.stack||'').split('\n').slice(1,4).join(' | ')));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
  await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0);
  const LONG='長い文章の例。'.repeat(30)+'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.repeat(4);
