@@ -1386,7 +1386,9 @@ const NAV_KEYS=['sel','hItem','hRange','hQ','hOnlyNg','eqQ','eqKind','eqImp','eq
 let NAV_POP=false;
 function navState(){const x={};NAV_KEYS.forEach(k=>{if(V[k]!==undefined)x[k]=V[k]});return {v:V.view,x}}
 let NAV_STACK=[];
-function go(v,extra){V.view=v;if(extra)Object.assign(V,extra);if(!NAV_POP){try{const st=JSON.parse(JSON.stringify(navState()));history.pushState(st,'');NAV_STACK.push(st.v)}catch(e){}}render();scrollTo(0,0)}
+const NAV_RECENT=[];/* その場で最近開いた画面（メニューの先頭に出す。保存しない） */
+function navRecent(v){if(!v||['home','menu'].includes(v))return;const i=NAV_RECENT.indexOf(v);if(i>=0)NAV_RECENT.splice(i,1);NAV_RECENT.unshift(v);if(NAV_RECENT.length>8)NAV_RECENT.length=8}
+function go(v,extra){navRecent(v);V.view=v;if(extra)Object.assign(V,extra);if(!NAV_POP){try{const st=JSON.parse(JSON.stringify(navState()));history.pushState(st,'');NAV_STACK.push(st.v)}catch(e){}}render();scrollTo(0,0)}
 function goBack(target){if(NAV_STACK.length>=2&&NAV_STACK[NAV_STACK.length-2]===target){history.back();return}go(target)}
 window.addEventListener('popstate',ev=>{
   const pop=document.getElementById('pop');
@@ -5839,10 +5841,11 @@ function setChkDef(k,v){S[k]=strs(v.split('\n').map(s=>s.trim()),200,40);save();
 /* ---------- メニュー（13区分） ---------- */
 const MENU_SHORT={'入力・判定・写真読み取り':'毎日の入力・判定','予定・点検・勤務者':'予定と勤務者','点検項目・周期・法定/社内':'点検の計画と期限','検索・トレンド・CSV':'過去の記録・グラフ','お知らせ・今日・全体の状況':'お知らせ・今日の状況','設備カルテ・仕様・修理履歴':'設備の一覧と履歴','棟→階→盤 を ◯/● で':'棟→階→盤を点検','施設→建屋→階→電気室→盤':'棟・階・盤の登録','単線結線図・配置図・版管理':'結線図・配置図','登録・検索・根拠表示':'資料の保管・検索','緊急度・期限・原因・承認':'異常の記録・対応','絶縁・接地・継電器・蓄電池':'測定値の記録','人の評価と参考指標':'設備の状態の目安','管理値外・周期超過・傾向':'注意が要る設備','件数・MTBF・MTTR・CSV':'故障の件数・傾向','10年の更新・改修':'更新の計画','承認・KY・停電計画・責任者確認':'作業の指示・承認','14日間の作業と勤務':'2週間の作業と勤務','承認済みの手順・必須チェック':'作業の手順','A/B夜勤ローテーション':'夜勤の当番表','資格の登録・作業との照合':'人員と資格','在庫・最低在庫・入出庫':'在庫の管理','貸出・校正期限':'貸出と校正の期限','予算・実績・更新費用':'予算と費用','自動集計・印刷':'自動集計・印刷','測定記録から作成':'測定から作成','異常案件から作成':'異常から作成','作業指示から作成':'作業から作成','読み取り・検索・下書き（人が確認）':'読み取り・下書き','書き出し・検査・復元テスト':'保存・復元','整合性・容量の検査':'データの確認','施設名・担当者・選択肢':'施設名・担当者','項目の追加・判定の基準':'項目と管理値','地点・APIキー・接続方式':'天気・AIとの接続','健全度の重み・チェックリスト':'重み・チェック表','管理値・条件':'測定の管理値'};
 function v16Menu(){
-  const it=(on,ic,t,d)=>`<div class="mtile" onclick="${on}" data-q="${esc(t+' '+d)}"><span class="ic">${ic}</span><span class="mt">${t}</span><span class="md">${MENU_SHORT[d]||d}</span></div>`;
+  const ITS=[];
+  const it=(on,ic,t,d)=>{const h=`<div class="mtile" onclick="${on}" data-q="${esc(t+' '+d)}"><span class="ic">${ic}</span><span class="mt">${t}</span><span class="md">${MENU_SHORT[d]||d}</span></div>`;ITS.push({on,h});return h};
   const g=(title,items)=>`<div class="mgrp">${title}</div><div class="mtgrid">${items.join('')}</div>`;
-  return `<input class="msearch" placeholder="🔍 機能を探す（例：校正）" oninput="menuFilter(this.value)">`
-   +g('✅ 毎日の点検・予定',[it("go('day',{day:TODAY})",'✅','日常点検','入力・判定・写真読み取り'),it("go('month')",'🗓','カレンダー','予定・点検・勤務者'),it("go('year')",'📅','年間計画・期限','点検項目・周期・法定/社内'),it("go('hist')",'📈','点検履歴・グラフ','検索・トレンド・CSV'),it("go('dailyRep',{day:TODAY})",'🗒','日報','A4印刷'),it("go('home')",'🏠','ホーム','お知らせ・今日・全体の状況')])
+  const srch=`<input class="msearch" placeholder="🔍 機能を探す（例：校正）" oninput="menuFilter(this.value)">`;
+  const body=g('✅ 毎日の点検・予定',[it("go('day',{day:TODAY})",'✅','日常点検','入力・判定・写真読み取り'),it("go('month')",'🗓','カレンダー','予定・点検・勤務者'),it("go('year')",'📅','年間計画・期限','点検項目・周期・法定/社内'),it("go('hist')",'📈','点検履歴・グラフ','検索・トレンド・CSV'),it("go('dailyRep',{day:TODAY})",'🗒','日報','A4印刷'),it("go('home')",'🏠','ホーム','お知らせ・今日・全体の状況')])
    +g('🏭 設備',[it("go('equip')",'🏭','設備台帳','設備カルテ・仕様・修理履歴'),it("go('ban')",'⚡','盤の点検','棟→階→盤 を ◯/● で'),it("go('locs')",'🏢','設備の階層','施設→建屋→階→電気室→盤'),it("go('qr')",'🔳','QRラベル','印刷・読み取り'),it("go('dwgs')",'🗺','図面','単線結線図・配置図・版管理'),it("go('lib')",'📚','技術資料','登録・検索・根拠表示')])
    +g('🩺 保全・診断',[it("go('issues')",'🛠','異常・修理','緊急度・期限・原因・承認'),it("go('diag',{dgTab:'meas'})",'📏','測定記録','絶縁・接地・継電器・蓄電池'),it("go('diag',{dgTab:'meas'});setTimeout(()=>{const g=document.getElementById('genCard');if(g)g.scrollIntoView()},80)",'⚡','非常用発電機','棟・階ごとに今月の点検'),it("go('diag',{dgTab:'health'})",'💯','健全度','人の評価と参考指標'),it("go('diag',{dgTab:'rec'})",'🔎','推奨・異常傾向','管理値外・周期超過・傾向'),it("go('diag',{dgTab:'fail'})",'📉','故障分析','件数・MTBF・MTTR・CSV'),it("go('plan',{plTab:'legal'})",'⚖','点検期限（法定・社内）','期限の一覧'),it("go('plan',{plTab:'renew'})",'🏗','更新計画','10年の更新・改修'),it("go('plan',{plTab:'measdue'})",'⏱','測定の周期','次回期限')])
    +g('🧰 作業・人員',[it("go('works')",'🧰','作業指示書','承認・KY・停電計画・責任者確認'),it("go('workSheet')",'📋','作業表','14日間の作業と勤務'),it("go('stds')",'📘','作業標準','承認済みの手順・必須チェック'),it("go('shift')",'👥','勤務表（シフト）','A/B夜勤ローテーション'),it("go('staff')",'🪪','人員・資格','資格の登録・作業との照合')])
@@ -5850,9 +5853,12 @@ function v16Menu(){
    +g('📄 報告書・AI',[it("go('report')",'📄','月報・年報','自動集計・印刷'),it("go('dailyRep',{day:TODAY})",'🗒','日報','A4印刷'),it("go('diag',{dgTab:'meas'})",'📏','点検報告書','測定記録から作成'),it("go('issues')",'🛠','修理報告書','異常案件から作成'),it("go('works')",'🧰','作業報告書','作業指示から作成'),it("go('ai')",'🤖','AI支援','読み取り・検索・下書き（人が確認）')])
    +g('⚙ 設定・データ',[it("go('set',{setTab:'data'})",'💾','バックアップ・復元','書き出し・検査・復元テスト'),it("dataCheck()",'🩺','データ点検','整合性・容量の検査'),it("go('set',{setTab:'basic'})",'⚙','基本設定','施設名・担当者・選択肢'),it("go('set',{setTab:'items'})",'✏️','日常点検の項目・管理値','項目の追加・判定の基準'),it("go('set',{setTab:'link'})",'☀','天気・AIの設定','地点・APIキー・接続方式'),it("go('mset')",'🔧','保全の設定','健全度の重み・チェックリスト'),it("go('mtpl')",'📐','測定のひな形','管理値・条件')])
    +`<div class="empty" id="mnone" style="display:none">見つかりません</div>`;
+  /* 最近開いた画面（この起動のあいだだけ。同じ画面の最初の入口を、最大4つ） */
+  const rec=[];for(const v of NAV_RECENT){const t=ITS.find(x=>x.on.startsWith(`go('${v}'`));if(t&&!rec.includes(t))rec.push(t);if(rec.length>=4)break}
+  return srch+(rec.length?`<div class="mgrp" id="mrecent">🕘 最近開いた画面</div><div class="mtgrid">${rec.map(x=>x.h).join('')}</div>`:'')+body;
 }
 function menuFilter(q){q=String(q||'').trim();let n=0;document.querySelectorAll('.mtile').forEach(t=>{const ok=!q||t.dataset.q.includes(q);t.style.display=ok?'':'none';if(ok)n++});
-  document.querySelectorAll('.mtgrid').forEach(g=>{const any=[...g.children].some(c=>c.style.display!=='none');g.style.display=any?'':'none';g.previousElementSibling.style.display=any?'':'none'});const e=$('#mnone');if(e)e.style.display=n?'none':''}
+  document.querySelectorAll('.mtgrid').forEach(g=>{const any=[...g.children].some(c=>c.style.display!=='none');g.style.display=any?'':'none';g.previousElementSibling.style.display=any?'':'none'});const e=$('#mnone');if(e)e.style.display=n?'none':'';const rc=$('#mrecent');if(rc){rc.style.display=q?'none':'';rc.nextElementSibling.style.display=q?'none':''}}
 /* ---------- 画面の登録 ---------- */
 Object.assign(VIEWS,{set:()=>tabify(vSet(),SET_TABS,'setTab','data'),equipDetail:()=>tabify(vEquipDetail(),EQ_TABS,'eqTab','ov'),stds:vStds,locs:vLocs,ban:vBan,qr:vQr,diag:vDiag,mtpl:vMtpl,plan:vPlan,printDoc:vPrintDoc,works:vWorks,workSheet:vWorkSheet,issues:vIssues,staff:vStaff,stock:vStock,dwgs:vDwgList,dwg:vDwg,lib:vLib,ai:vAi,mset:vMset});
 Object.assign(TITLES,{ban:'盤の点検',stds:'作業標準',locs:'設備の階層',qr:'QRラベル',diag:'診断',mtpl:'測定のひな形',plan:'保全計画',printDoc:'報告書',works:'作業管理',workSheet:'作業表',issues:'異常・修理',staff:'人員・資格',stock:'予備品・工具・予算',dwgs:'図面',dwg:'図面',lib:'技術資料',ai:'AI支援',mset:'保全の設定',home:'電気設備 総合保全'});
