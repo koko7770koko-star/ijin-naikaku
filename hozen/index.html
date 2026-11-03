@@ -4078,8 +4078,9 @@ function banSet(ym,id,k,v){S.banChk=S.banChk||{};const m=S.banChk[ym]=S.banChk[y
 function banTap(id,k){const ym=V.banYm||TODAY.slice(0,7),cur=banVal(ym,id,k);banSet(ym,id,k,cur===''?'○':cur==='○'?'済':'');save();render()}
 function banAll(rootId){const ym=V.banYm||TODAY.slice(0,7),bs=banBoards(rootId);if(!bs.length)return;
   const prev=bs.map(b=>[b.id,[0,1,2].map(k=>banVal(ym,b.id,k))]);
-  bs.forEach(b=>{for(let k=0;k<3;k++)banSet(ym,b.id,k,'済')});save();render();
-  undoBar('この階の盤を全部 ● にしました',()=>{prev.forEach(([id,a])=>a.forEach((v,k)=>banSet(ym,id,k,v)))})}
+  bs.forEach(b=>{for(let k=0;k<3;k++)if(banVal(ym,b.id,k)!=='延')banSet(ym,b.id,k,'済')}); // 延期（延）の印は上書きしない
+  save();render();
+  undoBar('この階の盤を全部 ● にしました（延期の印はそのまま）',()=>{prev.forEach(([id,a])=>a.forEach((v,k)=>banSet(ym,id,k,v)))})}
 function banIssue(id){const b=locById(id);if(!b)return;editIssue(null,{title:'盤の異常：'+b.name,place:locPath(id)})}
 function banMove(d){const ym=V.banYm||TODAY.slice(0,7);let y=+ym.slice(0,4),m=+ym.slice(5,7)+d;if(m<1){m=12;y--}if(m>12){m=1;y++}V.banYm=y+'-'+String(m).padStart(2,'0');render()}
 function vBan(){
