@@ -2858,6 +2858,8 @@ function voiceInput(){
 
 /* ---------- 7b 点検履歴・グラフ ---------- */
 function histRange(){
+  if(V.hRange==='m0')return [TODAY.slice(0,7)+'-01',TODAY]; // 今月（1日〜今日）
+  if(V.hRange==='m1'){const f=addM(TODAY.slice(0,7)+'-01',-1);return [f,f.slice(0,7)+'-'+pad(lastDayOf(+f.slice(0,4),+f.slice(5,7)))]} // 先月（1日〜末日）
   const to=V.hTo&&isDate(V.hTo)?V.hTo:TODAY;
   const from=V.hRange==='custom'&&V.hFrom&&isDate(V.hFrom)?V.hFrom:V.hRange==='all'?'0000-00-00':addD(to,-(+V.hRange||30)+1);
   return [from,to];
@@ -2882,10 +2884,10 @@ function vHist(){
     <label class="f">項目（設備）</label><select onchange="V.hItem=this.value;render()"><option value="">すべての項目</option>
       <optgroup label="数値">${nums.map(n=>`<option value="${n.id}" ${item===n.id?'selected':''}>${esc(n.name)}（${esc(n.unit)}）${n.equip?'・'+esc(equipName(n.equip)):''}</option>`).join('')}</optgroup>
       <optgroup label="確認">${checks.map(c=>`<option value="${c.id}" ${item===c.id?'selected':''}>${esc(c.name)}${c.equip?'・'+esc(equipName(c.equip)):''}</option>`).join('')}</optgroup></select>
-    <div class="grid2"><div><label class="f">期間</label><select onchange="V.hRange=this.value;render()">${[['30','30日'],['90','90日'],['365','1年'],['all','全期間'],['custom','日付を指定']].map(([v,l])=>`<option value="${v}" ${V.hRange===v?'selected':''}>${l}</option>`).join('')}</select></div>
-      <div><label class="f">キーワード（備考・点検者）</label><input value="${esc(V.hKw||'')}" onchange="V.hKw=this.value;render()"></div></div>
+    <label class="f">期間</label><div class="row" id="hRangeBtns" style="flex-wrap:wrap;gap:6px">${[['m0','今月'],['m1','先月'],['30','30日'],['90','3か月'],['365','1年'],['all','全期間'],['custom','日付を指定']].map(([v,l])=>`<button type="button" class="btn sm ${V.hRange===v?'':'sec'}" style="min-height:44px" aria-pressed="${V.hRange===v}" onclick="V.hRange='${v}';render()">${l}</button>`).join('')}</div>
+    <label class="f">キーワード（備考・点検者）</label><input value="${esc(V.hKw||'')}" onchange="V.hKw=this.value;render()">
     ${V.hRange==='custom'?`<div class="grid2"><div><label class="f">から</label><input type="date" value="${esc(V.hFrom||addD(TODAY,-30))}" onchange="V.hFrom=this.value;render()"></div><div><label class="f">まで</label><input type="date" value="${esc(V.hTo||TODAY)}" onchange="V.hTo=this.value;render()"></div></div>`:''}
-    <label class="chkl"><input type="checkbox" ${V.hNg?'checked':''} onchange="V.hNg=this.checked;render()">異常・基準外だけ表示</label>
+    <button type="button" id="hNgBtn" class="btn wide ${V.hNg?'':'sec'}" style="min-height:44px;margin-top:8px" aria-pressed="${!!V.hNg}" onclick="V.hNg=!V.hNg;render()">${V.hNg?'✔ 異常だけ表示中（押すと全部）':'異常・基準外だけ表示'}</button>
     <div class="row" style="margin-top:10px"><span class="muted grow">該当 ${rows.length}日</span><button class="btn sec sm" ${rows.length?'':'aria-disabled="true" style="opacity:.5"'} onclick="exportDailyCsv()">${rows.length?`CSVに書き出す（${rows.length}日分）`:'CSVに書き出す'}</button></div></div>`;
   if(isNum)h+=trendCard(numDef(item));
   h+=`<div class="card"><h2>記録</h2>${rows.length?rows.slice(0,200).map(k=>histRow(k,item)).join('')+(rows.length>200?`<div class="muted">ほか ${rows.length-200}日（CSVで全件出力できます）</div>`:''):`<div class="empty">該当する記録はありません${Object.keys(S.daily||{}).length?'<br>期間や絞り込みを変えてみてください':'<br>日常点検を入力すると、ここに出ます'}</div>${Object.keys(S.daily||{}).length?'':'<button class="btn sec wide" style="min-height:44px" onclick="go(\'day\')">✅ 日常点検を入力する</button>'}`}</div>`;
