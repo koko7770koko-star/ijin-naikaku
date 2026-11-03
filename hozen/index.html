@@ -3243,6 +3243,7 @@ function vSet(){
   const list=(k,l)=>`<label class="f">${l}（1行に1つ）</label><textarea style="min-height:80px" onchange="setList('${k}',this.value)">${esc(st[k].join('\n'))}</textarea>`;
   const lim=(k,l)=>`<div><label class="f">${l}</label><input type="number" step="any" inputmode="decimal" value="${esc(L[k])}" onchange="setLim('${k}',this)"></div>`;
   return `<div class="card"><h2>基本情報（報告書に表示）</h2>${field('name','施設名','例：○○総合病院')}${field('facType','施設の種類（AIへの指示に使います）','例：病院、工場、事務所ビル')}${field('dept','担当部署','例：施設管理課 電気係')}${field('reporter','報告者','氏名')}${field('to','提出先','例：施設管理課長')}${field('operator','この端末を使う人（修正履歴に残る名前）','氏名')}</div>
+  <div class="card"><h2>棟と階</h2><div class="muted">A棟〜F棟と各階（地下も）を一度に作ります。既にある物は重ねません。</div><button class="btn sec wide" style="margin-top:8px" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button></div>
   ${defsCard()}
   <div class="card"><h2>選択肢</h2><div class="muted">シフトの「メンバー」は自動で担当者・点検者の候補に入ります。ここにはそれ以外（委託業者など）を追加。</div>${list('staff','担当者・点検者（追加分）')}${list('cats','分類')}${list('kinds','区分')}</div>
   <div class="card"><h2>写真読み取り（Claude API）</h2>
@@ -3619,7 +3620,7 @@ async function start(){
    ・v15.7で開いても壊れない（v15.7は未知の項目をそのまま残す）
    ・判定基準・評価の重み・資格の要件などは、人が設定した値だけを使う（推測で埋めない）
    ===================================================================== */
-const LOC_TYPES=['施設','建屋','電気室','盤'];
+const LOC_TYPES=['施設','建屋','階','電気室','盤'];
 const EQ_KINDS=['受電設備','変圧器','遮断器','断路器','保護継電器','計器用変成器','コンデンサ','蓄電池','発電機','UPS','配電盤・分電盤','その他'];
 const EQ_STATUS=['稼働','予備','停止','廃止'];
 const IMPORTANCE=['','A','B','C'];
@@ -3797,7 +3798,7 @@ const tabs16=(key,list)=>`<div class="seg tabs noprint" style="margin-bottom:10p
    v16 第2段階：設備管理の基盤（階層・種別・重要度・仕様・設備カルテ・QR）
    ===================================================================== */
 
-/* ---------- 設備の階層（施設→建屋→電気室→盤→機器） ---------- */
+/* ---------- 設備の階層（施設→建屋→階→電気室→盤→機器） ---------- */
 function vLocs(){
   const L=S.locs||[],E=S.equipment||[];
   const eqAt=id=>E.filter(e=>e.locId===id);
@@ -3808,14 +3809,15 @@ function vLocs(){
       <button class="btn sec sm" onclick="editLoc('${l.id}')">編集</button></div>
       ${open?eq.map(e=>`<div class="item" style="margin-left:${d*14+14}px" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">🏭 ${esc(e.name)}</div><div class="meta">${esc([e.kind,e.importance?'重要度'+e.importance:'',e.status!=='稼働'?e.status:''].filter(Boolean).join('・'))}</div></div></div>`).join('')+ch.map(c=>node(c,d+1)).join(''):''}</div>`};
   const none=E.filter(e=>!e.locId);
-  return card('🏢 設備の階層',`<div class="muted" style="margin-bottom:8px">施設 → 建屋 → 電気室 → 盤 の順に登録し、設備（機器）をそれぞれの場所に結びつけます。</div>
+  return card('🏢 設備の階層',`<div class="muted" style="margin-bottom:8px">施設 → 建屋（A棟など）→ 階 → 電気室 → 盤 の順に登録し、設備（機器）をそれぞれの場所に結びつけます。</div>
       ${L.length?kids('').map(l=>node(l,0)).join(''):emptyBox('まだ場所が登録されていません')}
-      <div class="row" style="margin-top:10px"><button class="btn sec sm grow" onclick="suggestLocs()">設置場所の文字から階層を提案</button><button class="btn sec sm grow" onclick="go('qr')">🔳 QRラベル</button></div>`,
+      <div class="row" style="margin-top:10px"><button class="btn sec sm grow" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button></div>
+      <div class="row" style="margin-top:6px"><button class="btn sec sm grow" onclick="suggestLocs()">設置場所の文字から階層を提案</button><button class="btn sec sm grow" onclick="go('qr')">🔳 QRラベル</button></div>`,
       `<button class="btn sm" onclick="editLoc()">＋ 場所</button>`)
     +(none.length?card(`場所が未設定の設備 <span class="muted">${none.length}台</span>`,none.map(e=>`<div class="item" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${esc(e.place||'')}</div></div></div>`).join('')):'');
 }
 function editLoc(id,parent){
-  const l=locById(id)||{name:'',type:parent?LOC_TYPES[Math.min(3,LOC_TYPES.indexOf((locById(parent)||{}).type)+1)]:'施設',parent:parent||'',note:'',pos:{x:'',y:'',z:'',floor:''}};
+  const l=locById(id)||{name:'',type:parent?LOC_TYPES[Math.min(LOC_TYPES.length-1,LOC_TYPES.indexOf((locById(parent)||{}).type)+1)]:'施設',parent:parent||'',note:'',pos:{x:'',y:'',z:'',floor:''}};
   openModal(`<h3>${id?'場所の編集':'場所の追加'}</h3>
     <div class="grid2"><div><label class="f">区分</label><select id="lo_type">${opts(LOC_TYPES,l.type)}</select></div><div><label class="f">上位の場所</label><select id="lo_parent">${locOptions(l.parent,true,id)}</select></div></div>
     <label class="f">名称 *</label><input id="lo_name" value="${esc(l.name)}" maxlength="60" placeholder="例：本館 地下1階 第1電気室">
@@ -3845,6 +3847,38 @@ function delLoc(id){
   save();closeModal(true);render();undoBar(`場所「${l.name}」を削除しました`,()=>{S.locs.splice(i,0,l);eq.forEach(e=>e.locId=id);other.forEach(x=>x.locId=id)});
 }
 /* 既存の「設置場所」の文字から階層の候補を作る（人が選んで確定。元の文字は残す） */
+/* 棟と階をまとめて作る（既にある同じ名前の場所は重ねない。保存の形は locs のまま） */
+const BLDG_NAMES=['A','B','C','D','E','F'];
+function bldgWizard(){
+  const fac=(S.locs||[]).filter(l=>l.type==='施設');
+  openModal(`<h3>🏗 棟と階をまとめて作る</h3>
+    <div class="muted">作る棟にチェックを入れ、地上と地下の階数を入れます（例：地上3・地下1 → B1F・1F・2F・3F）。既にある棟・階は重ねません。</div>
+    <label class="f">上位の場所（施設。なくてもよい）</label><select id="bw_parent">${locOptions('',true).replace('（指定しない）','（なし）')}</select>
+    <div id="bw_rows" style="margin-top:8px">${BLDG_NAMES.map(n=>`<div class="row" style="flex-wrap:nowrap;gap:6px;align-items:center;margin:4px 0"><label class="chkl" style="margin:0;min-width:64px"><input type="checkbox" data-n="${n}" ${n==='A'?'checked':''}>${n}棟</label><span class="muted">地上</span><input type="number" min="0" max="60" value="3" data-up="${n}" style="width:62px"><span class="muted">地下</span><input type="number" min="0" max="10" value="0" data-dn="${n}" style="width:62px"></div>`).join('')}</div>
+    ${modalFoot('<button class="btn sec" onclick="closeModal()">やめる</button><button class="btn" onclick="applyBldgWizard()">作成する</button>')}`);
+}
+function bldgPlan(rows,parent,locs){
+  /* rows:[{n,up,dn}] → 作る物の一覧 [{type,name,parent(棟名 or 階の親),floor}]。同じ親・同じ名前は作らない */
+  const out=[],have=(par,name)=>(locs||[]).some(l=>(l.parent||'')===par&&norm(l.name)===norm(name));
+  rows.forEach(r=>{const bn=r.n+'棟',ex=(locs||[]).find(l=>l.type==='建屋'&&(!parent||(l.parent||'')===parent)&&norm(l.name)===norm(bn));
+    if(!ex)out.push({type:'建屋',name:bn,parent,key:bn});
+    const names=[];for(let k=r.dn;k>=1;k--)names.push('B'+k+'F');for(let k=1;k<=r.up;k++)names.push(k+'F');
+    names.forEach(fn=>{if(ex&&have(ex.id,fn))return;out.push({type:'階',name:fn,parentKey:bn,parent:ex?ex.id:'',floor:fn})})});
+  return out;
+}
+function applyBldgWizard(){
+  const parent=$('#bw_parent').value||'';
+  const rows=[...document.querySelectorAll('#bw_rows input[data-n]:checked')].map(c=>{const n=c.dataset.n;
+    const up=Math.max(0,Math.min(60,parseInt(document.querySelector(`[data-up="${n}"]`).value,10)||0)),dn=Math.max(0,Math.min(10,parseInt(document.querySelector(`[data-dn="${n}"]`).value,10)||0));return {n,up,dn}});
+  if(!rows.length){toast('作る棟を選んでください');return}
+  const plan=bldgPlan(rows,parent,S.locs||[]);
+  if(!plan.length){toast('すでに全部あります');return}
+  const made=[],ids={};
+  plan.forEach(p=>{if(p.type==='建屋'){const l={id:uid(),type:'建屋',parent:p.parent,name:txt(p.name,60),note:'',pos:{floor:'',x:'',y:'',z:''}};S.locs.push(l);ids[p.key]=l.id;made.push(l)}});
+  plan.forEach(p=>{if(p.type==='階'){const l={id:uid(),type:'階',parent:p.parent||ids[p.parentKey]||'',name:txt(p.name,60),note:'',pos:{floor:txt(p.floor,20),x:'',y:'',z:''}};S.locs.push(l);made.push(l)}});
+  save();closeModal(true);render();
+  undoBar(`棟・階を ${made.length}件 作りました`,()=>{const ids=new Set(made.map(l=>l.id));S.locs=S.locs.filter(l=>!ids.has(l.id))});
+}
 function suggestLocs(){
   const E=(S.equipment||[]).filter(e=>!e.locId&&e.place.trim());
   const places=[...new Set(E.map(e=>e.place.trim()))];
@@ -5213,7 +5247,7 @@ function tabify(html,tabs,key,def){
     +tabs.map(([k])=>`<div class="tabpane" data-key="${key}" data-pane="${k}" style="${k===cur?'':'display:none'}">${panes[k].join('')||'<div class="empty">ありません</div>'}</div>`).join('');
 }
 function tabGo(key,k){V[key]=k;document.querySelectorAll(`.ptabs[data-key="${key}"] button`).forEach((b,i,all)=>b.classList.toggle('on',b.getAttribute('onclick').includes(`'${k}'`)));document.querySelectorAll(`.tabpane[data-key="${key}"]`).forEach(p=>p.style.display=p.dataset.pane===k?'':'none');scrollTo(0,0)}
-const SET_TABS=[['data','💾 データ',/データ・バックアップ/],['basic','⚙ 基本',/基本情報|選択肢/],['items','✏️ 点検項目',/日常点検の項目|数値の項目|確認（○×）/],['link','☀ 天気・AI・通信',/写真読み取り|天気|ネット接続/]];
+const SET_TABS=[['data','💾 データ',/データ・バックアップ/],['basic','⚙ 基本',/基本情報|選択肢|棟と階/],['items','✏️ 点検項目',/日常点検の項目|数値の項目|確認（○×）/],['link','☀ 天気・AI・通信',/写真読み取り|天気|ネット接続/]];
 const EQ_TABS=[['ov','概要',/設備カルテ|健全度|更新計画|点検の推奨/],['rec','履歴',/時系列|故障・修理履歴|異常案件|作業・点検の実績/],['insp','点検・測定',/点検項目と期限|日常点検の記録|測定記録/],['rel','作業・部品・図面',/作業指示|予備品|図面/]];
 
 start();
