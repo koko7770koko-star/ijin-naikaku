@@ -4309,7 +4309,7 @@ async function qrScan(){
     if(!$('#qr_v')||!$('#mask').classList.contains('on')){stm.getTracks().forEach(t=>t.stop());return} // 待っている間に閉じられたらカメラを止める
     QR_STREAM=stm;const v=$('#qr_v');v.srcObject=QR_STREAM;v.style.display='block';await v.play();$('#qr_msg').textContent='QRコードを枠に入れてください';
     const loop=async()=>{if(!QR_STREAM||!$('#qr_v')||!$('#mask').classList.contains('on'))return;try{const r=await det.detect(v);if(r.length){qrStop();qrOpen(r[0].rawValue);return}}catch(e){}setTimeout(loop,300)};loop();
-  }catch(e){const n=e&&e.name;msg(n==='NotAllowedError'||n==='SecurityError'?'カメラの使用が許可されていません。ブラウザのサイト設定でカメラを「許可」にするか、「写真から読む」を使ってください。':n==='NotFoundError'||n==='OverconstrainedError'?'カメラが見つかりません。「写真から読む」か、設備IDを入れて探してください。':n==='NotReadableError'?'カメラを使えません（ほかのアプリが使用中の可能性）。':'カメラを使えませんでした。「写真から読む」か、設備IDを入れて探してください。')}
+  }catch(e){const n=e&&e.name;msg(n==='NotAllowedError'||n==='SecurityError'?'カメラの使用が許可されていません。ブラウザのサイト設定でカメラを「許可」にするか、「写真から読む」を使ってください。':n==='NotFoundError'||n==='OverconstrainedError'?'カメラが見つかりません。「写真から読む」か、設備IDを入れて探してください。':n==='NotReadableError'?'カメラを使えません（ほかのアプリが使用中の可能性）。閉じてからやり直すか、「写真から読む」か、設備IDを入れて探してください。':'カメラを使えませんでした。「写真から読む」か、設備IDを入れて探してください。')}
 }
 function qrStop(){if(QR_STREAM){QR_STREAM.getTracks().forEach(t=>t.stop());QR_STREAM=null}const v=document.getElementById('qr_v');if(v)v.srcObject=null}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)qrStop()});window.addEventListener('pagehide',()=>qrStop());
