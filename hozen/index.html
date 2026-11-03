@@ -6100,6 +6100,13 @@ function saveQual(name){const v=[...document.querySelectorAll('#ql input:checked
 function editQualList(){openModal(`<h3>資格の種類</h3><div class="muted">1行に1つ</div><textarea id="qlist" style="min-height:200px">${esc(S.qualList.join('\n'))}</textarea>${modalFoot('<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="S.qualList=strs($(\'#qlist\').value.split(\'\\n\').map(s=>s.trim()),60,100);save();closeModal(true);render()">保存</button>')}`)}
 
 /* ---------- 予備品・在庫 ---------- */
+function orderMemoText(){const L=(S.parts||[]).filter(p=>p.min!==''&&Number(p.qty)<=Number(p.min));
+  if(!L.length)return'';
+  return '発注のメモ　'+TODAY+'\n'+L.map(p=>`${p.name}${p.spec?'（'+p.spec+'）':''}　今 ${p.qty}${p.unit||''}／最低 ${p.min}${p.unit||''}／足りない ${Math.max(0,Number(p.min)-Number(p.qty))}${p.unit||''}`).join('\n')}
+async function copyOrderMemo(){const t=orderMemoText();if(!t){toast('最低在庫を切った予備品はありません');return}
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(t);toast('発注のメモをコピーしました');return}}catch(e){}
+  if(window.hzSave){const ok=await window.hzSave(`発注のメモ_${TODAY}.txt`,new Blob([t],{type:'text/plain;charset=utf-8'}));if(ok)toast('文字のファイルとして保存しました');return}
+  toast('コピーできませんでした')}
 function partRow(p){const low=p.min!==''&&p.qty<=p.min;
   return `<div class="item ${low?'ng':''}" onclick="editPart('${p.id}')"><div class="dt" style="min-width:58px"><b style="font-size:17px">${p.qty}</b><small>${esc(p.unit)}</small></div><div class="bd"><div class="ti">${esc(p.name)}${p.code?` <span class="muted">${esc(p.code)}</span>`:''}</div>
     <div class="meta">${esc([p.spec,p.place].filter(Boolean).join('・'))}${p.min!==''?`・最低 ${p.min}${esc(p.unit)}`:''}${p.equipIds.length?'・'+p.equipIds.map(equipName).filter(Boolean).map(esc).join('、'):''}</div>${low?'<span class="pill ng">在庫不足</span>':''}</div><div class="pqb" onclick="event.stopPropagation()"><button class="btn sec" aria-label="1つ出庫" onclick="stockQuick('${p.id}',-1)">−</button><button class="btn sec" aria-label="1つ入庫" onclick="stockQuick('${p.id}',1)">＋</button></div></div>`}
@@ -6116,6 +6123,7 @@ function vStock(){
   if(t==='parts'){const q=(V.ptQ||'').trim(),P=(S.parts||[]).filter(p=>!q||[p.name,p.code,p.spec,p.maker,p.place].join(' ').includes(q)).map((p,k)=>[p,k]).sort((a,b)=>((b[0].min!==''&&b[0].qty<=b[0].min)-(a[0].min!==''&&a[0].qty<=a[0].min))||a[1]-b[1]).map(x=>x[0]),low=P.filter(p=>p.min!==''&&p.qty<=p.min);
     h+=`<input placeholder="品名・型番・保管場所で検索" value="${esc(q)}" onchange="V.ptQ=this.value;render()" style="margin-bottom:8px"><div class="row" style="margin-bottom:8px"><label class="btn sec sm" style="min-height:44px">📥 CSVを読み込む<input type="file" accept=".csv,text/csv" onchange="importStockCsv(this)"></label><span class="muted" style="font-size:12px">「CSV」で書き出した予備品のファイル</span></div>`;
     if(low.length)h+=`<div class="al ng">在庫不足 ${low.length}品目：${low.slice(0,3).map(p=>esc(p.name)).join('、')}${low.length>3?` ほか${low.length-3}品目（下の一覧の上に並んでいます）`:''}</div>`;
+    if(low.length)h+=`<div class="row" style="margin-bottom:8px"><button class="btn sec sm" style="min-height:44px" onclick="copyOrderMemo()">📋 発注のメモをコピー（${low.length}品目）</button></div>`;
     h+=card(`📦 予備品 <span class="muted">${P.length}品目</span>`,P.map(partRow).join('')||emptyGuide('予備品はまだありません。登録しておくと、在庫が最低在庫数を下回ったときにホームで知らせます。','予備品を登録','editPart()'),`<button class="btn sm" style="min-height:40px" onclick="editPart()">＋ 追加</button>`);
     const M=(S.moves||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
     h+=card('🔄 入出庫履歴（最近20件）',M.map(m=>`<div class="item"><div class="dt">${md(m.date)}</div><div class="bd"><div class="ti">${esc(m.type)}：${esc(partName(m.partId))} ${m.type==='棚卸'?'→ '+m.after:(m.type==='出庫'?'−':'+')+m.qty}</div><div class="meta">${esc([m.by,m.ref.startsWith('issue:')?'異常案件':m.ref.startsWith('work:')?'作業':'',m.note].filter(Boolean).join('・'))}</div></div></div>`).join('')||emptyBox('まだありません'),`<button class="btn sec sm" onclick="exportStockCsv()">CSV</button>`);
