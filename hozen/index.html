@@ -2985,6 +2985,7 @@ function vEquip(){
     <input id="eqQ" type="search" enterkeyhint="search" placeholder="設備ID・名称・場所・メーカー・型式で検索" value="${esc(V.eqQ||'')}" oninput="eqSearch(this)">
     <div class="grid3 eqf" style="margin-top:6px"><label><span class="muted">場所</span><select onchange="V.eqLoc=this.value;render()">${locOptions(V.eqLoc||'').replace('（指定しない）','すべて')}</select></label><label><span class="muted">種別</span><select onchange="V.eqKind=this.value;render()"><option value="">すべて</option>${opts(EQ_KINDS,V.eqKind||'')}</select></label><label><span class="muted">重要度</span><select onchange="V.eqImp=this.value;render()"><option value="">すべて</option>${['A','B','C'].map(x=>`<option ${V.eqImp===x?'selected':''}>${x}</option>`).join('')}</select></label></div>
     <div class="row" style="margin-top:6px"><label class="chkl" style="margin:0"><input type="checkbox" ${V.eqAll?'checked':''} onchange="V.eqAll=this.checked;render()">廃止も表示</label><span class="sp"></span><button class="btn sec sm" onclick="go('locs')">🏢 階層</button><button class="btn sec sm" onclick="qrScan()">📷 QRを読む</button></div>
+    <div class="row" style="margin-top:6px"><label class="btn sec sm" style="min-height:44px">📥 CSVを読み込む<input type="file" accept=".csv,text/csv" onchange="importEquipCsv(this)"></label><span class="muted" style="font-size:12px">「CSV：設備台帳・修理履歴」で書き出したファイル</span></div>
     <div class="row" style="margin-top:8px;align-items:center"><span class="muted">${filt?`絞り込み：${E.length}台 ／ 全${(S.equipment||[]).length}台`:`${E.length}台を表示`}</span><span class="sp"></span><select aria-label="並び順" style="width:auto" onchange="V.eqSort=this.value;render()">${[['code','ID順'],['name','名前順'],['issue','異常の多い順'],['due','期限が近い順']].map(([v,l])=>`<option value="${v}" ${sortK===v?'selected':''}>${l}</option>`).join('')}</select></div>${filt?`<div class="row" style="margin-top:4px"><button class="btn sec sm" style="min-height:44px" onclick="V.eqQ='';V.eqKind='';V.eqImp='';V.eqLoc='';render()">絞り込みをやめる</button></div>`:''}
     <div style="margin-top:10px">${E.length?E.map(e=>{const L=eqLinks(e),open=L.issues.filter(i=>i.status!=='完了').length,dl=deadlines().filter(x=>x.it.equipId===e.id&&x.left!=null).sort((a,b)=>a.left-b.left)[0];
       return `<div class="item ${open?'ng':''}" onclick="go('equipDetail',{eq:'${e.id}',eqTab:'ov'})"><div class="dt" style="min-width:64px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}${e.importance?` <span class="pill ${e.importance==='A'?'ng':e.importance==='B'?'warn':''}">${esc(e.importance)}</span>`:''}${e.status&&e.status!=='稼働'?` <span class="pill">${esc(e.status)}</span>`:''}</div>
@@ -3920,6 +3921,97 @@ function exportEquipCsv(){
   const rows=[['区分','設備ID','設備名称','設置場所','メーカー','型式','製造番号','設置年月','点検周期','日付','種類','内容','業者・対応者','費用','備考','階層','種別','重要度','状態','耐用年数','更新予定','更新費用','仕様']];
   (S.equipment||[]).forEach(e=>{rows.push(['設備',e.code,e.name,e.place,e.maker,e.model,e.serial,e.installed,e.cycle,'','','','','',e.note,locPath(e.locId),e.kind,e.importance,e.status,e.life,e.renewYear,e.renewCost,Object.entries(e.spec||{}).map(([k,v])=>k+':'+v).join(' / ')]);(e.repairs||[]).slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(r=>rows.push(['履歴',e.code,e.name,e.place,'','','','','',r.date,r.kind,r.content,r.vendor,r.cost,'']))});
   download(`設備台帳_${TODAY}.csv`,csvBlob(rows));
+}
+/* ---------- 設備台帳 CSV の読み戻し（exportEquipCsv の列をそのまま読む。読む前に件数を見せて確認） ---------- */
+function parseCsv(t){
+  t=String(t||'').replace(/^﻿/,'');const rows=[];let r=[],c='',q=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];
+    if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}
+    else if(ch==='"')q=true;
+    else if(ch===','){r.push(c);c=''}
+    else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';rows.push(r);r=[]}
+    else c+=ch}
+  if(c!==''||r.length){r.push(c);rows.push(r)}
+  return rows.filter(x=>x.some(v=>String(v).trim()!==''));
+}
+function planEquipCsv(text){
+  const rows=parseCsv(text),H=(rows[0]||[]).map(x=>String(x).trim()),ix=n=>H.indexOf(n);
+  if(ix('区分')<0||ix('設備名称')<0)return {fatal:'設備台帳のCSVではありません（見出しの「区分」「設備名称」が見つかりません）。「CSV：設備台帳・修理履歴」で書き出したファイルを選んでください。'};
+  const v=(r,n)=>{const k=ix(n);return k<0?'':String(r[k]==null?'':r[k]).trim()};
+  const cur=S.equipment||[],byCode=new Map(),skip=[],eqs=[],reps=[];
+  cur.forEach(e=>{if(e.code)byCode.set(normCode(e.code),e)});
+  const seen=new Set(),locMap=new Map();(S.locs||[]).forEach(l=>locMap.set(locPath(l.id),l.id));
+  rows.slice(1).forEach((r,i)=>{const ln=i+2,kb=v(r,'区分');
+    if(r.length<H.length-8&&r.length<6){skip.push(`${ln}行目：列が足りません`);return}
+    if(kb==='設備'){
+      const name=txt(v(r,'設備名称'),60),code=txt(v(r,'設備ID'),30);
+      if(!name){skip.push(`${ln}行目：設備名称がありません`);return}
+      const ym=v(r,'設置年月');
+      if(ym&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(ym)){skip.push(`${ln}行目：設置年月が正しくありません（${ym}）`);return}
+      if(code){const k=normCode(code);if(seen.has(k)){skip.push(`${ln}行目：設備ID「${code}」がファイル内で重複しています`);return}seen.add(k)}
+      const spec={};v(r,'仕様').split(' / ').forEach(p=>{const m=p.match(/^([^:]+):(.*)$/);if(m&&m[1].trim()&&m[2].trim())spec[txt(m[1].trim(),40)]=txt(m[2].trim(),100)});
+      const o={code,name,place:txt(v(r,'設置場所'),60),maker:txt(v(r,'メーカー'),60),model:txt(v(r,'型式'),60),serial:txt(v(r,'製造番号'),60),installed:ym,cycle:txt(v(r,'点検周期'),60),note:txt(v(r,'備考'),1000)};
+      const kind=v(r,'種別'),imp=v(r,'重要度'),st=v(r,'状態');
+      if(EQ_KINDS.includes(kind))o.kind=kind;
+      if(IMPORTANCE.includes(imp)&&imp)o.importance=imp;
+      if(EQ_STATUS.includes(st))o.status=st;
+      for(const [f,h] of [['life','耐用年数'],['renewYear','更新予定'],['renewCost','更新費用']]){const n=num16(v(r,h));if(n!=='')o[f]=n}
+      if(Object.keys(spec).length)o.spec=spec;
+      const lp=v(r,'階層');if(lp&&locMap.has(lp))o.locId=locMap.get(lp);
+      const ex=code?byCode.get(normCode(code)):null;
+      eqs.push({o,ex,ln});
+    }else if(kb==='履歴'){
+      const code=v(r,'設備ID'),date=v(r,'日付'),content=txt(v(r,'内容'),2000);
+      if(!isDate(date)||!content){skip.push(`${ln}行目：履歴の日付か内容が正しくありません`);return}
+      const cost=v(r,'費用');if(cost!==''&&!(Number(cost)>=0)){skip.push(`${ln}行目：履歴の費用が正しくありません`);return}
+      const kind=v(r,'種類');
+      reps.push({code,name:v(r,'設備名称'),o:{date,kind:REPAIR_KINDS.includes(kind)?kind:'その他',content,vendor:txt(v(r,'業者・対応者'),60),cost:cost===''?'':Number(cost),photos:[]},ln});
+    }else skip.push(`${ln}行目：区分が「設備」「履歴」ではありません`);
+  });
+  return {eqs,reps,skip,total:rows.length-1};
+}
+let PENDING_EQCSV=null;
+function importEquipCsv(inp){
+  const f=inp.files[0];inp.value='';if(!f)return;
+  if(f.size>20*1024*1024){msgModal('読み込めません','ファイルが大きすぎます（20MB超）。');return}
+  const rd=new FileReader();
+  rd.onerror=()=>msgModal('読み込めません','ファイルを読めませんでした。');
+  rd.onload=()=>{
+    let t=String(rd.result||'');
+    const P=planEquipCsv(t);
+    if(P.fatal){msgModal('読み込めません',esc(P.fatal));return}
+    if(!P.eqs.length&&!P.reps.length){msgModal('読み込めません',`取り込める行がありません。${P.skip.length?'<br>'+P.skip.slice(0,5).map(esc).join('<br>'):''}`);return}
+    PENDING_EQCSV=P;
+    const nNew=P.eqs.filter(x=>!x.ex).length,nUp=P.eqs.length-nNew;
+    openModal(`<h3>設備台帳CSVの読み込み</h3>
+      <div class="al info">設備 <b>${P.eqs.length}件</b>（新規 ${nNew}件・同じIDの上書き ${nUp}件）／修理履歴 <b>${P.reps.length}件</b>。今の台帳は ${(S.equipment||[]).length}台です。</div>
+      <div class="muted" style="font-size:12px">上書きは、CSVに書いてある項目だけを入れ替えます（空欄の列は今の内容を残します。写真・資料・健全度なども残ります）。読み込んだ後に「元に戻す」で戻せます。</div>
+      ${P.skip.length?`<div class="al warn">読み飛ばす行：${P.skip.length}件<br>${P.skip.slice(0,8).map(esc).join('<br>')}${P.skip.length>8?'<br>ほか'+(P.skip.length-8)+'件':''}</div>`:''}
+      ${modalFoot('<button class="btn sec" onclick="PENDING_EQCSV=null;closeModal(true)">やめる</button><button class="btn" onclick="applyEquipCsv()">読み込む</button>')}`);
+  };
+  rd.readAsText(f,'UTF-8');
+}
+async function applyEquipCsv(){
+  const P=PENDING_EQCSV;if(!P)return;PENDING_EQCSV=null;
+  if(!await safeSnap('設備台帳CSVを読み込む前')){closeModal(true);msgModal('読み込みを中止しました','今のデータを退避できなかったため、読み込みませんでした。データは変わっていません。');return}
+  const prev=JSON.parse(JSON.stringify(S.equipment||[]));
+  S.equipment=S.equipment||[];
+  const byCode=new Map();S.equipment.forEach(e=>{if(e.code)byCode.set(normCode(e.code),e)});
+  let nNew=0,nUp=0,nRep=0,dupRep=0,lost=0;
+  P.eqs.forEach(({o,ex})=>{
+    if(ex){Object.keys(o).forEach(k=>{if(o[k]!==''&&o[k]!=null)ex[k]=o[k]});nUp++}
+    else{const n={id:uid(),...o,repairs:[],health:[]};S.equipment.push(n);if(n.code)byCode.set(normCode(n.code),n);nNew++}
+  });
+  P.reps.forEach(({code,name,o})=>{
+    const e=code?byCode.get(normCode(code)):S.equipment.filter(x=>x.name===name).length===1?S.equipment.find(x=>x.name===name):null;
+    if(!e){lost++;return}
+    e.repairs=e.repairs||[];
+    if(e.repairs.some(r=>r.date===o.date&&r.kind===o.kind&&r.content===o.content)){dupRep++;return}
+    e.repairs.push({id:uid(),...o});nRep++;
+  });
+  opLog('設備台帳CSVの読み込み',`新規${nNew}・上書き${nUp}・履歴${nRep}件`);
+  save();closeModal(true);render();
+  undoBar(`設備台帳を読み込みました（新規${nNew}・上書き${nUp}・履歴${nRep}${dupRep?`・同じ履歴${dupRep}件は飛ばし`:''}${lost?`・設備が見つからない履歴${lost}件は飛ばし`:''}）`,()=>{S.equipment=prev},'設備台帳CSVの読み込み');
 }
 function exportCsv(){
   const H=['日付','開始','区分','分類','作業内容','設備・場所','担当','立会','状態','結果','備考'],q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
