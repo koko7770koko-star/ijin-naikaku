@@ -2196,6 +2196,7 @@ function monthPrintHTML(y,m){
   return `<div class="card mprint"><h2>${y}年${m}月 点検予定表</h2><div class="muted">◯＝予定　●＝実施済み　（完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件）</div>
     <table class="mpt"><thead><tr>${[...WD].map((w,i)=>`<th class="${i===0?'sun':i===6?'sat':''}">${w}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+function pickDay(s){V.sel=s;render();const e=document.getElementById('dayCard');if(e&&e.scrollIntoView)e.scrollIntoView({block:'center'})}
 function vMonth(){
   const {y,m}=V,first=new Date(y,m-1,1),start=new Date(y,m-1,1-first.getDay()),st=S.settings;
   let h=mnav(`${y}年 ${m}月`,"shiftYM('y','m',-1)","shiftYM('y','m',1)");
@@ -2212,7 +2213,7 @@ function vMonth(){
     if(o&&st.calDay)crew+=o.D.map(n=>`<span class="w d">${esc(sn(n))}</span>`).join('');
     if(o&&o.lack&&st.showCrew!==false)crew+=`<span class="w ng">${esc(o.lack)}</span>`;
     if(crew)crew=`<div class="wc">${crew}</div>`;
-    h+=`<div class="d ${d.getMonth()!==m-1?'o':''} ${s===TODAY?'today':''} ${s===V.sel?'sel':''}" onclick="V.sel='${s}';render()">
+    h+=`<div class="d ${d.getMonth()!==m-1?'o':''} ${s===TODAY?'today':''} ${s===V.sel?'sel':''}" onclick="pickDay('${s}')">
       <div class="n ${wd===0?'sun':wd===6?'sat':''}">${d.getDate()}${cf?' <span style="color:var(--ng)">⚠</span>':''}</div>
       ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件 ${ts.filter(t=>t.status==='完了').length}/${ts.length}</div>`:''}${crew}</div>`;
   }
@@ -2220,7 +2221,7 @@ function vMonth(){
     <div class="row" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div>
     <button class="btn sm sec wide" style="margin-top:8px" onclick="window.print()">🖨 この月の予定表を印刷（A4 縦）</button></div>${monthPrintHTML(y,m)}`;
   const dayT=S.tasks.filter(t=>t.date===V.sel).sort(byDate);
-  h+=`<div class="card noprint"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):'<div class="empty">予定はありません</div>'}</div>`;
+  h+=`<div class="card noprint" id="dayCard"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):'<div class="empty">予定はありません</div>'}</div>`;
   const mt=tasksOf(y,m);
   h+=`<div class="card noprint"><div class="hd-row"><h2>${m}月の一覧</h2><span class="muted">完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件</span></div>${mt.length?mt.map(taskRow).join(''):'<div class="empty">この月の予定はまだありません</div>'}</div>`;
   return h;
