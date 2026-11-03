@@ -2600,7 +2600,7 @@ function vDay(){
   const dFl=V.dayLoc&&locById(V.dayLoc)?V.dayLoc:'',dSet=dFl?locDesc(dFl):null,dLoc=d=>{const e=d.equip&&eqById(d.equip);return e&&e.locId||''};
   const dOk=d=>!dSet||dSet.has(dLoc(d)),dHas=[...numDefs(),...chkDefs()].some(d=>dLoc(d)),nums=numDefs().filter(dOk),dHide=numDefs().length+chkDefs().length-nums.length-chkDefs().filter(dOk).length;
   window._sh=n=>{V.day=addD(V.day,n);render()};
-  let h=mnav(`${mdw(s)}${s===TODAY?' 今日':''}`,'_sh(-1)','_sh(1)');
+  let h=(NAV_STACK.length>=2&&NAV_STACK[NAV_STACK.length-2]==='hist'?'<button type="button" class="btn sec noprint" id="dayBackHist" style="min-height:44px;margin-bottom:8px" onclick="goBack(\'hist\')">‹ 点検履歴にもどる（絞り込みはそのまま）</button>':'')+mnav(`${mdw(s)}${s===TODAY?' 今日':''}`,'_sh(-1)','_sh(1)');
   if(s!==TODAY)h+=`<div class="al warn noprint" style="cursor:default;display:flex;gap:8px;align-items:center;flex-wrap:wrap" id="dayNotToday"><span class="grow"><b>${md(s)}（${'日月火水木金土'[new Date(s+'T00:00:00').getDay()]}）の記録を入力中</b><br>今日（${md(TODAY)}）ではありません。</span><button class="btn sm" style="min-height:44px" onclick="V.day=TODAY;render()">今日に戻る</button></div>`;
   h+=`<div class="row noprint" style="margin:-4px 0 10px;flex-wrap:nowrap">${[[-1,'昨日'],[0,'今日'],[1,'明日']].map(([n,l])=>`<button class="btn ${addD(TODAY,n)===s?'':'sec'} sm grow" onclick="V.day=addD(TODAY,${n});render()">${l}</button>`).join('')}<button class="btn sec sm grow" onclick="go('dailyRep')">📄 日報</button></div>`;
   h+=`<div class="quick">
