@@ -4385,7 +4385,7 @@ function locOptions(cur,allowEmpty=true,exclude){
   const kids=p=>locKids(p);
   const opt=(l,pa,sel)=>`<option value="${l.id}" ${sel&&l.id===cur?'selected':''}>${esc(pa.join(' › '))}（${esc(LOC_SHOW(l.type))}）</option>`;
   const pathOf=l=>{const pa=[];let x=l,n=0;while(x&&n++<20){pa.unshift(x.name);x=(S.locs||[]).find(y=>y.id===x.parent)}return pa};
-  const roots=kids(''),groups=[],walk=(p,path,out)=>kids(p).forEach(l=>{if(l.id===exclude)return;const pa=[...path,l.name];out.push(opt(l,pa,true));walk(l.id,pa,out)});
+  const roots=kids(''),groups=[],seenW=new Set(),walk=(p,path,out)=>kids(p).forEach(l=>{if(l.id===exclude||seenW.has(l.id))return;seenW.add(l.id);const pa=[...path,l.name];out.push(opt(l,pa,true));walk(l.id,pa,out)});
   // 施設が1つだけで、その下に棟が2つ以上あるときは、施設の行の下に棟ごとの見出しで分ける（場所が多くても探しやすく）
   const fac1=roots.length===1&&roots[0].type==='施設'&&kids(roots[0].id).filter(l=>l.type==='建屋').length>1?roots[0]:null;
   const single=roots.length<=1&&!fac1;
@@ -4425,7 +4425,11 @@ const LOC_CHILD={'施設':'建屋','建屋':'階','階':'電気室','電気室':
 const LOC_EX={'施設':'例：○○総合病院','建屋':'例：A棟','階':'例：3階','電気室':'例：第1電気室','盤':'例：動力盤-1'};
 function locCmp(a,b){const oa=Number.isFinite(a.ord),ob=Number.isFinite(b.ord);if(oa&&ob&&a.ord!==b.ord)return a.ord-b.ord;if(oa!==ob)return oa?-1:1;
   return LOC_TYPES.indexOf(a.type)-LOC_TYPES.indexOf(b.type)||(a.type==='階'&&b.type==='階'?floorKey(a.name)-floorKey(b.name):0)||a.name.localeCompare(b.name,'ja',{numeric:true})}
-const locKids=p=>(S.locs||[]).filter(l=>(l.parent||'')===(p||'')).sort(locCmp);
+/* 一番上の段：親が無い物に加えて、親が見つからない物・輪になって（A の親が B、B の親が A）どこからもたどれない物も一番上に出す（消えて見えないようにする。記録は変えない）。id の無い物は出さない */
+function locTop(){const L=(S.locs||[]).filter(l=>l&&l.id),ids=new Set(L.map(l=>l.id)),top=L.filter(l=>!l.parent||!ids.has(l.parent)||l.parent===l.id),seen=new Set();
+  const mark=id=>{const st=[id];while(st.length){const x=st.pop();if(seen.has(x))continue;seen.add(x);L.forEach(c=>{if(c.parent===x&&c.id!==x)st.push(c.id)})}};
+  top.forEach(t=>mark(t.id));L.forEach(l=>{if(!seen.has(l.id)){top.push(l);mark(l.id)}});return top.sort(locCmp)}
+const locKids=p=>p?(S.locs||[]).filter(l=>l&&l.id&&l.id!==p&&l.parent===p).sort(locCmp):locTop();
 function locNewOrd(p){const s=locKids(p).filter(l=>Number.isFinite(l.ord));return s.length?Math.max(...s.map(l=>l.ord))+1:undefined}
 function locMk(type,name,parent,floor){const l={id:uid(),type,parent:parent||'',name:txt(name,60).trim(),note:'',pos:{floor:txt(floor||'',20),x:'',y:'',z:''}},o=locNewOrd(parent);if(o!==undefined)l.ord=o;return l}
 const locFac1=()=>{const f=(S.locs||[]).filter(l=>l.type==='施設');return f.length===1&&!f[0].parent?f[0]:null};
@@ -4433,7 +4437,7 @@ function locCountTxt(id){const c={};locKids(id).forEach(k=>{const t=LOC_SHOW(k.t
 function vLocs(){
   const L=S.locs||[],E=S.equipment||[],sortM=!!V.locSortM;
   const eqAt=id=>E.filter(e=>e.locId===id),manyLocs=L.length>40,fac=locFac1(),top=fac?fac.id:'';
-  const node=(l,d,sib,i)=>{const ch=locKids(l.id),eq=eqAt(l.id),all=E.filter(e=>locDesc(l.id).has(e.locId)).length,open=V['lo_'+l.id]!==undefined?V['lo_'+l.id]!==false:(manyLocs?LOC_TYPES.indexOf(l.type)<LOC_TYPES.indexOf('建屋'):true); // 場所が多い（40件超）ときは、最初は棟までを出して階より下はたたむ。押した後はその状態を覚える
+  const seenN=new Set(),node=(l,d,sib,i)=>{if(seenN.has(l.id))return '';seenN.add(l.id);const ch=locKids(l.id),eq=eqAt(l.id),all=E.filter(e=>locDesc(l.id).has(e.locId)).length,open=V['lo_'+l.id]!==undefined?V['lo_'+l.id]!==false:(manyLocs?LOC_TYPES.indexOf(l.type)<LOC_TYPES.indexOf('建屋'):true); // 場所が多い（40件超）ときは、最初は棟までを出して階より下はたたむ。押した後はその状態を覚える
     const cc=locCountTxt(l.id),nx=LOC_CHILD[l.type];
     const btns=sortM?`<button class="btn sec sm" style="min-width:44px" aria-label="${esc(l.name)}を上へ" ${i===0?'disabled':''} onclick="locShift('${l.id}',-1)">↑</button><button class="btn sec sm" style="min-width:44px" aria-label="${esc(l.name)}を下へ" ${i===sib-1?'disabled':''} onclick="locShift('${l.id}',1)">↓</button>`
       :`${nx?`<button class="btn sec sm" style="white-space:nowrap" onclick="locAdd('${l.id}')" aria-label="${esc(l.name)}に${LOC_SHOW(nx)}を足す">＋${LOC_SHOW(nx)}</button>`:''}<button class="btn sec sm" style="min-width:44px" onclick="locMenu('${l.id}')" aria-label="${esc(l.name)}の操作">⋯</button>`;
