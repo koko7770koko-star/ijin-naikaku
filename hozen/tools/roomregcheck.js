@@ -10,13 +10,15 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
  const ready=()=>p.waitForFunction(()=>typeof S==='object'&&S&&Array.isArray(S.locs)&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});
  const shot=async n=>{if(OUT){fs.mkdirSync(OUT,{recursive:true});await p.screenshot({path:path.join(OUT,n+'.png')})}};
+ // 窓（#mask）が閉じきるまで待つ：閉じる前に下の画面のボタンを押すと、並べて走らせたとき #mask に当たって落ちていた（hz-tool-flaky5）
+ const closed=()=>p.waitForFunction(()=>!document.querySelector('#mask').classList.contains('on'),null,{timeout:8000});
  const wide=async w=>{const x=await p.evaluate(()=>document.documentElement.scrollWidth);if(x>392)bad.push(w+'：横にはみ出す '+x)};
  await p.goto('file://'+FILE);await ready();
  await p.evaluate(k=>{localStorage.clear();localStorage.setItem(k,JSON.stringify({settings:{name:'確認'}}))},KEY);await p.reload();await ready();
  await p.evaluate(()=>go('locs'));await p.waitForTimeout(200);
  if((await p.evaluate(()=>S.locs.length))!==0)bad.push('空から始まらない（初期値で場所が入っている）');
  await shot('room0-empty');
- const add=async(btn,name,cont)=>{await p.click(btn);await p.waitForSelector('#la_name');
+ const add=async(btn,name,cont)=>{await closed();await p.click(btn);await p.waitForSelector('#la_name');
    const ph=await p.getAttribute('#la_name','placeholder');if(!/^例：/.test(ph||''))bad.push('入力欄の例が「例：」の形でない '+ph);
    if(await p.inputValue('#la_name'))bad.push('名前に初期値が入っている');
    for(const n of name){await p.fill('#la_name',n);await p.click(cont&&n!==name[name.length-1]?'#modal button:has-text("足して続ける")':'#modal button:text-is("足す")');await p.waitForTimeout(120)}};
@@ -34,22 +36,23 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  const h=await p.evaluate(()=>Math.min(...[...document.querySelectorAll('.locn .btn')].map(x=>x.getBoundingClientRect().height)));if(h<44)bad.push('ボタンが小さい '+h);
  await wide('登録後');await shot('room1-tree');
  // 盤を数でまとめて足す（名前の頭は使う人が入れる）
- await p.click('[aria-label="第2電気室に盤を足す"]');await p.waitForSelector('#la_name');await p.evaluate(()=>document.querySelector('#modal details').open=true);
+ await closed();await p.click('[aria-label="第2電気室に盤を足す"]');await p.waitForSelector('#la_name');await p.evaluate(()=>document.querySelector('#modal details').open=true);
  if(await p.inputValue('#la_pre'))bad.push('盤の名前の頭に初期値がある');
- await p.fill('#la_pre','分電盤-');await p.fill('#la_n','3');await shot('room2-bulk');await p.click('#modal button:has-text("まとめて足す")');await p.waitForTimeout(150);
+ for(let k=0;k<8;k++){await p.fill('#la_pre','分電盤-');await p.fill('#la_n','3');if(await p.evaluate(()=>document.querySelector('#la_pre').value==='分電盤-'&&document.querySelector('#la_n').value==='3'))break;await p.waitForTimeout(150)}
+ await shot('room2-bulk');await p.click('#modal button:has-text("まとめて足す")');await p.waitForTimeout(150);
  const r2=await p.evaluate(()=>{const r=S.locs.find(l=>l.name==='第2電気室');return S.locs.filter(l=>l.parent===r.id).map(l=>l.type+l.name).join()});
  if(r2!=='盤分電盤-1,盤分電盤-2,盤分電盤-3')bad.push('盤のまとめて足すが違う '+r2);
  // 階を範囲で
- await p.click('[aria-label="A棟に階を足す"]');await p.waitForSelector('#la_dn',{state:'attached'});await p.evaluate(()=>document.querySelector('#modal details').open=true);
+ await closed();await p.click('[aria-label="A棟に階を足す"]');await p.waitForSelector('#la_dn',{state:'attached'});await p.evaluate(()=>document.querySelector('#modal details').open=true);
  for(let k=0;k<8;k++){await p.fill('#la_dn','1');await p.fill('#la_up','3');if(await p.evaluate(()=>document.querySelector('#la_dn').value==='1'&&document.querySelector('#la_up').value==='3'))break;await p.waitForTimeout(150)}await p.click('#modal button:has-text("範囲の階を足す")');await p.waitForFunction(()=>S.locs.some(l=>l.name==='3階'),null,{timeout:3000}).catch(()=>{});
  const fl=await p.evaluate(()=>{const a=S.locs.find(l=>l.name==='A棟');return locKids(a.id).map(l=>l.name).join()});
  if(fl!=='地下1階,1階,2階,3階')bad.push('階の範囲・並びが違う '+fl);
  // 名前を変える（⋯ から）
  const b1=await id('動力盤-1');
- await p.click('[aria-label="動力盤-1の操作"]');await p.waitForSelector('#lm_name');await shot('room3-menu');await p.fill('#lm_name','動力盤-1A');await p.click('#modal button:has-text("名前を保存")');await p.waitForTimeout(150);
+ await closed();await p.click('[aria-label="動力盤-1の操作"]');await p.waitForSelector('#lm_name');await shot('room3-menu');await p.fill('#lm_name','動力盤-1A');await p.click('#modal button:has-text("名前を保存")');await p.waitForTimeout(150);
  if(await p.evaluate(i=>locById(i).name,b1)!=='動力盤-1A')bad.push('名前を変えられない');
  // 並べ替え：電灯盤-1 を一番上へ（↑2回）。ほかの段には ord を振らない
- await p.click('button:has-text("並べ替え")');await p.waitForTimeout(100);
+ await closed();await p.click('button:has-text("並べ替え")');await p.waitForTimeout(100);
  const ord=()=>p.evaluate(()=>{const r=S.locs.find(l=>l.name==='第1電気室');return locKids(r.id).map(l=>l.name).join()});
  const o0=(await ord()).split(','),last=o0[2];
  await p.click(`[aria-label="${last}を上へ"]`);await p.waitForTimeout(100);await p.click(`[aria-label="${last}を上へ"]`);await p.waitForTimeout(100);
@@ -67,7 +70,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  const d=await p.evaluate(([i,r])=>({n:S.locs.length,b:!!locById(i),r:!!locById(r),rec:JSON.stringify(((S.banChk||{})['2026-11']||{})[i])}),[b1,r2id]);
  if(d.n!==n0-5||d.b||d.r)bad.push('中に物がある電気室をまとめて消せない '+JSON.stringify(d)+' n0='+n0);
  if(d.rec!=='["済","○",""]')bad.push('消すと点検の記録まで消えた '+d.rec);
- await p.click('#undobar button');await p.waitForTimeout(200);
+ await closed();await p.click('#undobar button');await p.waitForTimeout(200);
  if(await p.evaluate(()=>S.locs.length)!==n0)bad.push('元に戻せない');
  // 保存して読み直すと順番（ord）が残る
  const before=await ord();
