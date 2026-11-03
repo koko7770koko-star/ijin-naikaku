@@ -459,6 +459,10 @@ mark{background:#fff2a8;padding:0 1px}
 .pill{max-width:100%;white-space:normal;overflow-wrap:anywhere}
 #hd{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .rep td,.rep th{overflow-wrap:anywhere}
+/* 狭い列（No・分類・周期・状態・日付）を1字ずつ折り返さない（印刷・PDF の見た目） */
+.rep th,.rep td.c,.rep td.cat{overflow-wrap:break-word;word-break:keep-all}
+.rep td.cat{white-space:nowrap}
+.rep th{white-space:nowrap}
 .aisrc{white-space:pre-wrap;font-size:11px;max-height:30vh;overflow:auto;background:#f5f7fa;padding:6px;border-radius:6px}
 .modal h3{overflow-wrap:anywhere}
 .modal .meta,.modal .item,.modal label{overflow-wrap:anywhere;word-break:break-word}
@@ -3199,7 +3203,7 @@ function vMonthly(){
     <tr><th>日常点検</th><td class="c">${st.ddays} / ${st.last}</td><td class="c">${st.ddone}</td><td class="c ${st.ddays-st.ddone?'red':''}">${st.ddays-st.ddone}</td><td class="c ${st.dmiss?'red':''}">${st.dmiss}</td><td class="c ${st.dng?'red':''}">${st.dng}</td></tr></table>
     <table><tr><th>項目</th><th>最小</th><th>最大</th><th>平均</th><th>管理値</th><th>基準外</th></tr>${numDefs().map(n=>{const a=st.vals[n.id]||[];const ng=a.filter(v=>outOfRange(n,v)).length;return `<tr><td>${esc(n.name)}(${esc(n.unit)})</td><td class="c">${a.length?+Math.min(...a).toFixed(3):'-'}</td><td class="c">${a.length?+Math.max(...a).toFixed(3):'-'}</td><td class="c">${a.length?+(a.reduce((x,y)=>x+y,0)/a.length).toFixed(3):'-'}</td><td class="c">${[n.min!==''&&n.min!=null?n.min+'以上':'',n.max!==''&&n.max!=null?n.max+'以下':''].filter(Boolean).join('・')||'未設定'}</td><td class="c ${ng?'red':''}">${ng}</td></tr>`}).join('')}</table>
     <div class="sec">2. 年間計画（当月実施分）</div>
-    ${repTable('<th style="width:28px">No</th><th>分類</th><th>点検・作業項目</th><th>周期</th><th>委託/自主</th><th>状態</th>',plan.map((it,i)=>{const v=mk[it.id][ix];return `<tr><td class="c">${i+1}</td><td>${esc(it.cat)}</td><td>${esc(it.name)}</td><td class="c">${esc(it.cycle)}</td><td class="c">${esc(it.who)}</td><td class="c ${v==='済'?'grn':'red'}">${v==='済'?'● 完了':v==='延'?'延期':'◯ 未実施'}</td></tr>`}),'該当なし')}
+    ${repTable('<th style="width:28px">No</th><th>分類</th><th>点検・作業項目</th><th>周期</th><th>委託/自主</th><th>状態</th>',plan.map((it,i)=>{const v=mk[it.id][ix];return `<tr><td class="c">${i+1}</td><td class="cat">${esc(it.cat)}</td><td>${esc(it.name)}</td><td class="c">${esc(it.cycle)}</td><td class="c">${esc(it.who)}</td><td class="c ${v==='済'?'grn':'red'}">${v==='済'?'● 完了':v==='延'?'延期':'◯ 未実施'}</td></tr>`}),'該当なし')}
     <div class="sec">3. 作業実績一覧</div>
     ${repTable('<th style="width:28px">No</th><th style="width:44px">日付</th><th>作業内容</th><th>設備・場所</th><th>区分</th><th>担当</th><th>状態</th><th>結果</th>',ts.map((t,i)=>`<tr><td class="c">${i+1}</td><td class="c">${md(t.date)}</td><td>${esc(t.title)}</td><td>${esc(t.place)}</td><td class="c">${esc(t.kind)}</td><td class="c">${esc(t.staff)}</td><td class="c ${t.status==='予定'?'red':''}">${esc(t.status)}</td><td class="c ${isNG(t)?'red':''}">${esc(t.result)}</td></tr>`),'該当なし')}
     <div class="sec">4. 異常・指摘事項（当月）</div>
@@ -3234,7 +3238,7 @@ function vAnnual(){
     <tr><th>計</th><th>${T('tot')}</th><th>${T('done')}</th><th>${T('tot')?Math.round(T('done')/T('tot')*100)+'%':'-'}</th><th>${T('ng')}</th><th>${T('ddays')}</th><th>${T('dng')}</th><th>${Math.max(0,...rows.map(r=>r.kw||0))||'-'}</th><th>${Math.max(0,...rows.map(r=>r.t||0))||'-'}</th><th>${T('pd')}/${T('pt')}</th></tr></table>
     <div class="sec">2. 最大需要電力と完了率の推移</div>${chart}
     <div class="sec">3. 年間計画の実施状況</div>
-    ${repTable('<th>分類</th><th>点検・作業項目</th><th>周期</th><th>◯予定</th><th>●済</th><th>延期</th><th>未実施</th>',S.items.filter(it=>(mk[it.id]||[]).some(Boolean)).map(it=>{const r=mk[it.id],c=v=>r.filter(x=>x===v).length,un=r.map((v,i)=>v==='○'?MONTHS[i]+'月':'').filter(Boolean);return `<tr><td>${esc(it.cat)}</td><td>${esc(it.name)}</td><td class="c">${esc(it.cycle)}</td><td class="c">${r.filter(Boolean).length}</td><td class="c grn">${c('済')}</td><td class="c">${c('延')}</td><td class="${un.length?'red':''}">${un.join('・')}</td></tr>`}),'該当なし')}
+    ${repTable('<th>分類</th><th>点検・作業項目</th><th>周期</th><th>◯予定</th><th>●済</th><th>延期</th><th>未実施</th>',S.items.filter(it=>(mk[it.id]||[]).some(Boolean)).map(it=>{const r=mk[it.id],c=v=>r.filter(x=>x===v).length,un=r.map((v,i)=>v==='○'?MONTHS[i]+'月':'').filter(Boolean);return `<tr><td class="cat">${esc(it.cat)}</td><td>${esc(it.name)}</td><td class="c">${esc(it.cycle)}</td><td class="c">${r.filter(Boolean).length}</td><td class="c grn">${c('済')}</td><td class="c">${c('延')}</td><td class="${un.length?'red':''}">${un.join('・')}</td></tr>`}),'該当なし')}
     <div class="sec">4. 異常案件</div>
     <table><tr><th>発生</th><th>完了</th><th>未完了</th></tr><tr><td class="c">${fis.length}</td><td class="c">${fis.filter(i=>i.status==='完了').length}</td><td class="c ${fis.some(i=>i.status!=='完了')?'red':''}">${fis.filter(i=>i.status!=='完了').length}</td></tr></table>
     ${fis.length?repTable('<th style="width:44px">発生日</th><th>内容</th><th>状態</th><th>処置</th>',fis.map(i=>`<tr><td class="c">${md(i.date)}</td><td>${esc(i.title)}${i.place?'（'+esc(i.place)+'）':''}</td><td class="c ${i.status==='完了'?'grn':'red'}">${esc(i.status)}${i.closed?' '+md(i.closed):''}</td><td>${esc(i.action||'')}</td></tr>`),''):''}
