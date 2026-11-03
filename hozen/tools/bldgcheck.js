@@ -1,4 +1,4 @@
-// 棟と階：古い記録（施設・建屋・電気室・盤だけ）がそのまま開き、まとめて作る・重ねない・階で設備を絞れることを確かめる。
+// 棟と階：古い記録（施設・建屋・電気室・盤だけ）がそのまま開き、まとめて作る・重ねない・階で設備を絞れることを確かめる。初回の登録（棟→階の範囲→電気室→盤）を窓1回で足せること（hz-locs-first-setup）。
 // usage: node hozen/tools/bldgcheck.js
 const {chromium}=require('playwright');const path=require('path');
 const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1';
@@ -25,6 +25,16 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  if((await p.evaluate(()=>S.locs.length))!==n1)errs.push('2回目で重なった');
  const n2=await p.evaluate(()=>{bldgWizard();document.querySelector('#bw_names').value='C棟 D棟';document.querySelector('#bw_dn').value=1;document.querySelector('#bw_up').value=1;document.querySelector('#bw_fmt').value='階';applyBldgWizard();const c=S.locs.find(l=>l.name==='C棟');return {d:!!S.locs.find(l=>l.name==='D棟'),c:c?S.locs.filter(l=>l.parent===c.id).map(l=>l.name).sort().join():''}});
  if(!n2.d||n2.c!=='1階,地下1階')errs.push('空白区切りの棟・「1階」の書き方が違う '+JSON.stringify(n2));
+ // 初回の登録を窓1回で（hz-locs-first-setup）：2棟 × 3階 × 電気室1 × 盤2 → 木に出て、盤の点検に 12 面が並ぶ。もう一度押しても重ならない
+ const one=async()=>{await p.evaluate(()=>{bldgWizard();document.querySelector('#bw_more').open=true;const f=(id,v)=>{const e=document.querySelector(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))};
+   f('#bw_names','E棟 F棟');f('#bw_dn','0');f('#bw_up','3');document.querySelector('#bw_fmt').value='階';f('#bw_room','第1電気室');f('#bw_bpre','動力盤-');f('#bw_bn','2')});
+   const sum=await p.evaluate(()=>document.querySelector('#bw_sum').textContent);await p.evaluate(()=>applyBldgWizard());await p.waitForTimeout(200);return sum};
+ const sum=await one();if(!/棟 2・階 6・電気室 6・盤 12/.test(sum))errs.push('足す数の目安が違う '+sum);
+ const g=await p.evaluate(()=>{const E=S.locs.filter(l=>['E棟','F棟'].includes(l.name));return {b:E.length,f:S.locs.filter(l=>l.type==='階'&&E.some(e=>e.id===l.parent)).length,r:E.reduce((n,e)=>n+banBoards(e.id).length,0),
+   rooms:S.locs.filter(l=>l.type==='電気室'&&l.name==='第1電気室'&&E.some(e=>locDesc(e.id).has(l.id))).length,names:banBoards(E[0].id).map(x=>x.name).join()}});
+ if(g.b!==2||g.f!==6||g.r!==12||g.rooms!==6||g.names!=='動力盤-1,動力盤-2,動力盤-1,動力盤-2,動力盤-1,動力盤-2')errs.push('窓1回の登録が違う '+JSON.stringify(g));
+ const n1b=await p.evaluate(()=>S.locs.length);await one();if(await p.evaluate(()=>S.locs.length)!==n1b)errs.push('2回目で重なった（電気室・盤）');
+ const banN=await p.evaluate(()=>{V.banB=S.locs.find(l=>l.name==='E棟').id;go('ban');return document.querySelectorAll('.banrow:not(.bh)').length});if(banN!==6)errs.push('盤の点検に E棟の 6面が並ばない '+banN);
  await p.evaluate(()=>{V.eqLoc='l2';go('equip')});await p.waitForTimeout(300);
  if(!(await p.evaluate(()=>document.body.textContent.includes('確認設備'))))errs.push('A棟で絞り込むと階の設備が出ない');
  await p.evaluate(()=>{V.eqLoc=S.locs.find(l=>l.name==='B棟').id;render()});await p.waitForTimeout(200);
