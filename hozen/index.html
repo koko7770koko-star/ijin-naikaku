@@ -4538,15 +4538,37 @@ function applyBldgWizard(){
 const BAN_ITEMS=['盤内 発熱','端子および碍子','その他異常'];
 const banShow=v=>({'○':'◯','済':'●','延':'延'})[v]||'';
 function floorKey(n){n=String(n||'').normalize('NFKC');const m=/^(?:B|地下)(\d+)/i.exec(n);if(m)return -(+m[1]);const k=/^(\d+)/.exec(n);return k?+k[1]:1000}
-function banBoards(rootId){const ids=locDesc(rootId);return (S.locs||[]).filter(l=>l.type==='盤'&&ids.has(l.id)).sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}))}
+/* 盤は場所の木の順（棟 → 階 → 電気室 → 盤。並べ替えた順 ord があればそれ、無ければ名前の順） */
+function banBoards(rootId){const o=[],seen=new Set(),walk=p=>locKids(p).forEach(l=>{if(seen.has(l.id))return;seen.add(l.id);if(l.type==='盤')o.push(l);walk(l.id)});walk(rootId);return o}
 function banVal(ym,id,k){const r=((S.banChk||{})[ym]||{})[id];return r&&r[k]||''}
 function banCount(ym,boards){let d=0;boards.forEach(b=>{for(let k=0;k<3;k++)if(banVal(ym,b.id,k)==='済')d++});return {d,t:boards.length*3}}
 const banDone=(ym,b)=>[0,1,2].every(k=>banVal(ym,b.id,k)==='済');
 const banPend=(ym,b)=>[0,1,2].some(k=>{const v=banVal(ym,b.id,k);return v!=='済'&&v!=='延'});
-function banOrder(bid){const fl=(S.locs||[]).filter(l=>l.type==='階'&&l.parent===bid).sort((a,b)=>floorKey(b.name)-floorKey(a.name)||a.name.localeCompare(b.name,'ja')),seen=new Set(),o=[];fl.forEach(f=>banBoards(f.id).forEach(b=>{if(!seen.has(b.id)){seen.add(b.id);o.push(b)}}));banBoards(bid).forEach(b=>{if(!seen.has(b.id)){seen.add(b.id);o.push(b)}});return o}
+/* 棟の一覧（タブ）。棟の下に無い盤（電気室だけ・施設→電気室 など）は「棟なし」（id '_'）にまとめる */
+const BAN_NOB='_';
+function banBldgs(){const B=(S.locs||[]).filter(l=>l.type==='建屋').sort(locCmp),inB=new Set();
+  B.forEach(b=>banBoards(b.id).forEach(x=>inB.add(x.id)));
+  const out=B.map(b=>({id:b.id,name:b.name}));if((S.locs||[]).some(l=>l.type==='盤'&&!inB.has(l.id)))out.push({id:BAN_NOB,name:'棟なし'});return out}
+const banBoardsOf=bid=>{if(bid!==BAN_NOB)return banBoards(bid);const inB=new Set();(S.locs||[]).filter(l=>l.type==='建屋').forEach(b=>banBoards(b.id).forEach(x=>inB.add(x.id)));return banBoards('').filter(x=>!inB.has(x.id))};
+/* 棟の中の分け方：[{fl:階 or null, direct:[盤], rooms:[{r:電気室, bs:[盤]}]}]。階が無い古い形（棟→電気室→盤）は fl:null の段に電気室を並べ、
+   電気室が無い形（棟→階→盤）は direct に盤を並べる。どの盤も1回だけ出る */
+function banSections(bid){
+  const all=banBoardsOf(bid),shown=new Set(),secs=[];
+  const roomOf=r=>{const bs=banBoards(r.id).filter(x=>!shown.has(x.id));bs.forEach(x=>shown.add(x.id));return {r,bs}};
+  if(bid!==BAN_NOB){
+    const ks=locKids(bid),fl=ks.filter(l=>l.type==='階');
+    fl.forEach(f=>{const rooms=locKids(f.id).filter(l=>l.type==='電気室').map(roomOf);const direct=banBoards(f.id).filter(x=>!shown.has(x.id));direct.forEach(x=>shown.add(x.id));secs.push({fl:f,direct,rooms})});
+    const rooms=ks.filter(l=>l.type==='電気室').map(roomOf);if(rooms.length)secs.push({fl:null,direct:[],rooms});
+  }else{
+    const rooms=(S.locs||[]).filter(l=>l.type==='電気室').sort(locCmp).map(r=>({r,bs:banBoards(r.id).filter(x=>all.some(a=>a.id===x.id)&&!shown.has(x.id))})).filter(x=>x.bs.length);rooms.forEach(x=>x.bs.forEach(b=>shown.add(b.id)));if(rooms.length)secs.push({fl:null,direct:[],rooms});
+  }
+  const rest=all.filter(x=>!shown.has(x.id));if(rest.length)secs.push({fl:null,direct:rest,rooms:[],rest:true});
+  return secs;
+}
+function banOrder(bid){const o=[];banSections(bid).forEach(s=>{o.push(...s.direct);s.rooms.forEach(r=>o.push(...r.bs))});return o}
 /* 次の未点検の盤へ：この棟の上から順に、全部 ● ではない盤へ。この棟が終わっていれば次の棟へ移る。画面の動きだけで、保存は変えない */
 function banNext(){
-  const ym=V.banYm||TODAY.slice(0,7),B=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}));if(!B.length)return;
+  const ym=V.banYm||TODAY.slice(0,7),B=banBldgs();if(!B.length)return;
   const cur=Math.max(0,B.findIndex(x=>x.id===V.banB));
   for(let n=0;n<B.length;n++){const b=B[(cur+n)%B.length],t=banOrder(b.id).find(x=>banPend(ym,x));
     if(t){if(b.id!==V.banB){V.banB=b.id;render()}const el=document.getElementById('ban-'+t.id);if(el){el.scrollIntoView({block:'center',behavior:'smooth'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1800)}return}}
@@ -4555,32 +4577,43 @@ function banNext(){
 function banSet(ym,id,k,v){S.banChk=S.banChk||{};const m=S.banChk[ym]=S.banChk[ym]||{};const r=m[id]=m[id]||['','',''];r[k]=v}
 function banTap(id,k){const ym=V.banYm||TODAY.slice(0,7),cur=banVal(ym,id,k),nv=cur===''?'○':cur==='○'?'済':'';banSet(ym,id,k,nv);save();render();
   if(nv==='済'){const b=locById(id);undoBar(`「${b?b.name:'盤'}」の「${BAN_ITEMS[k]}」を ●（実施済み）にしました`,()=>{banSet(ym,id,k,cur)},'印')}}
-function banAll(rootId){const ym=V.banYm||TODAY.slice(0,7),bs=banBoards(rootId);if(!bs.length)return;
+/* 「この階を全部 ●」「この電気室を全部 ●」：押す前に件数を出して確かめる。延期（延）の印は上書きしない。元に戻せる */
+function banAllAsk(rootId){const ym=V.banYm||TODAY.slice(0,7),bs=banBoards(rootId),l=locById(rootId);if(!bs.length||!l)return;
+  let n=0;bs.forEach(b=>{for(let k=0;k<3;k++){const v=banVal(ym,b.id,k);if(v!=='済'&&v!=='延')n++}});
+  if(!n){toast('この'+LOC_SHOW(l.type)+'の盤は、すべて ● か延期です');return}
+  openModal(`<h3>この${esc(LOC_SHOW(l.type))}を全部 ●</h3><div style="margin:6px 0 4px"><b>${esc(locPath(rootId))}</b></div>
+    <div>盤 ${bs.length}面のうち、まだ ● でない <b>${n}項目</b>を ●（実施済み）にします。</div><div class="muted" style="font-size:12px;margin-top:4px">延期（延）の印はそのままです。押した後も「元に戻す」で取り消せます。</div>
+    ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">やめる</button><button class="btn" onclick="closeModal(true);banAll('${rootId}')">${n}項目を ● にする</button>`)}`)}
+function banAll(rootId){const ym=V.banYm||TODAY.slice(0,7),bs=banBoards(rootId),l=locById(rootId);if(!bs.length)return;
   const prev=bs.map(b=>[b.id,[0,1,2].map(k=>banVal(ym,b.id,k))]);
   bs.forEach(b=>{for(let k=0;k<3;k++)if(banVal(ym,b.id,k)!=='延')banSet(ym,b.id,k,'済')}); // 延期（延）の印は上書きしない
   save();render();
-  undoBar('この階の盤を全部 ● にしました（延期の印はそのまま）',()=>{prev.forEach(([id,a])=>a.forEach((v,k)=>banSet(ym,id,k,v)))})}
+  undoBar(`${l?l.name:'この階'}の盤を全部 ● にしました（延期の印はそのまま）`,()=>{prev.forEach(([id,a])=>a.forEach((v,k)=>banSet(ym,id,k,v)))})}
 function banIssue(id){const b=locById(id);if(!b)return;editIssue(null,{title:'盤の異常：'+b.name,place:locPath(id)})}
 function banMove(d){const ym=V.banYm||TODAY.slice(0,7);let y=+ym.slice(0,4),m=+ym.slice(5,7)+d;if(m<1){m=12;y--}if(m>12){m=1;y++}V.banYm=y+'-'+String(m).padStart(2,'0');render()}
 function vBan(){
-  const ym=V.banYm||TODAY.slice(0,7),B=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}));
+  const ym=V.banYm||TODAY.slice(0,7),B=banBldgs();
   const head=`<div class="card"><div class="hd-row"><button class="btn sec sm" aria-label="前の月" style="min-width:44px;min-height:44px" onclick="banMove(-1)">‹</button><h2 style="margin:0;text-align:center;flex:1">⚡ 盤の点検 ${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><button class="btn sec sm" aria-label="次の月" style="min-width:44px;min-height:44px" onclick="banMove(1)">›</button></div>
     <div class="muted" style="margin-top:6px">押すと 空 → ◯（予定）→ ●（実施済み）→ 空。異常があれば ⚠ でその場で記録できます。</div></div>`;
-  if(!B.length)return head+card('棟がありません',`<div class="muted" style="margin-bottom:8px">先に「棟と階」を作り、各階に盤を足します。</div><button class="btn wide" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button>`);
-  const bid=B.some(x=>x.id===V.banB)?V.banB:B[0].id,bl=locById(bid);
-  const allB=banBoards(bid),tot=banCount(ym,allB);
-  const tabs=`<div class="seg tabs" style="margin:8px 0;overflow-x:auto;white-space:nowrap">${B.map(b=>{const c=banCount(ym,banBoards(b.id));return `<button class="${b.id===bid?'on':''}" onclick="V.banB='${b.id}';render()">${esc(b.name)}<small style="display:block;font-weight:400">${c.t?c.d+'/'+c.t:'－'}</small></button>`}).join('')}</div>`;
-  const floors=(S.locs||[]).filter(l=>l.type==='階'&&l.parent===bid).sort((a,b)=>floorKey(b.name)-floorKey(a.name)||a.name.localeCompare(b.name,'ja'));
-  const inFloor=new Set();floors.forEach(f=>banBoards(f.id).forEach(b=>inFloor.add(b.id)));
-  const rest=allB.filter(b=>!inFloor.has(b.id));
-  const row=b=>`<div class="banrow" id="ban-${b.id}"><div class="bn">${esc(b.name)}</div>${[0,1,2].map(k=>{const v=banVal(ym,b.id,k);return `<button class="bm ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''}" aria-label="${esc(BAN_ITEMS[k])}" onclick="banTap('${b.id}',${k})">${banShow(v)||'&nbsp;'}</button>`}).join('')}<button class="bm bw" aria-label="異常を記録" onclick="banIssue('${b.id}')">⚠</button></div>`;
-  const grp=(title,bs,fid)=>{const c=banCount(ym,bs);return `<div class="card"><div class="hd-row"><h2 style="margin:0">${esc(title)} <span class="muted">${c.t?c.d+'/'+c.t+'（'+bs.filter(x=>banDone(ym,x)).length+'/'+bs.length+'面）':'盤なし'}</span></h2>${fid&&bs.length?`<button class="btn sec sm" onclick="banAll('${fid}')">全部 ●</button>`:''}</div>
-    ${bs.length?`<div class="banrow bh"><div class="bn"></div>${BAN_ITEMS.map(n=>`<div class="bi">${esc(n)}</div>`).join('')}<div class="bi"></div></div>${bs.map(row).join('')}`:`<div class="muted" style="margin-top:6px">この階にはまだ盤がありません。</div>`}</div>`};
+  if(!B.length)return head+card('盤がまだありません',`<div class="muted" style="margin-bottom:8px">「設備の場所」で 棟 → 階 → 電気室 → 盤 を登録すると、ここに盤が並びます（名前は自分で決めます）。</div><button class="btn wide" style="min-height:44px" onclick="go('locs')">🏢 場所を登録する</button><button class="btn sec wide" style="margin-top:6px;min-height:44px" onclick="bldgWizard()">🏗 棟と階をまとめて足す</button>`);
+  const bid=B.some(x=>x.id===V.banB)?V.banB:B[0].id,bl=B.find(x=>x.id===bid);
+  const allB=banBoardsOf(bid),tot=banCount(ym,allB),secs=banSections(bid),bpath=bid===BAN_NOB?'':locPath(bid);
+  const tabs=`<div class="seg tabs" style="margin:8px 0;overflow-x:auto;white-space:nowrap">${B.map(b=>{const c=banCount(ym,banBoardsOf(b.id));return `<button class="${b.id===bid?'on':''}" onclick="V.banB='${b.id}';render()">${esc(b.name)}<small style="display:block;font-weight:400">${c.t?c.d+'/'+c.t:'－'}</small></button>`}).join('')}</div>`;
+  const row=b=>`<div class="banrow" id="ban-${b.id}"><div class="bn">${esc(b.name)}</div>${[0,1,2].map(k=>{const v=banVal(ym,b.id,k);return `<button class="bm ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''}" aria-label="${esc(b.name)} ${esc(BAN_ITEMS[k])}" onclick="banTap('${b.id}',${k})">${banShow(v)||'&nbsp;'}</button>`}).join('')}<button class="bm bw" aria-label="${esc(b.name)}の異常を記録" onclick="banIssue('${b.id}')">⚠</button></div>`;
+  const hdr=`<div class="banrow bh"><div class="bn"></div>${BAN_ITEMS.map(n=>`<div class="bi">${esc(n)}</div>`).join('')}<div class="bi"></div></div>`;
+  const cnt=bs=>{const c=banCount(ym,bs);return c.t?c.d+'/'+c.t+'（'+bs.filter(x=>banDone(ym,x)).length+'/'+bs.length+'面）':'盤なし'};
+  const room=(r,bs,top)=>`<div class="banroom" data-room="${r.id}" style="${top?'':'border-top:1px solid var(--bd,#dde3ea);margin-top:10px;padding-top:8px'}"><div class="hd-row" style="flex-wrap:wrap;gap:4px"><h3 style="margin:0;font-size:16px;min-width:0;overflow-wrap:anywhere">🔌 ${esc(r.name)} <span class="muted" style="font-weight:400;font-size:13px">${cnt(bs)}</span></h3>${bs.length?`<button class="btn sec sm" style="min-height:44px;white-space:nowrap" onclick="banAllAsk('${r.id}')">この電気室を全部 ●</button>`:''}</div>
+    ${bs.length?hdr+bs.map(row).join(''):`<div class="row" style="margin-top:6px;align-items:center"><span class="muted grow">この電気室にはまだ盤がありません。</span><button class="btn sec sm" style="min-height:44px" onclick="locAdd('${r.id}','盤')">＋ 盤を足す</button></div>`}</div>`;
+  const sec=s=>{const bs=[...s.direct,...s.rooms.flatMap(x=>x.bs)],title=s.fl?(bpath?bpath+' › ':'')+s.fl.name:s.rest?(bpath?bpath+' › ':'')+'その他の盤':(bpath?bpath+' › ':'')+'階なし';
+    return `<div class="card banfl" ${s.fl?`data-floor="${s.fl.id}"`:''}><div class="hd-row" style="flex-wrap:wrap;gap:4px"><h2 style="margin:0;min-width:0;overflow-wrap:anywhere">${esc(title)} <span class="muted">${cnt(bs)}</span></h2>${s.fl&&bs.length?`<button class="btn sec sm" style="min-height:44px;white-space:nowrap" onclick="banAllAsk('${s.fl.id}')">この階を全部 ●</button>`:''}</div>
+      ${s.direct.length?`<div style="margin-top:6px">${hdr}${s.direct.map(row).join('')}</div>`:''}
+      ${s.rooms.map((x,i)=>room(x.r,x.bs,i===0&&!s.direct.length)).join('')}
+      ${s.fl&&!bs.length&&!s.rooms.length?`<div class="row" style="margin-top:6px;align-items:center"><span class="muted grow">この階にはまだ電気室・盤がありません。</span><button class="btn sec sm" style="min-height:44px" onclick="locAdd('${s.fl.id}','電気室')">＋ 電気室を足す</button></div>`:''}</div>`};
   return head+tabs+`<div class="card" style="padding:8px 12px"><div class="row" style="flex-wrap:nowrap"><span class="grow"><b>${esc(bl.name)}</b>：${tot.t?`${tot.d}/${tot.t} 実施済み（●）・${allB.filter(x=>banDone(ym,x)).length}/${allB.length}面が完了`:'盤がまだ登録されていません'}</span>${tot.t?`<button class="btn sm" style="min-height:44px;white-space:nowrap" onclick="banNext()">次の未点検へ ▼</button>`:''}</div></div>`
-    +floors.map(f=>grp(f.name,banBoards(f.id),f.id)).join('')+(rest.length?grp('階なし',rest,''):'')
-    +(!floors.length&&!rest.length?card('階がありません','<button class="btn wide" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button>'):'')
-    +`<div class="row" style="margin:8px 0"><button class="btn sec grow" onclick="banAddWizard()">＋ 盤をまとめて足す</button></div>
-    <div class="row" style="margin:8px 0"><button class="btn sec grow" style="min-height:44px" onclick="banPrintBlank()">🖨 現場用の空の点検表を印刷（手書き・A4）</button></div>`+banBlankHTML(ym,B);
+    +secs.map(sec).join('')
+    +(!secs.length?card('階がありません',`<div class="row"><button class="btn grow" style="min-height:44px" onclick="locAdd('${bid===BAN_NOB?'':bid}','階')">＋ 階を足す</button><button class="btn sec grow" style="min-height:44px" onclick="go('locs')">🏢 場所の登録へ</button></div>`):'')
+    +`<div class="row" style="margin:8px 0"><button class="btn sec grow" style="min-height:44px" onclick="banAddWizard()">＋ 盤をまとめて足す</button><button class="btn sec grow" style="min-height:44px" onclick="go('locs')">🏢 場所の登録</button></div>
+    <div class="row" style="margin:8px 0"><button class="btn sec grow" style="min-height:44px" onclick="banPrintBlank()">🖨 現場用の空の点検表を印刷（手書き・A4）</button></div>`+banBlankHTML(ym,(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true})));
 }
 /* 現場で手書きする空の点検表（画面では出ない。棟ごとに A4 縦1枚〜、階→盤→3項目の空欄。保存・画面の記録は変えない） */
 function banBlankHTML(ym,B){
@@ -4661,21 +4694,22 @@ function banDetailHTML(ym,B,m){
   return rows.length?`<div class="sec">6の3. 盤ごとの点検（${m}月）</div><table class="bdt" style="table-layout:fixed;width:100%;break-inside:auto"><tr><th>盤</th>${BAN_ITEMS.map(n=>`<th style="width:22%;font-size:11px">${esc(n)}</th>`).join('')}</tr>${rows.join('')}</table><div class="muted" style="font-size:12px">◯＝予定、●＝実施済み、－＝まだ印なし</div>`:'';
 }
 function banAddWizard(){
-  const F=(S.locs||[]).filter(l=>l.type==='階').sort((a,b)=>locPath(a.id).localeCompare(locPath(b.id),'ja',{numeric:true}));
-  if(!F.length){msgModal('先に階を作ってください','「棟と階をまとめて作る」で棟と階を作ると、各階に盤を足せます。');return}
-  const cur=(S.locs||[]).find(l=>l.id===V.banB);
-  openModal(`<h3>＋ この階に盤をまとめて足す</h3><label class="f">階</label><select id="ba_floor">${F.map(f=>`<option value="${f.id}">${esc(locPath(f.id))}</option>`).join('')}</select>
-    <div class="grid2"><div><label class="f">盤の数</label><input id="ba_n" type="number" min="1" max="30" value="3"></div><div><label class="f">名前の頭</label><input id="ba_pre" value="盤" maxlength="20"></div></div>
-    <div class="muted">「盤1」「盤2」…の名前で作ります。同じ名前が既にあれば重ねません。</div>
-    ${modalFoot('<button class="btn sec" onclick="closeModal()">やめる</button><button class="btn" onclick="applyBanAdd()">作成する</button>')}`);
+  const F=(S.locs||[]).filter(l=>l.type==='電気室'||l.type==='階').sort((a,b)=>locPath(a.id).localeCompare(locPath(b.id),'ja',{numeric:true}));
+  if(!F.length){msgModal('先に電気室か階を作ってください','「設備の場所」で 棟 → 階 → 電気室 を登録すると、各電気室に盤を足せます。');return}
+  const pick=(S.locs||[]).find(l=>l.id===V.banAddTo)||F.find(f=>f.type==='電気室'&&banSections(V.banB||'').some(s=>s.rooms.some(r=>r.r.id===f.id)))||F[0];
+  openModal(`<h3>＋ 盤をまとめて足す</h3><label class="f">足す所（電気室・階）</label><select id="ba_floor">${F.map(f=>`<option value="${f.id}" ${f.id===pick.id?'selected':''}>${esc(locPath(f.id))}（${esc(LOC_SHOW(f.type))}）</option>`).join('')}</select>
+    <div class="grid2"><div><label class="f">名前の頭 *</label><input id="ba_pre" maxlength="20" placeholder="例：動力盤-"></div><div><label class="f">盤の数</label><input id="ba_n" type="number" min="1" max="60" inputmode="numeric"></div></div>
+    <div class="muted">「名前の頭」に 1・2・3… を付けた名前で足します（例：動力盤-1・動力盤-2）。同じ名前が既にあれば重ねません。</div>
+    ${modalFoot('<button class="btn sec" onclick="closeModal()">やめる</button><button class="btn" onclick="applyBanAdd()">足す</button>')}`);
 }
 function applyBanAdd(){
-  const fid=$('#ba_floor').value,n=Math.max(1,Math.min(30,parseInt($('#ba_n').value,10)||0)),pre=txt($('#ba_pre').value,20).trim()||'盤';
-  if(!locById(fid))return;const made=[];
-  for(let i=1;i<=n;i++){const nm=pre+i;if((S.locs||[]).some(x=>x.parent===fid&&norm(x.name)===norm(nm)))continue;const l={id:uid(),type:'盤',parent:fid,name:nm,note:'',pos:{floor:'',x:'',y:'',z:''}};S.locs.push(l);made.push(l)}
+  const fid=$('#ba_floor').value,n=Math.max(0,Math.min(60,parseInt($('#ba_n').value,10)||0)),pre=txt($('#ba_pre').value,20).trim();
+  if(!locById(fid))return;if(!pre){toast('名前の頭を入れてください');return}if(!n){toast('盤の数を入れてください');return}
+  const made=[];
+  for(let i=1;i<=n;i++){const nm=pre+i;if((S.locs||[]).some(x=>x.parent===fid&&norm(x.name)===norm(nm)))continue;const l=locMk('盤',nm,fid);S.locs.push(l);made.push(l)}
   if(!made.length){toast('すでに全部あります');return}
-  const f=locById(fid);V.banB=(locById(f.parent)||{}).id||V.banB;
-  save();closeModal(true);render();undoBar(`盤を ${made.length}件 足しました`,()=>{const ids=new Set(made.map(l=>l.id));S.locs=S.locs.filter(l=>!ids.has(l.id))});
+  V.banAddTo=fid;const bb=banBldgs().find(b=>b.id!==BAN_NOB&&locDesc(b.id).has(fid));V.banB=bb?bb.id:BAN_NOB;
+  save();closeModal(true);render();undoBar(`盤を ${made.length}件 足しました`,()=>{const ids=new Set(made.map(l=>l.id));S.locs=S.locs.filter(l=>!ids.has(l.id))},'追加');
 }
 function suggestLocs(){
   const E=(S.equipment||[]).filter(e=>!e.locId&&e.place.trim());
@@ -6194,7 +6228,7 @@ function v16Menu(){
   const g=(title,items)=>`<div class="mgrp">${title}</div><div class="mtgrid">${items.join('')}</div>`;
   const srch=`<input class="msearch" placeholder="🔍 機能を探す（例：校正）" oninput="menuFilter(this.value)">`;
   const body=g('✅ 毎日の点検・予定',[it("go('day',{day:TODAY})",'✅','日常点検','入力・判定・写真読み取り'),it("go('month')",'🗓','カレンダー','予定・点検・勤務者'),it("go('year')",'📅','年間計画・期限','点検項目・周期・法定/社内'),it("go('hist')",'📈','点検履歴・グラフ','検索・トレンド・CSV'),it("go('dailyRep',{day:TODAY})",'🗒','日報','A4印刷'),it("go('home')",'🏠','ホーム','お知らせ・今日・全体の状況')])
-   +g('🏭 設備',[it("go('equip')",'🏭','設備台帳','設備カルテ・仕様・修理履歴'),it("go('ban')",'⚡','盤の点検','棟→階→盤 を ◯/● で'),it("go('locs')",'🏢','設備の場所','棟→階→電気室→盤 を登録'),it("go('qr')",'🔳','QRラベル','印刷・読み取り'),it("go('dwgs')",'🗺','図面','単線結線図・配置図・版管理'),it("go('lib')",'📚','技術資料','登録・検索・根拠表示')])
+   +g('🏭 設備',[it("go('equip')",'🏭','設備台帳','設備カルテ・仕様・修理履歴'),it("go('ban')",'⚡','盤の点検','棟→階→電気室→盤 を ◯/● で'),it("go('locs')",'🏢','設備の場所','棟→階→電気室→盤 を登録'),it("go('qr')",'🔳','QRラベル','印刷・読み取り'),it("go('dwgs')",'🗺','図面','単線結線図・配置図・版管理'),it("go('lib')",'📚','技術資料','登録・検索・根拠表示')])
    +g('🩺 保全・診断',[it("go('issues')",'🛠','異常・修理','緊急度・期限・原因・承認'),it("go('diag',{dgTab:'meas'})",'📏','測定記録','絶縁・接地・継電器・蓄電池'),it("go('diag',{dgTab:'meas'});setTimeout(()=>{const g=document.getElementById('genCard');if(g)g.scrollIntoView()},80)",'⚡','非常用発電機','棟・階ごとに今月の点検'),it("go('diag',{dgTab:'health'})",'💯','健全度','人の評価と参考指標'),it("go('diag',{dgTab:'rec'})",'🔎','推奨・異常傾向','管理値外・周期超過・傾向'),it("go('diag',{dgTab:'fail'})",'📉','故障分析','件数・MTBF・MTTR・CSV'),it("go('plan',{plTab:'legal'})",'⚖','点検期限（法定・社内）','期限の一覧'),it("go('plan',{plTab:'renew'})",'🏗','更新計画','10年の更新・改修'),it("go('plan',{plTab:'measdue'})",'⏱','測定の周期','次回期限')])
    +g('🧰 作業・人員',[it("go('works')",'🧰','作業指示書','承認・KY・停電計画・責任者確認'),it("go('workSheet')",'📋','作業表','14日間の作業と勤務'),it("go('stds')",'📘','作業標準','承認済みの手順・必須チェック'),it("go('shift')",'👥','勤務表（シフト）','A/B夜勤ローテーション'),it("go('staff')",'🪪','人員・資格','資格の登録・作業との照合')])
    +g('📦 物品・費用',[it("go('stock',{stTab:'parts'})",'📦','予備品','在庫・最低在庫・入出庫'),it("go('stock',{stTab:'tools'})",'🔧','工具・測定器','貸出・校正期限'),it("go('stock',{stTab:'budget'})",'💴','予算・費用','予算・実績・更新費用')])

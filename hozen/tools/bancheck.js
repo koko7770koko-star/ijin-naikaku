@@ -20,9 +20,9 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  const ym=new Date().toISOString().slice(0,7);
  let v=await p.evaluate(()=>JSON.stringify(S.banChk));if(!/"済"/.test(v))errs.push('保存値が 済 でない '+v);
  await cell(0).click();await p.waitForTimeout(80);if((await cell(0).textContent()).trim()!=='')errs.push('3回目で空に戻らない');
- await p.locator('button:has-text("全部 ●")').first().click();await p.waitForTimeout(150);
+ await p.locator('button:has-text("全部 ●")').first().click();await p.waitForSelector('#modal button:has-text("● にする")');await p.click('#modal button:has-text("● にする")');await p.waitForTimeout(150);
  const dn=await p.evaluate(()=>{let n=0;for(const ym in S.banChk)for(const id in S.banChk[ym])n+=S.banChk[ym][id].filter(x=>x==='済').length;return n});if(dn!==6)errs.push('全部 ● が6件でない '+dn);
- await p.evaluate(()=>banAddWizard());await p.waitForTimeout(150);await p.evaluate(()=>{document.querySelector('#ba_n').value=3;document.querySelector('#ba_floor').value='l2';applyBanAdd()});await p.waitForTimeout(200);
+ await p.evaluate(()=>banAddWizard());await p.waitForTimeout(150);await p.evaluate(()=>{document.querySelector('#ba_n').value=3;document.querySelector('#ba_pre').value='盤';document.querySelector('#ba_floor').value='l2';applyBanAdd()});await p.waitForTimeout(200);
  const names=await p.evaluate(()=>S.locs.filter(l=>l.parent==='l2').map(l=>l.name).sort().join());if(names!=='盤1,盤2,盤3')errs.push('盤の追加が違う（重ねない）: '+names);
  if(process.argv[2])await p.screenshot({path:process.argv[2]});
  await p.evaluate(()=>save());const ls=await p.evaluate(()=>(localStorage.getItem('hospElecSched_v1').match(/banChk.{0,80}/)||['なし'])[0]);if(process.env.DBG)console.log(ls);await p.evaluate(()=>{window.__t=Date.now();save()});await p.waitForFunction(()=>(MIRROR_AT.app||0)>=window.__t,null,{timeout:10000});await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&Array.isArray(S.locs)&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});
