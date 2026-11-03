@@ -365,7 +365,8 @@ details summary{cursor:pointer;padding:4px 0}
 #shiftApp .sheet table.sub tfoot td{font-weight:700}
 #shiftApp .sheet .nt{margin-top:2.5mm;font-size:8pt;line-height:1.45}
 #shiftApp .sheet .rec{margin-top:2mm;font-size:8pt;line-height:1.4;border-top:1px solid #000;padding-top:1.5mm}
-#shiftApp .sheet .rec b{display:block;margin-bottom:.5mm}
+#shiftApp .sheet .rec b{display:block;margin-bottom:.5mm;column-span:all}
+#shiftApp .sheet .rec.rc2{column-count:2;column-gap:5mm;font-size:7.5pt}#shiftApp .sheet .rec.rc3{column-count:3;column-gap:4mm;font-size:7pt;line-height:1.3}#shiftApp .sheet .rec.rc4{column-count:4;column-gap:3mm;font-size:6.5pt;line-height:1.25}#shiftApp .sheet .rec .ri{break-inside:avoid}
 #shiftApp .sheet .pno{position:absolute;right:11mm;bottom:5mm;font-size:7.5pt}
 #shiftApp dialog{border:0;border-radius:var(--r);padding:0;width:min(560px,94vw)}
 #shiftApp dialog::backdrop{background:rgba(0,0,0,.4)}
@@ -1023,7 +1024,8 @@ function sheetHTML(type,month,pno){
   const notes=S.notes.filter(Boolean);
   if(notes.length) h+='<div class="nt">'+notes.map(esc).join('<br>')+'</div>';
   const rec=a.rows.filter(x=>x.notes);
-  h+='<div class="rec"><b>交代・有給の記録</b>'+(rec.length?rec.map(x=>{const t=ymd(x.d);return t.m+'/'+t.d+'（'+WD[t.w]+'）'+esc(x.notes);}).join('<br>'):'なし')+'</div>';
+  // 記録が多い月は、枠の外に切れないよう 2〜3 列に並べる（紙の高さは変えない）
+  h+='<div class="rec'+(rec.length>22?' rc4':rec.length>12?' rc3':rec.length>6?' rc2':'')+'"><b>交代・有給の記録</b>'+(rec.length?rec.map(x=>{const t=ymd(x.d);return '<div class="ri">'+t.m+'/'+t.d+'（'+WD[t.w]+'）'+esc(x.notes)+'</div>';}).join(''):'なし')+'</div>';
   h+='<div class="pno">'+pno+'</div></div>';
   return h;
 }
