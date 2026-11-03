@@ -2848,7 +2848,7 @@ async function apiPost0(body,signal){
 }
 function needKey(){
   if(aiReady())return false;
-  openModal(`<h3>APIキーが必要です</h3><p>写真の読み取りには Claude API を使います。設定の「写真読み取り」にAPIキーを入れてください。</p>${modalFoot(`<button class="btn sec" onclick="closeModal()">閉じる</button><button class="btn" onclick="closeModal(true);go('set')">設定を開く</button>`)}`);
+  openModal(`<h3>APIキーが必要です</h3><p>AIは使えませんが、記録・点検・報告書はそのまま使えます。AIを使うときは、設定の「写真読み取り」にAPIキーを入れてください。</p>${modalFoot(`<button class="btn sec" onclick="closeModal()">閉じる</button><button class="btn" onclick="closeModal(true);go('set')">設定を開く</button>`)}`);
   return true;
 }
 const fileB64=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(f)});
@@ -3170,6 +3170,12 @@ function vAnnual(){
 }
 
 /* ---------- 9b AI支援（下書きは必ず人が確認してから反映） ---------- */
+function aiHttpMsg(st,j){
+  if(st===401||st===403)return 'APIキーが正しくないか、使えない状態です（'+st+'）。設定の「写真読み取り」でキーを確かめてください';
+  if(st===429)return 'AIが混み合っているか、使える量を超えました（429）。しばらく待ってからもう一度お試しください';
+  if(st>=500)return 'AIの側が今使えません（'+st+'）。しばらく待ってからもう一度お試しください';
+  return (j&&j.error&&j.error.message)||('AIがエラーを返しました（'+st+'）')}
+let AI_SEQ=0;
 async function askClaudeText(prompt,maxTokens=1500){
   if(needKey())throw new Error('APIキーが未設定です');
   if(!navigator.onLine)throw new Error('通信できません（圏外）。電波のある場所で使ってください');
@@ -3177,17 +3183,25 @@ async function askClaudeText(prompt,maxTokens=1500){
   try{r=await apiPost({model:S.settings.model||'claude-sonnet-5-5',max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})}
   catch(e){throw new Error(/タイムアウト/.test(e&&e.message||'')?e.message:'通信できませんでした')}
   const j=await r.json();
-  if(!r.ok)throw new Error((j.error&&j.error.message)||'HTTP '+r.status);
+  if(!r.ok)throw new Error(aiHttpMsg(r.status,j));
   return (j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
 }
 const facLabel=()=>{const n=(S.settings.name||'').trim(),t=(S.settings.facType||'').trim();return `${n||'この施設'}${t?`（${t}）`:''}の電気設備`};
 const AI_RULE='\n\n【守ること】記録に書かれていない事実を作らない。述べたことの根拠として、記録の日付・資料名を示す。根拠が見つからないことは推測せず「不明」と書く。設備の操作（開閉・投入・停止など）や作業の安全についての判断・指示はしない。設備の正常・異常の判定や管理値の妥当性の判断はしない（判定は施設の管理値に基づき人が行う）。原因を断定しない。日本語で簡潔に。';
 let AI_DRAFT={use:null};
-async function aiDraft(title,prompt,useLabel,use){
+function aiDraft(title,prompt,useLabel,use){
   if(needKey())return;
-  openModal(`<h3>🤖 ${esc(title)}</h3><p class="muted">AIが下書きを作っています…</p>`);
+  window.__aiGo=()=>aiDraftRun(title,prompt,useLabel,use);
+  openModal(`<h3>🤖 ${esc(title)}</h3><div class="al info">次の内容を Claude API（インターネット）に送ります。<b>施設名・人の名前などが入っていないか確かめてから</b>送ってください。やめれば何も送りません。</div>
+    <pre class="aisrc" style="max-height:40vh;overflow:auto">${esc(prompt)}</pre>
+    ${modalFoot(`<button class="btn sec" onclick="AI_SEQ++;closeModal(true)">やめる</button><button class="btn" onclick="window.__aiGo()">この内容を送る</button>`)}`);
+}
+async function aiDraftRun(title,prompt,useLabel,use){
+  const k=++AI_SEQ;
+  openModal(`<h3>🤖 ${esc(title)}</h3><p class="muted">AIが下書きを作っています…（長くて90秒ほど）</p>${modalFoot(`<button class="btn sec" onclick="AI_SEQ++;closeModal(true)">やめる</button>`)}`);
   try{
     const text=await askClaudeText(prompt+AI_RULE);
+    if(k!==AI_SEQ)return;
     AI_DRAFT={use};
     openModal(`<h3>🤖 ${esc(title)}</h3><div class="al info">AIの下書きです。<b>内容を確認・修正してから</b>使ってください。この時点では記録には入っていません。</div>
       <textarea id="ai_text" style="min-height:220px">${esc(text)}</textarea>
@@ -3195,7 +3209,7 @@ async function aiDraft(title,prompt,useLabel,use){
       <div class="muted" style="font-size:12px">AIは読み違い・書き違いをすることがあります。数値・日付・設備名は元の記録と照らし合わせてください。根拠のない内容は「不明」と書かせていますが、必ず確認してください。</div>
       ${use?'<label class="chkl"><input type="checkbox" id="ai_ack">内容を確認し、事実と違う点・不要な点を直しました</label>':''}
       ${modalFoot(`<button class="btn sec" onclick="closeModal()">使わない</button>${use?`<button class="btn" onclick="useDraft()">${esc(useLabel)}</button>`:'<button class="btn" onclick="copyDraft()">コピー</button>'}`)}`);
-  }catch(e){msgModal('AIの下書きを作れませんでした',esc(e.message))}
+  }catch(e){if(k!==AI_SEQ)return;openModal(`<h3>AIの下書きを作れませんでした</h3><p>${esc(e.message)}</p><p class="muted">AIは使えなくても、記録は今までどおりできます。</p>${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="window.__aiGo()">もう一度</button>`)}`)}
 }
 function useDraft(){const t=$('#ai_text').value.trim();if(!t){toast('空です');return}if($('#ai_ack')&&!$('#ai_ack').checked){toast('内容を確認して、チェックを入れてください');return}AI_DRAFT.use(t);closeModal(true)}
 async function copyDraft(){try{await navigator.clipboard.writeText($('#ai_text').value);toast('コピーしました')}catch(e){$('#ai_text').select();toast('選択しました。長押しでコピーしてください')}}
