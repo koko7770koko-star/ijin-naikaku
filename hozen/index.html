@@ -2170,7 +2170,12 @@ function editIssue(id,preset){
   const i=S.issues.find(x=>x.id===id)||{date:TODAY,title:'',place:'',detail:'',status:'発見',action:'',closed:'',photos:[],equipId:'',...(preset||{})};
   TP=[...(i.photos||[])];
   const step=ISTAT.map((x,k)=>`<button type="button" class="${x===i.status?'on':''}" onclick="setIssueStep('${x}')">${k+1}.${x}</button>`).join('');
-  loadPhotos(TP).then(()=>{openModal(`<h3>${id?'異常案件':'異常案件の登録'}</h3>
+  const recentPl=[...new Set(S.issues.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(x=>x.place).filter(Boolean))].slice(0,4);
+  const quick=id?'':`<div class="grp" id="is_quick"><b>早く記録（緊急度・写真・場所）</b>
+    <div class="seg tabs" id="is_qurg" style="margin:6px 0">${['緊急','高','中','低'].map(u=>`<button type="button" class="${u===i.urgency?'on':''}" style="height:48px;font-size:15px" onclick="setIssueUrg('${u}')">${u}</button>`).join('')}</div>
+    ${tpBox()}
+    ${recentPl.length?`<div class="muted" style="margin-top:8px;font-size:12px">最近の場所（押すと入ります）</div><div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">${recentPl.map(pl=>`<button type="button" class="btn sec sm" style="min-height:44px" onclick="setIssuePlace(${esc(JSON.stringify(pl))})">${esc(pl)}</button>`).join('')}</div>`:''}</div>`;
+  loadPhotos(TP).then(()=>{openModal(`<h3>${id?'異常案件':'異常案件の登録'}</h3>${quick}
     <label class="f">状態</label><div class="seg tabs istep" id="is_steps" style="margin-bottom:4px">${step}</div><input type="hidden" id="is_status" value="${esc(i.status)}">
     <div id="is_done" style="display:${i.status==='完了'?'block':'none'}" class="grp"><b>完了の確認（人が確認してください）</b>
       <label class="f">確認者 *</label><input id="is_by" list="dl_is" value="${esc(i.confirmedBy||'')}" maxlength="60">${staffList('dl_is')}
@@ -2183,13 +2188,17 @@ function editIssue(id,preset){
     <label class="f">処置内容・経過</label><textarea id="is_action" style="min-height:60px" maxlength="4000" placeholder="例：11/12 業者手配、11/20 部品交換で復旧">${esc(i.action)}</textarea>
     <label class="f">状態を変えた理由・メモ（履歴に残ります${i.status==='完了'?'。完了から戻すときは必須':''}）</label><input id="is_memo" maxlength="300">
     ${issueExtra(i)}${issueApprovals({...i,id})}
-    ${tpBox()}
+    ${id?tpBox():''}
     ${id?`<div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="useParts('issue:${id}')">📦 使った部品を出庫</button><button class="btn sec sm grow" onclick="closeModal(true);editWork(null,{title:${esc(JSON.stringify('対応：'+i.title))},kind:'修理',equipIds:${esc(JSON.stringify(i.equipId?[i.equipId]:[]))},issueId:'${id}'})">🧰 作業指示を作る</button><button class="btn sec sm grow" onclick="closeModal(true);go('printDoc',{doc:{t:'issue',id:'${id}'}})">修理報告書</button></div>`:''}
     ${(i.log||[]).length?`<details style="margin-top:10px"><summary class="muted">状態の履歴（${i.log.length}件）</summary>${i.log.slice().reverse().map(l=>`<div class="meta" style="padding:3px 0;border-bottom:1px solid #eef1f4">${esc(l.at?new Date(l.at).toLocaleString('ja-JP'):'')}${l.by?'・'+esc(l.by):''}：${esc(l.from||'－')} → <b>${esc(l.to)}</b>${l.note?'（'+esc(l.note)+'）':''}</div>`).join('')}</details>`:''}
     ${id?editLogHTML('issue',id):''}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveIssue('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delIssue('${id}')">削除</button>`:'')}`);
-    const sel=$('#modal .grid2 select');if(sel)sel.id='is_equip';});
+    const sel=$('#modal .grid2 select');if(sel)sel.id='is_equip';
+    const us=$('#is_urg');if(us)us.addEventListener('change',()=>setIssueUrg(us.value,true));
+    if(!id){const t=$('#is_title');if(t&&!t.value)try{t.focus()}catch(e){}}});
 }
+function setIssueUrg(u,fromSel){const s=$('#is_urg');if(s&&!fromSel)s.value=(s.value===u?'':u);const cur=s?s.value:u;document.querySelectorAll('#is_qurg button').forEach(b=>b.classList.toggle('on',b.textContent===cur))}
+function setIssuePlace(pl){const e=$('#is_place');if(e)e.value=pl}
 function setIssueStep(x){$('#is_status').value=x;document.querySelectorAll('#is_steps button').forEach(b=>b.classList.toggle('on',b.textContent.endsWith(x)));$('#is_done').style.display=x==='完了'?'block':'none'}
 function saveIssue(id){
   const g=k=>{const e=$('#is_'+k);return e?e.value.trim():''};
