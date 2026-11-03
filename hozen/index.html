@@ -5889,7 +5889,7 @@ function genCard(){
         }
       }
     }
-    body+=`<button class="btn sec sm wide" style="min-height:44px;margin-bottom:6px" onclick="V.ry=now.getFullYear();V.rm=now.getMonth()+1;go('report')">🖨 今月の点検表を印刷（月報の「6の4」・A4）</button><div class="muted" style="font-size:12px">台を押すと月次点検の入力が開きます。前回値との差が出ます。◯＝今月まだ、●＝今月点検済み（今月の測定記録があるか）。</div>`;
+    body+=`<button class="btn sec sm wide" style="min-height:44px;margin-bottom:6px" onclick="V.ry=now.getFullYear();V.rm=now.getMonth()+1;go('report')">🖨 今月の点検表を印刷（月報の「6の4」・A4）</button>${(S.meas||[]).some(m=>m.tplId==='mt_gen')?`<button class="btn sec sm wide" id="genCsvBtn" style="min-height:44px;margin-bottom:6px" onclick="exportGenCsv()">📄 発電機の点検記録を CSV に書き出す</button>`:''}<div class="muted" style="font-size:12px">台を押すと月次点検の入力が開きます。前回値との差が出ます。◯＝今月まだ、●＝今月点検済み（今月の測定記録があるか）。</div>`;
   }
   return `<div id="genCard">`+card(`⚡ 非常用発電機の点検${G.length?` <span class="muted">今月 ● ${doneN}/${shown.length}</span>`:''}`,body)+`</div>`;
 }
@@ -5897,6 +5897,16 @@ function genStart(id){
   if(!Array.isArray(S.mtpl))S.mtpl=[];let t=tplById('mt_gen');if(!t){t=clone(GEN_TPL);S.mtpl.push(t);save()}
   editMeas(null,{equipId:id,tplId:t.id,type:t.type,name:t.name,rows:t.rows.map(r=>({...r,v:''}))});
 }
+// 非常用発電機の月次点検（mt_gen）の数字だけを CSV に：1回の点検を1行に、項目（電圧・周波数・燃料など）を列に並べる。BOM つき・download（hzSave）経由。保存はしない
+function genCsvRows(){
+  const M=(S.meas||[]).filter(m=>m.tplId==='mt_gen'),cols=[];
+  [...(((S.mtpl||[]).find(t=>t.id==='mt_gen')||GEN_TPL).rows||[]),...M.flatMap(m=>m.rows||[])].forEach(r=>{if(r&&r.name&&!cols.some(c=>c.name===r.name))cols.push({name:r.name,unit:r.unit||''})});
+  const lab=m=>eqLabel(eqById(m.equipId))||'（設備なし）';
+  const L=M.slice().sort((a,b)=>lab(a).localeCompare(lab(b),'ja',{numeric:true})||String(a.date).localeCompare(String(b.date)));
+  return [['測定日','設備ID','設備名','場所',...cols.map(c=>c.unit?`${c.name}（${c.unit}）`:c.name),'判定','測定者','所見'],
+    ...L.map(m=>{const e=eqById(m.equipId)||{};return [m.date,e.code||'',e.name||'',locPath(e.locId)||e.place||'',...cols.map(c=>{const r=(m.rows||[]).find(x=>x.name===c.name);return r?r.v:''}),measJudge(m).text,m.by||'',m.note||'']})];
+}
+function exportGenCsv(){const R=genCsvRows();if(R.length<2){toast('発電機の点検記録がまだありません');return}download(`発電機点検_${TODAY}.csv`,csvBlob(R));toast(`発電機の点検 ${R.length-1}件を書き出しました`)}
 function exportMeasCsv(){download(`測定記録_${TODAY}.csv`,csvBlob([['測定日','種類','名称','設備','項目','測定値','値の出どころ','単位','下限','上限','判定','気温','湿度','測定器','測定者','所見'],...(S.meas||[]).flatMap(m=>m.rows.map(r=>[m.date,m.type,m.name,equipName(m.equipId),r.name,r.v,r.src==='AI'?'AI読取（人が確認）':'入力',r.unit,r.min,r.max,{ng:'管理値外',ok:'管理値内',nolim:'基準未設定',none:'未入力',na:'該当なし'}[rowJudge(r)],m.cond.temp,m.cond.hum,m.cond.toolName,m.by,m.note]))]))}
 /* 測定のひな形（管理値は人が設定） */
 function vMtpl(){
