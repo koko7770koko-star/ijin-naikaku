@@ -4490,6 +4490,7 @@ function v16Fill(d){
   if(!Array.isArray(d.mtpl))d.mtpl=clone(DEF_MTPL);
   if(!isObj(d.quals))d.quals={};
   if(!isObj(d.banChk))d.banChk={};
+  if(!isObj(d.banAt))d.banAt={}; // ● を付けた日（2026-11 に足した。古い記録は空で補う）
   if(!Array.isArray(d.qualList))d.qualList=[...DEF_QUALS];
   if(!isObj(d.healthCfg))d.healthCfg={...DEF_HEALTH};
   if(!Array.isArray(d.chkPre))d.chkPre=[...DEF_CHK_PRE];
@@ -4581,6 +4582,7 @@ function validateV16(o,log){
   if(o.healthCfg!==undefined){const h=isObj(o.healthCfg)?o.healthCfg:{};o.healthCfg={};for(const k in DEF_HEALTH){const v=Number(h[k]);o.healthCfg[k]=Number.isFinite(v)&&v>=0&&v<=100?v:DEF_HEALTH[k]}}
   for(const k of ['chkPre','chkPost'])if(o[k]!==undefined)o[k]=strs(o[k],200,40);
   {const bc={};if(isObj(o.banChk))for(const [ym,row] of Object.entries(o.banChk).slice(0,240)){if(!RE_YM.test(ym)||!isObj(row))continue;const r={};for(const [id,a] of Object.entries(row)){if(!RE_ID.test(id)||!Array.isArray(a))continue;r[id]=[0,1,2].map(i=>MARKS.includes(a[i])?a[i]:'')}bc[ym]=r}o.banChk=bc}
+  {const ba={};if(isObj(o.banAt))for(const [ym,row] of Object.entries(o.banAt).slice(0,240)){if(!RE_YM.test(ym)||!isObj(row))continue;const r={};for(const [id,dt] of Object.entries(row))if(RE_ID.test(id)&&typeof dt==='string'&&RE_DATE.test(dt))r[id]=dt;if(Object.keys(r).length)ba[ym]=r}o.banAt=ba}
 }
 
 /* 写真・資料の参照（バックアップ・整理・欠落検出で使う） */
@@ -4954,7 +4956,11 @@ function banHist(id){const l=locById(id);if(!l)return;const pl=locPath(id),now=T
     <h3 style="margin-top:12px;font-size:16px">⚠ この盤の異常 <span class="muted">${iss.length}件</span></h3>
     ${iss.length?iss.slice(0,20).map(i=>`<div class="item" onclick="closeModal(true);editIssue('${i.id}')"><div class="dt">${i.date?md(i.date):''}</div><div class="bd" style="min-width:0"><div class="ti" style="overflow-wrap:anywhere">${esc(i.title||'')}</div><div class="meta"><span class="pill ${ISTAT_CLS[i.status]||''}">${esc(i.status||'')}</span></div></div></div>`).join(''):'<div class="muted">記録はありません。</div>'}
     ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="closeModal(true);banIssue('${id}')">⚠ 異常を記録</button>`)}`)}
-function banSet(ym,id,k,v){S.banChk=S.banChk||{};const m=S.banChk[ym]=S.banChk[ym]||{};const r=m[id]=m[id]||['','',''];r[k]=v}
+/* ● を付けた日：S.banAt[年月][盤id]='YYYY-MM-DD'（その盤に ● を付けた最後の日）。● が1つも無くなったら消す。古い記録（banAt なし）は空のまま読む */
+function banSet(ym,id,k,v){S.banChk=S.banChk||{};const m=S.banChk[ym]=S.banChk[ym]||{};const r=m[id]=m[id]||['','',''];const was=r[k];r[k]=v;
+  if(!isObj(S.banAt))S.banAt={};if(v==='済'&&was!=='済'){(S.banAt[ym]=S.banAt[ym]||{})[id]=TODAY}
+  else if(!r.includes('済')&&S.banAt[ym]){delete S.banAt[ym][id];if(!Object.keys(S.banAt[ym]).length)delete S.banAt[ym]}}
+const banAtOf=(ym,id)=>{const d=((S.banAt||{})[ym]||{})[id];return typeof d==='string'&&RE_DATE.test(d)?d:''};
 const banFuture=ym=>ym>TODAY.slice(0,7);
 function banTap(id,k){const ym=V.banYm||TODAY.slice(0,7),cur=banVal(ym,id,k),nv=banFuture(ym)?(cur===''?'○':''):cur===''?'○':cur==='○'?'済':''; // 来月以降はまだ実施できないので ◯（予定）と空だけ
   if(banFuture(ym)&&cur==='○')toast('来月以降は ◯（予定）だけ付けられます');banSet(ym,id,k,nv);save();render();
@@ -5006,7 +5012,7 @@ function vBan(){
   const tabs=`<div class="seg tabs" style="margin:8px 0;overflow-x:auto;white-space:nowrap">${B.map(b=>{const c=banCount(ym,banBoardsOf(b.id));return `<button class="${b.id===bid?'on':''}" onclick="V.banB='${b.id}';render()">${esc(b.name)}<small style="display:block;font-weight:400">${c.t?c.d+'/'+c.t:'－'}</small></button>`}).join('')}</div>`;
   const ed=!!V.banEdit;
   const row=(b,i,a)=>ed?`<div class="banrow" id="ban-${b.id}"><input class="grow" style="min-width:0;flex:1 1 auto;min-height:44px" value="${esc(b.name)}" maxlength="60" aria-label="${esc(b.name)}の名前" onchange="banRename('${b.id}',this)" onkeydown="if(event.key==='Enter')this.blur()"><button class="btn sec sm" style="min-width:44px;min-height:44px" aria-label="${esc(b.name)}を上へ" ${i===0?'disabled':''} onclick="banShift('${b.id}',-1)">↑</button><button class="btn sec sm" style="min-width:44px;min-height:44px" aria-label="${esc(b.name)}を下へ" ${i===a.length-1?'disabled':''} onclick="banShift('${b.id}',1)">↓</button></div>`
-    :`<div class="banrow" id="ban-${b.id}"><div class="bn" role="button" tabindex="0" style="cursor:pointer;min-height:44px;display:flex;align-items:center" aria-label="${esc(b.name)}の記録（12か月）" onclick="banHist('${b.id}')">${esc(b.name)}</div>${[0,1,2].map(k=>{const v=banVal(ym,b.id,k);return `<button class="bm ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''}" aria-label="${esc(b.name)} ${esc(BAN_ITEMS[k])}" onclick="banTap('${b.id}',${k})">${banShow(v)||'&nbsp;'}</button>`}).join('')}${(()=>{const n=banOpenIss(b.id).length;return `<button class="bm bw${n?' mk-iss':''}" aria-label="${esc(b.name)}の異常を記録${n?'（対応中 '+n+'件）':''}" onclick="banIssue('${b.id}')">⚠${n>1?`<small>${n}</small>`:''}</button>`})()}</div>`;
+    :`<div class="banrow" id="ban-${b.id}"><div class="bn" role="button" tabindex="0" style="cursor:pointer;min-height:44px;display:flex;flex-direction:column;justify-content:center" aria-label="${esc(b.name)}の記録（12か月）" onclick="banHist('${b.id}')">${esc(b.name)}${banAtOf(ym,b.id)?`<small class="muted" style="display:block;font-weight:400;font-size:12px">● ${md(banAtOf(ym,b.id))}</small>`:''}</div>${[0,1,2].map(k=>{const v=banVal(ym,b.id,k);return `<button class="bm ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''}" aria-label="${esc(b.name)} ${esc(BAN_ITEMS[k])}" onclick="banTap('${b.id}',${k})">${banShow(v)||'&nbsp;'}</button>`}).join('')}${(()=>{const n=banOpenIss(b.id).length;return `<button class="bm bw${n?' mk-iss':''}" aria-label="${esc(b.name)}の異常を記録${n?'（対応中 '+n+'件）':''}" onclick="banIssue('${b.id}')">⚠${n>1?`<small>${n}</small>`:''}</button>`})()}</div>`;
   const hdr=ed?'':`<div class="banrow bh"><div class="bn"></div>${BAN_HEAD.map(n=>`<div class="bi">${n}</div>`).join('')}<div class="bi"></div></div>`;
   const cnt=bs=>{const c=banCount(ym,bs);return c.t?c.d+'/'+c.t+'（'+bs.filter(x=>banDone(ym,x)).length+'/'+bs.length+'面）':'盤なし'};
   const room=(r,bs,top)=>{const fo=!ed&&!q&&banFolded('br_'+r.id,bs,ym);return `<div class="banroom${fo?' folded':''}" data-room="${r.id}" style="${top?'':'border-top:1px solid var(--bd,#dde3ea);margin-top:10px;padding-top:8px'}"><div class="hd-row" style="flex-wrap:wrap;gap:4px"><h3 style="margin:0;font-size:16px;min-width:0;overflow-wrap:anywhere;cursor:pointer;min-height:44px;display:flex;align-items:center;gap:4px" role="button" aria-expanded="${!fo}" onclick="V['br_${r.id}']=${fo};render()">${bs.length?(fo?'▸':'▾'):''} 🔌 ${esc(r.name)} <span class="muted" style="font-weight:400;font-size:13px">${cnt(bs)}</span></h3>${bs.length&&!ed&&!fo&&!q&&!banFuture(ym)?`<button class="btn sec sm" style="min-height:44px;white-space:nowrap" onclick="banAllAsk('${r.id}')">この電気室を全部 ●</button>`:''}</div>
@@ -5110,10 +5116,10 @@ function banDetailHTML(ym,B,m){
     // 棟 › 階 › 電気室 の見出し行（段が変わる所）の下に、その電気室の盤を並べる。見出しは表の途中で切れない（次の行と同じページに置く）
     banGroups(b.id).forEach(g=>{
       rows.push(`<tr class="rbh"><td colspan="4" style="text-align:left;font-weight:700;background:#f0f4f8">${esc(b.name)}${g.floor?' › '+esc(g.floor):''}${g.room?' › '+esc(g.room):''}${!g.floor&&!g.room?' › 階なし':''}</td></tr>`);
-      g.boards.forEach(x=>rows.push(`<tr><td style="text-align:left">${esc(x.name)}${typeof banOpenIss==='function'&&banOpenIss(x.id).length?' ⚠':''}</td>${[0,1,2].map(k=>`<td class="c">${mkShow(banVal(ym,x.id,k))||'－'}</td>`).join('')}</tr>`));
+      g.boards.forEach(x=>rows.push(`<tr><td style="text-align:left">${esc(x.name)}${banAtOf(ym,x.id)?` <small>（${md(banAtOf(ym,x.id))}）</small>`:''}${typeof banOpenIss==='function'&&banOpenIss(x.id).length?' ⚠':''}</td>${[0,1,2].map(k=>`<td class="c">${mkShow(banVal(ym,x.id,k))||'－'}</td>`).join('')}</tr>`));
     });
   });
-  return rows.length?`<div class="sec">6の3. 盤ごとの点検（${m}月）</div><table class="bdt" style="table-layout:fixed;width:100%;break-inside:auto"><tr><th>盤</th>${BAN_HEAD.map(n=>`<th style="width:22%;font-size:11px;word-break:keep-all">${n}</th>`).join('')}</tr>${rows.join('')}</table><div class="muted" style="font-size:12px">印：●＝実施済み　◯＝予定　延＝延期　－＝まだ印なし　⚠＝対応中の異常あり（盤の名前の横）</div>`:'';
+  return rows.length?`<div class="sec">6の3. 盤ごとの点検（${m}月）</div><table class="bdt" style="table-layout:fixed;width:100%;break-inside:auto"><tr><th>盤</th>${BAN_HEAD.map(n=>`<th style="width:22%;font-size:11px;word-break:keep-all">${n}</th>`).join('')}</tr>${rows.join('')}</table><div class="muted" style="font-size:12px">印：●＝実施済み　◯＝予定　延＝延期　－＝まだ印なし　⚠＝対応中の異常あり（盤の名前の横）　（月/日）＝● を付けた日</div>`:'';
 }
 function banAddWizard(){
   const F=(S.locs||[]).filter(l=>l.type==='電気室'||l.type==='階').sort((a,b)=>locPath(a.id).localeCompare(locPath(b.id),'ja',{numeric:true}));
