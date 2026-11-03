@@ -3509,6 +3509,9 @@ function vMonthly(){
     <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">所見・特記事項（この月）</label><button class="btn sec sm" onclick="aiMonthlyNote(${y},${m})">🤖 所見の下書き</button></div><textarea onchange="logEdit('report','${key}','所見',S.notes['${key}'],this.value);S.notes['${key}']=txt(this.value,4000);save();render()">${esc(S.notes[key]||'')}</textarea>
     <label class="chkl"><input type="checkbox" ${S.settings.repPhotos!==false?'checked':''} onchange="S.settings.repPhotos=this.checked;save();render()">写真を報告書に載せる</label></div>`;
   h+=`<div class="card"><div class="rep">${repHead('電気設備 保守管理 月次報告書',`${y}/${m}/1 ～ ${y}/${m}/${st.last}`)}
+    <table class="rsum"><tr><th style="width:120px">今月の要約</th><td><b>点検・作業 ${st.done} / ${st.tot} 件 完了</b>${cnt('予定')?`　<span class="red">未完了 ${cnt('予定')}件</span>`:''}</td></tr>
+    <tr><th>日常点検</th><td>${st.ddone} / ${st.ddays} 日 完了${st.dng?`　<b class="red">異常あり ${st.dng}日</b>`:''}</td></tr>
+    <tr><th>異常・指摘</th><td>${abn.length?`<b class="red">${abn.length}件</b>（作業の要観察/不良 ${st.ng}・日常点検の異常 ${ngDays.length}日）`:'なし'}　／　異常案件 ${IS.length}件</td></tr>${genMonthSum(y,m)}</table>
     <div class="sec">1. 実施概要</div>
     <table><tr><th></th><th>予定件数</th><th>完了</th><th>延期</th><th>中止</th><th>未完了</th><th>完了率</th><th>要観察/不良</th></tr>
     <tr><th>作業</th><td class="c">${st.tot}</td><td class="c">${st.done}</td><td class="c">${cnt('延期')}</td><td class="c">${cnt('中止')}</td><td class="c ${cnt('予定')?'red':''}">${cnt('予定')}</td><td class="c">${st.tot?Math.round(st.done/st.tot*100)+'%':'-'}</td><td class="c ${st.ng?'red':''}">${st.ng}</td></tr></table>
@@ -4739,6 +4742,12 @@ function banPrintBlank(){
 }
 /* 月報・印刷：棟ごとの盤の点検表（● の件数／盤の数） */
 /* 月報・印刷：非常用発電機1台ごとの数値点検（日付×電圧・周波数・燃料など）。管理値の外は ▲ と赤（色が出ない印刷でも分かる） */
+/* 月報の先頭の要約：発電機の月次点検（記録のある台数・管理値の外の数）。保存はしない */
+function genMonthSum(y,m){
+  const p=y+'-'+pad(m)+'-',G=(S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止');if(!G.length)return '';
+  let rec=0,ng=0;G.forEach(e=>{const M=(S.meas||[]).filter(x=>x.equipId===e.id&&x.tplId==='mt_gen'&&String(x.date||'').startsWith(p));if(M.length)rec++;M.forEach(x=>(x.rows||[]).forEach(r=>{if(rowJudge(r)==='ng')ng++}))});
+  return `<tr><th>発電機の運転点検</th><td>${rec} / ${G.length} 台で記録あり${ng?`　<b class="red">▲ 管理値の外 ${ng}件</b>`:'　管理値の外 なし'}</td></tr>`;
+}
 function genReportHTML(y,m){
   const p=y+'-'+pad(m)+'-',G=(S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止').sort((a,b)=>eqLabel(a).localeCompare(eqLabel(b),'ja',{numeric:true}));
   if(!G.length)return '';
