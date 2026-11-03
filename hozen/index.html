@@ -6444,6 +6444,7 @@ function wxCard(){
   const warn=c.warn&&c.warn.list?c.warn.list:null;
   return `<div class="card" id="wxCard"><div class="hd-row"><h2>☀ 天気 <span class="muted">${esc(wxCfg().label||'')}</span></h2><button class="btn sec sm" onclick="wxReload()">更新</button></div>
     <div class="row" style="align-items:baseline;gap:10px"><b style="font-size:26px">${cur.temperature_2m!=null?Math.round(cur.temperature_2m)+'℃':'—'}</b><span>${esc(WMO[cur.weather_code]||'')}</span><span class="muted">湿度 ${cur.relative_humidity_2m??'—'}%・風 ${windLabel(cur.wind_direction_10m)} ${cur.wind_speed_10m!=null?Math.round(cur.wind_speed_10m)+'m/s':'—'}</span></div>
+    ${stale?`<div class="al warn wxstale" style="margin:6px 0"><b>${wxAge(c)}の古い情報です。</b>${WX_ERR?esc(WX_ERR)+'。':''}今の天気ではありません。「更新」で取り直してください。</div>`:''}
     ${warn?`<div class="al ${warn.length?'ng':'info'}" style="margin:6px 0">${warn.length?`⚠ ${esc(c.warn.pref)}で発表中：${esc(warn.join('、'))}<br><small>府県内のどこかに発表されているものを含みます（市町村ごとの区別はしていません）</small>`:`${esc(c.warn.pref)}：警報・注意報の発表なし`}</div>`:''}
     ${adv?`<div class="al ${adv.level==='ng'?'ng':adv.level==='warn'?'warn':'info'}" style="margin:6px 0"><b>${esc(adv.title)}</b>（これから8時間）${adv.reasons.length?'<br>'+adv.reasons.map(esc).join('<br>'):''}<br><small>${WX_NOTE}</small></div>`:''}
     <div class="wxstrip">${hours.join('')}</div>
@@ -6496,7 +6497,7 @@ function wxLine(){
   if(!wxReady())return '';const c=wxCache();if(!c)return '';
   const cur=c.data.current||{},h=c.data.hourly,now=Date.now();let st=0;for(let i=0;i<h.time.length;i++){if(new Date(h.time[i]).getTime()>=now-20*60000){st=i;break}}
   const adv=wxAdvice(h,st,st+8),w=c.warn&&c.warn.list&&c.warn.list.length;
-  return `<div class="wxline" onclick="scrollToId('wxCard')">${cur.temperature_2m!=null?Math.round(cur.temperature_2m)+'℃':''} ${esc(WMO[cur.weather_code]||'')}${adv?` <span class="pill ${adv.level==='ng'?'ng':adv.level==='warn'?'warn':'ok'}">屋外作業：${{ok:'問題なし',warn:'注意',ng:'中止・延期を検討'}[adv.level]}</span>`:''}${w?' <span class="pill ng">警報・注意報あり</span>':''}</div>`;
+  return `<div class="wxline" onclick="scrollToId('wxCard')">${cur.temperature_2m!=null?Math.round(cur.temperature_2m)+'℃':''} ${esc(WMO[cur.weather_code]||'')}${adv?` <span class="pill ${adv.level==='ng'?'ng':adv.level==='warn'?'warn':'ok'}">屋外作業：${{ok:'問題なし',warn:'注意',ng:'中止・延期を検討'}[adv.level]}</span>`:''}${w?' <span class="pill ng">警報・注意報あり</span>':''}${now-c.at>WX_TTL?` <span class="pill ${now-c.at>3*3600000?'warn':''}" title="取得した時刻">${new Date(c.at).getHours()}:${String(new Date(c.at).getMinutes()).padStart(2,'0')}の情報</span>`:''}</div>`;
 }
 
 /* =====================================================================
