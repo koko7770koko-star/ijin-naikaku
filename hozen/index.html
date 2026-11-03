@@ -97,6 +97,7 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 /* 一覧の行（予定・異常・期限） */
 .item{display:flex;gap:10px;align-items:flex-start;padding:12px 10px 12px 12px;margin:0 -6px 8px;border-radius:var(--r-s);background:#f7f9fb;border-left:4px solid #9fb6cc;cursor:pointer}
 .item:last-child{margin-bottom:0}
+.pqb{display:flex;gap:6px;align-self:center;flex:none}.pqb .btn{min-width:44px;min-height:44px;padding:0;font-size:20px;font-weight:700}
 .item.ok{border-left-color:var(--ok-line)}.item.ng{border-left-color:var(--ng-line)}.item.dim{border-left-color:#c3c9d0;opacity:.75}
 .item .dt{min-width:58px;font-weight:700;font-size:14px}
 .item .dt small{display:block;font-weight:400;font-size:12px;color:var(--mut)}
@@ -4798,11 +4799,18 @@ function editQualList(){openModal(`<h3>資格の種類</h3><div class="muted">1�
 /* ---------- 予備品・在庫 ---------- */
 function partRow(p){const low=p.min!==''&&p.qty<=p.min;
   return `<div class="item ${low?'ng':''}" onclick="editPart('${p.id}')"><div class="dt" style="min-width:58px"><b style="font-size:17px">${p.qty}</b><small>${esc(p.unit)}</small></div><div class="bd"><div class="ti">${esc(p.name)}${p.code?` <span class="muted">${esc(p.code)}</span>`:''}</div>
-    <div class="meta">${esc([p.spec,p.place].filter(Boolean).join('・'))}${p.min!==''?`・最低 ${p.min}${esc(p.unit)}`:''}${p.equipIds.length?'・'+p.equipIds.map(equipName).filter(Boolean).map(esc).join('、'):''}</div>${low?'<span class="pill ng">在庫不足</span>':''}</div></div>`}
+    <div class="meta">${esc([p.spec,p.place].filter(Boolean).join('・'))}${p.min!==''?`・最低 ${p.min}${esc(p.unit)}`:''}${p.equipIds.length?'・'+p.equipIds.map(equipName).filter(Boolean).map(esc).join('、'):''}</div>${low?'<span class="pill ng">在庫不足</span>':''}</div><div class="pqb" onclick="event.stopPropagation()"><button class="btn sec" aria-label="1つ出庫" onclick="stockQuick('${p.id}',-1)">−</button><button class="btn sec" aria-label="1つ入庫" onclick="stockQuick('${p.id}',1)">＋</button></div></div>`}
+/* 一覧の −/＋：1つずつ出庫・入庫をその場で記録（入出庫履歴の形は stockMove と同じ） */
+function stockQuick(id,d){const p=partById(id);if(!p)return;
+  if(d<0&&p.qty<1){toast('在庫が 0 です（数が違うときは開いて棚卸で直してください）');return}
+  const type=d>0?'入庫':'出庫',before=p.qty,r6=x=>Math.round(x*1e6)/1e6;p.qty=r6(before+d);
+  S.moves.push({id:uid(),partId:id,date:TODAY,type,qty:1,after:p.qty,ref:'',by:txt(who(),60),note:''});
+  logEdit('part',id,`在庫（${type}）`,before,p.qty);save();render();
+  if(d<0&&p.min!==''&&p.qty<=p.min)toast(`${p.name}：残 ${p.qty}${p.unit}（最低在庫数 ${p.min} 以下）`);else toast(`${p.name}：${type} 1 → 残 ${p.qty}${p.unit}`)}
 function vStock(){
   const t=V.stTab||'parts';
   let h=tabs16('stTab',[['parts','予備品'],['tools','工具・測定器'],['budget','予算・費用']]);
-  if(t==='parts'){const q=(V.ptQ||'').trim(),P=(S.parts||[]).filter(p=>!q||[p.name,p.code,p.spec,p.maker,p.place].join(' ').includes(q)),low=P.filter(p=>p.min!==''&&p.qty<=p.min);
+  if(t==='parts'){const q=(V.ptQ||'').trim(),P=(S.parts||[]).filter(p=>!q||[p.name,p.code,p.spec,p.maker,p.place].join(' ').includes(q)).map((p,k)=>[p,k]).sort((a,b)=>((b[0].min!==''&&b[0].qty<=b[0].min)-(a[0].min!==''&&a[0].qty<=a[0].min))||a[1]-b[1]).map(x=>x[0]),low=P.filter(p=>p.min!==''&&p.qty<=p.min);
     h+=`<input placeholder="品名・型番・保管場所で検索" value="${esc(q)}" onchange="V.ptQ=this.value;render()" style="margin-bottom:8px">`;
     if(low.length)h+=`<div class="al ng">在庫不足 ${low.length}品目：${low.map(p=>esc(p.name)).join('、')}</div>`;
     h+=card(`📦 予備品 <span class="muted">${P.length}品目</span>`,P.map(partRow).join('')||emptyBox('まだありません'),`<button class="btn sm" style="min-height:40px" onclick="editPart()">＋ 追加</button>`);
