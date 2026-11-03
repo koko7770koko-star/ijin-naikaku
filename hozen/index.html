@@ -1346,7 +1346,7 @@ const mdKey=k=>'hes_mdraft_'+k;
 function mdraftNext(key,ids){MD_NEXT={key,ids}}
 function mdSave(){clearTimeout(MD.t);MD.t=setTimeout(()=>{if(!MD.key||!MD.ids.length||!$('#'+MD.ids[0]))return;try{const v={};MD.ids.forEach(i=>{const e=$('#'+i);if(e)v[i]=e.value});sessionStorage.setItem(mdKey(MD.key),JSON.stringify({at:Date.now(),v}))}catch(e){}},400)}
 function mdraftClear(){clearTimeout(MD.t);try{if(MD.key)sessionStorage.removeItem(mdKey(MD.key))}catch(e){}}
-function mdraftApply(){let d=null;try{d=JSON.parse(sessionStorage.getItem(mdKey(MD.key))||'null')}catch(e){}if(d&&d.v)for(const [i,v] of Object.entries(d.v)){const e=$('#'+i);if(e&&e.value!==v)e.value=v}const b=$('#dr_bar');if(b)b.remove();toast('書きかけの入力を戻しました（未保存。「保存」で保存してください）')}
+function mdraftApply(){let d=null;try{d=JSON.parse(sessionStorage.getItem(mdKey(MD.key))||'null')}catch(e){}if(d&&d.v)for(const [i,v] of Object.entries(d.v)){const e=$('#'+i);if(e&&e.value!==v)e.value=v}const mo=$('#is_more');if(mo&&['is_detail','is_action','is_memo'].some(i=>$('#'+i)&&$('#'+i).value))mo.open=true;const b=$('#dr_bar');if(b)b.remove();toast('書きかけの入力を戻しました（未保存。「保存」で保存してください）')}
 function mdraftDrop(){mdraftClear();const b=$('#dr_bar');if(b)b.remove()}
 function mdraftBind(key,ids){
   MD.key='';const m=$('#modal');if(!m||!ids.length||!$('#'+ids[0]))return;MD.key=key;MD.ids=ids;
@@ -2474,20 +2474,24 @@ function editIssue(id,preset){
     <div class="seg tabs" id="is_qurg" style="margin:6px 0">${['緊急','高','中','低'].map(u=>`<button type="button" class="${u===i.urgency?'on':''}" style="height:48px;font-size:15px" onclick="setIssueUrg('${u}')">${u}</button>`).join('')}</div>
     ${tpBox()}
     ${recentPl.length?`<div class="muted" style="margin-top:8px;font-size:12px">最近の場所（押すと入ります）</div><div class="row" style="flex-wrap:wrap;gap:6px;margin-top:4px">${recentPl.map(pl=>`<button type="button" class="btn sec sm" style="min-height:44px" onclick="setIssuePlace(${esc(JSON.stringify(pl))})">${esc(pl)}</button>`).join('')}</div>`:''}</div>`;
-  loadPhotos(TP).then(()=>{openModal(`<h3>${id?'異常案件':'異常案件の登録'}</h3>${quick}
-    <label class="f">状態</label><div class="seg tabs istep" id="is_steps" style="margin-bottom:4px">${step}</div><input type="hidden" id="is_status" value="${esc(i.status)}">
+  // 新規は「場所・内容・写真」だけを先に出し、状態・発見日・設備・詳細・処置・担当・期限・費用などは「詳しく入れる」に畳む（消さない。保存の形は変えない）
+  const stHTML=`<label class="f">状態</label><div class="seg tabs istep" id="is_steps" style="margin-bottom:4px">${step}</div><input type="hidden" id="is_status" value="${esc(i.status)}">
     <div id="is_done" style="display:${i.status==='完了'?'block':'none'}" class="grp"><b>完了の確認（人が確認してください）</b>
       <label class="f">確認者 *</label><input id="is_by" list="dl_is" value="${esc(i.confirmedBy||'')}" maxlength="60">${staffList('dl_is')}
       <label class="chkl"><input type="checkbox" id="is_chk" ${i.status==='完了'&&i.confirmedBy?'checked':''}>処置の結果を現場で確認し、異常が解消したことを確かめた</label>
-      <label class="f">完了日</label><input type="date" id="is_closed" value="${esc(i.closed||TODAY)}"></div>
-    <div class="grid2"><div><label class="f">発見日</label><input type="date" id="is_date" value="${esc(i.date)}"></div><div><label class="f">設備</label>${equipSelect(i.equipId,"")}</div></div>
-    <label class="f">内容 *</label><input id="is_title" value="${esc(i.title)}" maxlength="100">
+      <label class="f">完了日</label><input type="date" id="is_closed" value="${esc(i.closed||TODAY)}"></div>`;
+  const dateEq=`<div class="grid2"><div><label class="f">発見日</label><input type="date" id="is_date" value="${esc(i.date)}"></div><div><label class="f">設備</label>${equipSelect(i.equipId,"")}</div></div>`;
+  const titleHTML=`<label class="f">内容 *</label><input id="is_title" value="${esc(i.title)}" maxlength="100">
     ${id?'':`<div class="row" id="is_phr" style="flex-wrap:wrap;gap:6px;margin-top:4px">${issuePhrases().map(t=>`<button type="button" class="btn sec sm" style="min-height:44px" onclick="setIssuePhrase(${esc(JSON.stringify(t))})">${esc(t)}</button>`).join('')}</div>`}
-    <label class="f">設置場所</label><input id="is_place" value="${esc(i.place)}" maxlength="100">
-    <label class="f">詳細</label><textarea id="is_detail" style="min-height:60px" maxlength="2000">${esc(i.detail)}</textarea>
+    <label class="f">設置場所</label><input id="is_place" value="${esc(i.place)}" maxlength="100">`;
+  const restHTML=`<label class="f">詳細</label><textarea id="is_detail" style="min-height:60px" maxlength="2000">${esc(i.detail)}</textarea>
     <label class="f">処置内容・経過</label><textarea id="is_action" style="min-height:60px" maxlength="4000" placeholder="例：11/12 業者手配、11/20 部品交換で復旧">${esc(i.action)}</textarea>
     <label class="f">状態を変えた理由・メモ（履歴に残ります${i.status==='完了'?'。完了から戻すときは必須':''}）</label><input id="is_memo" maxlength="300">
-    ${issueExtra(i)}${issueApprovals({...i,id})}
+    ${issueExtra(i)}${issueApprovals({...i,id})}`;
+  const moreOpen=!!(preset&&(preset.detail||preset.action||preset.equipId||preset.status&&preset.status!=='発見'||preset.urgency));
+  const body=id?stHTML+dateEq+titleHTML+restHTML:titleHTML+`<details id="is_more" class="grp" style="margin-top:10px" ${moreOpen?'open':''}><summary style="min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer">詳しく入れる（状態・発見日・設備・詳細・処置・期限・費用など）</summary>${stHTML+dateEq+restHTML}</details>`;
+  loadPhotos(TP).then(()=>{openModal(`<h3>${id?'異常案件':'異常案件の登録'}</h3>${quick}
+    ${body}
     ${id?tpBox():''}
     ${id?`<div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="useParts('issue:${id}')">📦 使った部品を出庫</button><button class="btn sec sm grow" onclick="closeModal(true);editWork(null,{title:${esc(JSON.stringify('対応：'+i.title))},kind:'修理',equipIds:${esc(JSON.stringify(i.equipId?[i.equipId]:[]))},issueId:'${id}'})">🧰 作業指示を作る</button><button class="btn sec sm grow" onclick="closeModal(true);go('printDoc',{doc:{t:'issue',id:'${id}'}})">修理報告書</button></div>`:''}
     ${(i.log||[]).length?`<details style="margin-top:10px"><summary class="muted">状態の履歴（${i.log.length}件）</summary>${i.log.slice().reverse().map(l=>`<div class="meta" style="padding:3px 0;border-bottom:1px solid #eef1f4">${esc(l.at?new Date(l.at).toLocaleString('ja-JP'):'')}${l.by?'・'+esc(l.by):''}：${esc(l.from||'－')} → <b>${esc(l.to)}</b>${l.note?'（'+esc(l.note)+'）':''}</div>`).join('')}</details>`:''}
@@ -2514,10 +2518,11 @@ function saveIssue(id){
   const o={date:g('date'),title:txt(g('title'),100),place:txt(g('place'),100),detail:txt(g('detail'),2000),status:ISTAT.includes(g('status'))?g('status'):'発見',action:txt(g('action'),4000),photos:[...TP],auto:false,equipId:RE_ID.test(g('equip'))?g('equip'):''};
   Object.assign(o,issueReadExtra());
   const memo=txt(g('memo'),300);
-  if(!o.title||!o.date){toast('発見日と内容を入れてください');return}
-  if(!isDate(o.date)){toast('日付が正しくありません');return}
+  if(!o.title||!o.date){if(!o.date){const mo=$('#is_more');if(mo)mo.open=true}toast('発見日と内容を入れてください');return}
+  if(!isDate(o.date)){const mo=$('#is_more');if(mo)mo.open=true;toast('日付が正しくありません');return}
   const old=S.issues.find(x=>x.id===id);
   if(o.status==='完了'){
+    const mo=$('#is_more');if(mo)mo.open=true;
     const by=txt(g('by'),60),closed=g('closed');
     if(!by){toast('完了には確認者の名前が必要です');return}
     if(!$('#is_chk').checked){toast('現場で確認したことのチェックが必要です');return}
@@ -2539,7 +2544,7 @@ function saveIssue(id){
     const log=[...(old.log||[])];if(from!==o.status||memo)log.push({at:new Date().toISOString(),from,to:o.status,by:who,note:reopenNote||memo});
     Object.assign(old,o,{log});
   }else S.issues.push({id:uid(),src:'manual:'+uid(),...o,log:[{at:new Date().toISOString(),from:'',to:o.status,by:who,note:memo||'手入力で登録'}]});
-  save();mdraftClear();closeModal(true);render();toast(o.status==='完了'?`完了にしました（確認者：${o.confirmedBy}）`:'保存しました');
+  save();mdraftClear();closeModal(true);render();toast(o.status==='完了'?`完了にしました（確認者：${o.confirmedBy}）`:old?'保存しました':'保存しました。異常案件の一覧（未完了）に入りました');
 }
 function delIssue(id){
   if(!confirm('この案件を削除しますか？'))return;
