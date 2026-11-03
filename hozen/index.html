@@ -1385,7 +1385,7 @@ function askBox(o){return new Promise(res=>{
 const NAV_KEYS=['sel','hItem','hRange','hQ','hOnlyNg','eqQ','eqKind','eqImp','eqLoc','ry','rm','fy','day','eq','dwg','dwgVer','doc','dgTab','plTab','stTab','wkF','isF','isQ','isB','rmode','y','m','qrSel','qrLoc','measEq','msType','libQ','wsFrom'];
 let NAV_POP=false;
 function navState(){const x={};NAV_KEYS.forEach(k=>{if(V[k]!==undefined)x[k]=V[k]});return {v:V.view,x}}
-let NAV_STACK=[];
+let NAV_STACK=[],BACK_AT=0;
 const NAV_RECENT=[];/* その場で最近開いた画面（メニューの先頭に出す。保存しない） */
 function navRecent(v){if(!v||['home','menu'].includes(v))return;const i=NAV_RECENT.indexOf(v);if(i>=0)NAV_RECENT.splice(i,1);NAV_RECENT.unshift(v);if(NAV_RECENT.length>8)NAV_RECENT.length=8}
 function go(v,extra){navRecent(v);V.view=v;if(extra)Object.assign(V,extra);if(!NAV_POP){try{const st=JSON.parse(JSON.stringify(navState()));history.pushState(st,'');NAV_STACK.push(st.v)}catch(e){}}render();scrollTo(0,0)}
@@ -1399,7 +1399,10 @@ window.addEventListener('popstate',ev=>{
     closeModal();return;
   }
   NAV_STACK.pop();
-  const st=ev.state;if(!st||!st.v||!VIEWS[st.v]&&st.v!=='shift'){NAV_POP=true;go('home');NAV_POP=false;return}
+  const st=ev.state;
+  /* ホームで「戻る」：1回目は知らせるだけ（アプリを閉じない）。2.5秒以内にもう一度で閉じる */
+  if(st&&st.root){const t=Date.now();if(t-BACK_AT<2500){BACK_AT=0;history.back();return}BACK_AT=t;NAV_POP=true;try{go('home');history.pushState({v:'home',x:{}},'');NAV_STACK=['home','home']}finally{NAV_POP=false}toast('もう一度「戻る」を押すとアプリを閉じます');return}
+  if(!st||!st.v||!VIEWS[st.v]&&st.v!=='shift'){NAV_POP=true;go('home');NAV_POP=false;return}
   NAV_POP=true;try{go(st.v,st.x||{})}finally{NAV_POP=false}
 });
 function shiftYM(ky,km,dm){let y=V[ky],m=V[km]+dm;if(m<1){m=12;y--}if(m>12){m=1;y++}V[ky]=y;V[km]=m;render()}
