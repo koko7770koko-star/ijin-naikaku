@@ -2493,9 +2493,20 @@ function editIssue(id,preset){
     ${id?editLogHTML('issue',id):''}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveIssue('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delIssue('${id}')">削除</button>`:'')}`);
     const sel=$('#modal .grid2 select');if(sel)sel.id='is_equip';
+    const pl=$('#is_place');if(pl&&sel){pl.insertAdjacentHTML('afterend','<div id="is_recur" class="muted" style="font-size:13px;margin-top:4px"></div>');ISS_CUR=id||'';sel.addEventListener('change',issueRecurHint);issueRecurHint()}
     const us=$('#is_urg');if(us)us.addEventListener('change',()=>setIssueUrg(us.value,true));
     if(!id){const t=$('#is_title');if(t&&!t.value)try{t.focus()}catch(e){}}});
 }
+/* 設備を選んだとき、その設備の未完了の異常と過去1年の件数を1行で出す（再発に気づく。表示だけ・押すとその案件を開く） */
+let ISS_CUR='';
+function issueRecurHint(){
+  const box=$('#is_recur'),sel=$('#is_equip');if(!box||!sel)return;const eq=sel.value;
+  if(!eq){box.innerHTML='';return}
+  const y1=addD(TODAY,-365),all=S.issues.filter(i=>i.equipId===eq&&i.id!==ISS_CUR),open=all.filter(i=>i.status!=='完了').sort((a,b)=>b.date.localeCompare(a.date)),yr=all.filter(i=>i.date>=y1).length;
+  const go1=open[0]?`<a href="#" style="color:var(--accent);font-weight:700;display:inline-block;min-height:44px;line-height:44px" onclick="issueOpenFrom('${open[0].id}');return false">未完了 ${open.length}件：${esc(open[0].title)}（${md(open[0].date)}）</a>`:'';
+  box.innerHTML=[go1,yr?`この設備の過去1年の異常：${yr}件`:''].filter(Boolean).join('<br>')||'この設備の異常の記録はまだありません';
+}
+function issueOpenFrom(id){if(closeModal()===false)return;editIssue(id)}
 function setIssueUrg(u,fromSel){const s=$('#is_urg');if(s&&!fromSel)s.value=(s.value===u?'':u);const cur=s?s.value:u;document.querySelectorAll('#is_qurg button').forEach(b=>b.classList.toggle('on',b.textContent===cur))}
 /* よく使う言い方：内蔵の候補＋過去の件名のうち同じ物が2回以上あるもの（新しい保存項目は足さない） */
 function issuePhrases(){const base=['球切れ','発熱','異音','破損','漏水','焦げ臭い','表示灯が消えている','警報が鳴る'],cnt={};
