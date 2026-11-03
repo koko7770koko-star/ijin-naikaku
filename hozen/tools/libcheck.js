@@ -14,5 +14,11 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  await p.evaluate(()=>{V.stdQ='標準C';go('stds')});await p.waitForTimeout(300);
  const n=await p.evaluate(()=>document.querySelectorAll('#app .item').length);if(n!==1)bad.push('作業標準の絞り込みが効かない '+n);
  if(await p.evaluate(()=>document.documentElement.scrollWidth)>392)bad.push('作業標準がはみ出す');
+ // 作業標準の編集：確認項目の文章が全部見える（切れない）・×が44px・改行を入れても1行の文字列で保存される
+ await p.evaluate(()=>{S.stds[2].pre=[{text:'停電範囲・送電先への影響を全員で確認した上で、作業開始の合図を出した（長い文章の例）',req:true}];editStd('s2')});await p.waitForTimeout(300);
+ const sd=await p.evaluate(()=>{const t=document.querySelector('#sd_pre textarea'),x=document.querySelector('#sd_pre [aria-label="この項目を外す"]');return{fit:t.scrollHeight<=t.clientHeight+2,xw:x.getBoundingClientRect().width,xh:x.getBoundingClientRect().height,sw:document.documentElement.scrollWidth}});
+ if(!sd.fit)bad.push('確認項目の文章が切れる');if(sd.xw<44||sd.xh<44)bad.push('×が小さい');if(sd.sw>392)bad.push('編集画面がはみ出す');
+ await p.evaluate(()=>{const t=document.querySelector('#sd_pre textarea');t.value='一行目\n二行目';t.dispatchEvent(new Event('change'))});
+ if(await p.evaluate(()=>STD.pre[0].text)!=='一行目 二行目')bad.push('改行が空白にならない：'+await p.evaluate(()=>JSON.stringify(STD.pre[0].text)));
  if(process.argv[2])await p.screenshot({path:process.argv[2]});
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
