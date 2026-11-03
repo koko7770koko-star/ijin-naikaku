@@ -229,7 +229,7 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
 #undobar.on{display:flex}
 #undobar span{flex:1}
 #undobar button{border:0;background:none;color:#8fd1ff;font-weight:700;font-size:15px;padding:6px 8px;min-height:44px}
-@media print{#sysbar,#undobar{display:none!important}}
+@media print{#sysbar,#undobar{display:none!important}html{zoom:1!important}}
 
 /* ---------- モーダル・通知 ---------- */
 .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:none;align-items:flex-end;justify-content:center}
@@ -1269,7 +1269,7 @@ const DEF={
     cats:['受変電設備','非常用電源','医用電気設備','消防・防災設備','照明・コンセント','空調・動力','昇降機','その他'],
     kinds:['日常','月次','年次','定期','臨時','工事','会議・届出'],
     model:'claude-sonnet-5-5',lim:{vMin:'',vMax:'',kwMax:'',tMax:'',chg:15},
-    lastBackup:'',showCrew:true,calDay:false,repPhotos:true,facType:'',apiMode:'direct',apiUrl:'',wx:{on:false,lat:null,lng:null,pref:'',label:''}},
+    lastBackup:'',fscale:'',showCrew:true,calDay:false,repPhotos:true,facType:'',apiMode:'direct',apiUrl:'',wx:{on:false,lat:null,lng:null,pref:'',label:''}},
   items:[],marks:{},tasks:[],daily:{},notes:{},issues:[],inbox:[]
 };
 const WD='日月火水木金土';
@@ -2118,7 +2118,7 @@ function vHome(){ // v16.4：上から「今すぐ対応すること → 今日�
   const dl=deadlines().filter(x=>x.left!=null&&x.left<=30),over=S.tasks.filter(t=>t.status==='予定'&&t.date<TODAY).length;
   let h=`<div class="hero"><div class="date">${now.getMonth()+1}月${now.getDate()}日（${WD[now.getDay()]}）</div>${S.settings.name?`<div class="muted">${esc(S.settings.name)}</div>`:''}${wxLine()}</div>`;
   // 0 よく使う仕事（2タップ以内で着く）
-  h+=`<div class="quick" style="margin:0 0 12px;grid-template-columns:repeat(4,1fr);gap:6px"><button class="btn sec" onclick="go('day',{day:TODAY})"><b>✅</b>今日の点検</button><button class="btn sec" onclick="go('year')"><b>◯●</b>印を付ける</button><button class="btn sec" onclick="go('diag',{dgTab:'meas'});setTimeout(()=>{const g=document.getElementById('genCard');if(g)g.scrollIntoView()},80)"><b>⚡</b>発電機</button><button class="btn sec" onclick="editIssue()"><b>🛠</b>異常を記録</button></div>`;
+  h+=`<div class="quick" style="margin:0 0 12px;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:6px"><button class="btn sec" onclick="go('day',{day:TODAY})"><b>✅</b>今日の点検</button><button class="btn sec" onclick="go('year')"><b>◯●</b>印を付ける</button><button class="btn sec" onclick="go('diag',{dgTab:'meas'});setTimeout(()=>{const g=document.getElementById('genCard');if(g)g.scrollIntoView()},80)"><b>⚡</b>発電機</button><button class="btn sec" onclick="editIssue()"><b>🛠</b>異常を記録</button></div>`;
   // 1 今すぐ対応すること
   if(A.length){
     const al=([c,t,on,ch])=>`<div class="al ${c}" onclick="${on}">${esc(t)}${ch?`<div class="alchips noprint">${ch.days.map(d=>`<button class="alchip" onclick="event.stopPropagation();go('day',{day:'${d}'})">${md(d)} を開く</button>`).join('')}${ch.more?`<span class="muted">ほか ${ch.more}日</span>`:''}</div>`:''}</div>`,top=A.slice(0,3),rest=A.slice(3),ngN=A.filter(a=>a[0]==='ng').length;
@@ -3605,7 +3605,9 @@ function vSet(){
   const field=(k,l,ph,hp)=>`<label class="f">${l}</label><input value="${esc(st[k])}" placeholder="${ph}" maxlength="100" onchange="S.settings.${k}=txt(this.value,100).trim();save()">${hp?`<div class="muted sethelp" style="font-size:12px;margin-top:2px">${hp}</div>`:''}`;
   const list=(k,l,hp)=>`<label class="f">${l}（1行に1つ）</label><textarea style="min-height:80px" onchange="setList('${k}',this.value)">${esc(st[k].join('\n'))}</textarea>${hp?`<div class="muted sethelp" style="font-size:12px;margin-top:2px">${hp}</div>`:''}`;
   const lim=(k,l)=>`<div><label class="f">${l}</label><input type="number" step="any" inputmode="decimal" value="${esc(L[k])}" onchange="setLim('${k}',this)"></div>`;
-  return `<div class="card"><h2>基本情報（報告書に表示）</h2>${field('name','施設名','例：○○総合病院','報告書・印刷物の見出しに出ます')}${field('facType','施設の種類（AIへの指示に使います）','例：病院、工場、事務所ビル','AIに質問するときの前提になります')}${field('dept','担当部署','例：施設管理課 電気係','報告書の担当部署の欄に出ます')}${field('reporter','報告者','氏名','報告書の「報告者」欄に出ます')}${field('to','提出先','例：施設管理課長','報告書の「提出先」欄に出ます')}${field('operator','この端末を使う人（修正履歴に残る名前）','氏名','記録を直したとき「誰が直したか」に使います')}</div>
+  return `<div class="card"><h2>文字の大きさ</h2><div class="muted sethelp" style="font-size:12px;margin-bottom:6px">画面の文字と部品を大きくします（印刷の大きさは変わりません）。</div>
+    <div class="seg" role="group" aria-label="文字の大きさ">${FSCALES.map(([v,l])=>`<button type="button" class="${(st.fscale||'')===v?'on':''}" style="min-height:48px" onclick="setFScale('${v}')">${l}</button>`).join('')}</div></div>
+  <div class="card"><h2>基本情報（報告書に表示）</h2>${field('name','施設名','例：○○総合病院','報告書・印刷物の見出しに出ます')}${field('facType','施設の種類（AIへの指示に使います）','例：病院、工場、事務所ビル','AIに質問するときの前提になります')}${field('dept','担当部署','例：施設管理課 電気係','報告書の担当部署の欄に出ます')}${field('reporter','報告者','氏名','報告書の「報告者」欄に出ます')}${field('to','提出先','例：施設管理課長','報告書の「提出先」欄に出ます')}${field('operator','この端末を使う人（修正履歴に残る名前）','氏名','記録を直したとき「誰が直したか」に使います')}</div>
   <div class="card"><h2>棟と階</h2><div class="muted">A棟〜F棟と各階（地下も）を一度に作ります。既にある物は重ねません。</div><button class="btn sec wide" style="margin-top:8px" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button></div>
   ${defsCard()}
   <div class="card"><h2>選択肢</h2><div class="muted">シフトの「メンバー」は自動で担当者・点検者の候補に入ります。ここにはそれ以外（委託業者など）を追加。</div>${list('staff','担当者・点検者（追加分）','点検・作業の担当者を選ぶ一覧に加わります')}${list('cats','分類','点検項目の「分類」の選択肢になります')}${list('kinds','区分','点検項目の「区分」の選択肢になります')}</div>
@@ -3927,7 +3929,13 @@ function updateNavBadge(fromRender){
   const d=document.querySelector('nav button[data-v=day] b');if(d){const r=S.daily[TODAY];d.dataset.n=r&&r.done?'':'!'}
 }
 let AL_CACHE=null;
+/* 文字の大きさ（設定の fscale：''=標準・'l'=大・'xl'=特大）。画面全体の拡大で効かせる。印刷には効かせない */
+const FSCALES=[['','標準',1],['l','大',1.125],['xl','特大',1.25]];
+const FSCALE_OFF=['dailyRep','report','printDoc','workSheet'];/* 印刷の見本の画面（表が幅いっぱい）は大きくしない */
+function applyFScale(){const f=FSCALES.find(x=>x[0]===((S&&S.settings&&S.settings.fscale)||''))||FSCALES[0];document.documentElement.style.zoom=f[2]===1||FSCALE_OFF.includes(V.view)?'':String(f[2])}
+function setFScale(v){if(!FSCALES.some(x=>x[0]===v))return;S.settings.fscale=v;save();applyFScale();render();toast('文字の大きさを変えました')}
 function render(){
+  applyFScale();
   CREW={};DL_CACHE=null;AL_CACHE=null;
   const shiftMode=V.view==='shift';
   document.body.classList.toggle('mode-shift',shiftMode);
@@ -5887,7 +5895,7 @@ function tabify(html,tabs,key,def){
     +tabs.map(([k])=>`<div class="tabpane" data-key="${key}" data-pane="${k}" style="${k===cur?'':'display:none'}">${panes[k].join('')||'<div class="empty">ありません</div>'}</div>`).join('');
 }
 function tabGo(key,k){V[key]=k;document.querySelectorAll(`.ptabs[data-key="${key}"] button`).forEach((b,i,all)=>b.classList.toggle('on',b.getAttribute('onclick').includes(`'${k}'`)));document.querySelectorAll(`.tabpane[data-key="${key}"]`).forEach(p=>p.style.display=p.dataset.pane===k?'':'none');scrollTo(0,0)}
-const SET_TABS=[['data','💾 データ',/データ・バックアップ/],['basic','⚙ 基本',/基本情報|選択肢|棟と階/],['items','✏️ 点検項目',/日常点検の項目|数値の項目|確認（○×）/],['link','☀ 天気・AI・通信',/写真読み取り|天気|ネット接続/]];
+const SET_TABS=[['data','💾 データ',/データ・バックアップ/],['basic','⚙ 基本',/基本情報|選択肢|棟と階|文字の大きさ/],['items','✏️ 点検項目',/日常点検の項目|数値の項目|確認（○×）/],['link','☀ 天気・AI・通信',/写真読み取り|天気|ネット接続/]];
 const EQ_TABS=[['ov','概要',/設備カルテ|健全度|更新計画|点検の推奨/],['rec','履歴',/時系列|故障・修理履歴|異常案件|作業・点検の実績/],['insp','点検・測定',/点検項目と期限|日常点検の記録|測定記録/],['rel','作業・部品・図面',/作業指示|予備品|図面/]];
 
 start();
