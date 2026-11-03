@@ -406,7 +406,8 @@ details summary{cursor:pointer;padding:4px 0}
 .grp{border:1px solid #e3e8ee;border-radius:10px;padding:8px 10px;margin-top:10px}
 .grp>b:first-child{display:block;margin-bottom:2px}
 .dwgv{position:relative;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px;touch-action:pan-x pan-y pinch-zoom}
-.dwgv img{display:block;width:100%;height:auto}
+.dwgw{overflow:auto;max-height:78vh;margin-bottom:12px;border-radius:var(--r);-webkit-overflow-scrolling:touch}.dwgw .dwgv{margin-bottom:0;display:inline-block;max-width:none}.dwgw .dwgv.fit{max-width:100%}.dwgw .dwgv.fit img{width:auto;max-width:100%;max-height:70vh;height:auto}
+.dwgv img{display:block;width:100%;height:auto}.dwgz{display:flex;gap:6px;align-items:center;margin-top:6px}.dwgz .btn{min-width:44px}
 .dwgv .pin{position:absolute;transform:translate(-50%,-100%);background:#c62828;color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px 10px 10px 2px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4);cursor:pointer;max-width:40vw;overflow:hidden;text-overflow:ellipsis}
 .dwgv .pin.hl{background:#1565c0;outline:3px solid #ffeb3b}
 .qrsheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -414,7 +415,7 @@ details summary{cursor:pointer;padding:4px 0}
 .qri{width:64px;flex:none}.qri svg{width:100%;height:auto;display:block}
 .qrt{font-size:11px;line-height:1.3;min-width:0;overflow-wrap:anywhere}.qrt b{font-size:13px}
 mark{background:#fff2a8;padding:0 1px}
-@media print{.qrsheet{grid-template-columns:repeat(3,1fr);gap:3mm}.qrl{border-color:#000}.dwgv{box-shadow:none}}
+@media print{.dwgw{max-height:none;overflow:visible}.dwgw .dwgv,.dwgw .dwgv.fit{width:auto!important;max-width:100%}.dwgw .dwgv img{width:auto;max-width:100%;max-height:250mm}.qrsheet{grid-template-columns:repeat(3,1fr);gap:3mm}.qrl{border-color:#000}.dwgv{box-shadow:none}}
 .grid2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)}
 .grid2 input,.grid3 input,.grid2 select,.grid3 select{min-width:0;max-width:100%}
@@ -5145,7 +5146,7 @@ const dwgById=id=>(S.drawings||[]).find(d=>d.id===id);
 function vDwgList(){
   const D=(S.drawings||[]);
   return card(`🗺 図面 <span class="muted">${D.length}件</span>`,`<div class="muted" style="margin-bottom:6px">単線結線図・配置図などを画像（写真・スキャン）やPDFで登録します。画像の図面には設備の印を置けます。新しい版を追加しても古い版は残ります。</div>`
-    +(D.map(d=>{const v=d.vers.at(-1);return `<div class="item" onclick="go('dwg',{dwg:'${d.id}'})"><div class="bd"><div class="ti">${esc(d.name)}</div><div class="meta">${esc(d.kind)}${d.locId?'・'+esc(locPath(d.locId)):''}・${v?`版 ${esc(v.ver)}（${slash(v.date)}）`:'版なし'}・設備の印 ${d.pins.length}</div></div><span class="ar">›</span></div>`}).join('')||emptyBox('まだありません')),
+    +(D.map(d=>{const v=d.vers.at(-1);return `<div class="item" onclick="go('dwg',{dwg:'${d.id}',dwgZ:1})"><div class="bd"><div class="ti">${esc(d.name)}</div><div class="meta">${esc(d.kind)}${d.locId?'・'+esc(locPath(d.locId)):''}・${v?`版 ${esc(v.ver)}（${slash(v.date)}）`:'版なし'}・設備の印 ${d.pins.length}</div></div><span class="ar">›</span></div>`}).join('')||emptyBox('まだありません')),
     `<button class="btn sm" onclick="editDwg()">＋ 図面</button>`);
 }
 function editDwg(id){
@@ -5168,8 +5169,9 @@ async function saveDwg(id){
   const d=dwgById(id);
   if(d){logEdit('dwg',id,'図面の情報',`${d.name}/${d.kind}`,`${o.name}/${o.kind}`);Object.assign(d,o);save();closeModal(true);render();return}
   try{const f=await dwgFile($('#dw_file').files[0]);const n={id:uid(),...o,vers:[{id:uid(),ver:txt($('#dw_ver').value.trim()||'1',20),date:isDate($('#dw_date').value)?$('#dw_date').value:TODAY,note:'',by:who(),...f}],pins:[]};S.drawings.push(n);save();closeModal(true);go('dwg',{dwg:n.id});toast('登録しました')}
-  catch(e){toast(e.message)}
+  catch(e){dwgErr(e)}
 }
+function dwgErr(e){const m=e&&e.message||'保存できませんでした';if(/容量/.test(m))msgModal('保存容量が足りません','端末の保存場所がいっぱいです。他の記録は壊れていません。先に「設定」でバックアップを書き出し、「データ点検」で不要な写真を整理してから、もう一度お試しください。');else toast(m)}
 async function addDwgVer(id){
   const d=dwgById(id);if(!d)return;
   openModal(`<h3>新しい版を追加</h3><div class="muted">古い版は残ります。設備の印は新しい版にも引き継ぎます（位置がずれたら直してください）。</div>
@@ -5178,7 +5180,7 @@ async function addDwgVer(id){
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveDwgVer('${id}')">追加</button>`)}`);
 }
 async function saveDwgVer(id){const d=dwgById(id);const ver=txt($('#dv_ver').value.trim(),20);if(!ver){toast('版を入れてください');return}if(d.vers.some(v=>v.ver===ver)){toast('同じ版があります');return}
-  try{const f=await dwgFile($('#dv_file').files[0]);d.vers.push({id:uid(),ver,date:isDate($('#dv_date').value)?$('#dv_date').value:TODAY,note:txt($('#dv_note').value.trim(),500),by:who(),...f});logEdit('dwg',id,'版の追加','',ver);V.dwgVer='';save();closeModal(true);render();toast('版を追加しました')}catch(e){toast(e.message)}}
+  try{const f=await dwgFile($('#dv_file').files[0]);d.vers.push({id:uid(),ver,date:isDate($('#dv_date').value)?$('#dv_date').value:TODAY,note:txt($('#dv_note').value.trim(),500),by:who(),...f});logEdit('dwg',id,'版の追加','',ver);V.dwgVer='';save();closeModal(true);render();toast('版を追加しました')}catch(e){dwgErr(e)}}
 function delDwg(id){const i=S.drawings.findIndex(d=>d.id===id),d=S.drawings[i];if(!confirm(`図面「${d.name}」（全${d.vers.length}版）を削除しますか？`))return;S.drawings.splice(i,1);save();closeModal(true);go('dwgs');undoBar(`図面「${d.name}」を削除しました`,()=>S.drawings.splice(i,0,d))}
 function vDwg(){
   const d=dwgById(V.dwg);if(!d)return emptyBox('図面が見つかりません');
@@ -5187,7 +5189,8 @@ function vDwg(){
     <div class="row"><select class="grow" onchange="V.dwgVer=this.value;render()">${d.vers.slice().reverse().map(x=>`<option value="${x.id}" ${x===v?'selected':''}>版 ${esc(x.ver)}（${slash(x.date)}）${x===d.vers.at(-1)?' 最新':''}</option>`).join('')}</select><button class="btn sec sm" onclick="addDwgVer('${d.id}')">＋ 新しい版</button></div>
     ${!latest?'<div class="al warn">古い版を表示しています（最新ではありません）</div>':''}${v&&v.note?`<div class="meta">変更内容：${esc(v.note)}</div>`:''}
     ${img?`<div class="row" style="margin-top:6px"><button class="btn ${mode?'':'sec'} sm" onclick="V.pinMode=${!mode};render()">${mode?'✓ 印を置くモード（図面をタップ）':'📍 設備の印を置く'}</button><button class="btn sec sm" onclick="window.print()">🖨 印刷</button></div>`:`<button class="btn sec sm" style="margin-top:6px" onclick="openDoc('${v?v.file:''}')">📄 PDFを開く</button><div class="muted">PDFの図面には印を置けません。画像（写真・スキャン）で登録すると設備の印を置けます。</div>`}</div>
-    ${img?`<div class="dwgv" id="dwgv" onclick="${mode?'dwgTap(event)':''}"><img src="${esc(safeSrc(ph(v.file)))}" alt="">${d.pins.map(p=>{const e=eqById(p.equipId);return `<span class="pin ${V.pinEq===p.equipId?'hl':''}" style="left:${p.x*100}%;top:${p.y*100}%" onclick="event.stopPropagation();pinTap('${d.id}','${p.id}')">${esc(p.label||(e?e.code||e.name:'?'))}</span>`}).join('')}</div>`:''}
+    ${img?`<div class="dwgz noprint"><button class="btn sec sm" onclick="V.dwgZ=Math.max(1,(V.dwgZ||1)-0.5);render()" aria-label="縮小">－</button><button class="btn sec sm" onclick="V.dwgZ=1;render()">全体</button><button class="btn sec sm" onclick="V.dwgZ=Math.min(4,(V.dwgZ||1)+0.5);render()" aria-label="拡大">＋</button><span class="muted">拡大 ${Math.round((V.dwgZ||1)*100)}%（拡大したら指でなぞって動かせます）</span></div>`:''}
+    ${img?`<div class="dwgw"><div class="dwgv ${(V.dwgZ||1)>1?'':'fit'}" id="dwgv" style="${(V.dwgZ||1)>1?`width:${(V.dwgZ||1)*100}%`:''}" onclick="${mode?'dwgTap(event)':''}"><img src="${esc(safeSrc(ph(v.file)))}" alt="">${d.pins.map(p=>{const e=eqById(p.equipId);return `<span class="pin ${V.pinEq===p.equipId?'hl':''}" style="left:${p.x*100}%;top:${p.y*100}%" onclick="event.stopPropagation();pinTap('${d.id}','${p.id}')">${esc(p.label||(e?e.code||e.name:'?'))}</span>`}).join('')}</div></div>`:''}
     <div class="card noprint"><h2>📍 設備の印 <span class="muted">${d.pins.length}</span></h2>${d.pins.map(p=>{const e=eqById(p.equipId);return `<div class="item" onclick="${e?`go('equipDetail',{eq:'${e.id}'})`:''}"><div class="bd"><div class="ti">${esc(p.label||'')}${e?' '+esc(eqLabel(e)):' <span class="muted">（設備の指定なし・削除済み）</span>'}</div></div><button class="btn sec sm" onclick="event.stopPropagation();delPin('${d.id}','${p.id}')">外す</button></div>`}).join('')||emptyBox('まだありません')}</div>`;
 }
 function dwgTap(ev){
