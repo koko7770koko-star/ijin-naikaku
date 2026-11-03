@@ -395,6 +395,8 @@ details summary{cursor:pointer;padding:4px 0}
 #shiftApp table.sh th,#shiftApp table.sh td{border-right:1px solid #ccc;border-bottom:1px solid #ccc;padding:4px 5px;text-align:center;background:#fff}
 #shiftApp table.sh thead th{position:sticky;top:0;z-index:3;background:#f2f2f2;border-bottom:1px solid #000}
 #shiftApp table.sh thead tr:nth-child(2) th{top:27px}
+#shiftApp table.sh thead button.qn{all:unset;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;display:block;width:100%;line-height:18px}#shiftApp table.sh thead button.qn:focus-visible{outline:2px solid #e0b000}
+@media print{#shiftApp table.sh thead button.qn{text-decoration:none}}
 #shiftApp table.sh .dc{position:sticky;left:0;z-index:2;background:#fff;text-align:left;border-right:1px solid #000;min-width:62px}
 #shiftApp table.sh thead .dc{z-index:4;background:#f2f2f2}
 #shiftApp table.sh td.cell{min-width:46px;cursor:pointer;font-weight:700}
@@ -796,7 +798,7 @@ html.night [style*="border:2px solid #c00000"]{border-color:var(--ng-line)!impor
   </div>
   <div class="judge" id="judge"></div>
   <div class="shper noprint" id="shPer" aria-label="一人ずつの回数"></div>
-  <div class="shhint noprint">左右・上下にスクロールできます（日付と見出しは固定）。マスを押すと勤務を選べます。<button type="button" class="btn sec sm" id="shLegBtn" style="min-height:44px;margin-left:6px;vertical-align:middle" onclick="document.querySelector('#pg-shift .legend').scrollIntoView({block:'center',behavior:'smooth'})">色の意味へ ↓</button></div>
+  <div class="shhint noprint">左右・上下にスクロールできます（日付と見出しは固定）。マスを押すと勤務を選べます。名前を押すと資格と今月の勤務が見られます。<button type="button" class="btn sec sm" id="shLegBtn" style="min-height:44px;margin-left:6px;vertical-align:middle" onclick="document.querySelector('#pg-shift .legend').scrollIntoView({block:'center',behavior:'smooth'})">色の意味へ ↓</button></div>
   <div class="tblwrap"><table class="sh" id="shTable"></table></div>
   <div class="legend">
     <span><i style="background:#DDEBF7"></i>A日夜勤</span><span><i style="background:#F4B183"></i>B日夜勤</span>
@@ -1114,7 +1116,7 @@ function renderShift(){
   {const el=$('shPer');if(el){const ns=M.map((m,i)=>m.type==='日勤'?-1:a.per[i].nights),mx=Math.max(0,...ns),mn=Math.min(...ns.filter(x=>x>=0),mx);
     el.innerHTML=M.map((m,i)=>{const p=a.per[i],rest=p.cnt['公休']+p.cnt['有給']+p.cnt['希望休'];const hi=m.type!=='日勤'&&mx-mn>=2&&p.nights===mx;
       return '<div class="pc'+(hi?' hi':'')+'" title="'+esc(m.name)+'"><b>'+esc(m.name)+(hi?'（多め）':'')+'</b><span>夜 '+p.nights+'・日 '+p.cnt['日勤']+'・休 '+rest+'</span></div>';}).join('');}}
-  let h='<thead><tr><th class="dc">日付</th><th>曜</th>'+M.map(m=>'<th>'+esc(m.name)+'</th>').join('')+'<th>A</th><th>B</th><th>欠員・重複</th><th>備考（自動）</th><th>代わりの候補（自動）</th></tr>';
+  let h='<thead><tr><th class="dc">日付</th><th>曜</th>'+M.map(m=>'<th>'+(typeof window.editQual==='function'?'<button type="button" class="qn" data-qn="'+esc(m.name)+'" aria-label="'+esc(m.name)+'の資格と今月の勤務">'+esc(m.name)+'</button>':esc(m.name))+'</th>').join('')+'<th>A</th><th>B</th><th>欠員・重複</th><th>備考（自動）</th><th>代わりの候補（自動）</th></tr>';
   h+='<tr><th class="dc">区分</th><th></th>'+M.map(m=>'<th class="'+(m.type==='日勤'?'dayk':'')+'" style="font-weight:400;font-size:11px">'+(m.type==='日勤'?'日勤':'夜勤')+'</th>').join('')+'<th></th><th></th><th></th><th></th><th></th></tr></thead><tbody>';
   a.rows.forEach(r=>{
     const t=ymd(r.d);
@@ -1138,7 +1140,7 @@ function renderShift(){
   $('shTable').innerHTML=h;
   const tb=$('shTodayBtn');if(tb)tb.style.display='';tb.textContent=(TODAY_N>=from&&TODAY_N<=to)?'今日':'今日へ';
 }
-$('shTable').addEventListener('click',e=>{const td=e.target.closest('td.cell');if(td)openPop(+td.dataset.i,+td.dataset.d);});
+$('shTable').addEventListener('click',e=>{const qn=e.target.closest('button.qn');if(qn&&typeof window.editQual==='function'){window.editQual(qn.dataset.qn);return}const td=e.target.closest('td.cell');if(td)openPop(+td.dataset.i,+td.dataset.d);});
 $('monthSel').addEventListener('change',e=>{S.view=e.target.value;save();renderShift();});
 window.moveMonth=k=>{S.view=ymAdd(S.view,k);save();renderShift();};
 
@@ -6156,7 +6158,7 @@ function staffMonthSum(L){const n=f=>L.filter(x=>f(x.v)).length,a=n(v=>/夜勤/.
   return [a?`夜勤 ${a}日`:'',dd?`日勤 ${dd}日`:'',o?`休み ${o}日`:''].filter(Boolean).join('・')}
 function staffMonthHTML(name){if(!hasShift())return '';const L=staffMonth(name),m=+TODAY.slice(5,7);
   return `<div class="stmon" style="margin-top:12px"><b>📅 ${m}月の勤務（シフト表）</b>${L.length?`<div class="muted" style="margin:2px 0 6px">${esc(staffMonthSum(L))}</div><div class="tags">${L.map(x=>`<span class="tag ${/A日/.test(x.v)?'a':/B日/.test(x.v)?'b':x.v==='日勤'?'d':'off'}${x.d===TODAY?' today':''}">${+x.d.slice(8)}日 ${esc(x.v==='A日夜勤'?'A夜勤':x.v==='B日夜勤'?'B夜勤':x.v)}</span>`).join('')}</div>`:'<div class="muted">今月の勤務はシフト表にありません（シフト表のメンバーでない人は出ません）</div>'}
-  <button class="btn sec sm" style="min-height:44px;margin-top:8px" onclick="closeModal();if(!$('#mask').classList.contains('on'))go('shift')">シフト表を開く ›</button></div>`}
+  ${V.view==='shift'?'':`<button class="btn sec sm" style="min-height:44px;margin-top:8px" onclick="closeModal();if(!$('#mask').classList.contains('on'))go('shift')">シフト表を開く ›</button>`}</div>`}
 function vStaff(){
   const names=[...new Set([...staffAll(),...Object.keys(S.quals)])];
   return qualNeedHTML()+card('🪪 人員・資格',`<div class="muted" style="margin-bottom:8px">シフトのメンバーと設定の担当者が表示されます。資格を登録すると、作業指示で必要な資格・人数を照合します。</div>`

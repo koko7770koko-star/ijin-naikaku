@@ -23,6 +23,16 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   const st=await p.evaluate(()=>({v:V.view,mask:document.querySelector('#mask').classList.contains('on')}));if(st.v!=='shift'||st.mask)bad.push('シフト表へ飛ばない '+JSON.stringify(st));
   await p.goBack();await p.waitForTimeout(200);if(await p.evaluate(()=>V.view)!=='staff')bad.push('戻るで人員に戻らない');
  }
+ // シフト表の名前（見出し）を押すと 資格と今月の勤務の窓（シフト表の中なので「シフト表を開く」は出さない）
+ await p.evaluate(()=>{closeModal(true);go('shift')});await p.waitForTimeout(300);
+ const qn=await p.evaluate(()=>[...document.querySelectorAll('#shTable thead button.qn')].map(b=>b.dataset.qn));
+ const mem=await p.evaluate(()=>SHIFT.members());if(JSON.stringify(qn)!==JSON.stringify(mem))bad.push('シフト表の名前が押せない '+qn.join());
+ const hh=await p.evaluate(()=>document.querySelector('#shTable thead tr').getBoundingClientRect().height);if(hh>32)bad.push('見出しの行が高くなり2段目の固定がずれる '+hh);
+ if(qn.length){await p.click('#shTable thead button.qn >> nth=0');await p.waitForTimeout(200);
+  const m2=await p.evaluate(()=>({on:document.querySelector('#mask').classList.contains('on'),h:(document.querySelector('#modal h3')||{}).textContent,st:!!document.querySelector('#modal .stmon'),btn:[...document.querySelectorAll('#modal .stmon button')].length,pop:document.querySelector('#pop').classList.contains('on')}));
+  if(!m2.on||m2.h!=='資格：'+qn[0])bad.push('名前を押しても資格の窓が出ない '+JSON.stringify(m2));if(!m2.st)bad.push('窓に今月の勤務が無い');if(m2.btn)bad.push('シフト表の中なのに「シフト表を開く」が出る');if(m2.pop)bad.push('勤務を選ぶ窓まで開いた');
+  await p.evaluate(()=>closeModal(true));}
+ await p.evaluate(()=>go('staff'));await p.waitForTimeout(150);
  // シフト表のメンバーでない人
  const ext=await p.evaluate(()=>{const it=[...document.querySelectorAll('#app .item')].find(e=>e.querySelector('.ti')&&e.querySelector('.ti').textContent==='外部の担当');return it?!!it.querySelector('.stsum'):null});
  if(ext===null)bad.push('設定の担当者が出ない');else if(ext)bad.push('シフトに居ない人に勤務の日数が出る');
