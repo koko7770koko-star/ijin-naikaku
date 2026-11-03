@@ -5,7 +5,7 @@
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');
 const WIDTHS=(process.argv[2]||'320,360').split(',').map(Number);const bad=[],note=[];
 // 直し中の物（取り込まれたらここから消す）：日報の点検表は wC/hz-day-narrow（iC）で直し中
-const KNOWN={dailyRep:'wC/hz-day-narrow で直し中'};
+const KNOWN={};
 (async()=>{const b=await chromium.launch();
  for(const W of WIDTHS)for(const many of [false,true]){
   const c=await b.newContext({viewport:{width:W,height:740}});const p=await c.newPage();const errs=[];
