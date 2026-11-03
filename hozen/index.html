@@ -5013,7 +5013,7 @@ function vBan(){
       return card('合う盤がありません',`<div class="muted">この棟に「${esc(V.banQ)}」を含む名前の盤はありません。</div>${oth.map(([b,n])=>`<button class="btn sec wide" style="min-height:44px;margin-top:6px" onclick="V.banB='${b.id}';render()">${esc(b.name)} に ${n}面あります</button>`).join('')}<button class="btn sec wide" style="min-height:44px;margin-top:6px" onclick="V.banQ='';render()">探すのをやめる</button>`)})()
     +(!secs.length?card('階がありません',`<div class="row"><button class="btn grow" style="min-height:44px" onclick="locAdd('${bid===BAN_NOB?'':bid}','階')">＋ 階を足す</button><button class="btn sec grow" style="min-height:44px" onclick="go('locs')">🏢 場所の登録へ</button></div>`):'')
     +`<div class="row" style="margin:8px 0"><button class="btn sec grow" style="min-height:44px" onclick="banAddWizard()">＋ 盤をまとめて足す</button><button class="btn sec grow" style="min-height:44px" onclick="go('locs')">🏢 場所の登録</button></div>
-    <div class="row" style="margin:8px 0"><button class="btn sec grow" style="min-height:44px" onclick="banPrintBlank()">🖨 空の点検表（手書き用・A4）</button><button class="btn sec grow" style="min-height:44px" onclick="banPrintBlank(true)">🖨 今月の印入り（A4）</button></div>`+banBlankHTML(ym,(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true})));
+    <div class="row" style="margin:8px 0"><button class="btn sec grow" style="min-height:44px" onclick="banPrintBlank()">🖨 空の点検表（手書き用・A4）</button><button class="btn sec grow" style="min-height:44px" onclick="banPrintBlank(true)">🖨 今月の印入り（A4）</button></div>`+banBlankHTML(ym,(S.locs||[]).filter(l=>l.type==='建屋').sort(locCmp));
 }
 /* 現場で手書きする空の点検表（画面では出ない。棟ごとに A4 縦1枚〜、階→盤→3項目の空欄。保存・画面の記録は変えない） */
 function banBlankHTML(ym,B){
@@ -5074,10 +5074,10 @@ function banGroups(bid){
   const by=id=>(S.locs||[]).find(l=>l.id===id),G=new Map();
   banBoards(bid).forEach(x=>{let l=by(x.parent),n=0,f='',fk=1e6,r='';while(l&&l.id!==bid&&n++<10){if(l.type==='階'&&!f){f=l.name;fk=floorKey(l.name)}if(l.type==='電気室'&&!r)r=l.name;l=by(l.parent)}
     const key=f+'\u0001'+r;if(!G.has(key))G.set(key,{floor:f,room:r,fk,boards:[],label:f&&r?f+' › '+r:f||r||'階なし'});G.get(key).boards.push(x)});
-  return [...G.values()].sort((a,b)=>(!a.floor-!b.floor)||(b.fk-a.fk)||a.floor.localeCompare(b.floor,'ja')||a.room.localeCompare(b.room,'ja',{numeric:true}));
+  return [...G.values()].sort((a,b)=>(!a.floor-!b.floor)); // 階・電気室の順は「設備の場所」の並び（盤の点検の画面と同じ。並べ替えた順 ord も効く）。階の無い物だけ後ろへ
 }
 function banReportHTML(y,m){
-  const ym=y+'-'+pad(m),B=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true})).filter(b=>banBoards(b.id).length);
+  const ym=y+'-'+pad(m),B=(S.locs||[]).filter(l=>l.type==='建屋').sort(locCmp).filter(b=>banBoards(b.id).length);
   if(!B.length)return '';
   const cnt=(bs,k)=>bs.filter(b=>banVal(ym,b.id,k)==='済').length;
   const rows=[];
@@ -5086,7 +5086,7 @@ function banReportHTML(y,m){
     banGroups(b.id).forEach(g=>line(g.label,g.boards,false));
     line('棟の合計',banBoards(b.id),true);
   });
-  return `<div class="sec">6の2. 盤の点検（棟ごと・${m}月）</div>`+repTable('<th>棟</th><th>階・電気室</th><th>盤数</th>'+BAN_ITEMS.map(n=>`<th>${esc(n)}</th>`).join('')+'<th>状況</th>',rows,'該当なし')+`<div class="muted" style="font-size:12px">各項目は ●（実施済み）の盤数／盤の数</div>`+banDetailHTML(ym,B,m);
+  return `<div class="sec">6の2. 盤の点検（棟ごと・${m}月）</div>`+repTable('<th>棟</th><th>階・電気室</th><th>盤数</th>'+BAN_HEAD.map(n=>`<th style="word-break:keep-all">${n}</th>`).join('')+'<th>状況</th>',rows,'該当なし')+`<div class="muted" style="font-size:12px">各項目は ●（実施済み）の盤数／盤の数</div>`+banDetailHTML(ym,B,m);
 }
 // 盤ごとの ◯（予定）・●（実施済み）。棟→階→盤の順。A4 縦で切れないよう 3 項目は細い列にする
 function banDetailHTML(ym,B,m){
@@ -5098,7 +5098,7 @@ function banDetailHTML(ym,B,m){
       g.boards.forEach(x=>rows.push(`<tr><td style="text-align:left">${esc(x.name)}</td>${[0,1,2].map(k=>`<td class="c">${mkShow(banVal(ym,x.id,k))||'－'}</td>`).join('')}</tr>`));
     });
   });
-  return rows.length?`<div class="sec">6の3. 盤ごとの点検（${m}月）</div><table class="bdt" style="table-layout:fixed;width:100%;break-inside:auto"><tr><th>盤</th>${BAN_ITEMS.map(n=>`<th style="width:22%;font-size:11px">${esc(n)}</th>`).join('')}</tr>${rows.join('')}</table><div class="muted" style="font-size:12px">◯＝予定、●＝実施済み、－＝まだ印なし</div>`:'';
+  return rows.length?`<div class="sec">6の3. 盤ごとの点検（${m}月）</div><table class="bdt" style="table-layout:fixed;width:100%;break-inside:auto"><tr><th>盤</th>${BAN_HEAD.map(n=>`<th style="width:22%;font-size:11px;word-break:keep-all">${n}</th>`).join('')}</tr>${rows.join('')}</table><div class="muted" style="font-size:12px">◯＝予定、●＝実施済み、－＝まだ印なし</div>`:'';
 }
 function banAddWizard(){
   const F=(S.locs||[]).filter(l=>l.type==='電気室'||l.type==='階').sort((a,b)=>locPath(a.id).localeCompare(locPath(b.id),'ja',{numeric:true}));
@@ -5859,7 +5859,9 @@ function workRow(w){
     <div class="meta">${esc([w.place,w.no,w.kind,w.staff.join('・'),w.vendor].filter(Boolean).join('・'))}</div><span class="pill ${WORK_STAT_CLS[w.status]||''}">${esc(w.status)}</span>${od?`<span class="pill ng">${od}日超過</span>`:''}${w.outage.on?'<span class="pill ng">停電</span>':''}${c&&!['完了','中止'].includes(w.status)?`<span class="pill ng">要確認 ${c}</span>`:''}</div></div>`;
 }
 /* 作業の確認事項（人員・資格・勤務表との照合など）。判断材料を示すだけ */
-function workChecks(w){
+function workChecks(w0){
+  // 項目が欠けた作業（古い記録・途中の記録）でも止まらないように、足りない所は空で補って見る（記録は変えない）
+  const w={...w0,staff:w0.staff||[],needQuals:w0.needQuals||[],pre:w0.pre||[],post:w0.post||[],ky:w0.ky||[],outage:{on:false,range:'',affect:'',...(w0.outage||{})}};w.outage.range=String(w.outage.range||'');w.outage.affect=String(w.outage.affect||'');
   const R=[],add=(lv,t)=>R.push({lv,t});
   if(w.needN&&w.staff.length+(w.vendorStaff?w.vendorStaff.split(/[、,・\s]+/).filter(Boolean).length:0)<w.needN)add('ng',`必要人数 ${w.needN}人に対して担当者が ${w.staff.length}人${w.vendorStaff?'（協力会社を含めても不足）':''}`);
   (w.needQuals||[]).forEach(q=>{const has=(w.staff||[]).filter(n=>(S.quals[n]||[]).includes(q));if(!has.length)add('ng',`必要資格「${q}」を持つ担当者がいません（資格の登録：人員・資格）`)});
