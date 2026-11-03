@@ -20,13 +20,13 @@ const CASES=[
   p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('console',m=>{if(m.type()==='error'&&!/Failed to load resource|net::ERR/.test(m.text()))errs.push('CONSOLE '+m.text())});
   p.on('dialog',d=>d.dismiss().catch(()=>{}));
   await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
-  await p.addInitScript(([ls,first])=>{if(sessionStorage.getItem('__oc'))return;sessionStorage.setItem('__oc','1');localStorage.clear();for(const k in ls)localStorage.setItem(k,ls[k])},[c.ls,1]);
-  await p.goto('file://'+FILE);await p.waitForTimeout(2500);
+  await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});
+  await p.evaluate(ls=>{localStorage.clear();for(const k in ls)localStorage.setItem(k,ls[k])},c.ls);await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(500);
   const views=await p.evaluate(()=>Object.keys(VIEWS));
   for(const v of views){if(v==='equipDetail')continue;await p.evaluate(v=>{try{go(v)}catch(e){console.error('go '+v+' '+e.message)}},v);await p.waitForTimeout(150)}
   for(const v of ['home','month','day','shift','menu']){await p.click(`#nav button[data-v="${v}"]`,{timeout:2500,force:true}).catch(()=>errs.push('下のボタン '+v+' が押せない'));await p.waitForTimeout(150)}
   await p.evaluate(()=>{try{save()}catch(e){console.error('save '+e.message)}});await p.waitForTimeout(600);
-  await p.reload();await p.waitForTimeout(2000);
+  await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(500);
   const dump=await p.evaluate(async()=>{const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);o[k]=localStorage.getItem(k)}
    try{const dbs=await indexedDB.databases();o.__idb=JSON.stringify(dbs)}catch(e){}return o});
   if(c.keep){let o=null;try{o=JSON.parse(dump[KEY])}catch(e){}if(!o||!c.keep(o))errs.push('記録が消えた／変わった: '+c.name)}
