@@ -3125,6 +3125,8 @@ function histRows(){
     return true;
   });
 }
+/* 絞り込みで 0 件になったとき：項目・期間・キーワード・「異常だけ」をまとめて外す（画面だけの状態。記録は変えない） */
+function histClearFilter(){V.hItem='';V.hKw='';V.hNg=false;V.hRange='all';V.hFrom='';V.hTo='';render();toast('条件を外しました')}
 function vHist(){
   if(!V.hRange)V.hRange='30';
   const nums=numDefs(),checks=chkDefs(),item=V.hItem||'',isNum=nums.some(n=>n.id===item),rows=histRows();
@@ -3138,7 +3140,7 @@ function vHist(){
     <button type="button" id="hNgBtn" class="btn wide ${V.hNg?'':'sec'}" style="min-height:44px;margin-top:8px" aria-pressed="${!!V.hNg}" onclick="V.hNg=!V.hNg;render()">${V.hNg?'✔ 異常だけ表示中（押すと全部）':'異常・基準外だけ表示'}</button>
     <div class="row" style="margin-top:10px"><span class="muted grow">該当 ${rows.length}日</span><button class="btn sec sm" ${rows.length?'':'aria-disabled="true" style="opacity:.5"'} onclick="exportDailyCsv()">${rows.length?`CSVに書き出す（${rows.length}日分）`:'CSVに書き出す'}</button></div></div>`;
   if(isNum)h+=trendCard(numDef(item));
-  h+=`<div class="card"><h2>記録</h2>${rows.length?rows.slice(0,200).map(k=>histRow(k,item)).join('')+(rows.length>200?`<div class="muted">ほか ${rows.length-200}日（CSVで全件出力できます）</div>`:''):`<div class="empty">該当する記録はありません${Object.keys(S.daily||{}).length?'<br>期間や絞り込みを変えてみてください':'<br>日常点検を入力すると、ここに出ます'}</div>${Object.keys(S.daily||{}).length?'':'<button class="btn sec wide" style="min-height:44px" onclick="go(\'day\')">✅ 日常点検を入力する</button>'}`}</div>`;
+  h+=`<div class="card"><h2>記録</h2>${rows.length?rows.slice(0,200).map(k=>histRow(k,item)).join('')+(rows.length>200?`<div class="muted">ほか ${rows.length-200}日（CSVで全件出力できます）</div>`:''):`<div class="empty">該当する記録はありません${Object.keys(S.daily||{}).length?'<br>期間や絞り込みを変えてみてください':'<br>日常点検を入力すると、ここに出ます'}</div>${Object.keys(S.daily||{}).length?'<button class="btn wide" id="hClearBtn" style="min-height:44px" onclick="histClearFilter()">✖ 条件を外して全期間を見る</button>':'<button class="btn sec wide" style="min-height:44px" onclick="go(\'day\')">✅ 日常点検を入力する</button>'}`}</div>`;
   return h;
 }
 function histRow(k,item){
