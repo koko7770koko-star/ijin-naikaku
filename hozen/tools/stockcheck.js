@@ -22,4 +22,22 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  // 在庫 0 で − は記録しない
  await p.evaluate(()=>{partById('p2').qty=0;save();go('stock',{stTab:'parts'})});await p.waitForTimeout(300);const n0=await p.evaluate(()=>S.moves.length);
  await tap('電球','1つ出庫');if(await p.evaluate(()=>[partById('p2').qty,S.moves.length].join()) !== '0,'+n0)bad.push('0 から出庫できてしまう');
+ // 窓での出庫・貸出・校正：prompt が出ない・数字キーボード・日付は type=date・保存の形が同じ
+ let pr=0;p.removeAllListeners('dialog');p.on('dialog',d=>{pr++;d.dismiss().catch(()=>{})});
+ await p.evaluate(()=>{go('stock',{stTab:'parts'});stockMove('p1','出庫')});await p.waitForTimeout(300);
+ const m1=await p.evaluate(()=>({t:document.querySelector('#sm_n')&&document.querySelector('#sm_n').type,im:document.querySelector('#sm_n')&&document.querySelector('#sm_n').inputMode}));
+ if(m1.t!=='number'||m1.im!=='decimal')bad.push('出庫の数が数字キーボードにならない '+JSON.stringify(m1));
+ await p.fill('#sm_n','99');if(!(await p.evaluate(()=>document.querySelector('#sm_w').innerText)).includes('多い出庫'))bad.push('在庫より多い出庫の案内が出ない');
+ await p.fill('#sm_n','2');await p.fill('#sm_note','確認用');await p.click('text=出庫を記録');await p.waitForTimeout(300);
+ const mv=await p.evaluate(()=>{const m=S.moves.filter(x=>x.partId==='p1').pop();return {k:Object.keys(m).sort().join(),q:m.qty,a:m.after,t:m.type,n:m.note}});
+ if(mv.k!=='after,by,date,id,note,partId,qty,ref,type'||mv.q!==2||mv.t!=='出庫'||mv.n!=='確認用')bad.push('出庫の記録の形・値が違う '+JSON.stringify(mv));
+ await p.evaluate(()=>{S.tools=[{id:'tx1',code:'',name:'確認用測定器',kind:'測定器',maker:'',model:'',serial:'',place:'',calDue:'',calCycleM:'12',calHist:[],loans:[],note:''}];save();go('stock',{stTab:'tools'});editTool('tx1');toolLoan('tx1')});await p.waitForTimeout(300);
+ const m2=await p.evaluate(()=>({d:document.querySelector('#tn_due')&&document.querySelector('#tn_due').type}));if(m2.d!=='date')bad.push('返却予定日が日付の入力でない');
+ await p.fill('#tn_to','確認');await p.fill('#tn_due','2030-01-31');await p.click('text=貸出を記録');await p.waitForTimeout(300);
+ const ln=await p.evaluate(()=>{const l=S.tools[0].loans[0];return l?Object.keys(l).sort().join()+':'+l.to+':'+l.due:''});if(ln!=='back,due,id,note,out,to:確認:2030-01-31')bad.push('貸出の記録が違う '+ln);
+ await p.evaluate(()=>{toolCal('tx1')});await p.waitForTimeout(300);
+ const nx=await p.evaluate(()=>document.querySelector('#tc_next')&&document.querySelector('#tc_next').value);if(!/^\d{4}-\d\d-\d\d$/.test(nx||''))bad.push('次回の校正期限の既定（周期から）が出ない '+nx);
+ await p.fill('#tc_by','確認機関');await p.click('text=校正を記録 >> nth=-1');await p.waitForTimeout(300);
+ const cl=await p.evaluate(()=>{const c=S.tools[0].calHist[0];return c?Object.keys(c).sort().join()+':'+c.by:''});if(cl!=='by,date,next,result:確認機関')bad.push('校正の記録が違う '+cl);
+ if(pr)bad.push('prompt/confirm が出た '+pr);
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
