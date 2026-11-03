@@ -2244,6 +2244,10 @@ function editItem(id){
       <label class="f">立会者（シフトと照合）</label><input id="i_attend" list="dl_i" value="${esc(it.attend||'')}">${staffList('dl_i')}
       <label class="chkl"><input type="checkbox" id="i_skip" ${it.skipOff!==false?'checked':''}>土日祝なら翌平日にずらす</label>
       <label class="chkl"><input type="checkbox" id="i_track" ${it.track!==false?'checked':''}>期限管理の対象（法定点検など）</label></div>
+    ${id?`<div class="grp"><b>年間計画に ◯ をまとめて置く（${V.fy}年度）</b>
+      <div class="grid2"><div><label class="f">間隔</label><select id="i_rp"><option value="1">毎月</option><option value="2">隔月（2か月ごと）</option><option value="3">3か月ごと</option><option value="6">半年ごと</option><option value="12">年1回</option></select></div>
+      <div><label class="f">最初の月</label><select id="i_rs">${MONTHS.map((m,i)=>`<option value="${i}">${m}月</option>`).join('')}</select></div></div>
+      <button type="button" class="btn sec sm wide" style="margin-top:6px;min-height:44px" onclick="placeMarks('${id}')">◯ を置く（空のマスだけ。●・延は変えません）</button></div>`:''}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveItem('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delItem('${id}')">削除</button>`:'')}`);
 }
 function saveItem(id){
@@ -2256,6 +2260,15 @@ function saveItem(id){
   if(o.time&&!isTime(o.time)){toast('時刻が正しくありません');return}
   if(id)Object.assign(S.items.find(x=>x.id===id),o);else S.items.push({id:uid(),...o});
   save();closeModal(true);render();toast('保存しました');
+}
+function placeMarks(id){
+  const it=S.items.find(x=>x.id===id);if(!it)return;
+  const step=Math.max(1,parseInt($('#i_rp').value)||1),st=Math.min(11,Math.max(0,parseInt($('#i_rs').value)||0)),fy=V.fy;
+  S.marks[fy]=S.marks[fy]||{};const row=S.marks[fy][id]=S.marks[fy][id]||Array(12).fill(''),old=[...row];let n=0;
+  for(let i=st;i<12;i+=step)if(!row[i]){row[i]='○';n++}
+  if(!n){toast('置ける空のマスがありません');return}
+  save();render();
+  undoBar(`「${it.name}」に ${fy}年度の ◯ を ${n} 個置きました`,()=>{if(S.marks[fy]&&S.marks[fy][id])S.marks[fy][id]=old},'印');
 }
 function delItem(id){
   if(!confirm('この項目を削除しますか？（全年度の○も消えます）'))return;
