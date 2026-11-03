@@ -1413,7 +1413,8 @@ window.getOperator=()=>S&&S.settings?S.settings.operator||'':'';
 const members=()=>hasShift()?SHIFT.members():[];
 const staffAll=()=>[...new Set([...members(),...S.settings.staff])];
 const staffList=id=>`<datalist id="${id}">${staffAll().map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
-function holidays(){try{return new Set(hasShift()?SHIFT.holidays():[])}catch(e){return new Set()}}
+/* 祝日の判定：シフト表に入れた祝日（職場の休みなど）＋内蔵の祝日表 holName。has(日付) で調べる */
+function holidays(){let u=new Set();try{u=new Set(hasShift()?SHIFT.holidays():[])}catch(e){}return {has:d=>u.has(d)||!!holName(d)}}
 let CREW={};
 function crewDay(ds){
   const k=ds.slice(0,7);
