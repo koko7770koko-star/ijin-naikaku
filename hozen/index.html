@@ -3670,7 +3670,7 @@ function setApiUrl(v){v=v.trim();if(v&&!/^https:\/\/[^\s]+$/.test(v)){toast('htt
 function saveKey(){const k=$('#apikey').value.trim(),m=$('#apimode').value;if(!k&&!getApiKey()){toast('APIキーを入れてください');return}
   if(!$('#apiack').checked){toast('APIキーの保存のリスクを確認して、チェックを入れてください');return}setApiKey(k||getApiKey(),m);opLog('APIキーの保存',m==='session'?'ブラウザを閉じたら消す':'この端末に保存');save();render();toast('保存しました');processQueue()}
 async function wipe(){
-  const w=await askBox({title:'スケジュールのデータを消去',msg:'スケジュールのデータ（予定・点検記録・異常案件・年間計画）をすべて消去します。シフト表・設備台帳・点検項目の設定・写真は残ります。\n消去前の状態はバックアップ履歴に残します。\n\n実行する場合は「消去」と入力してください。',label:'「消去」と入力',must:'消去',okLabel:'消去する',danger:true});
+  const w=await askBox({title:'スケジュールのデータを消去',msg:'消える件数：予定 '+(S.tasks||[]).length+'件・日常点検 '+Object.keys(S.daily||{}).length+'日分・異常案件 '+(S.issues||[]).length+'件・年間計画の項目 '+(S.items||[]).length+'件\n\nスケジュールのデータ（予定・点検記録・異常案件・年間計画）をすべて消去します。シフト表・設備台帳・点検項目の設定・写真は残ります。\n消去前の状態はバックアップ履歴に残します。\n\n実行する場合は「消去」と入力してください。',label:'「消去」と入力',must:'消去',okLabel:'消去する',danger:true});
   if(w!=='消去')return
   if(!await safeSnap('全消去の前'))return;
   /* 説明どおり、消すのは予定・点検記録・異常案件・年間計画（DEF の settings 以外の項目）だけ。設定・設備台帳・測定・作業指示・予備品・工具・図面・技術資料・場所の階層・作業標準などは残す */
