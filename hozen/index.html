@@ -2362,11 +2362,13 @@ function vHome(){ // v16.4：上から「今すぐ対応すること → 今日�
 }
 /* ホーム：今月の盤の点検の残り（盤が1面も無ければ出さない）。押すと盤の点検の「次の未点検の盤」へ。表示だけ・保存しない */
 function homeBanLine(){
-  const ym=TODAY.slice(0,7),all=[];banBldgs().forEach(b=>banBoardsOf(b.id).forEach(x=>all.push(x)));
+  const ym=TODAY.slice(0,7),all=[],per=[];banBldgs().forEach(b=>{const bs=banBoardsOf(b.id);bs.forEach(x=>all.push(x));per.push([b,bs.filter(x=>banPend(ym,x)).length])});
   if(!all.length)return '';
-  const n=all.filter(x=>banPend(ym,x)).length;
-  return `<button class="btn sec wide homeban" style="min-height:48px;margin:0 0 12px;text-align:left" onclick="homeBanGo()"><span>⚡ 今月の盤の点検　${n?`あと<b>${n}面</b>（全${all.length}面）　次の盤へ ›`:`<span class="pill ok">全${all.length}面 済み</span>`}</span></button>`}
-function homeBanGo(){V.banYm=TODAY.slice(0,7);V.banEdit=false;go('ban');setTimeout(banNext,60)}
+  const n=all.filter(x=>banPend(ym,x)).length,late=n>0&&+TODAY.slice(8,10)>=20;
+  /* 棟ごとの残り：残りのある棟が2つ以上のときだけ出す（1つだけなら上の行で足りる）。押すとその棟のタブ。月の20日以降は黄色 */
+  const rest=per.filter(x=>x[1]>0),bl=rest.length>=2?`<div class="row homebanb" style="gap:6px;margin:-6px 0 12px;flex-wrap:wrap">${rest.map(([b,c])=>`<button class="btn sec sm" style="min-height:44px"${late?' data-late="1"':''} onclick="homeBanGo('${b.id}')">${esc(b.name)} <b>${c}</b>面</button>`).join('')}</div>`:'';
+  return `<button class="btn sec wide homeban" style="min-height:48px;margin:0 0 12px;text-align:left${late?';background:var(--warn-bg,#fff6d6)':''}" onclick="homeBanGo()"><span>⚡ 今月の盤の点検　${n?`あと<b>${n}面</b>（全${all.length}面）　次の盤へ ›`:`<span class="pill ok">全${all.length}面 済み</span>`}</span></button>`+bl}
+function homeBanGo(bid){V.banYm=TODAY.slice(0,7);V.banEdit=false;V.banQ='';if(bid){V.banB=bid;go('ban');return}go('ban');setTimeout(banNext,60)}
 /* たたみ表示のカード（開閉は覚えておく） */
 function fold(k,title,body,openDef,id){const open=V['fold_'+k]??openDef??false;
   return `<details class="card fold" ${id?`id="${id}"`:''} ${open?'open':''} ontoggle="V['fold_${k}']=this.open"><summary><h2>${title}</h2></summary>${body}</details>`}
