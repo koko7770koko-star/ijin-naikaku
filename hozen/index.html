@@ -2441,7 +2441,7 @@ function vYear(){
       +row.map((v,i)=>`<td class="mk ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''} ${i===curIdx?'cur':''}" onclick="markTap(event,'${it.id}',${i})" ontouchstart="markPress('${it.id}',${i})" ontouchend="markRelease()" ontouchmove="markRelease()" oncontextmenu="return markCtx(event,'${it.id}',${i})">${mkShow(v)}</td>`).join('')
       +`<td>${row.filter(x=>x==='済').length}/${row.filter(Boolean).length}</td></tr>`;
   }
-  h+=`</table></div></div>`;
+  h+=`</table><div class="yrleg" style="font-size:12px;color:var(--mut);margin:6px 4px 2px">印の見方：◯ 予定　● 実施済み　延 延期</div></div></div>`;
   const dl=deadlines();
   h+=`<div class="card noprint"><h2>⏰ 期限管理 <span class="muted">前回実施日から自動計算</span></h2>${dl.length?dl.map(deadlineRow).join(''):'<div class="empty">周期を設定した項目がありません</div>'}
     <div class="muted" style="margin-top:8px">前回＝カレンダーで「完了」にした日（無ければ年間計画の「済」の月末）</div></div>`;
