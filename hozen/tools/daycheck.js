@@ -22,5 +22,13 @@ const FILE=path.resolve(__dirname,'..','index.html');
   const note=await p.evaluate(()=>document.querySelector('#app').innerText.includes('絞り込み中'));if(!note)errs.push('絞り込み中の案内が無い');
   const h=await sel.evaluate(e=>e.getBoundingClientRect().height);if(h<40)errs.push('選択が小さい '+h);
   await p.evaluate(()=>{V.dayLoc='';render()});await p.waitForTimeout(200);if(await cnt()!==total)errs.push('解除で戻らない')}
+ // 今日ではない日：帯と「今日に戻る」（44px）が出る・今日のときは出ない・戻ると今日になる
+ await p.evaluate(()=>{go('day',{day:TODAY})});await p.waitForTimeout(200);if(await p.locator('#dayNotToday').count())errs.push('今日なのに帯が出る');
+ await p.evaluate(()=>{V.day=addD(TODAY,-3);render()});await p.waitForTimeout(200);
+ const bn=p.locator('#dayNotToday button');if(!await bn.count())errs.push('過去の日に帯が出ない');
+ else{const hh=await bn.evaluate(e=>e.getBoundingClientRect().height);if(hh<44)errs.push('今日に戻るが小さい '+hh);
+  const tx=await p.locator('#dayNotToday').innerText();if(!tx.includes('の記録を入力中'))errs.push('帯の言葉 '+tx);
+  if(process.argv[2])await p.screenshot({path:process.argv[2]});
+  await bn.click();await p.waitForTimeout(200);if(await p.evaluate(()=>V.day!==TODAY))errs.push('今日に戻らない')}
  if(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))errs.push('横にはみ出す');
  if(errs.length){console.log('NG',errs);process.exit(1)}console.log('OK 日常点検の場所絞り込み');await b.close()})();
