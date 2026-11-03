@@ -17,5 +17,23 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  if(before!==await p.evaluate(()=>JSON.stringify(S.banChk)))bad.push('押しただけで記録が変わった');
  await p.evaluate(()=>{const ym=TODAY.slice(0,7);S.banChk[ym]={p1:['済','済','済'],p2:['済','済','済'],p3:['済','延','済']};go('home')});await p.waitForTimeout(300);
  if(!/全3面 済み/.test(await p.evaluate(()=>document.querySelector('.homeban').textContent)))bad.push('全部済みの表示が違う');
+ // 棟ごとの残り：2棟（片方だけ残り）では出ない・両方に残りがあれば出る・押すとその棟・20日以降は黄色
+ await p.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});S.locs=[mk('b1','棟1','建屋',''),mk('f1','階1','階','b1'),mk('p1','盤1','盤','f1'),mk('b2','棟2','建屋',''),mk('f2','階2','階','b2'),mk('p2','盤2','盤','f2'),mk('p3','盤3','盤','f2')];
+  const ym=TODAY.slice(0,7);S.banChk={};S.banChk[ym]={p1:['済','済','済']};go('home')});await p.waitForTimeout(300);
+ if(await p.evaluate(()=>!!document.querySelector('.homebanb')))bad.push('残りが1棟だけなのに棟の行が出る');
+ await p.evaluate(()=>{S.banChk[TODAY.slice(0,7)]={};go('home')});await p.waitForTimeout(300);
+ const bb=await p.evaluate(()=>[...document.querySelectorAll('.homebanb button')].map(e=>({t:e.textContent.trim(),h:e.getBoundingClientRect().height})));
+ if(bb.length!==2||!/棟1 1面/.test(bb[0].t)||!/棟2 2面/.test(bb[1].t)||bb.some(x=>x.h<44))bad.push('棟ごとの残りの行が違う '+JSON.stringify(bb));
+ await p.click('.homebanb button:nth-child(2)');await p.waitForTimeout(400);
+ if(await p.evaluate(()=>V.view!=='ban'||V.banB!=='b2'))bad.push('棟2のタブが開かない');
+ if(await p.evaluate(()=>document.documentElement.scrollWidth)>392)bad.push('棟の行ではみ出す');
+ // 25日（月の20日以降）に残りがあれば黄色
+ const p2=await c.newPage();await p2.clock.install({time:new Date('2026-11-25T10:00:00')});await p2.goto('file://'+FILE);await p2.waitForTimeout(1500);
+ await p2.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});S.locs=[mk('b1','棟1','建屋',''),mk('f1','階1','階','b1'),mk('p1','盤1','盤','f1')];S.banChk={};go('home')});await p2.waitForTimeout(300);
+ const bg25=await p2.evaluate(()=>getComputedStyle(document.querySelector('.homeban')).backgroundColor);
+ await p2.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});S.locs=[mk('b1','棟1','建屋',''),mk('f1','階1','階','b1'),mk('p1','盤1','盤','f1')];S.banChk={};go('home')});await p2.waitForTimeout(200);
+ await p.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});S.locs=[mk('b1','棟1','建屋',''),mk('f1','階1','階','b1'),mk('p1','盤1','盤','f1')];S.banChk={};go('home')});await p.waitForTimeout(200);
+ const bg=await p.evaluate(()=>getComputedStyle(document.querySelector('.homeban')).backgroundColor);
+ if(new Date().getDate()<20&&bg===bg25)bad.push('25日でも色が変わらない（'+bg+'）');
  await p.screenshot({path:process.env.SHOT||'/tmp/homeban.png'});
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
