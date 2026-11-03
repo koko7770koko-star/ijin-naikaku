@@ -3913,7 +3913,7 @@ function vDailyRep(){
   const ds=V.day,r=S.daily[ds]||{},I=dailyIssues(ds),o=crewDay(ds),st=S.settings,ts=tasksBetween(ds,ds),h=handoverOf(ds);
   const iss=S.issues.filter(i=>i.date<=ds&&(!i.closed||i.closed>=ds)).sort((a,b)=>a.date.localeCompare(b.date));
   window._sh=n=>{V.day=addD(V.day,n);render()};
-  const emptyDay=!Object.keys(r).length&&!ts.length&&!(S.meas||[]).some(m=>m.date===ds)&&!h&&!(S.dnotes||{})[ds],AUTO='<span class="muted" style="font-weight:400;font-size:11px">（記録から自動）</span>',HAND='<span class="muted" style="font-weight:400;font-size:11px">（手で入力）</span>';
+  const emptyDay=!Object.keys(r).length&&!ts.length&&!(S.meas||[]).some(m=>m.date===ds)&&!h&&!(S.dnotes||{})[ds],AUTO='<span class="srcmark" style="font-weight:400;font-size:11px;color:inherit;opacity:.8">（記録から自動）</span>',HAND='<span class="srcmark" style="font-weight:400;font-size:11px;color:inherit;opacity:.8">（手で入力）</span>';
   return mnav(mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div>
     <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">特記事項（日報に印刷）</label><button class="btn sec sm" style="min-height:44px" onclick="aiDailyNote('${ds}')">🤖 下書き</button></div>
     <button class="btn sec wide" id="dnDraft" style="min-height:44px;margin-top:6px" onclick="addDnoteDraft('${ds}')">📝 今日の記録から入れる（ネット不要・あとで直せます）</button>
