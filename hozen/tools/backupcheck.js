@@ -32,6 +32,7 @@ const snap=p=>p.evaluate(()=>({tasks:S.tasks.map(t=>t.id+'|'+t.title+'|'+t.date)
  await B.p.evaluate(()=>go('set'));await B.p.waitForTimeout(500);await B.p.setInputFiles('input[onchange^="restore("]',good,{timeout:5000});
  await B.p.waitForTimeout(800);
  ok(await B.p.evaluate(()=>/復元の確認/.test(document.body.innerText)),'復元の確認が出ない');
+ {const t=await B.p.evaluate(()=>document.querySelector('.modal,#modal,body').innerText);ok(/書き出した日：\s*20\d\d/.test(t),'復元の確認に書き出した日が出ない');ok(/設備/.test(t),'復元の確認に設備の件数が出ない')}
  await B.p.evaluate(()=>applyRestore());await B.p.waitForTimeout(1500);
  const after=await snap(B.p);
  for(const k of ['tasks','daily','issues','equip','photoIds']){ok(JSON.stringify(before[k])===JSON.stringify(after[k]),'復元後に '+k+' が元と違う：'+JSON.stringify(before[k])+' → '+JSON.stringify(after[k]))}
@@ -40,6 +41,7 @@ const snap=p=>p.evaluate(()=>({tasks:S.tasks.map(t=>t.id+'|'+t.title+'|'+t.date)
  // 保存して読み直しても残る
  await B.p.reload();await B.p.waitForTimeout(1500);
  const re=await snap(B.p);ok(JSON.stringify(re.tasks)===JSON.stringify(before.tasks),'復元後に再読み込みすると記録が消えた');
+ {const o=JSON.parse(built.text);delete o.savedAt;const f=path.join(tmp,'nodate.json');fs.writeFileSync(f,JSON.stringify(o));await B.p.evaluate(()=>closeModal(true));await B.p.evaluate(()=>go('set'));await B.p.waitForTimeout(300);await B.p.setInputFiles('input[onchange^="restore("]',f,{timeout:5000});await B.p.waitForTimeout(800);const t=await B.p.evaluate(()=>document.body.innerText);ok(/書き出した日：\s*記録なし/.test(t),'日付の無い古いファイルで「記録なし」が出ない');await B.p.evaluate(()=>{PENDING_RESTORE=null;closeModal(true)})}
  // 壊れたファイルを断れるか（今の記録は変わらない）
  const cases={trunc:built.text.slice(0,Math.floor(built.text.length/2)),notjson:'これは記録ではありません',empty:'',array:'[1,2,3]',tamper:built.text.replace('テスト点検○○','書き換え点検')};
  for(const [k,txt] of Object.entries(cases)){const f=path.join(tmp,k+'.json');fs.writeFileSync(f,txt);
