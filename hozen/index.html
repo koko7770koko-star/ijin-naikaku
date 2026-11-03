@@ -170,6 +170,7 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
 .num input.bad{background:var(--ng-bg);color:var(--ng)}
 .num input.chg{background:var(--warn-bg)}
 .num .hint{font-size:11px;color:var(--mut);min-height:16px}
+.num .hint.tapprev{text-decoration:underline dotted;padding:6px 0;min-height:32px;cursor:pointer}
 .chk{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eef1f4}
 .chk .l{flex:1;font-size:15px}
 .seg{display:flex;border:1px solid var(--field);border-radius:var(--r-s);overflow:hidden;flex:none}
@@ -2335,7 +2336,7 @@ function vDay(){
       const next=i<nums.length-1?`$('#n_${nums[i+1].id}').focus()`:'this.blur()';
       return `<div class="num"><label class="f" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(n.short||n.name)}<span style="font-weight:400">(${esc(n.unit)})</span>${n.req?'<span style="color:var(--ng)">*</span>':''}</label>
       <input id="n_${n.id}" class="${cl}" type="number" inputmode="decimal" step="any" enterkeyhint="${i<nums.length-1?'next':'done'}" value="${esc(v??'')}" placeholder="${p?esc(p[1]):''}" onchange="setNum('${n.id}',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();${next}}">
-      <div class="hint" id="h_${n.id}">${numHint(s,n)}</div></div>`}).join('')}</div>
+      <div class="hint${v==null&&p?' tapprev':''}" id="h_${n.id}" ${v==null&&p?`onclick="useNumPrev('${n.id}')" title="タップで前回の値を入れる"`:''}>${numHint(s,n)}</div></div>`}).join('')}</div>
     <div id="dayAl">${dayAlerts(s)}</div>
     <div style="margin-top:6px">${chkDefs().map(c=>{const v=(r.c||{})[c.id]||'';return `<div class="chk"><div class="l">${esc(c.name)}${c.req?'<span style="color:var(--ng)">*</span>':''}</div><div class="seg">${[['○','on-ok'],['×','on-ng'],['－','on-na']].map(([x,cl])=>`<button class="${v===x?cl:''}" onclick="setCheck('${c.id}','${x}')">${x}</button>`).join('')}</div></div>`}).join('')}</div>
     <div class="row" style="margin-top:10px"><span class="muted grow"><span style="color:var(--ng)">*</span>＝必須</span>${fileBtn('📎 写真を添付','addDayPhoto','sec sm','image/*')}</div>
@@ -2398,6 +2399,11 @@ function delDay(ds){
 function dayRec(ds=V.day){if(!S.daily[ds])S.daily[ds]={c:{},by:nightCrew(ds)};return S.daily[ds]}
 function commitDay(full){syncDailyIssue(V.day);save();if(full)render();else refreshDay()}
 function markMod(r,field,from,to){if(r.done){logEdit('daily',V.day,field,from,to);if(String(from??'')!==String(to??''))r.mod=new Date().toISOString()}}
+/* 未入力の数値欄の下の「前回 ○○」をタップすると、前回の値を入れる（黄色・要確認の印つき。copyPrev と同じ扱い） */
+function useNumPrev(k){
+  const r=dayRec(),p=prevVal(V.day,k);if(!p||r[k]!=null)return;
+  markMod(r,k,null,p[1]);r[k]=p[1];(r.cp=r.cp||{})[k]=true;commitDay(true);toast('前回の値を入れました。黄色の数値は確認してください');
+}
 function setNum(k,v){
   const r=dayRec(),el=$('#n_'+k),n=numDef(k);
   if(v!==''){
