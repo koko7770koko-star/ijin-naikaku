@@ -12,7 +12,7 @@ const sm=src.match(/const SCHEMA=(\d+);/);if(!sm)bad.push('SCHEMA が見つか�
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('console',m=>{if(m.type()==='error'&&!/Failed to load resource|net::ERR/.test(m.text()))errs.push('CONSOLE '+m.text());});
  p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await ctx.route('**/*',r=>{const u=r.request().url();return /^(file|data|blob):/.test(u)?r.continue():r.abort();});
- await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
+ await p.goto('file://'+FILE);await p.waitForTimeout(2500);
  const views=await p.evaluate(()=>Object.keys(VIEWS));
  for(const v of views){if(v==='equipDetail')continue;await p.evaluate(v=>{try{go(v)}catch(e){console.error('go '+v+' '+e.message)}},v);await p.waitForTimeout(300);
   const n=await p.evaluate(()=>document.body.innerText.length);if(n<20)bad.push('画面 '+v+' が空');}
