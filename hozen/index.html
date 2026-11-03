@@ -2872,7 +2872,7 @@ function trendCard(n){
     <polyline fill="none" stroke="#2f6fb0" stroke-width="1.6" points="${pts.map(([k,v])=>`${X(k).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')}"/>
     ${pts.map(([k,v])=>{const o=outOfRange(n,v);return `<circle cx="${X(k).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${o?3.2:2}" fill="${o?'#d0342c':'#2f6fb0'}"><title>${md(k)} ${v}${n.unit}</title></circle>`}).join('')}
     <text x="${L}" y="${H-3}" font-size="11" fill="#6b7684">${md(pts[0][0])}</text>${pts.length>2?`<text x="${((L+W-6)/2).toFixed(1)}" y="${H-3}" font-size="11" text-anchor="middle" fill="#6b7684">${md(pts[Math.floor((pts.length-1)/2)][0])}</text>`:''}<text x="${W-6}" y="${H-3}" font-size="11" text-anchor="end" fill="#6b7684">${md(pts[pts.length-1][0])}</text>
-    <text x="${Math.min(W-6,Math.max(L+10,+X(pts[pts.length-1][0]).toFixed(1)))}" y="${Math.max(12,+Y(pts[pts.length-1][1]).toFixed(1)-6)}" font-size="12" font-weight="700" text-anchor="end" fill="${outOfRange(n,pts[pts.length-1][1])?'#d0342c':'#2f6fb0'}">${pts[pts.length-1][1]}</text></svg>`;
+    <text x="${Math.min(W-6,Math.max(L+10,+X(pts[pts.length-1][0]).toFixed(1)))}" y="${Math.max(12,+Y(pts[pts.length-1][1]).toFixed(1)-6)}" font-size="12" font-weight="700" text-anchor="end" fill="${outOfRange(n,pts[pts.length-1][1])?'#d0342c':'#2f6fb0'}">${isFinite(Number(pts[pts.length-1][1]))?+Number(pts[pts.length-1][1]).toFixed(3):esc(pts[pts.length-1][1])}</text></svg>`;
   const avg=vals.reduce((a,b)=>a+b,0)/vals.length,ng=pts.filter(([,v])=>outOfRange(n,v));
   const allNg=Object.keys(S.daily).filter(k=>S.daily[k][n.id]!=null&&outOfRange(n,S.daily[k][n.id])).sort().reverse().slice(0,10);
   return `<div class="card"><div class="hd-row"><h2>${esc(n.name)}の推移 <span class="muted">${esc(n.unit)}</span></h2><button class="btn sec sm" onclick="aiTrend('${n.id}')">🤖 傾向分析</button></div>${svg}
@@ -4758,11 +4758,13 @@ JSONだけで答えてください：{"value":数値またはnull,"unit":"表示
 function linFit(pts){const n=pts.length;if(n<2)return null;let sx=0,sy=0,sxx=0,sxy=0;pts.forEach(([x,y])=>{sx+=x;sy+=y;sxx+=x*x;sxy+=x*y});const d=n*sxx-sx*sx;if(!d)return null;const a=(n*sxy-sx*sy)/d;return {a,b:(sy-a*sx)/n}}
 /* 直線近似で管理値に達する日を見積もる（4点以上・管理値ありのときだけ） */
 function trendCross(series,min,max){
-  if(series.length<4||(min===''&&max===''))return null;
-  const t0=series[0][0],pts=series.map(([d,v])=>[diffD(d,t0),v]),f=linFit(pts);if(!f||!f.a)return null;
+  const lim=v=>v===''||v==null||!isFinite(Number(v))?null:Number(v);/* 空・null・数でない物は「管理値なし」。null を 0 とは読まない */
+  min=lim(min);max=lim(max);series=(series||[]).filter(x=>x&&x[0]&&isFinite(Number(x[1]))).map(([d,v])=>[d,Number(v)]);
+  if(series.length<4||(min==null&&max==null))return null;
+  const t0=series[0][0],pts=series.map(([d,v])=>[diffD(d,t0),v]),f=linFit(pts);if(!f||!f.a||!isFinite(f.a))return null;
   const last=pts[pts.length-1][0],lv=f.a*last+f.b;let target=null,which='';
-  if(f.a>0&&max!==''&&lv<max){target=(max-f.b)/f.a;which='上限'}else if(f.a<0&&min!==''&&lv>min){target=(min-f.b)/f.a;which='下限'}
-  if(target==null)return null;const days=Math.round(target-last);return days>0?{days,which,n:series.length,slope:f.a}:null;
+  if(f.a>0&&max!=null&&lv<max){target=(max-f.b)/f.a;which='上限'}else if(f.a<0&&min!=null&&lv>min){target=(min-f.b)/f.a;which='下限'}
+  if(target==null||!isFinite(target))return null;const days=Math.round(target-last);return days>0?{days,which,n:series.length,slope:f.a}:null;
 }
 function recommendFor(eqId){
   const R=[],e=eqById(eqId);if(!e)return R;
