@@ -3638,12 +3638,14 @@ const SPEC_FIELDS={
 };
 const MEAS_TYPES=['絶縁抵抗','接地抵抗','保護継電器試験','蓄電池','電圧・電流・電力','温度','その他'];
 /* 測定のひな形（項目名と単位だけ。管理値は空欄＝人が設定するまで判定しない） */
+const GEN_TPL={id:'mt_gen',type:'電圧・電流・電力',name:'非常用発電機 月次点検（無負荷運転）',cycleM:1,kind:'発電機',rows:[{name:'電圧',unit:'V',min:'',max:''},{name:'周波数',unit:'Hz',min:'',max:''},{name:'電流',unit:'A',min:'',max:''},{name:'油圧',unit:'MPa',min:'',max:''},{name:'冷却水温',unit:'℃',min:'',max:''},{name:'燃料残量',unit:'%',min:'',max:''},{name:'始動用蓄電池電圧',unit:'V',min:'',max:''},{name:'運転時間計',unit:'h',min:'',max:''},{name:'始動時間',unit:'秒',min:'',max:''}]};
 const DEF_MTPL=[
   {id:'mt_ins',type:'絶縁抵抗',name:'絶縁抵抗測定',cycleM:12,rows:[{name:'高圧 一括',unit:'MΩ',min:'',max:''},{name:'低圧 一括',unit:'MΩ',min:'',max:''}]},
   {id:'mt_earth',type:'接地抵抗',name:'接地抵抗測定',cycleM:12,rows:[{name:'A種',unit:'Ω',min:'',max:''},{name:'B種',unit:'Ω',min:'',max:''},{name:'C種',unit:'Ω',min:'',max:''},{name:'D種',unit:'Ω',min:'',max:''}]},
   {id:'mt_relay',type:'保護継電器試験',name:'保護継電器試験',cycleM:12,rows:[{name:'最小動作値',unit:'A',min:'',max:''},{name:'動作時間',unit:'秒',min:'',max:''},{name:'連動（遮断器トリップ）',unit:'',min:'',max:'',ck:true}]},
   {id:'mt_bat',type:'蓄電池',name:'蓄電池点検',cycleM:6,rows:[{name:'総電圧',unit:'V',min:'',max:''},{name:'セル電圧 最低',unit:'V',min:'',max:''},{name:'内部抵抗 最大',unit:'mΩ',min:'',max:''},{name:'液面・外観',unit:'',min:'',max:'',ck:true}]},
-  {id:'mt_vi',type:'電圧・電流・電力',name:'電圧・電流・力率',cycleM:1,rows:[{name:'電圧',unit:'V',min:'',max:''},{name:'電流',unit:'A',min:'',max:''},{name:'電力',unit:'kW',min:'',max:''},{name:'力率',unit:'%',min:'',max:''}]}
+  {id:'mt_vi',type:'電圧・電流・電力',name:'電圧・電流・力率',cycleM:1,rows:[{name:'電圧',unit:'V',min:'',max:''},{name:'電流',unit:'A',min:'',max:''},{name:'電力',unit:'kW',min:'',max:''},{name:'力率',unit:'%',min:'',max:''}]},
+  GEN_TPL
 ];
 const WORK_KINDS=['点検','修理','停電作業','工事','試験','その他'];
 const WORK_STAT=['起案','承認待ち','承認済み','実施中','完了','中止','保留'];
@@ -4060,10 +4062,10 @@ function measRow(m){
 let MEAS_ROWS=[],MEAS_PH=[],MEAS_CTX={};
 function editMeas(id,preset){
   const m=(S.meas||[]).find(x=>x.id===id)||{date:TODAY,equipId:'',tplId:'',type:'その他',name:'',rows:[],cond:{temp:'',hum:'',weather:'',tool:'',toolName:'',method:''},by:who(),note:'',photos:[],...(preset||{})};
-  MEAS_ROWS=clone(m.rows);TP=[...(m.photos||[])];MEAS_CTX={workId:RE_ID.test(m.workId||'')?m.workId:''};
+  MEAS_ROWS=clone(m.rows);TP=[...(m.photos||[])];MEAS_CTX={id:id||'',workId:RE_ID.test(m.workId||'')?m.workId:''};
   const tools=(S.tools||[]).filter(t=>t.kind==='測定器');
   loadPhotos([...TP,...MEAS_ROWS.map(r=>r.photo).filter(Boolean)]).then(()=>{openModal(`<h3>${id?'測定記録':'測定記録の追加'}</h3>
-    <div class="grid2"><div><label class="f">測定日 *</label><input type="date" id="ms_date" value="${esc(m.date)}"></div><div><label class="f">設備</label><select id="ms_eq" onchange="measResortTpl(this.value)">${'<option value="">（設備を指定しない）</option>'+(S.equipment||[]).map(e=>`<option value="${e.id}" ${e.id===m.equipId?'selected':''}>${esc(eqLabel(e))}</option>`).join('')}</select></div></div>
+    <div class="grid2"><div><label class="f">測定日 *</label><input type="date" id="ms_date" value="${esc(m.date)}" onchange="measRenderRows()"></div><div><label class="f">設備</label><select id="ms_eq" onchange="measResortTpl(this.value);measRenderRows()">${'<option value="">（設備を指定しない）</option>'+(S.equipment||[]).map(e=>`<option value="${e.id}" ${e.id===m.equipId?'selected':''}>${esc(eqLabel(e))}</option>`).join('')}</select></div></div>
     <label class="f">ひな形（項目と管理値）</label><select id="ms_tpl" onchange="measTpl(this.value)"><option value="">（自由入力）</option>${tplSorted(m.equipId).map(t=>`<option value="${t.id}" ${t.id===m.tplId?'selected':''}>${esc(t.type)}：${esc(t.name)}${tplCondText(t)?'【'+esc(tplCondText(t))+'】':''}</option>`).join('')}</select>
     <div class="grid2"><div><label class="f">種類</label><select id="ms_type">${opts(MEAS_TYPES,m.type)}</select></div><div><label class="f">名称</label><input id="ms_name" value="${esc(m.name)}" maxlength="60" placeholder="例：絶縁抵抗測定"></div></div>
     <div class="grp"><b>測定値</b><div class="muted" style="font-size:12px">判定は各項目の管理値（ひな形・この記録の値）だけで行います。管理値が空欄の項目は判定しません。</div><div id="ms_rows"></div>
@@ -4080,17 +4082,30 @@ function editMeas(id,preset){
     ${id?editLogHTML('meas',id):''}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveMeas('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delMeas('${id}')">削除</button><button class="btn sec sm" onclick="closeModal(true);go('printDoc',{doc:{t:'meas',id:'${id}'}})">報告書</button>`:'')}`);measRenderRows();MODAL_SIG=modalSig()});
 }
+function measEnter(ev){if(ev.key!=='Enter')return;ev.preventDefault();const a=[...document.querySelectorAll('#ms_rows input[data-mv]')],i=a.indexOf(ev.target);ev.target.blur();setTimeout(()=>{const b=[...document.querySelectorAll('#ms_rows input[data-mv]')];if(b[i+1])b[i+1].focus()},0)}
+/* 同じ設備の前回の測定値との差（数値の項目だけ。同じ項目名の直近の記録） */
+function measPrev(r){
+  if(r.ck||!String(r.name).trim())return null;const eq=($('#ms_eq')||{}).value||'',date=($('#ms_date')||{}).value||TODAY;if(!eq)return null;
+  const L=(S.meas||[]).filter(m=>m.equipId===eq&&m.id!==MEAS_CTX.id&&m.date<=date).sort((a,b)=>b.date.localeCompare(a.date)||String(b.at).localeCompare(String(a.at)));
+  for(const m of L){const x=m.rows.find(q=>q.name===r.name&&!q.ck&&q.v!==''&&q.v!=null&&Number.isFinite(Number(q.v)));if(x)return {v:Number(x.v),date:m.date}}
+  return null;
+}
+function measPrevHTML(r){
+  const p=measPrev(r);if(!p)return '';
+  const cur=r.v===''||r.v==null?null:Number(r.v),d=cur==null?null:Math.round((cur-p.v)*1000)/1000;
+  return `<span class="pill">前回 ${esc(p.v)}${esc(r.unit)}（${md(p.date)}）</span>${d==null?'':`<span class="pill ${d===0?'':'plan'}">差 ${d>0?'+':''}${d}${esc(r.unit)}</span>`}`;
+}
 function measRenderRows(){
   const box=$('#ms_rows');if(!box)return;
   box.innerHTML=MEAS_ROWS.map((r,k)=>{const st=rowJudge(r);return `<div class="mrow ${st==='ng'?'ng':''}" style="border-bottom:1px solid #eef1f4;padding:6px 0">
     <div class="row" style="flex-wrap:nowrap"><input value="${esc(r.name)}" maxlength="60" placeholder="項目名" onchange="MEAS_ROWS[${k}].name=this.value"><button type="button" class="btn sec sm" onclick="MEAS_ROWS.splice(${k},1);measRenderRows()">×</button></div>
     <div class="row" style="flex-wrap:nowrap;gap:4px;margin-top:4px">${r.ck?`<select onchange="MEAS_ROWS[${k}].v=this.value;measRenderRows()">${opsV(['','○','×','－'],r.v||'')}</select>`:
-      `<input type="number" step="any" inputmode="decimal" value="${esc(r.v)}" placeholder="測定値" style="${r.ai?'background:var(--warn-bg)':''}" onchange="MEAS_ROWS[${k}].v=num16(this.value);MEAS_ROWS[${k}].ai=false;MEAS_ROWS[${k}].src='';measRenderRows()">
+      `<input type="number" step="any" inputmode="decimal" enterkeyhint="next" data-mv="1" onkeydown="measEnter(event)" value="${esc(r.v)}" placeholder="測定値" style="${r.ai?'background:var(--warn-bg)':''}" onchange="MEAS_ROWS[${k}].v=num16(this.value);MEAS_ROWS[${k}].ai=false;MEAS_ROWS[${k}].src='';measRenderRows()">
       <input value="${esc(r.unit)}" maxlength="12" placeholder="単位" style="max-width:56px" onchange="MEAS_ROWS[${k}].unit=this.value">
       <input type="number" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:64px" onchange="MEAS_ROWS[${k}].min=num16(this.value);measRenderRows()">
       <input type="number" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:64px" onchange="MEAS_ROWS[${k}].max=num16(this.value);measRenderRows()">`}</div>
     <div class="row" style="gap:4px;margin-top:4px;align-items:center"><span class="pill ${st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':''}">${{ng:'管理値外',ok:'管理値内',nolim:'基準未設定',none:'未入力',na:'該当なし'}[st]}</span>
-      ${r.ai?'<span class="pill warn">AI読取（要確認）</span>':r.src==='AI'?'<span class="pill plan">AI読取値（人が確認済み）</span>':''}
+      ${measPrevHTML(r)}${r.ai?'<span class="pill warn">AI読取（要確認）</span>':r.src==='AI'?'<span class="pill plan">AI読取値（人が確認済み）</span>':''}
       ${r.photo?`<img src="${esc(safeSrc(ph(r.photo)))}" style="height:34px;border-radius:4px" onclick="viewPh('${r.photo}')"><button type="button" class="btn sec sm" onclick="MEAS_ROWS[${k}].photo='';measRenderRows()">写真を外す</button>`:`<label class="btn sec sm">📷 写真<input type="file" accept="image/*" onchange="measRowPhoto(this,${k})"></label>`}
       ${r.ck?'':`<label class="btn sec sm">🤖 計器写真から読む<input type="file" accept="image/*" onclick="if(!aiReady()){toast('APIキーが未設定です（設定 → 写真読み取り）');return false}" onchange="measAiRead(this,${k})"></label>`}</div></div>`}).join('')||'<div class="muted">項目がありません。ひな形を選ぶか、項目を追加してください。</div>';
 }
@@ -4303,15 +4318,27 @@ function vDiag(){
     h+=card(`📏 測定記録 <span class="muted">${M.length}件</span>`,`<div class="grid2"><select onchange="V.msType=this.value;render()"><option value="">すべての種類</option>${opts(MEAS_TYPES,ty)}</select><select onchange="V.measEq=this.value;render()"><option value="">すべての設備</option>${(S.equipment||[]).map(e=>`<option value="${e.id}" ${e.id===eq?'selected':''}>${esc(eqLabel(e))}</option>`).join('')}</select></div>
       <div style="margin-top:8px">${M.slice(0,V.msMore||100).map(measRow).join('')||emptyBox('まだありません')}${M.length>(V.msMore||100)?`<button class="btn sec wide" onclick="V.msMore=(V.msMore||100)+100;render()">さらに100件表示（残り ${M.length-(V.msMore||100)}件）</button>`:''}</div>
       <div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="exportMeasCsv()">CSV出力</button><button class="btn sec sm grow" onclick="go('mtpl')">ひな形・管理値の設定</button></div>`,`<button class="btn sm" onclick="editMeas()">＋ 記録</button>`);
+    h+=genCard();
   }
   return h;
+}
+/* 非常用発電機：一覧から1台を選んで月次点検の数字を入れる（棟・階は場所の階層から表示） */
+function genCard(){
+  const G=(S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止');
+  const last=id=>{const L=(S.meas||[]).filter(m=>m.equipId===id&&m.tplId==='mt_gen').sort((a,b)=>b.date.localeCompare(a.date));return L[0]};
+  return card('⚡ 非常用発電機の点検',G.length?G.map(e=>{const m=last(e.id),j=m?measJudge(m):null;return `<div class="item ${j&&j.ng?'ng':''}" onclick="genStart('${e.id}')"><div class="bd"><div class="ti">${esc(eqLabel(e))}</div><div class="meta">${esc(locPath(e.locId)||e.place||'場所未設定')}・${m?'前回 '+slash(m.date)+(j.ng?'（管理値外あり）':''):'点検記録なし'}</div></div></div>`}).join('')+`<div class="muted" style="font-size:12px">台を押すと月次点検の入力が開きます。前回値との差が出ます。</div>`:emptyBox('設備台帳に種別「発電機」の設備を登録すると、ここから1台ずつ点検できます'));
+}
+function genStart(id){
+  if(!Array.isArray(S.mtpl))S.mtpl=[];let t=tplById('mt_gen');if(!t){t=clone(GEN_TPL);S.mtpl.push(t);save()}
+  editMeas(null,{equipId:id,tplId:t.id,type:t.type,name:t.name,rows:t.rows.map(r=>({...r,v:''}))});
 }
 function exportMeasCsv(){download(`測定記録_${TODAY}.csv`,csvBlob([['測定日','種類','名称','設備','項目','測定値','値の出どころ','単位','下限','上限','判定','気温','湿度','測定器','測定者','所見'],...(S.meas||[]).flatMap(m=>m.rows.map(r=>[m.date,m.type,m.name,equipName(m.equipId),r.name,r.v,r.src==='AI'?'AI読取（人が確認）':'入力',r.unit,r.min,r.max,{ng:'管理値外',ok:'管理値内',nolim:'基準未設定',none:'未入力',na:'該当なし'}[rowJudge(r)],m.cond.temp,m.cond.hum,m.cond.toolName,m.by,m.note]))]))}
 /* 測定のひな形（管理値は人が設定） */
 function vMtpl(){
   return card('📐 測定のひな形と管理値',`<div class="muted" style="margin-bottom:8px">管理値（下限・上限）と周期は、法令・保安規程・メーカー資料など施設の基準に従って人が入れてください。空欄の項目は判定しません。</div>`
-    +(S.mtpl||[]).map(t=>`<div class="item" onclick="editMtpl('${t.id}')"><div class="bd"><div class="ti">${esc(t.type)}：${esc(t.name)}${tplCondText(t)?` <span class="pill plan">${esc(tplCondText(t))}</span>`:''}</div><div class="meta">${t.rows.map(r=>`${esc(r.name)}（${esc(limText(r))}）`).join('・')}${t.cycleM?`・周期 ${t.cycleM}か月`:'・周期 未設定'}</div></div></div>`).join(''),`<button class="btn sm" onclick="editMtpl()">＋</button>`);
+    +((S.mtpl||[]).some(t=>t.id==='mt_gen')?'':`<button class="btn sec wide" style="margin-bottom:8px" onclick="addGenTpl()">⚡ 非常用発電機の月次点検ひな形を足す（管理値は空のまま）</button>`)+(S.mtpl||[]).map(t=>`<div class="item" onclick="editMtpl('${t.id}')"><div class="bd"><div class="ti">${esc(t.type)}：${esc(t.name)}${tplCondText(t)?` <span class="pill plan">${esc(tplCondText(t))}</span>`:''}</div><div class="meta">${t.rows.map(r=>`${esc(r.name)}（${esc(limText(r))}）`).join('・')}${t.cycleM?`・周期 ${t.cycleM}か月`:'・周期 未設定'}</div></div></div>`).join(''),`<button class="btn sm" onclick="editMtpl()">＋</button>`);
 }
+function addGenTpl(){if(!Array.isArray(S.mtpl))S.mtpl=[];if(S.mtpl.some(t=>t.id==='mt_gen')){toast('すでにあります');return}S.mtpl.push(clone(GEN_TPL));save();render();toast('発電機のひな形を足しました。管理値は施設の基準で入れてください')}
 let MT_ROWS=[];
 function editMtpl(id){
   const t=tplById(id)||{type:'その他',name:'',cycleM:'',kind:'',cond:'',rows:[]};MT_ROWS=clone(t.rows);
