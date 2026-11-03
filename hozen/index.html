@@ -5009,7 +5009,7 @@ function exportWorksCsv(){download(`作業指示_${TODAY}.csv`,csvBlob([['作業
 function vIssues(){
   const f=V.isF||'open',q=(V.isQ||'').trim();
   const L=S.issues.filter(i=>(f==='all'||(f==='open'?i.status!=='完了':f==='fail'?i.failure:f==='over'?i.status!=='完了'&&i.due&&i.due<TODAY:i.urgency===f))&&(!q||[i.title,i.detail,i.action,i.cause,i.place,equipName(i.equipId)].join(' ').includes(q)))
-    .sort((a,b)=>(URGENCY.indexOf(a.urgency||'低')-URGENCY.indexOf(b.urgency||'低'))||b.date.localeCompare(a.date));
+    .sort((a,b)=>((a.status==='完了')-(b.status==='完了'))||(URGENCY.indexOf(a.urgency||'低')-URGENCY.indexOf(b.urgency||'低'))||b.date.localeCompare(a.date));
   const over=S.issues.filter(i=>i.status!=='完了'&&i.due&&i.due<TODAY).length;
   return `<div class="tiles">${[['open','未完了',S.issues.filter(i=>i.status!=='完了').length],['緊急','緊急',S.issues.filter(i=>i.status!=='完了'&&i.urgency==='緊急').length],['over','期限超過',over],['fail','故障（全期間）',S.issues.filter(i=>i.failure).length]]
       .map(([v,l,n])=>`<div class="tile ${(v==='緊急'||v==='over')&&n?'ng':''}" onclick="V.isF='${v}';render()"><div class="tl">${l}</div><div class="tv">${n}<small>件</small></div></div>`).join('')}</div>
