@@ -41,7 +41,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  if(r2!=='盤分電盤-1,盤分電盤-2,盤分電盤-3')bad.push('盤のまとめて足すが違う '+r2);
  // 階を範囲で
  await p.click('[aria-label="A棟に階を足す"]');await p.waitForSelector('#la_dn',{state:'attached'});await p.evaluate(()=>document.querySelector('#modal details').open=true);
- await p.fill('#la_dn','1');await p.fill('#la_up','3');await p.click('#modal button:has-text("範囲の階を足す")');await p.waitForTimeout(150);
+ for(let k=0;k<8;k++){await p.fill('#la_dn','1');await p.fill('#la_up','3');if(await p.evaluate(()=>document.querySelector('#la_dn').value==='1'&&document.querySelector('#la_up').value==='3'))break;await p.waitForTimeout(150)}await p.click('#modal button:has-text("範囲の階を足す")');await p.waitForFunction(()=>S.locs.some(l=>l.name==='3階'),null,{timeout:3000}).catch(()=>{});
  const fl=await p.evaluate(()=>{const a=S.locs.find(l=>l.name==='A棟');return locKids(a.id).map(l=>l.name).join()});
  if(fl!=='地下1階,1階,2階,3階')bad.push('階の範囲・並びが違う '+fl);
  // 名前を変える（⋯ から）
