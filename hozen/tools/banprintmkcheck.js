@@ -1,0 +1,21 @@
+// 盤の点検表の印刷（印入り）：「今月の印入り」を押すと、印刷の間だけ今月の ◯ ● 延 が表に入り、印刷が終わると元の画面に戻る。「空の点検表」は空のまま。記録（banChk）は変わらない。390pxで44px以上・はみ出し無し。
+const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
+(async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
+ p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
+ await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
+ await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ const before=await p.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});S.locs=[mk('b1','棟1','建屋',''),mk('f1','階1','階','b1'),mk('r1','室1','電気室','f1'),mk('p1','盤1','盤','r1'),mk('p2','盤2','盤','r1'),mk('p3','盤3','盤','r1')];
+  const ym=TODAY.slice(0,7);S.banChk={};S.banChk[ym]={p1:['済','○','済'],p2:['延','','']};
+  window.__cells=[];window.print=()=>{window.__cells.push([...document.querySelectorAll('.banprint .bpt tbody tr')].map(tr=>[...tr.querySelectorAll('td.bx')].slice(0,3).map(x=>x.textContent).join('')));window.dispatchEvent(new Event('afterprint'))};
+  go('ban');return JSON.stringify(S.banChk)});await p.waitForTimeout(300);
+ const bt=await p.evaluate(()=>[...document.querySelectorAll('#app button')].filter(x=>/空の点検表|印入り/.test(x.textContent)).map(x=>({t:x.textContent,h:x.getBoundingClientRect().height})));
+ if(bt.length!==2)bad.push('印刷ボタンが '+bt.length+' 個');if(bt.some(x=>x.h<44))bad.push('ボタンが低い');
+ if(await p.evaluate(()=>document.documentElement.scrollWidth)>392)bad.push('はみ出す');
+ await p.click('button:has-text("空の点検表")');await p.waitForTimeout(300);
+ await p.click('button:has-text("印入り")');await p.waitForTimeout(400);
+ const cells=await p.evaluate(()=>window.__cells);
+ if(JSON.stringify(cells[0])!==JSON.stringify(['','',''])&&cells[0].some(x=>x))bad.push('空の点検表に印が入っている '+JSON.stringify(cells[0]));
+ if(JSON.stringify(cells[1])!==JSON.stringify(['●◯●','延','']))bad.push('印入りの内容が違う '+JSON.stringify(cells[1]));
+ const after=await p.evaluate(()=>({mk:!!V.banPrintMk,cls:document.body.classList.contains('bbp'),ban:JSON.stringify(S.banChk),blank:[...document.querySelectorAll('.banprint .bpt tbody td.bx')].every(x=>!x.textContent)}));
+ if(after.mk||after.cls)bad.push('印刷のあとに元に戻らない');if(after.ban!==before)bad.push('記録が変わった');if(!after.blank)bad.push('印刷のあと表に印が残る');
+ console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();

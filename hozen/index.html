@@ -4731,14 +4731,14 @@ function vBan(){
     +secs.map(sec).join('')
     +(!secs.length?card('階がありません',`<div class="row"><button class="btn grow" style="min-height:44px" onclick="locAdd('${bid===BAN_NOB?'':bid}','階')">＋ 階を足す</button><button class="btn sec grow" style="min-height:44px" onclick="go('locs')">🏢 場所の登録へ</button></div>`):'')
     +`<div class="row" style="margin:8px 0"><button class="btn sec grow" style="min-height:44px" onclick="banAddWizard()">＋ 盤をまとめて足す</button><button class="btn sec grow" style="min-height:44px" onclick="go('locs')">🏢 場所の登録</button></div>
-    <div class="row" style="margin:8px 0"><button class="btn sec grow" style="min-height:44px" onclick="banPrintBlank()">🖨 現場用の空の点検表を印刷（手書き・A4）</button></div>`+banBlankHTML(ym,(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true})));
+    <div class="row" style="margin:8px 0"><button class="btn sec grow" style="min-height:44px" onclick="banPrintBlank()">🖨 空の点検表（手書き用・A4）</button><button class="btn sec grow" style="min-height:44px" onclick="banPrintBlank(true)">🖨 今月の印入り（A4）</button></div>`+banBlankHTML(ym,(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true})));
 }
 /* 現場で手書きする空の点検表（画面では出ない。棟ごとに A4 縦1枚〜、階→盤→3項目の空欄。保存・画面の記録は変えない） */
 function banBlankHTML(ym,B){
   let h='';
   B.forEach(b=>{
     const rows=[];
-    const line=(label,bs)=>bs.forEach((x,i)=>rows.push(`<tr><td>${i?'':esc(label)}</td><td class="bnm">${esc(x.name)}</td>${BAN_ITEMS.map(()=>'<td class="bx"></td>').join('')}<td class="bx"></td></tr>`));
+    const line=(label,bs)=>bs.forEach((x,i)=>rows.push(`<tr><td>${i?'':esc(label)}</td><td class="bnm">${esc(x.name)}</td>${BAN_ITEMS.map((_,k)=>`<td class="bx">${V.banPrintMk?banShow(banVal(ym,x.id,k)):''}</td>`).join('')}<td class="bx"></td></tr>`));
     banGroups(b.id).forEach(g=>line(g.label,g.boards)); // 階 › 電気室 の見出しで棟ごとにまとめる
     if(!rows.length)return;
     h+=`<div class="banprint"><div class="phd"><div><h2>盤の点検表　${esc(b.name)}　${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><div class="muted">実施したら ● ／ 予定なら ◯ ／ 異常があれば右の欄に書く　点検者：＿＿＿＿＿＿　点検日：＿＿月＿＿日</div></div>${pStamp}</div>
@@ -4761,9 +4761,10 @@ async function shareReport(){
   try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(title+'\n\n'+text);toast('文字をコピーしました（メールやLINEに貼り付けて送れます）');return}}catch(e){}
   if(window.hzSave){const ok=await window.hzSave(`${title}.txt`.replace(/[\\/:*?"<>|\s]/g,'_'),new Blob([title+'\n\n'+text],{type:'text/plain;charset=utf-8'}));if(ok)toast('文字のファイルとして保存しました')}
 }
-function banPrintBlank(){
+function banPrintBlank(mk){
   if(!(S.locs||[]).some(l=>l.type==='盤')){toast('盤がまだありません。先に盤を足してください');return}
-  document.body.classList.add('bbp');const off=()=>{document.body.classList.remove('bbp');window.removeEventListener('afterprint',off)};
+  if(mk){V.banPrintMk=true;render()} // 印を入れた表：印刷の間だけ今の印を表に入れる（保存しない）
+  document.body.classList.add('bbp');const off=()=>{document.body.classList.remove('bbp');window.removeEventListener('afterprint',off);if(V.banPrintMk){V.banPrintMk=false;render()}};
   window.addEventListener('afterprint',off);setTimeout(()=>window.print(),30);setTimeout(off,60000);
 }
 /* 月報・印刷：棟ごとの盤の点検表（● の件数／盤の数） */
