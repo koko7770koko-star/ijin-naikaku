@@ -2497,7 +2497,7 @@ function dayAlerts(s){
   const I=dailyIssues(s),r=S.daily[s]||{};let h='';
   if(I.ng.length){
     const past=numDefs().map(n=>{if(!outOfRange(n,r[n.id]))return '';const a=lastAbnormal(s,n.id);return a?`${n.name}の前回の基準外：${md(a[0])} ${a[1]}${n.unit}`:`${n.name}は直近で初めての基準外`}).filter(Boolean);
-    h+=`<div class="al ng">⛔ ${esc(I.ng.join('、'))}${past.length?`<div style="font-weight:400;font-size:13px;margin-top:4px">${past.map(esc).join('<br>')}</div>`:''}</div>`;
+    h+=`<div class="al ng">⛔ ${esc(I.ng.join('、'))}${past.length?`<div style="font-weight:400;font-size:13px;margin-top:4px">${past.map(esc).join('<br>')}</div>`:''}${(()=>{const is=S.issues.find(i=>i.src==='daily:'+s);return is?`<button class="btn sm" style="margin-top:8px;min-height:44px;width:100%;white-space:normal" onclick="editIssue('${is.id}')">🛠 異常の記録を開く</button><div class="muted" style="font-size:12px;margin-top:2px">日付・内容は引き継ぎ済みです</div>`:''})()}</div>`;
   }
   if(I.warn.length)h+=`<div class="al warn">⚠ 前回から大きく変化：${esc(I.warn.join('、'))}</div>`;
   if(hasRec(r)&&I.miss.length&&!r.done)h+=`<div class="al info">未入力の必須項目：${esc(I.miss.join('、'))}</div>`;
