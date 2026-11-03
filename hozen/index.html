@@ -4369,8 +4369,34 @@ function vDiag(){
 /* 非常用発電機：一覧から1台を選んで月次点検の数字を入れる（棟・階は場所の階層から表示） */
 function genCard(){
   const G=(S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止');
-  const last=id=>{const L=(S.meas||[]).filter(m=>m.equipId===id&&m.tplId==='mt_gen').sort((a,b)=>b.date.localeCompare(a.date));return L[0]};
-  return card('⚡ 非常用発電機の点検',G.length?G.map(e=>{const m=last(e.id),j=m?measJudge(m):null;return `<div class="item ${j&&j.ng?'ng':''}" onclick="genStart('${e.id}')"><div class="bd"><div class="ti">${esc(eqLabel(e))}</div><div class="meta">${esc(locPath(e.locId)||e.place||'場所未設定')}・${m?'前回 '+slash(m.date)+(j.ng?'（管理値外あり）':''):'点検記録なし'}</div></div></div>`}).join('')+`<div class="muted" style="font-size:12px">台を押すと月次点検の入力が開きます。前回値との差が出ます。</div>`:emptyBox('設備台帳に種別「発電機」の設備を登録すると、ここから1台ずつ点検できます'));
+  const ym=TODAY.slice(0,7);
+  const gens=(S.meas||[]).filter(m=>m.tplId==='mt_gen');
+  const last=id=>gens.filter(m=>m.equipId===id).sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const doneThis=id=>gens.some(m=>m.equipId===id&&String(m.date||'').startsWith(ym));
+  // 棟・階は場所の階層（建屋・階）をたどって決める。無ければ「場所未設定」
+  const where=e=>{let l=locById(e.locId),n=0,b='',f='';while(l&&n<10){if(l.type==='階'&&!f)f=l.name;if(l.type==='建屋'&&!b)b=l.name;l=locById(l.parent);n++}return{b:b||(e.locId?'（棟の指定なし）':'場所未設定'),f}};
+  const W=G.map(e=>({e,w:where(e),d:doneThis(e.id)}));
+  const blds=[...new Set(W.map(x=>x.w.b))].sort((a,b)=>a.localeCompare(b,'ja'));
+  const sel=blds.includes(V.genB)?V.genB:'';
+  const shown=W.filter(x=>!sel||x.w.b===sel);
+  const doneN=shown.filter(x=>x.d).length;
+  const row=({e,d})=>{const m=last(e.id),j=m?measJudge(m):null;return `<div class="item ${j&&j.ng?'ng':''}" onclick="genStart('${e.id}')"><div class="dt" style="min-width:34px"><b style="font-size:20px">${d?'●':'◯'}</b></div><div class="bd"><div class="ti">${esc(eqLabel(e))}</div><div class="meta">${esc(locPath(e.locId)||e.place||'場所未設定')}・${d?'今月 点検済み':'今月 まだ'}・${m?'前回 '+slash(m.date)+(j.ng?'（管理値外あり）':''):'点検記録なし'}</div></div></div>`};
+  let body='';
+  if(!G.length)body=emptyBox('設備台帳に種別「発電機」の設備を登録すると、ここから1台ずつ点検できます');
+  else{
+    if(blds.length>1)body+=`<div class="row" style="margin-bottom:8px;flex-wrap:wrap;gap:6px"><button class="btn sm ${sel?'sec':''}" onclick="V.genB='';render()">すべて</button>${blds.map(b=>`<button class="btn sm ${sel===b?'':'sec'}" onclick="V.genB=${esc(JSON.stringify(b))};render()">${esc(b)}</button>`).join('')}</div>`;
+    const bs=[...new Set(shown.map(x=>x.w.b))].sort((a,b)=>a.localeCompare(b,'ja'));
+    for(const b of bs){
+      const inB=shown.filter(x=>x.w.b===b),fs=[...new Set(inB.map(x=>x.w.f))].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}));
+      for(const f of fs){
+        const L=inB.filter(x=>x.w.f===f).sort((a,b)=>(a.d-b.d)||eqLabel(a.e).localeCompare(eqLabel(b.e),'ja'));
+        const h2=`${esc(b)}${f?' › '+esc(f):''}`;
+        body+=`<div class="grp"><b>${h2}</b> <span class="muted">今月 ● ${L.filter(x=>x.d).length}/${L.length}</span>${L.map(row).join('')}</div>`;
+      }
+    }
+    body+=`<div class="muted" style="font-size:12px">台を押すと月次点検の入力が開きます。前回値との差が出ます。◯＝今月まだ、●＝今月点検済み（今月の測定記録があるか）。</div>`;
+  }
+  return `<div id="genCard">`+card(`⚡ 非常用発電機の点検${G.length?` <span class="muted">今月 ● ${doneN}/${shown.length}</span>`:''}`,body)+`</div>`;
 }
 function genStart(id){
   if(!Array.isArray(S.mtpl))S.mtpl=[];let t=tplById('mt_gen');if(!t){t=clone(GEN_TPL);S.mtpl.push(t);save()}
@@ -5230,7 +5256,7 @@ function v16Menu(){
   return `<input class="msearch" placeholder="🔍 機能を探す（例：校正、QR、バックアップ）" oninput="menuFilter(this.value)">`
    +g('✅ 毎日の点検・予定',[it("go('day',{day:TODAY})",'✅','日常点検','入力・判定・写真読み取り'),it("go('month')",'🗓','カレンダー','予定・点検・勤務者'),it("go('year')",'📅','年間計画・期限','点検項目・周期・法定/社内'),it("go('hist')",'📈','点検履歴・グラフ','検索・トレンド・CSV'),it("go('dailyRep',{day:TODAY})",'🗒','日報','A4印刷'),it("go('home')",'🏠','ホーム','お知らせ・今日・全体の状況')])
    +g('🏭 設備',[it("go('equip')",'🏭','設備台帳','設備カルテ・仕様・修理履歴'),it("go('locs')",'🏢','設備の階層','施設→建屋→電気室→盤'),it("go('qr')",'🔳','QRラベル','印刷・読み取り'),it("go('dwgs')",'🗺','図面','単線結線図・配置図・版管理'),it("go('lib')",'📚','技術資料','登録・検索・根拠表示')])
-   +g('🩺 保全・診断',[it("go('issues')",'🛠','異常・修理','緊急度・期限・原因・承認'),it("go('diag',{dgTab:'meas'})",'📏','測定記録','絶縁・接地・継電器・蓄電池'),it("go('diag',{dgTab:'health'})",'💯','健全度','人の評価と参考指標'),it("go('diag',{dgTab:'rec'})",'🔎','推奨・異常傾向','管理値外・周期超過・傾向'),it("go('diag',{dgTab:'fail'})",'📉','故障分析','件数・MTBF・MTTR・CSV'),it("go('plan',{plTab:'legal'})",'⚖','点検期限（法定・社内）','期限の一覧'),it("go('plan',{plTab:'renew'})",'🏗','更新計画','10年の更新・改修'),it("go('plan',{plTab:'measdue'})",'⏱','測定の周期','次回期限')])
+   +g('🩺 保全・診断',[it("go('issues')",'🛠','異常・修理','緊急度・期限・原因・承認'),it("go('diag',{dgTab:'meas'})",'📏','測定記録','絶縁・接地・継電器・蓄電池'),it("go('diag',{dgTab:'meas'});setTimeout(()=>{const g=document.getElementById('genCard');if(g)g.scrollIntoView()},80)",'⚡','非常用発電機','棟・階ごとに今月の点検'),it("go('diag',{dgTab:'health'})",'💯','健全度','人の評価と参考指標'),it("go('diag',{dgTab:'rec'})",'🔎','推奨・異常傾向','管理値外・周期超過・傾向'),it("go('diag',{dgTab:'fail'})",'📉','故障分析','件数・MTBF・MTTR・CSV'),it("go('plan',{plTab:'legal'})",'⚖','点検期限（法定・社内）','期限の一覧'),it("go('plan',{plTab:'renew'})",'🏗','更新計画','10年の更新・改修'),it("go('plan',{plTab:'measdue'})",'⏱','測定の周期','次回期限')])
    +g('🧰 作業・人員',[it("go('works')",'🧰','作業指示書','承認・KY・停電計画・責任者確認'),it("go('workSheet')",'📋','作業表','14日間の作業と勤務'),it("go('stds')",'📘','作業標準','承認済みの手順・必須チェック'),it("go('shift')",'👥','勤務表（シフト）','A/B夜勤ローテーション'),it("go('staff')",'🪪','人員・資格','資格の登録・作業との照合')])
    +g('📦 物品・費用',[it("go('stock',{stTab:'parts'})",'📦','予備品','在庫・最低在庫・入出庫'),it("go('stock',{stTab:'tools'})",'🔧','工具・測定器','貸出・校正期限'),it("go('stock',{stTab:'budget'})",'💴','予算・費用','予算・実績・更新費用')])
    +g('📄 報告書・AI',[it("go('report')",'📄','月報・年報','自動集計・印刷'),it("go('dailyRep',{day:TODAY})",'🗒','日報','A4印刷'),it("go('diag',{dgTab:'meas'})",'📏','点検報告書','測定記録から作成'),it("go('issues')",'🛠','修理報告書','異常案件から作成'),it("go('works')",'🧰','作業報告書','作業指示から作成'),it("go('ai')",'🤖','AI支援','読み取り・検索・下書き（人が確認）')])
