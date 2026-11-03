@@ -4010,7 +4010,7 @@ function banIssue(id){const b=locById(id);if(!b)return;editIssue(null,{title:'�
 function banMove(d){const ym=V.banYm||TODAY.slice(0,7);let y=+ym.slice(0,4),m=+ym.slice(5,7)+d;if(m<1){m=12;y--}if(m>12){m=1;y++}V.banYm=y+'-'+String(m).padStart(2,'0');render()}
 function vBan(){
   const ym=V.banYm||TODAY.slice(0,7),B=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}));
-  const head=`<div class="card"><div class="hd-row"><button class="btn sec sm" onclick="banMove(-1)">‹</button><h2 style="margin:0">⚡ 盤の点検 ${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><button class="btn sec sm" onclick="banMove(1)">›</button></div>
+  const head=`<div class="card"><div class="hd-row"><button class="btn sec sm" aria-label="前の月" style="min-width:44px;min-height:44px" onclick="banMove(-1)">‹</button><h2 style="margin:0;text-align:center;flex:1">⚡ 盤の点検 ${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><button class="btn sec sm" aria-label="次の月" style="min-width:44px;min-height:44px" onclick="banMove(1)">›</button></div>
     <div class="muted" style="margin-top:6px">押すと 空 → ◯（予定）→ ●（実施済み）→ 空。異常があれば ⚠ でその場で記録できます。</div></div>`;
   if(!B.length)return head+card('棟がありません',`<div class="muted" style="margin-bottom:8px">先に「棟と階」を作り、各階に盤を足します。</div><button class="btn wide" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button>`);
   const bid=B.some(x=>x.id===V.banB)?V.banB:B[0].id,bl=locById(bid);

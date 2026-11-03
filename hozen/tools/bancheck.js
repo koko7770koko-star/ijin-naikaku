@@ -12,6 +12,8 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  await p.evaluate(()=>go('ban'));await p.waitForTimeout(300);
  const txt=()=>p.evaluate(()=>document.body.textContent);
  if(!/B1F/.test(await txt())||!/盤1/.test(await txt()))errs.push('盤の表が出ない');
+ const small=await p.evaluate(()=>[...document.querySelectorAll('#app button')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&(r.width<44||r.height<44)}).map(e=>e.textContent.trim().slice(0,8)+':'+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height)));
+ if(small.length)errs.push('ボタンが 44px 未満 '+small.slice(0,5).join(' '));
  const cell=(i)=>p.locator('.banrow .bm:not(.bw)').nth(i);
  await cell(0).click();await p.waitForTimeout(80);if((await cell(0).textContent()).trim()!=='◯')errs.push('1回目で ◯ にならない');
  await cell(0).click();await p.waitForTimeout(80);if((await cell(0).textContent()).trim()!=='●')errs.push('2回目で ● にならない');
