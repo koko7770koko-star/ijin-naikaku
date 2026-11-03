@@ -4028,7 +4028,7 @@ function planEquipCsv(text){
   const rows=parseCsv(text),H=(rows[0]||[]).map(x=>String(x).trim()),ix=n=>H.indexOf(n);
   if(ix('区分')<0||ix('設備名称')<0)return {fatal:'設備台帳のCSVではありません（見出しの「区分」「設備名称」が見つかりません）。「CSV：設備台帳・修理履歴」で書き出したファイルを選んでください。'};
   const v=(r,n)=>{const k=ix(n);return k<0?'':String(r[k]==null?'':r[k]).trim()};
-  const cur=S.equipment||[],byCode=new Map(),skip=[],eqs=[],reps=[];
+  const cur=S.equipment||[],byCode=new Map(),skip=[],eqs=[],reps=[];let noLoc=0;
   cur.forEach(e=>{if(e.code)byCode.set(normCode(e.code),e)});
   const seen=new Set(),locMap=new Map();(S.locs||[]).forEach(l=>locMap.set(locPath(l.id),l.id));
   rows.slice(1).forEach((r,i)=>{const ln=i+2,kb=v(r,'区分');
@@ -4047,7 +4047,7 @@ function planEquipCsv(text){
       if(EQ_STATUS.includes(st))o.status=st;
       for(const [f,h] of [['life','耐用年数'],['renewYear','更新予定'],['renewCost','更新費用']]){const n=num16(v(r,h));if(n!=='')o[f]=n}
       if(Object.keys(spec).length)o.spec=spec;
-      const lp=v(r,'階層');if(lp&&locMap.has(lp))o.locId=locMap.get(lp);
+      const lp=v(r,'階層');if(lp&&locMap.has(lp))o.locId=locMap.get(lp);else if(lp)noLoc++;
       const ex=code?byCode.get(normCode(code)):null;
       eqs.push({o,ex,ln});
     }else if(kb==='履歴'){
@@ -4058,7 +4058,7 @@ function planEquipCsv(text){
       reps.push({code,name:v(r,'設備名称'),o:{date,kind:REPAIR_KINDS.includes(kind)?kind:'その他',content,vendor:txt(v(r,'業者・対応者'),60),cost:cost===''?'':Number(cost),photos:[]},ln});
     }else skip.push(`${ln}行目：区分が「設備」「履歴」ではありません`);
   });
-  return {eqs,reps,skip,total:rows.length-1};
+  return {eqs,reps,skip,noLoc,total:rows.length-1};
 }
 let PENDING_EQCSV=null;
 function importEquipCsv(inp){
@@ -4076,6 +4076,7 @@ function importEquipCsv(inp){
     openModal(`<h3>設備台帳CSVの読み込み</h3>
       <div class="al info">設備 <b>${P.eqs.length}件</b>（新規 ${nNew}件・同じIDの上書き ${nUp}件）／修理履歴 <b>${P.reps.length}件</b>。今の台帳は ${(S.equipment||[]).length}台です。</div>
       <div class="muted" style="font-size:12px">上書きは、CSVに書いてある項目だけを入れ替えます（空欄の列は今の内容を残します。写真・資料・健全度なども残ります）。読み込んだ後に「元に戻す」で戻せます。</div>
+      ${P.noLoc?`<div class="al info">場所（階層）がこの端末の「棟 › 階 › 電気室」に見つからない設備が ${P.noLoc}件あります。場所は入れ替えず（新規は空のまま）、設置場所の文字だけ読み込みます。先に「🏢 階層」で場所を登録すると、次の読み込みから結びつきます。</div>`:''}
       ${P.skip.length?`<div class="al warn">読み飛ばす行：${P.skip.length}件<br>${P.skip.slice(0,8).map(esc).join('<br>')}${P.skip.length>8?'<br>ほか'+(P.skip.length-8)+'件':''}</div>`:''}
       ${modalFoot('<button class="btn sec" onclick="PENDING_EQCSV=null;closeModal(true)">やめる</button><button class="btn" onclick="applyEquipCsv()">読み込む</button>')}`);
   };
