@@ -1,0 +1,23 @@
+// 発電機などの測定入力の確認：前回の値が薄い文字で出る・入力中に管理値の外へ出ると色と判定が変わる・保存の形は変わらない
+const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
+(async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
+ p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
+ await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0);
+ await p.evaluate(()=>{addGenTpl();const t=tplById('mt_gen');t.rows[0].min=190;t.rows[0].max=210;
+  S.equipment.push({id:'eqG1',name:'発電機試験',kind:'発電機',status:'稼働',locId:'',place:''});
+  S.meas=S.meas||[];S.meas.push({id:'mP1',date:'2020-01-01',equipId:'eqG1',tplId:'mt_gen',type:t.type,name:t.name,rows:[{...t.rows[0],v:200}],cond:{temp:'',hum:'',weather:'',tool:'',toolName:'',method:''},by:'x',note:'',photos:[]});
+  go('diag',{dgTab:'meas'});genStart('eqG1')});await p.waitForTimeout(400);
+ const inp='#ms_rows .mrow:first-child input[data-mv]';
+ const ph=await p.getAttribute(inp,'placeholder');if(!/^前回 200/.test(ph))bad.push('前回の値が薄く出ない: '+ph);
+ await p.fill(inp,'250');
+ let s=await p.evaluate(()=>{const r=document.querySelector('#ms_rows .mrow:first-child');return{ng:r.classList.contains('ng'),pill:r.querySelector('.pill').textContent,bg:r.querySelector('input[data-mv]').style.background}});
+ if(!s.ng||s.pill!=='管理値外'||!s.bg)bad.push('範囲外で変わらない '+JSON.stringify(s));
+ await p.fill(inp,'200');
+ s=await p.evaluate(()=>{const r=document.querySelector('#ms_rows .mrow:first-child');return{ng:r.classList.contains('ng'),pill:r.querySelector('.pill').textContent}});
+ if(s.ng||s.pill!=='管理値内')bad.push('範囲内に戻らない '+JSON.stringify(s));
+ await p.fill(inp,'250');await p.fill('#ms_by','試験');await p.evaluate(()=>saveMeas(''));await p.waitForTimeout(200);
+ const k=await p.evaluate(()=>{const m=S.meas.filter(x=>x.id!=='mP1').slice(-1)[0];return m&&Object.keys(m.rows[0]).sort().join()});
+ if(!k||!/ck,max,min,name,photo,src,unit,v/.test(k))bad.push('保存の形が変わった '+k);
+ if(await p.evaluate(()=>document.documentElement.scrollWidth)>392)bad.push('横にはみ出す');
+ console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();

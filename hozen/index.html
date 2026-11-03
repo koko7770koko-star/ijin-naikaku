@@ -4327,12 +4327,20 @@ function measPrevHTML(r){
   const cur=r.v===''||r.v==null?null:Number(r.v),d=cur==null?null:Math.round((cur-p.v)*1000)/1000;
   return `<span class="pill">前回 ${esc(p.v)}${esc(r.unit)}（${md(p.date)}）</span>${d==null?'':`<span class="pill ${d===0?'':'plan'}">差 ${d>0?'+':''}${d}${esc(r.unit)}</span>`}`;
 }
+/* 入力欄の薄い文字：前回の値があればそれを、なければ「測定値」 */
+function measPh(r){const p=measPrev(r);return p?`前回 ${p.v}${r.unit||''}`:'測定値'}
+/* 入力中にその場で管理値の内外を色で知らせる（再描画しないので入力は途切れない） */
+function measLive(inp,k){
+  const r=MEAS_ROWS[k];if(!r)return;const v=inp.value===''?'':Number(inp.value);if(v!==''&&!Number.isFinite(v))return;
+  const st=rowJudge({...r,v});inp.style.borderColor=st==='ng'?'var(--ng,#c0392b)':'';inp.style.background=st==='ng'?'#fdecea':st==='ok'?'#eaf6ec':'';
+  const row=inp.closest('.mrow');if(row){row.classList.toggle('ng',st==='ng');const pl=row.querySelector('.pill');if(pl){pl.className='pill '+(st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':'');pl.textContent={ng:'管理値外',ok:'管理値内',nolim:'基準未設定',none:'未入力',na:'該当なし'}[st]}}
+}
 function measRenderRows(){
   const box=$('#ms_rows');if(!box)return;
   box.innerHTML=MEAS_ROWS.map((r,k)=>{const st=rowJudge(r);return `<div class="mrow ${st==='ng'?'ng':''}" style="border-bottom:1px solid #eef1f4;padding:6px 0">
     <div class="row" style="flex-wrap:nowrap"><input value="${esc(r.name)}" maxlength="60" placeholder="項目名" onchange="MEAS_ROWS[${k}].name=this.value"><button type="button" class="btn sec sm" style="min-height:44px;min-width:44px" aria-label="この項目を外す" onclick="MEAS_ROWS.splice(${k},1);measRenderRows()">×</button></div>
     <div class="row" style="flex-wrap:nowrap;gap:4px;margin-top:4px">${r.ck?`<select onchange="MEAS_ROWS[${k}].v=this.value;measRenderRows()">${opsV(['','○','×','－'],r.v||'')}</select>`:
-      `<input type="number" step="any" inputmode="decimal" enterkeyhint="next" data-mv="1" onkeydown="measEnter(event)" value="${esc(r.v)}" placeholder="測定値" style="${r.ai?'background:var(--warn-bg)':''}" onchange="MEAS_ROWS[${k}].v=num16(this.value);MEAS_ROWS[${k}].ai=false;MEAS_ROWS[${k}].src='';measRenderRows()">
+      `<input type="number" step="any" inputmode="decimal" enterkeyhint="next" data-mv="1" onkeydown="measEnter(event)" oninput="measLive(this,${k})" value="${esc(r.v)}" placeholder="${esc(measPh(r))}" style="${r.ai?'background:var(--warn-bg)':st==='ng'?'border-color:var(--ng,#c0392b);background:#fdecea':''}" onchange="MEAS_ROWS[${k}].v=num16(this.value);MEAS_ROWS[${k}].ai=false;MEAS_ROWS[${k}].src='';measRenderRows()">
       <input value="${esc(r.unit)}" maxlength="12" placeholder="単位" style="max-width:52px;padding-left:6px;padding-right:6px" onchange="MEAS_ROWS[${k}].unit=this.value">
       <input type="number" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].min=num16(this.value);measRenderRows()">
       <input type="number" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].max=num16(this.value);measRenderRows()">`}</div>
