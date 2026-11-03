@@ -2777,7 +2777,12 @@ function editLogHTML(type,ref){
 
 // 音声入力（項目名・単位で振り分け。言わなかった項目は順番に当てはめる）
 const reEsc=s=>String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+/* 漢数字の読み取り：「十二点五」→12.5、「三百五十」→350、「六点六」→6.6（音声認識が漢数字で返す場合） */
+function kanjiToNum(k){const D={'〇':0,'零':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
+  const [ip,fp]=k.split('点'),conv=t=>{if(/^[〇零一二三四五六七八九]+$/.test(t))return t.split('').map(c=>D[c]).join('');let n=0,cur=0;for(const c of t){if(c==='百'){n+=(cur||1)*100;cur=0}else if(c==='十'){n+=(cur||1)*10;cur=0}else cur=D[c]}return String(n+cur)};
+  return conv(ip)+(fp!=null&&fp!==''?'.'+fp.split('').map(c=>D[c]).join(''):'')}
 function parseVoice(text){
+  text=String(text).replace(/[〇零一二三四五六七八九十百]+(?:点[〇零一二三四五六七八九]+)?/g,m=>/[〇零一二三四五六七八九十百]/.test(m)?kanjiToNum(m):m);
   const s=String(text).replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/(\d)\s*(点|てん)\s*(\d)/g,'$1.$3').replace(/[,，]/g,'');
   const LEG_KEY={v:'電圧|ボルト|kv',kw:'デマンド|需要|電力|キロワット|kw',t:'温度|℃'},LEG_UNIT={v:'キロボルト|kv',kw:'キロワット|kw',t:'度|℃'};
   const defs=numDefs(),order=defs.map(n=>n.id);
