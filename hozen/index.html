@@ -2919,7 +2919,7 @@ function eqSummary(e,L){
     <tr><th style="width:96px">次の点検</th><td>${nxT}</td></tr>
     <tr><th>最後の点検</th><td>${done?slash(done):'<span class="muted">記録なし</span>'}</td></tr>
     <tr><th>未完了の異常</th><td>${open.length?`<span class="pill ng">${open.length}件</span> ${esc(open[0].title)}${open.length>1?' ほか':''}`:'<span class="pill ok">なし</span>'}</td></tr></table></div>
-    <button class="btn wide" style="margin-top:8px;min-height:48px" onclick="editIssue(null,{equipId:'${e.id}',place:${esc(JSON.stringify(e.place||''))}})">⚠ この設備で異常を記録</button></div>`;
+    <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px"><button class="btn grow" id="eqRecMeas" style="min-height:44px" onclick="${e.kind==='発電機'?`genStart('${e.id}')`:`editMeas(null,{equipId:'${e.id}'})`}">${e.kind==='発電機'?'⚡ 月次点検の数字':'📏 測定を記録'}</button><button class="btn sec grow" style="min-height:44px" onclick="editIssue(null,{equipId:'${e.id}',place:${esc(JSON.stringify(e.place||''))}})">⚠ 異常を記録</button></div></div>`;
 }
 function vEquipDetail(){
   const e=eqById(V.eq);if(!e)return '<div class="empty">設備が見つかりません</div>';
