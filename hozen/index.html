@@ -2091,6 +2091,7 @@ function alerts(){
   if(part7.length)add('warn',`日常点検が完了していない日 ${part7.length}日（${part7.map(md).join('、')}）`,`go('day',{day:'${part7[0]}'})`,dayChips(part7));
   tasksBetween(TODAY,addD(TODAY,14)).forEach(t=>{const c=conflicts(t);if(c.length)add('warn',`${md(t.date)} ${t.title}：${c.join('、')}`,`editTask('${t.id}')`)});
   const oi=openIssues();if(oi.length)add('warn',`対応中の異常 ${oi.length}件`,"scrollToId('issCard')");
+  {const gp=genPending();if(gp.length)add('warn',`今月まだ数字を入れていない非常用発電機 ${gp.length}台：${gp.slice(0,3).map(eqLabel).join('、')}${gp.length>3?' ほか':''}`,gp.length===1?`genStart('${gp[0].id}')`:"go('diag',{dgTab:'meas'});setTimeout(()=>scrollToId('genCard'),200)")}
   if(STORAGE_WARN)add('ng',STORAGE_WARN+'。バックアップを取り、不要な写真を整理してください','dataCheck()');
   const lb=S.settings.lastBackup,hasData=S.tasks.length||S.items.length||Object.keys(S.daily).length;
   if(hasData&&(!lb||diffD(TODAY,lb)>=7))add('warn',lb?`前回のバックアップから${diffD(TODAY,lb)}日経っています`:'まだバックアップしていません','driveBackup()');
@@ -4904,6 +4905,8 @@ function vDiag(){
   return h;
 }
 /* 非常用発電機：一覧から1台を選んで月次点検の数字を入れる（棟・階は場所の階層から表示） */
+/* 今月まだ月次点検の数字を入れていない非常用発電機（ホームのお知らせ用） */
+function genPending(){const ym=TODAY.slice(0,7),gens=(S.meas||[]).filter(m=>m.tplId==='mt_gen');return (S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止'&&!gens.some(m=>m.equipId===e.id&&String(m.date||'').startsWith(ym))).sort((a,b)=>eqLabel(a).localeCompare(eqLabel(b),'ja',{numeric:true}))}
 function genCard(){
   const G=(S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止');
   const ym=TODAY.slice(0,7);
