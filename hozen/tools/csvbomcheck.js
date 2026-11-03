@@ -27,7 +27,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  const csvE=await p.evaluate(async()=>{let t='';const orig=download;download=async(n,b)=>{t=await b.text();return true};exportEquipCsv();await new Promise(r=>setTimeout(r,150));download=orig;return t});
  const csvS=await p.evaluate(async()=>{let t='';const orig=download;download=async(n,b)=>{t=await b.text();return true};exportStockCsv();await new Promise(r=>setTimeout(r,150));download=orig;return t});
  for(const [label,buf] of [['BOMあり',Buffer.concat([Buffer.from([0xEF,0xBB,0xBF]),Buffer.from(csvE.replace(/^﻿/,''),'utf-8')])],['BOMなし',Buffer.from(csvE.replace(/^﻿/,''),'utf-8')]]){
-  await p.evaluate(()=>{go('equip')});await p.waitForTimeout(200);
+  await p.evaluate(()=>{V.eqFo=true;go('equip')});await p.waitForTimeout(200);
   await p.setInputFiles('#app input[type=file][accept*=csv]',{name:'e.csv',mimeType:'text/csv',buffer:buf});await p.waitForTimeout(400);
   const t=await p.evaluate(()=>$('#modal').textContent);if(!t.includes('設備 1件')||!t.includes('修理履歴 1件'))bad.push('設備台帳 '+label+' '+t.slice(0,80));await p.evaluate(()=>closeModal(true));
  }
