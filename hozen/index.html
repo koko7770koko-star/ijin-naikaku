@@ -1881,7 +1881,7 @@ function setMark(itemId,ds,val,undo){
 
 /* ---------- 5 画面 ---------- */
 // 一覧の行
-function taskRow(t){
+function taskRow(t,quick){
   const over=t.status==='予定'&&t.date<TODAY,cf=conflicts(t);
   const cls=isNG(t)||over?'ng':t.status==='完了'?'ok':t.status==='予定'?'':'dim';
   const meta=[t.time,t.place,t.staff,t.attend?'立会 '+t.attend:''].filter(Boolean).join('・');
@@ -1891,8 +1891,13 @@ function taskRow(t){
     +((t.photos||[]).length?`<span class="pill">📷${t.photos.length}</span>`:'')
     +(cf.length?`<span class="pill warn">⚠ ${esc(cf.join('、'))}</span>`:'');
   return `<div class="item ${cls}" onclick="editTask('${t.id}')"><div class="dt">${md(t.date)}<small>（${WD[pd(t.date).getDay()]}）</small></div>
-    <div class="bd"><div class="ti">${esc(t.title)}</div>${meta?`<div class="meta">${esc(meta)}</div>`:''}${pills?`<div>${pills}</div>`:''}</div></div>`;
+    <div class="bd"><div class="ti">${esc(t.title)}</div>${meta?`<div class="meta">${esc(meta)}</div>`:''}${pills?`<div>${pills}</div>`:''}${quick&&t.status==='予定'?`<button type="button" class="btn sec sm" style="margin-top:6px;min-height:44px" onclick="event.stopPropagation();quickDone('${t.id}')">● 実施済みにする</button>`:''}</div></div>`;
 }
+// 一覧から、開かずに1回で「実施済み（●）」にする（既存の完了と同じ：状態=完了・結果=良。押し間違えは「元に戻す」で戻せる）
+function quickDone(id){const t=S.tasks.find(x=>x.id===id);if(!t||t.status!=='予定')return;
+  const prev={status:t.status,result:t.result},U={marks:[]},it=itemOf(t.title);if(it)setMark(it.id,t.date,'済',U); // 年間計画の印（●）も同時に付く。戻すときは印も戻す
+  logEdit('task',id,'状態',t.status,'完了');t.status='完了';t.result=t.result||'良';storeTask(t);save();render();
+  undoBar(`「${t.title}」を実施済み（●）にしました`,()=>{logEdit('task',id,'状態','完了',prev.status);t.status=prev.status;if(prev.result===undefined)delete t.result;else t.result=prev.result;for(const [fy,iid,ix,old] of U.marks.slice().reverse())if(S.marks[fy]&&S.marks[fy][iid])S.marks[fy][iid][ix]=old;save();render()})}
 function issueRow(i){
   const done=i.status==='完了';
   return `<div class="item ${done?'ok':'ng'}" onclick="editIssue('${i.id}')"><div class="dt">${md(i.date)}<small>${done?'':diffD(TODAY,i.date)+'日経過'}</small></div>
@@ -2067,7 +2072,7 @@ function vMonth(){
   h+=`</div><div class="tags" style="margin-top:10px">${st.showCrew!==false?'<span class="tag a" style="font-size:12px">A夜勤</span><span class="tag b" style="font-size:12px">B夜勤</span>':''}${st.calDay?'<span class="tag d" style="font-size:12px">日勤</span>':''}<span class="tag task" style="font-size:12px">点検・作業</span><span class="muted">青◯予定　緑●完了　灰＝延期　⚠＝衝突</span></div>
     <div class="row" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div></div>`;
   const dayT=S.tasks.filter(t=>t.date===V.sel).sort(byDate);
-  h+=`<div class="card"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.length?dayT.map(taskRow).join(''):'<div class="empty">予定はありません</div>'}</div>`;
+  h+=`<div class="card"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):'<div class="empty">予定はありません</div>'}</div>`;
   const mt=tasksOf(y,m);
   h+=`<div class="card"><div class="hd-row"><h2>${m}月の一覧</h2><span class="muted">完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件</span></div>${mt.length?mt.map(taskRow).join(''):'<div class="empty">この月の予定はまだありません</div>'}</div>`;
   return h;
