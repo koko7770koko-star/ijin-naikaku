@@ -18,6 +18,16 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  const n1=await p.evaluate(()=>document.querySelectorAll('#app .item').length);if(n1<n0)bad.push('絞り込みをやめても戻らない');
  const cut=await p.evaluate(()=>[...document.querySelectorAll('.eqf select')].filter(x=>{const t=x.options[x.selectedIndex].text;const c=document.createElement('canvas').getContext('2d');c.font=getComputedStyle(x).font;return c.measureText(t).width>x.clientWidth-28}).length);if(cut)bad.push('選んだ値の文字が切れる '+cut);
  const lab=await p.evaluate(()=>[...document.querySelectorAll('.eqf label')].map(x=>x.firstElementChild.textContent).join());if(lab!=='場所,種別,重要度')bad.push('見出しが無い '+lab);
+ // 稼働時間計：prompt ではなく小さい窓。前回より小さい値は赤く出る・保存できる・形は {date,value,by}
+ let pr=0;p.removeAllListeners('dialog');p.on('dialog',d=>{pr++;d.dismiss().catch(()=>{})});
+ await p.evaluate(()=>{S.equipment[0].run={meters:[{date:'2026-01-05',value:100,by:''}]};addMeter(S.equipment[0].id)});await p.waitForTimeout(300);
+ const mm=await p.evaluate(()=>({v:!!document.querySelector('#mt_v'),t:document.querySelector('#mt_v')&&document.querySelector('#mt_v').type,im:document.querySelector('#mt_v')&&document.querySelector('#mt_v').inputMode,d:document.querySelector('#mt_d')&&document.querySelector('#mt_d').value===TODAY}));
+ if(!mm.v)bad.push('稼働時間計の窓が出ない');else{if(mm.t!=='number'||mm.im!=='decimal')bad.push('読み値が数字キーボードにならない');if(!mm.d)bad.push('読んだ日の既定が今日でない');
+  await p.fill('#mt_v','50');const wn=await p.evaluate(()=>document.querySelector('#mt_w').innerText);if(!wn.includes('前回より小さい'))bad.push('小さい値の赤い案内が出ない');
+  await p.fill('#mt_v','');await p.click('text=記録する');await p.waitForTimeout(200);if(!await p.evaluate(()=>!!document.querySelector('#mt_v')))bad.push('空のまま保存できてしまう');
+  await p.fill('#mt_v','50');await p.click('text=記録する');await p.waitForTimeout(300);
+  const ms=await p.evaluate(()=>S.equipment[0].run.meters.map(m=>Object.keys(m).sort().join()+':'+m.value));if(ms.length!==2||ms[1]!=='by,date,value:50')bad.push('保存の形が違う '+ms);}
+ if(pr)bad.push('prompt/confirm が出た '+pr);
  const w=await p.evaluate(()=>document.documentElement.scrollWidth);if(w>392)bad.push('横にはみ出す '+w);
  for(const k of ['due','issue']){await p.selectOption('select[aria-label="並び順"]',k);await p.waitForTimeout(300)}
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
