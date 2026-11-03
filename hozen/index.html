@@ -2375,7 +2375,6 @@ function saveTask(id){
 }
 function doneTask(id){const t=S.tasks.find(x=>x.id===id);logEdit('task',id,'状態',t.status,'完了');t.status='完了';t.result=t.result||'良';storeTask(t);save();closeModal(true);render();toast('完了にしました')}
 function delTask(id){
-  if(!confirm('この予定を削除しますか？'))return;
   const i=S.tasks.findIndex(x=>x.id===id),t=S.tasks[i];S.tasks.splice(i,1);save();closeModal(true);render();
   undoBar(`${md(t.date)}「${t.title}」を削除しました`,()=>S.tasks.splice(i,0,t));
 }
@@ -2904,7 +2903,6 @@ function addDef(kind){
 }
 function delDef(kind,id){
   const d=S.settings[kind].find(x=>x.id===id);if(!d)return;
-  if(!confirm(`「${d.name}」を点検項目から外しますか？\n過去の記録は消えませんが、画面と判定には出なくなります。`))return;
   const i=S.settings[kind].indexOf(d);S.settings[kind].splice(i,1);logLim(d.name,'項目','あり','削除');syncDefs();save();render();
   undoBar(`「${d.name}」を外しました`,()=>{S.settings[kind].splice(i,0,d);logLim(d.name,'項目','削除','元に戻す');syncDefs()});
 }
@@ -3054,7 +3052,6 @@ function saveRepair(eid,rid){
   save();closeModal(true);render();toast('保存しました');
 }
 function delRepair(eid,rid){
-  if(!confirm('この履歴を削除しますか？'))return;
   const e=eqById(eid),i=e.repairs.findIndex(x=>x.id===rid),r=e.repairs[i];e.repairs.splice(i,1);save();closeModal(true);render();
   undoBar('履歴を削除しました',()=>e.repairs.splice(i,0,r));
 }
@@ -4649,7 +4646,7 @@ function saveMeas(id){
   if(j.ng&&o.equipId&&confirm('管理値外の項目があります。異常案件として登録しますか？（登録内容は次の画面で確認できます）'))
     editIssue(null,{equipId:o.equipId,title:`${o.name||o.type}：管理値外`,detail:o.rows.filter(r=>rowJudge(r)==='ng').map(r=>`${r.name} ${r.v}${r.unit}（管理値 ${limText(r)}）`).join('\n'),date});
 }
-function delMeas(id){const i=S.meas.findIndex(x=>x.id===id);if(i<0||!confirm('この測定記録を削除しますか？'))return;const m=S.meas[i];S.meas.splice(i,1);logEdit('meas',id,'記録の削除',`${m.name} ${m.date}`,'');save();closeModal(true);render();undoBar(`測定記録（${md(m.date)} ${m.name||m.type}）を削除しました`,()=>S.meas.splice(i,0,m))}
+function delMeas(id){const i=S.meas.findIndex(x=>x.id===id);if(i<0)return;const m=S.meas[i];S.meas.splice(i,1);logEdit('meas',id,'記録の削除',`${m.name} ${m.date}`,'');save();closeModal(true);render();undoBar(`測定記録（${md(m.date)} ${m.name||m.type}）を削除しました`,()=>S.meas.splice(i,0,m))}
 /* H-2：計器写真の数値読み取り補助（下書き。人が確認して保存するまで記録にならない） */
 async function measAiRead(inp,k){
   const f=inp.files[0];inp.value='';if(!f)return;if(!aiReady()){toast('APIキーが未設定です（設定 → 写真読み取り）。値は手で入力してください');return}if(!navigator.onLine){toast('通信できません。値は手で入力してください');return}
@@ -4947,7 +4944,7 @@ function editPlan(id){
 }
 function savePlan(id){const g=k=>$('#pl_'+k).value.trim();const o={title:txt(g('title'),100),year:num16(g('year')),kind:g('kind'),equipId:eqById(g('eq'))?g('eq'):'',cost:num16(g('cost')),status:g('status'),note:txt(g('note'),2000)};
   if(!o.title){toast('件名を入れてください');return}if(!Number.isInteger(o.year)||o.year<1900||o.year>2200){toast('年度を入れてください');return}const p=(S.plans||[]).find(x=>x.id===id);if(p){logEdit('plan',id,'計画',`${p.year} ${p.status} ${p.cost}`,`${o.year} ${o.status} ${o.cost}`);Object.assign(p,o)}else S.plans.push({id:uid(),...o});save();closeModal(true);render();toast('保存しました')}
-function delPlan(id){const i=S.plans.findIndex(x=>x.id===id);if(i<0||!confirm('この計画を削除しますか？'))return;const p=S.plans[i];S.plans.splice(i,1);save();closeModal(true);render();undoBar(`計画「${p.title}」を削除しました`,()=>S.plans.splice(i,0,p))}
+function delPlan(id){const i=S.plans.findIndex(x=>x.id===id);if(i<0)return;const p=S.plans[i];S.plans.splice(i,1);save();closeModal(true);render();undoBar(`計画「${p.title}」を削除しました`,()=>S.plans.splice(i,0,p))}
 
 /* ---------- 報告書（点検報告書・修理報告書・作業報告書） ---------- */
 function vPrintDoc(){
@@ -5252,7 +5249,7 @@ function editBudget(id,fy){const b=(S.budget||[]).find(x=>x.id===id)||{fy:fy||fy
   ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveBudget('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delBudget('${id}')">削除</button>`:'')}`)}
 function saveBudget(id){const o={fy:parseInt($('#bg_fy').value),cat:$('#bg_cat').value,name:txt($('#bg_name').value.trim(),80),amount:num16($('#bg_amount').value)};if(!Number.isInteger(o.fy)){toast('年度を入れてください');return}
   const b=(S.budget||[]).find(x=>x.id===id);if(b){logEdit('budget',id,'予算',`${b.cat} ${b.amount}`,`${o.cat} ${o.amount}`);Object.assign(b,o)}else S.budget.push({id:uid(),...o});V.bgFy=o.fy;save();closeModal(true);render()}
-function delBudget(id){const i=S.budget.findIndex(x=>x.id===id),b=S.budget[i];if(!confirm('削除しますか？'))return;S.budget.splice(i,1);save();closeModal(true);render();undoBar('予算を削除しました',()=>S.budget.splice(i,0,b))}
+function delBudget(id){const i=S.budget.findIndex(x=>x.id===id),b=S.budget[i];S.budget.splice(i,1);save();closeModal(true);render();undoBar('予算を削除しました',()=>S.budget.splice(i,0,b))}
 
 function editPart(id){
   const p=partById(id)||{code:'',name:'',spec:'',maker:'',place:'',unit:'個',qty:0,min:'',price:'',equipIds:[],note:''};
@@ -5344,7 +5341,7 @@ function toolCal(id){if($('#tl_name')&&!saveTool(id,true))return;const t=S.tools
 function toolCalDo(id){const t=S.tools.find(x=>x.id===id);if(!t)return;const by=$('#tc_by').value,result=$('#tc_res').value,next=$('#tc_next').value;
   if(next&&!isDate(next)){toast('日付の形が正しくありません');return}
   t.calHist.push({date:TODAY,by:txt(by,80),result:txt(result,200),next});logEdit('tool',id,'校正期限',t.calDue,next);t.calDue=next||t.calDue;save();closeModal(true);editTool(id);toast('校正を記録しました')}
-function delTool(id){const i=S.tools.findIndex(x=>x.id===id),t=S.tools[i];if(!confirm(`「${t.name}」を削除しますか？`))return;S.tools.splice(i,1);save();closeModal(true);render();undoBar(`「${t.name}」を削除しました`,()=>S.tools.splice(i,0,t))}
+function delTool(id){const i=S.tools.findIndex(x=>x.id===id),t=S.tools[i];S.tools.splice(i,1);save();closeModal(true);render();undoBar(`「${t.name}」を削除しました`,()=>S.tools.splice(i,0,t))}
 
 /* ---------- 作業標準（停電・検電・接地・復電などの手順は、施設で承認された標準に基づいて管理） ---------- */
 const stdById=id=>(S.stds||[]).find(t=>t.id===id);
@@ -5634,7 +5631,7 @@ function dwgTap(ev){
 function addPin(x,y){const d=dwgById(V.dwg),eq=$('#pn_eq').value,label=txt($('#pn_label').value.trim(),40);if(!eq&&!label){toast('設備か表示文字を入れてください');return}
   d.pins.push({id:uid(),equipId:eqById(eq)?eq:'',label,x,y});logEdit('dwg',d.id,'設備の印','',label||equipName(eq));save();closeModal(true);render()}
 function pinTap(did,pid){const d=dwgById(did),p=d.pins.find(x=>x.id===pid);if(!p)return;if(V.pinMode){delPin(did,pid);return}if(p.equipId&&eqById(p.equipId))go('equipDetail',{eq:p.equipId});else toast(p.label||'設備の指定がありません')}
-function delPin(did,pid){const d=dwgById(did),i=d.pins.findIndex(x=>x.id===pid);if(i<0||!confirm('この印を外しますか？'))return;const p=d.pins[i];d.pins.splice(i,1);save();render();undoBar('印を外しました',()=>d.pins.splice(i,0,p))}
+function delPin(did,pid){const d=dwgById(did),i=d.pins.findIndex(x=>x.id===pid);if(i<0)return;const p=d.pins[i];d.pins.splice(i,1);save();render();undoBar('印を外しました',()=>d.pins.splice(i,0,p))}
 
 /* ---------- 技術資料（検索と根拠表示） ---------- */
 function vLib(){
@@ -5667,7 +5664,7 @@ function editLib(id){
 async function addLibFile(inp){const prev=TD;TD=[];await addTD(inp);TD=TD.length?TD.slice(-1):prev;$('#td').innerHTML=docsList(TD,'rmTD')}
 function saveLib(id){const o={title:txt($('#lb_title').value.trim(),100),tags:txt($('#lb_tags').value.trim(),200),text:txt($('#lb_text').value,30000),equipIds:eqMultiVal('lb_eqs'),file:TD[0]?TD[0].id:'',type:TD[0]?TD[0].type:''};
   if(!o.title){toast('題名を入れてください');return}const d=(S.library||[]).find(x=>x.id===id);if(d){logEdit('lib',id,'技術資料',d.title,o.title);Object.assign(d,o)}else S.library.push({id:uid(),...o});save();closeModal(true);render();toast('保存しました')}
-function delLib(id){const i=S.library.findIndex(x=>x.id===id),d=S.library[i];if(!confirm(`「${d.title}」を削除しますか？`))return;S.library.splice(i,1);save();closeModal(true);render();undoBar(`「${d.title}」を削除しました`,()=>S.library.splice(i,0,d))}
+function delLib(id){const i=S.library.findIndex(x=>x.id===id),d=S.library[i];S.library.splice(i,1);save();closeModal(true);render();undoBar(`「${d.title}」を削除しました`,()=>S.library.splice(i,0,d))}
 
 /* ---------- AI支援 ---------- */
 function vAi(){
