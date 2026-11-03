@@ -13,7 +13,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  await p.evaluate(()=>go('locs'));await p.waitForTimeout(300);
  await p.evaluate(()=>bldgWizard());await p.waitForTimeout(200);
  await p.evaluate(()=>{document.querySelector('[data-n="B"]').checked=true;document.querySelector('[data-dn="A"]').value=1;document.querySelector('[data-up="B"]').value=2});
- await p.screenshot({path:process.argv[2]||'/dev/null'});
+ await p.screenshot({path:process.argv[2]||require('path').join(require('os').tmpdir(),'bldgcheck.png')});
  await p.evaluate(()=>applyBldgWizard());await p.waitForTimeout(300);
  const r=await p.evaluate(()=>({A:S.locs.filter(l=>l.parent==='l2'&&l.type==='階').map(l=>l.name).sort(),bn:S.locs.filter(l=>l.type==='建屋').map(l=>l.name),B:(()=>{const b=S.locs.find(l=>l.name==='B棟');return b?S.locs.filter(l=>l.parent===b.id).map(l=>l.name):null})()}));
  if(r.A.join()!=='1F,2F,3F,B1F')errs.push('A棟の階が違う（既にある1Fは重ねない）: '+r.A.join());
