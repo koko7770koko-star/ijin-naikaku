@@ -5404,15 +5404,19 @@ function measLive(inp,k){
   const st=rowJudge({...r,v});inp.style.borderColor=st==='ng'?'var(--ng,#c0392b)':'';inp.style.background=st==='ng'?'#fdecea':st==='ok'?'#eaf6ec':'';
   const row=inp.closest('.mrow');if(row){const pv=measPrev(r),bg=row.querySelector('.mbig');if(bg)bg.hidden=!measBig(pv,v===''?null:v);const od=row.querySelector('.modd');if(od){const t=measOdd(r,pv,v===''?null:v);od.hidden=!t;od.textContent='⚠ '+t}row.classList.toggle('ng',st==='ng');const pl=row.querySelector('.pill');if(pl){pl.className='pill '+(st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':'');pl.textContent=judgeWord(r,st,v)}}
 }
+/* 行の値を確定したときの描き直し：すぐ描き直すと、いまタップした次の行の入力欄が置き換わって入力が始まらない（打った数字が消える）。
+   少し待ってから描き直し、描き直す前にフォーカスのあった欄（と文字の位置）へ戻す */
+function measRerender(){setTimeout(()=>{const box=$('#ms_rows');if(!box)return;const all=()=>[...box.querySelectorAll('input,select,textarea')],a=document.activeElement,i=all().indexOf(a);
+  let ss=null;try{ss=a&&a.selectionStart}catch(e){}measRenderRows();if(i>=0){const n=all()[i];if(n){n.focus();try{if(ss!=null)n.setSelectionRange(ss,ss)}catch(e){}}}},0)}
 function measRenderRows(){
   const box=$('#ms_rows');if(!box)return;
   box.innerHTML=MEAS_ROWS.map((r,k)=>{const st=rowJudge(r);return `<div class="mrow ${st==='ng'?'ng':''}" style="border-bottom:1px solid #eef1f4;padding:6px 0">
     <div class="row" style="flex-wrap:nowrap"><input value="${esc(r.name)}" maxlength="60" placeholder="項目名" onchange="MEAS_ROWS[${k}].name=this.value"><button type="button" class="btn sec sm" style="min-height:44px;min-width:44px" aria-label="この項目を外す" onclick="MEAS_ROWS.splice(${k},1);measRenderRows()">×</button></div>
-    <div class="row" style="flex-wrap:nowrap;gap:4px;margin-top:4px">${r.ck?`<select onchange="MEAS_ROWS[${k}].v=this.value;measRenderRows()">${opsV(['','○','×','－'],r.v||'')}</select>`:
-      `<input type="number" step="any" inputmode="decimal" enterkeyhint="next" data-mv="1" onkeydown="measEnter(event)" oninput="measLive(this,${k})" value="${esc(r.v)}" placeholder="${esc(measPh(r))}" style="${r.ai?'background:var(--warn-bg)':st==='ng'?'border-color:var(--ng,#c0392b);background:#fdecea':''}" onchange="MEAS_ROWS[${k}].v=num16(this.value);MEAS_ROWS[${k}].ai=false;MEAS_ROWS[${k}].src='';measRenderRows()">
+    <div class="row" style="flex-wrap:nowrap;gap:4px;margin-top:4px">${r.ck?`<select onchange="MEAS_ROWS[${k}].v=this.value;measRerender()">${opsV(['','○','×','－'],r.v||'')}</select>`:
+      `<input type="number" step="any" inputmode="decimal" enterkeyhint="next" data-mv="1" onkeydown="measEnter(event)" oninput="measLive(this,${k})" value="${esc(r.v)}" placeholder="${esc(measPh(r))}" style="${r.ai?'background:var(--warn-bg)':st==='ng'?'border-color:var(--ng,#c0392b);background:#fdecea':''}" onchange="MEAS_ROWS[${k}].v=num16(this.value);MEAS_ROWS[${k}].ai=false;MEAS_ROWS[${k}].src='';measRerender()">
       <input value="${esc(r.unit)}" maxlength="12" placeholder="単位" style="max-width:52px;padding-left:6px;padding-right:6px" onchange="MEAS_ROWS[${k}].unit=this.value">
-      <input type="number" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].min=num16(this.value);measRenderRows()">
-      <input type="number" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].max=num16(this.value);measRenderRows()">`}</div>
+      <input type="number" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].min=num16(this.value);measRerender()">
+      <input type="number" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].max=num16(this.value);measRerender()">`}</div>
     <div class="row" style="gap:4px;margin-top:4px;align-items:center"><span class="pill ${st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':''}">${esc(judgeWord(r,st))}</span>
       ${!r.ck&&(r.min===''||r.min==null)&&(r.max===''||r.max==null)?(tplById(($('#ms_tpl')||{}).value)?`<button type="button" class="btn sec sm mlim" style="min-height:44px" onclick="measLimGo()">📐 管理値をひな形で入れる</button>`:`<span class="muted mlim" style="font-size:12px;flex-basis:100%">この記録だけの管理値は右の下限・上限に入れてください</span>`):''}
       ${measPrevHTML(r)}${r.ai?'<span class="pill warn">AI読取（要確認）</span>':r.src==='AI'?'<span class="pill plan">AI読取値（人が確認済み）</span>':''}
