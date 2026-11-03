@@ -223,7 +223,7 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
 #undobar{position:fixed;left:12px;right:12px;bottom:84px;z-index:65;background:#263238;color:#fff;border-radius:12px;padding:10px 12px 10px 16px;display:none;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:14px}
 #undobar.on{display:flex}
 #undobar span{flex:1}
-#undobar button{border:0;background:none;color:#8fd1ff;font-weight:700;font-size:15px;padding:6px 8px}
+#undobar button{border:0;background:none;color:#8fd1ff;font-weight:700;font-size:15px;padding:6px 8px;min-height:44px}
 @media print{#sysbar,#undobar{display:none!important}}
 
 /* ---------- モーダル・通知 ---------- */
@@ -1805,9 +1805,9 @@ async function restoreGeneration(key){
 }
 
 /* 取り消しバー（削除の直後に「元に戻す」） */
-function undoBar(msg,fn){
+function undoBar(msg,fn,kind){
   const b=$('#undobar');b.innerHTML=`<span>${esc(msg)}</span><button>元に戻す</button>`;b.classList.add('on');
-  opLog('削除',msg);save();
+  opLog(kind||'削除',msg);save();
   b.querySelector('button').onclick=()=>{b.classList.remove('on');fn();opLog('元に戻す',msg);save();render();toast('元に戻しました')};
   clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('on'),8000);
 }
@@ -2129,8 +2129,10 @@ function vYear(){
 // マスを押して描き直しても、見ている月の位置を動かさない（年度を替えたときと最初だけ今の月へ）
 let _yrFy=null;
 function yearToNow(){const w=$('.tbw'),c=w&&w.querySelector('th.cur');if(c)w.scrollLeft=Math.max(0,c.offsetLeft-170)}
-function cycleMark(id,i,toEnki){const seq=['','○','済'];const fy=V.fy;S.marks[fy]=S.marks[fy]||{};const r=S.marks[fy][id]=S.marks[fy][id]||Array(12).fill('');
-  if(toEnki)r[i]=r[i]==='延'?'':'延';else r[i]=r[i]==='延'?'':seq[(seq.indexOf(r[i])+1)%3];save();render()}
+function cycleMark(id,i,toEnki){const seq=['','○','済'];const fy=V.fy;S.marks[fy]=S.marks[fy]||{};const r=S.marks[fy][id]=S.marks[fy][id]||Array(12).fill('');const old=r[i];
+  if(toEnki)r[i]=r[i]==='延'?'':'延';else r[i]=r[i]==='延'?'':seq[(seq.indexOf(r[i])+1)%3];save();render();
+  // ● や 延 にした直後は、押し間違えてもすぐ戻せる（戻すと保存も元の値に）
+  if(old!==r[i]&&(r[i]==='済'||r[i]==='延')){const it=S.items.find(x=>x.id===id),fyv=fy;undoBar(`「${it?it.name:'項目'}」${(i+3)%12+1}月を ${r[i]==='済'?'●（実施済み）':'延期'} にしました`,()=>{if(S.marks[fyv]&&S.marks[fyv][id])S.marks[fyv][id][i]=old},'印')}}
 let _mkT=null,_mkLong=false;
 function markPress(id,i){_mkTouchAt=Date.now();_mkLong=false;clearTimeout(_mkT);_mkT=setTimeout(()=>{_mkLong=true;_mkT=null;if(navigator.vibrate)try{navigator.vibrate(30)}catch(e){}cycleMark(id,i,true)},550)}
 function markRelease(){clearTimeout(_mkT);_mkT=null}
@@ -4120,7 +4122,8 @@ function banBoards(rootId){const ids=locDesc(rootId);return (S.locs||[]).filter(
 function banVal(ym,id,k){const r=((S.banChk||{})[ym]||{})[id];return r&&r[k]||''}
 function banCount(ym,boards){let d=0;boards.forEach(b=>{for(let k=0;k<3;k++)if(banVal(ym,b.id,k)==='済')d++});return {d,t:boards.length*3}}
 function banSet(ym,id,k,v){S.banChk=S.banChk||{};const m=S.banChk[ym]=S.banChk[ym]||{};const r=m[id]=m[id]||['','',''];r[k]=v}
-function banTap(id,k){const ym=V.banYm||TODAY.slice(0,7),cur=banVal(ym,id,k);banSet(ym,id,k,cur===''?'○':cur==='○'?'済':'');save();render()}
+function banTap(id,k){const ym=V.banYm||TODAY.slice(0,7),cur=banVal(ym,id,k),nv=cur===''?'○':cur==='○'?'済':'';banSet(ym,id,k,nv);save();render();
+  if(nv==='済'){const b=locById(id);undoBar(`「${b?b.name:'盤'}」の「${BAN_ITEMS[k]}」を ●（実施済み）にしました`,()=>{banSet(ym,id,k,cur)},'印')}}
 function banAll(rootId){const ym=V.banYm||TODAY.slice(0,7),bs=banBoards(rootId);if(!bs.length)return;
   const prev=bs.map(b=>[b.id,[0,1,2].map(k=>banVal(ym,b.id,k))]);
   bs.forEach(b=>{for(let k=0;k<3;k++)if(banVal(ym,b.id,k)!=='延')banSet(ym,b.id,k,'済')}); // 延期（延）の印は上書きしない
