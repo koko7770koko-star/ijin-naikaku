@@ -1834,7 +1834,15 @@ async function snapshot(reason,extra,force){
     if(data.app&&data.app.settings)delete data.app.settings.apiKey;
     const at=new Date().toISOString();
     const isRaw=data.raw!=null||data.rawShift!=null;
-    await idb('b','readwrite',s=>s.put({at,reason,data},(isRaw?'r':'b')+Date.now()+uid().slice(-3)));
+    const gk=(isRaw?'r':'b')+Date.now()+uid().slice(-3);
+    try{await idb('b','readwrite',s=>s.put({at,reason,data},gk))}
+    catch(e1){ // 容量不足など：古い世代を半分まで減らして1回だけやり直す（本体の記録には触らない。最新の世代は残す）
+      const ks=(await idb('b','readonly',s=>s.getAllKeys())).map(String).filter(k=>k.startsWith('b')).sort(),drop=ks.slice(0,Math.max(0,ks.length-Math.ceil(GEN_KEEP/6)));
+      if(!drop.length)throw e1;
+      await idb('b','readwrite',s=>{drop.forEach(k=>s.delete(k))});
+      await idb('b','readwrite',s=>s.put({at,reason,data},gk));
+      opLog('バックアップ履歴の容量不足',`古い履歴${drop.length}件を整理して保存`);
+    }
     const keys=(await idb('b','readonly',s=>s.getAllKeys())).map(String);
     const del=[...keys.filter(k=>k.startsWith('b')).sort().slice(0,-GEN_KEEP),...keys.filter(k=>k.startsWith('r')).sort().slice(0,-10)]; // 原本の退避は最新10件まで別枠で残す
     if(del.length)await idb('b','readwrite',s=>{del.forEach(k=>s.delete(k))});
@@ -1880,14 +1888,17 @@ async function restoreGeneration(key){
   if(g.data.raw!=null){try{src=JSON.parse(g.data.raw)}catch(e){msgModal('戻せません','この原本はJSONとして読めないほど壊れています。「ファイルに保存」して内容を確認してください。');return}}
   if(!src)return;
   const v=validateData(src);if(!v.ok){toast('この履歴は壊れています：'+v.fatal);return}
-  if(!confirm(`${new Date(g.at).toLocaleString('ja-JP')} の状態に戻します。今の状態はバックアップ履歴に残します。よろしいですか？`))return;
+  const cnt=a=>`予定${(a.tasks||[]).length}・点検${Object.keys(a.daily||{}).length}日・項目${(a.items||[]).length}・異常${(a.issues||[]).length}・設備${(a.equipment||[]).length}`;
+  if(!confirm(`${new Date(g.at).toLocaleString('ja-JP')} の状態に戻します。\n今　　　：${cnt(S)}\n戻す先　：${cnt(v.data)}\n今の状態はバックアップ履歴に残します（戻した直後は「元に戻す」でも戻せます）。よろしいですか？`))return;
   if(!await safeSnap('履歴から戻す前'))return;
+  const prevS=S,prevShift=hasShift()?SHIFT.get():null;
   const keepLog=S.opLog||[];
   const devS={apiMode:S.settings.apiMode,apiUrl:S.settings.apiUrl,bk:S.settings.bk};
   S=migrate(v.data);Object.assign(S.settings,devS);S.lastVer=APP_VER;S.opLog=mergeOpLog(keepLog,[]);opLog(g.data.raw!=null?'原本から戻す':'履歴から戻す',`${new Date(g.at).toLocaleString('ja-JP')}（${g.reason||''}）`);syncDefs();save();
   if(g.data.shift&&hasShift()){const sv=validateShift(g.data.shift);if(sv.ok)SHIFT.set(sv.data)}
   closeModal(true);render();
   const pc=await checkPhotos();toast(pc.missing.length?`戻しました（表示できない写真 ${pc.missing.length}件）`:'戻しました');
+  if(g.data.raw==null)undoBar(`履歴（${new Date(g.at).toLocaleString('ja-JP')}）に戻しました`,()=>{S=prevS;syncDefs();if(prevShift&&hasShift())SHIFT.set(prevShift)},'履歴から戻す');
 }
 
 /* 取り消しバー（削除の直後に「元に戻す」） */
