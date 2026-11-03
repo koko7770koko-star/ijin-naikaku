@@ -14,4 +14,10 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  const hp=await p.evaluate(()=>{go('set',{setTab:'basic'});return null});await p.waitForTimeout(300);
  const hh=await p.evaluate(()=>{const h=[...document.querySelectorAll('.sethelp')];return {n:h.length,over:h.some(x=>x.getBoundingClientRect().right>document.documentElement.clientWidth),sw:document.documentElement.scrollWidth}});
  if(hh.n<8)bad.push('設定の欄の説明が足りない '+hh.n);if(hh.over||hh.sw>392)bad.push('設定の説明がはみ出す');
+ // 点検項目・天気の各タブにも「何に効くか」の説明が出て、はみ出さない（390px）
+ for(const [tab,min] of [['items',2],['link',1]]){
+  await p.evaluate(t=>{go('set',{setTab:t})},tab);await p.waitForTimeout(300);
+  const h2=await p.evaluate(()=>{const v=[...document.querySelectorAll('.sethelp')].filter(x=>x.offsetParent);return {n:v.length,over:v.some(x=>x.getBoundingClientRect().right>document.documentElement.clientWidth),sw:document.documentElement.scrollWidth}});
+  if(h2.n<min)bad.push(tab+'タブの説明が足りない '+h2.n);if(h2.over||h2.sw>392)bad.push(tab+'タブの説明がはみ出す');
+ }
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();

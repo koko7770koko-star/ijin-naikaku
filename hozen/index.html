@@ -2811,9 +2811,11 @@ function defsCard(){
       <div class="grid2"><div><label class="f">名前</label><input value="${esc(d.name)}" maxlength="40" onchange="setDef('dnums','${d.id}','name',this)"></div><div><label class="f">短い表示名</label><input value="${esc(d.short||'')}" maxlength="12" onchange="setDef('dnums','${d.id}','short',this)"></div></div>
       <div class="grid3"><div><label class="f">単位</label><input value="${esc(d.unit)}" maxlength="10" onchange="setDef('dnums','${d.id}','unit',this)"></div><div><label class="f">下限</label><input type="number" step="any" inputmode="decimal" value="${esc(d.min)}" onchange="setDef('dnums','${d.id}','min',this)"></div><div><label class="f">上限</label><input type="number" step="any" inputmode="decimal" value="${esc(d.max)}" onchange="setDef('dnums','${d.id}','max',this)"></div></div>
       <div class="grid2"><div><label class="f">急変の注意（前回比%）</label><input type="number" step="any" inputmode="decimal" value="${esc(d.chg)}" onchange="setDef('dnums','${d.id}','chg',this)"></div><div><label class="f">設備</label>${equipSelect(d.equip,`setDef('dnums','${d.id}','equip',this)`)}</div></div>
-      <label class="chkl"><input type="checkbox" ${d.req?'checked':''} onchange="setDef('dnums','${d.id}','req',this)">必須（未入力のままでは完了できない）</label></div>`).join('')}
+      <label class="chkl"><input type="checkbox" ${d.req?'checked':''} onchange="setDef('dnums','${d.id}','req',this)">必須（未入力のままでは完了できない）</label>
+      <div class="muted sethelp" style="font-size:12px;margin-top:4px">名前：日常点検の入力欄・日報の表の見出し／短い表示名：ホームなど狭い所の表示／単位：数値のあとに付く／下限・上限：外れると「異常」になり異常案件に登録／急変の注意：前回より○%以上変わると注意を出す／設備：異常のときの設備台帳との結びつき</div></div>`).join('')}
     <button class="btn sec sm wide" style="margin-top:10px" onclick="addDef('dnums')">＋ 数値の項目を追加</button>
     <h2 style="margin-top:16px;font-size:15px">確認（○×）の項目</h2>
+    <div class="muted sethelp" style="font-size:12px;margin-top:2px">名前：日常点検の確認欄の名前／必須：入れないと完了できない／下の設備：×のときの異常案件を結びつける設備</div>
     ${c.map(d=>`<div class="row" style="margin-top:8px;flex-wrap:nowrap"><input value="${esc(d.name)}" maxlength="40" onchange="setDef('dchecks','${d.id}','name',this)" class="grow" style="width:auto;min-width:0">
       <label class="chkl" style="margin:0;white-space:nowrap"><input type="checkbox" ${d.req?'checked':''} onchange="setDef('dchecks','${d.id}','req',this)">必須</label><button class="btn red sm" onclick="delDef('dchecks','${d.id}')">削除</button></div>
       <div style="margin:4px 0 0">${equipSelect(d.equip,`setDef('dchecks','${d.id}','equip',this)`)}</div>`).join('')}
@@ -5456,6 +5458,7 @@ function wxSettingsCard(){
     <label class="f">地点の名前</label><input value="${esc(c.label||'')}" maxlength="40" placeholder="例：本館" onchange="wxSet('label',this.value)">
     <div class="grid2"><div><label class="f">緯度</label><input type="number" step="any" value="${esc(c.lat??'')}" onchange="wxSet('lat',this.value)"></div><div><label class="f">経度</label><input type="number" step="any" value="${esc(c.lng??'')}" onchange="wxSet('lng',this.value)"></div></div>
     <button class="btn sec sm" style="margin-top:6px" onclick="wxHere()">📍 今いる場所を地点にする</button>
+    <div class="muted sethelp" style="font-size:12px;margin-top:6px">地点の名前：ホームの天気の見出し／緯度・経度：この場所の天気を調べる位置／警報・注意報の県：選んだ県の気象庁の警報を出す（天気・警報が取れなくても他の機能は使えます）</div>
     <label class="f">警報・注意報の都道府県</label><select onchange="wxSet('pref',this.value)"><option value="">（表示しない）</option>${Object.keys(PREF_JMA).map(p=>`<option ${c.pref===p?'selected':''}>${p}</option>`).join('')}</select>
     <div class="muted" style="font-size:12px;margin-top:6px">・天気はネット接続が必要です。取得するときに、地点の緯度・経度を気象サービス（Open-Meteo）に送ります。警報・注意報は気象庁の府県ごとの情報です。<br>・圏外では、最後に取得した天気を取得時刻つきで表示します。<br>・屋外作業の目安は予報からの参考で、作業の可否や安全はアプリが決めません。</div></div>`;
 }
