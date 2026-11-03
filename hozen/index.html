@@ -4345,8 +4345,11 @@ function locOptions(cur,allowEmpty=true,exclude){
   const opt=(l,pa,sel)=>`<option value="${l.id}" ${sel&&l.id===cur?'selected':''}>${esc(pa.join(' › '))}（${esc(LOC_SHOW(l.type))}）</option>`;
   const pathOf=l=>{const pa=[];let x=l,n=0;while(x&&n++<20){pa.unshift(x.name);x=(S.locs||[]).find(y=>y.id===x.parent)}return pa};
   const roots=kids(''),groups=[],walk=(p,path,out)=>kids(p).forEach(l=>{if(l.id===exclude)return;const pa=[...path,l.name];out.push(opt(l,pa,true));walk(l.id,pa,out)});
-  const single=roots.length<=1;
-  roots.forEach(r=>{if(r.id===exclude)return;const out=[opt(r,[r.name],true)];walk(r.id,[r.name],out);groups.push(single?out.join(''):`<optgroup label="${esc(r.name)}">${out.join('')}</optgroup>`)});
+  // 施設が1つだけで、その下に棟が2つ以上あるときは、施設の行の下に棟ごとの見出しで分ける（場所が多くても探しやすく）
+  const fac1=roots.length===1&&roots[0].type==='施設'&&kids(roots[0].id).filter(l=>l.type==='建屋').length>1?roots[0]:null;
+  const single=roots.length<=1&&!fac1;
+  if(fac1){if(fac1.id!==exclude){groups.push(opt(fac1,[fac1.name],true));kids(fac1.id).forEach(r=>{if(r.id===exclude)return;const pa=[fac1.name,r.name],out=[opt(r,pa,true)];walk(r.id,pa,out);groups.push(`<optgroup label="${esc(r.name)}">${out.join('')}</optgroup>`)})}}
+  else roots.forEach(r=>{if(r.id===exclude)return;const out=[opt(r,[r.name],true)];walk(r.id,[r.name],out);groups.push(single?out.join(''):`<optgroup label="${esc(r.name)}">${out.join('')}</optgroup>`)});
   const rec=LOC_RECENT.map(id=>(S.locs||[]).find(l=>l.id===id)).filter(l=>l&&l.id!==exclude).slice(0,5);
   return (allowEmpty?'<option value="">（指定しない）</option>':'')+(rec.length&&!single?`<optgroup label="最近使った場所">${rec.map(l=>opt(l,pathOf(l),false)).join('')}</optgroup>`:'')+groups.join('');
 }
@@ -4780,7 +4783,7 @@ function suggestLocs(){
   const places=[...new Set(E.map(e=>e.place.trim()))];
   if(!places.length){msgModal('提案できる場所がありません','場所が未設定で「設置場所」に文字が入っている設備がありません。');return}
   openModal(`<h3>設置場所から階層を作る</h3><div class="muted">設備の「設置場所」の文字ごとに「電気室」を作り、その設備を結びつけます。作るものにチェックを入れてください（元の「設置場所」の文字は消しません）。</div>
-    <label class="f">上位の場所（施設・建屋）</label><select id="sg_parent">${locOptions('',true)}</select>
+    <label class="f">上位の場所（棟・階など）</label><select id="sg_parent">${locOptions('',true)}</select>
     <div id="sg_list" style="margin-top:8px">${places.map((p,k)=>`<label class="chkl"><input type="checkbox" data-k="${k}" checked>${esc(p)}（${E.filter(e=>e.place.trim()===p).length}台）</label>`).join('')}</div>
     ${modalFoot('<button class="btn sec" onclick="closeModal()">やめる</button><button class="btn" onclick="applySuggestLocs()">作成する</button>')}`);
   window.__sg=places;
