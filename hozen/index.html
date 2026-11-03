@@ -4919,6 +4919,19 @@ const banPrevYm=ym=>{let y=+ym.slice(0,4),m=+ym.slice(5,7)-1;if(m<1){m=12;y--}re
 function banCarry(ym){const pv=banPrevYm(ym),m=(S.banChk||{})[pv];if(!m||!Object.keys(m).length)return [];
   const ord=[];banBldgs().forEach(b=>ord.push(...banOrder(b.id)));
   return ord.filter(b=>{const r=m[b.id];const a=[0,1,2].map(k=>Array.isArray(r)?r[k]||'':'');return a.includes('○')||a.every(x=>x==='')})}
+/* 月初の予定を写す：今月の盤が全部空のときだけ、先月 ◯ か ● だった項目に今月の ◯（予定）を置く（● は写さない・延期は写さない・今月に印がある所は触らない）。確かめ1回・元に戻せる */
+function banPlanSrc(ym){const m=(S.banChk||{})[banPrevYm(ym)],cur=(S.banChk||{})[ym]||{};if(!m)return null;
+  if(Object.values(cur).some(r=>Array.isArray(r)&&r.some(v=>v)))return null;
+  const B=new Set((S.locs||[]).filter(l=>l.type==='盤').map(l=>l.id)),L=[];let n=0;
+  Object.entries(m).forEach(([id,r])=>{if(!B.has(id)||!Array.isArray(r))return;const ks=[0,1,2].filter(k=>r[k]==='○'||r[k]==='済');if(ks.length){L.push([id,ks]);n+=ks.length}});
+  return L.length?{L,n}:null}
+function banPlanAsk(){const ym=V.banYm||TODAY.slice(0,7),P=banPlanSrc(ym);if(!P)return;
+  openModal(`<h3>📋 先月と同じ盤に ◯ を置く</h3><div>先月 ◯ か ● だった <b>${P.L.length}面・${P.n}項目</b>に、${+ym.slice(5,7)}月の ◯（予定）を置きます。</div>
+    <div class="muted" style="font-size:12px;margin-top:4px">● は写しません（今月は ◯ から始まります）。延期の印は写しません。押した後も「元に戻す」で取り消せます。</div>
+    ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">やめる</button><button class="btn" onclick="closeModal(true);banPlanCopy()">${P.L.length}面に ◯ を置く</button>`)}`)}
+function banPlanCopy(){const ym=V.banYm||TODAY.slice(0,7),P=banPlanSrc(ym);if(!P)return;const had=!!(S.banChk||{})[ym],prev=JSON.stringify(((S.banChk||{})[ym])||{});
+  P.L.forEach(([id,ks])=>ks.forEach(k=>{if(banVal(ym,id,k)==='')banSet(ym,id,k,'○')}));save();render();
+  undoBar(`先月と同じ ${P.L.length}面に ◯ を置きました`,()=>{if(had)S.banChk[ym]=JSON.parse(prev);else delete S.banChk[ym]},'印')}
 function banCarryGo(){const ym=V.banYm||TODAY.slice(0,7),L=banCarry(ym);if(!L.length)return;const t=L[0],pv=banPrevYm(ym);V.banYm=pv;
   const b=banBldgs().find(x=>banBoardsOf(x.id).some(y=>y.id===t.id));if(b){V.banB=b.id;banReveal(b.id,t.id)}render();
   const el=document.getElementById('ban-'+t.id);if(el){el.scrollIntoView({block:'center'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1800)}}
@@ -4966,7 +4979,7 @@ function vBan(){
   const head=`<div class="card"><div class="hd-row"><button class="btn sec sm" aria-label="前の月" style="min-width:44px;min-height:44px" onclick="banMove(-1)">‹</button><h2 style="margin:0;text-align:center;flex:1">⚡ 盤の点検 ${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><button class="btn sec sm" aria-label="次の月" style="min-width:44px;min-height:44px" onclick="banMove(1)">›</button></div>
     <div class="muted" style="margin-top:6px">押すと 空 → ◯（予定）→ ●（実施済み）→ 空。異常があれば ⚠ でその場で記録できます。</div></div>`;
   if(!B.length)return head+card('盤がまだありません',`<div class="muted" style="margin-bottom:8px">「設備の場所」で 棟 → 階 → 電気室 → 盤 を登録すると、ここに盤が並びます（名前は自分で決めます）。</div><button class="btn wide" style="min-height:44px" onclick="go('locs')">🏢 場所を登録する</button><button class="btn sec wide" style="margin-top:6px;min-height:44px" onclick="bldgWizard()">🏗 棟と階をまとめて足す</button>`);
-  const bid=B.some(x=>x.id===V.banB)?V.banB:B[0].id,bl=B.find(x=>x.id===bid),carry=ym===TODAY.slice(0,7)?banCarry(ym):[];
+  const bid=B.some(x=>x.id===V.banB)?V.banB:B[0].id,bl=B.find(x=>x.id===bid),carry=ym===TODAY.slice(0,7)?banCarry(ym):[],plan=banPlanSrc(ym);
   const allB=banBoardsOf(bid),tot=banCount(ym,allB),secs=banSections(bid),bpath=bid===BAN_NOB?'':locPath(bid);
   const tabs=`<div class="seg tabs" style="margin:8px 0;overflow-x:auto;white-space:nowrap">${B.map(b=>{const c=banCount(ym,banBoardsOf(b.id));return `<button class="${b.id===bid?'on':''}" onclick="V.banB='${b.id}';render()">${esc(b.name)}<small style="display:block;font-weight:400">${c.t?c.d+'/'+c.t:'－'}</small></button>`}).join('')}</div>`;
   const ed=!!V.banEdit;
@@ -4985,7 +4998,7 @@ function vBan(){
       ${s.direct.length?`<div style="margin-top:6px">${hdr}${s.direct.map(row).join('')}</div>`:''}
       ${s.rooms.map((x,i)=>room(x.r,x.bs,i===0&&!s.direct.length)).join('')}
       ${s.fl&&!bs.length&&!s.rooms.length?`<div class="row" style="margin-top:6px;align-items:center"><span class="muted grow">この階にはまだ電気室・盤がありません。</span><button class="btn sec sm" style="min-height:44px" onclick="locAdd('${s.fl.id}','電気室')">＋ 電気室を足す</button></div>`:''}</div>`};
-  return head+(carry.length?`<button class="btn sec wide" style="min-height:44px;margin:0 0 8px;background:var(--warn-bg,#fff6d6)" onclick="banCarryGo()">⏪ 先月のやり残し ${carry.length}面（押すと先月へ）</button>`:'')+tabs+`<div class="card" style="padding:8px 12px"><div class="row" style="flex-wrap:nowrap"><span class="grow"><b>${esc(bl.name)}</b>：${tot.t?`${tot.d}/${tot.t} 実施済み（●）・${allB.filter(x=>banDone(ym,x)).length}/${allB.length}面が完了`:'盤がまだ登録されていません'}</span>${tot.t&&!ed?`<button class="btn sm" style="min-height:44px;white-space:nowrap" onclick="banNext()">次の未点検へ ▼</button>`:''}</div>
+  return head+(plan?`<button class="btn wide" style="min-height:44px;margin:0 0 8px" onclick="banPlanAsk()">📋 先月と同じ盤に ◯ を置く（${plan.L.length}面）</button>`:'')+(carry.length?`<button class="btn sec wide" style="min-height:44px;margin:0 0 8px;background:var(--warn-bg,#fff6d6)" onclick="banCarryGo()">⏪ 先月のやり残し ${carry.length}面（押すと先月へ）</button>`:'')+tabs+`<div class="card" style="padding:8px 12px"><div class="row" style="flex-wrap:nowrap"><span class="grow"><b>${esc(bl.name)}</b>：${tot.t?`${tot.d}/${tot.t} 実施済み（●）・${allB.filter(x=>banDone(ym,x)).length}/${allB.length}面が完了`:'盤がまだ登録されていません'}</span>${tot.t&&!ed?`<button class="btn sm" style="min-height:44px;white-space:nowrap" onclick="banNext()">次の未点検へ ▼</button>`:''}</div>
     ${allB.length||secs.some(x=>x.rooms.length)?`<div class="row" style="margin-top:6px"><button class="btn ${ed?'':'sec'} sm grow" style="min-height:44px" onclick="V.banEdit=${!ed};render()">${ed?'✓ 直し終える（点検に戻る）':'✎ 盤の名前・並びを直す'}</button></div>${ed?'<div class="muted" style="font-size:12px;margin-top:4px">名前はその場で書き換えられます。↑↓ で同じ電気室の中の順番を変えます。点検の印（◯/●）は変わりません。</div>':''}`:''}</div>`
     +(allB.length>=8||q?`<div class="row" style="margin:0 0 8px"><input id="banQ" type="search" enterkeyhint="search" class="grow" style="min-height:44px" placeholder="盤の名前で探す（例：動力盤-1）" aria-label="盤の名前で探す" value="${esc(V.banQ||'')}" oninput="banSearch(this)"></div>`:'')
     +(()=>{const out=secs.map(sec).join('');if(!q)return out;if(out)return `<div class="muted" style="margin:0 0 8px">「${esc(V.banQ)}」に合う盤：${allB.filter(hit).length}面（絞り込み中は「全部 ●」を出しません）</div>`+out;
