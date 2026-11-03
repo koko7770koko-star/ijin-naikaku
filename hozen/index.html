@@ -5426,7 +5426,7 @@ function vStock(){
   const t=V.stTab||'parts';
   let h=tabs16('stTab',[['parts','予備品'],['tools','工具・測定器'],['budget','予算・費用']]);
   if(t==='parts'){const q=(V.ptQ||'').trim(),P=(S.parts||[]).filter(p=>!q||[p.name,p.code,p.spec,p.maker,p.place].join(' ').includes(q)).map((p,k)=>[p,k]).sort((a,b)=>((b[0].min!==''&&b[0].qty<=b[0].min)-(a[0].min!==''&&a[0].qty<=a[0].min))||a[1]-b[1]).map(x=>x[0]),low=P.filter(p=>p.min!==''&&p.qty<=p.min);
-    h+=`<input placeholder="品名・型番・保管場所で検索" value="${esc(q)}" onchange="V.ptQ=this.value;render()" style="margin-bottom:8px">`;
+    h+=`<input placeholder="品名・型番・保管場所で検索" value="${esc(q)}" onchange="V.ptQ=this.value;render()" style="margin-bottom:8px"><div class="row" style="margin-bottom:8px"><label class="btn sec sm" style="min-height:44px">📥 CSVを読み込む<input type="file" accept=".csv,text/csv" onchange="importStockCsv(this)"></label><span class="muted" style="font-size:12px">「CSV」で書き出した予備品のファイル</span></div>`;
     if(low.length)h+=`<div class="al ng">在庫不足 ${low.length}品目：${low.slice(0,3).map(p=>esc(p.name)).join('、')}${low.length>3?` ほか${low.length-3}品目（下の一覧の上に並んでいます）`:''}</div>`;
     h+=card(`📦 予備品 <span class="muted">${P.length}品目</span>`,P.map(partRow).join('')||emptyGuide('予備品はまだありません。登録しておくと、在庫が最低在庫数を下回ったときにホームで知らせます。','予備品を登録','editPart()'),`<button class="btn sm" style="min-height:40px" onclick="editPart()">＋ 追加</button>`);
     const M=(S.moves||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
@@ -5510,6 +5510,60 @@ function stockDo(id,type,ref,from){
   if(from)editPart(id);else render();
 }
 function delPart(id){const i=S.parts.findIndex(p=>p.id===id),p=S.parts[i];if(!confirm(`予備品「${p.name}」を削除しますか？（入出庫履歴も一緒に外れます）`))return;const mv=S.moves.filter(m=>m.partId===id);S.parts.splice(i,1);S.moves=S.moves.filter(m=>m.partId!==id);save();closeModal(true);render();undoBar(`予備品「${p.name}」を削除しました`,()=>{S.parts.splice(i,0,p);S.moves.push(...mv)})}
+/* 予備品CSVの読み戻し（exportStockCsv の最初の表＝予備品だけを読む。入出庫の表は読まない。読む前に件数を見せて確認） */
+function planStockCsv(text){
+  const rows=parseCsv(text),hi=rows.findIndex(r=>r.map(x=>String(x).trim()).includes('品名')&&r.map(x=>String(x).trim()).includes('品番'));
+  if(hi<0)return {fatal:'予備品のCSVではありません（見出しの「品番」「品名」が見つかりません）。予備品の画面の「CSV」で書き出したファイルを選んでください。'};
+  const H=rows[hi].map(x=>String(x).trim()),ix=n=>H.indexOf(n),skip=[],items=[],seen=new Set();
+  const cur=S.parts||[];
+  for(let i=hi+1;i<rows.length;i++){const r=rows[i];if(String(r[0]).trim()==='日付'&&String(r[1]||'').trim()==='区分')break;
+    const ln=i+1,v=n=>{const k=ix(n);return k<0?'':String(r[k]==null?'':r[k]).trim()};
+    if(r.length<3){skip.push(`${ln}行目：列が足りません`);continue}
+    const name=txt(v('品名'),80),code=txt(v('品番'),30);
+    if(!name){skip.push(`${ln}行目：品名がありません`);continue}
+    const key=code?'c:'+normCode(code):'n:'+norm(name);
+    if(seen.has(key)){skip.push(`${ln}行目：「${name}」がファイル内で重複しています`);continue}seen.add(key);
+    const qty=v('在庫'),mn=v('最低在庫'),pr=v('単価');
+    if((qty!==''&&!(Number(qty)>=0))||(mn!==''&&!(Number(mn)>=0))||(pr!==''&&!(Number(pr)>=0))){skip.push(`${ln}行目：在庫・最低在庫・単価に数でない値があります`);continue}
+    const eqIds=v('使用設備').split('、').map(x=>x.trim()).filter(Boolean).map(n=>((S.equipment||[]).find(e=>e.name===n)||{}).id).filter(Boolean);
+    const o={code,name,spec:txt(v('仕様'),200),maker:txt(v('メーカー'),60),place:txt(v('保管場所'),80),unit:txt(v('単位'),10)||'個',min:mn===''?'':Number(mn),price:pr===''?'':Number(pr),equipIds:eqIds};
+    const ex=cur.find(p=>code?(p.code&&normCode(p.code)===normCode(code)):norm(p.name)===norm(name));
+    items.push({o,ex,qty:qty===''?0:Number(qty),ln});
+  }
+  return {items,skip};
+}
+let PENDING_STOCKCSV=null;
+function importStockCsv(inp){
+  const f=inp.files[0];inp.value='';if(!f)return;
+  if(f.size>20*1024*1024){msgModal('読み込めません','ファイルが大きすぎます（20MB超）。');return}
+  const rd=new FileReader();
+  rd.onerror=()=>msgModal('読み込めません','ファイルを読めませんでした。');
+  rd.onload=()=>{
+    const P=planStockCsv(String(rd.result||''));
+    if(P.fatal){msgModal('読み込めません',esc(P.fatal));return}
+    if(!P.items.length){msgModal('読み込めません',`取り込める行がありません。${P.skip.length?'<br>'+P.skip.slice(0,5).map(esc).join('<br>'):''}`);return}
+    PENDING_STOCKCSV=P;const nNew=P.items.filter(x=>!x.ex).length,nUp=P.items.length-nNew;
+    openModal(`<h3>予備品CSVの読み込み</h3>
+      <div class="al info">予備品 <b>${P.items.length}品目</b>（新規 ${nNew}品目・同じ品番／品名の上書き ${nUp}品目）。今は ${(S.parts||[]).length}品目です。</div>
+      <div class="muted" style="font-size:12px">上書きは仕様・メーカー・保管場所・単位・最低在庫・単価・使用設備だけを入れ替えます（空欄は今の内容を残します）。<b>在庫の数は変えません</b>（数は入出庫・棚卸で変えてください）。新規の品目だけ、CSVの在庫を初期在庫にします。読み込んだ後に「元に戻す」で戻せます。</div>
+      ${P.skip.length?`<div class="al warn">読み飛ばす行：${P.skip.length}件<br>${P.skip.slice(0,8).map(esc).join('<br>')}${P.skip.length>8?'<br>ほか'+(P.skip.length-8)+'件':''}</div>`:''}
+      ${modalFoot('<button class="btn sec" onclick="PENDING_STOCKCSV=null;closeModal(true)">やめる</button><button class="btn" onclick="applyStockCsv()">読み込む</button>')}`);
+  };
+  rd.readAsText(f,'UTF-8');
+}
+async function applyStockCsv(){
+  const P=PENDING_STOCKCSV;if(!P)return;PENDING_STOCKCSV=null;
+  if(!await safeSnap('予備品CSVを読み込む前')){closeModal(true);msgModal('読み込みを中止しました','今のデータを退避できなかったため、読み込みませんでした。データは変わっていません。');return}
+  const prevP=JSON.parse(JSON.stringify(S.parts||[])),nMv=(S.moves||[]).length;
+  S.parts=S.parts||[];S.moves=S.moves||[];let nNew=0,nUp=0;
+  P.items.forEach(({o,ex,qty})=>{
+    if(ex){Object.keys(o).forEach(k=>{if(k==='equipIds'?o[k].length:o[k]!==''&&o[k]!=null)ex[k]=o[k]});nUp++}
+    else{const n={id:uid(),...o,qty,note:''};S.parts.push(n);if(qty)S.moves.push({id:uid(),partId:n.id,date:TODAY,type:'入庫',qty,after:qty,ref:'init',by:who(),note:'初期在庫（CSV読み込み・費用に数えない）'});nNew++}
+  });
+  opLog('予備品CSVの読み込み',`新規${nNew}・上書き${nUp}`);
+  save();closeModal(true);render();
+  undoBar(`予備品を読み込みました（新規${nNew}・上書き${nUp}）`,()=>{S.parts=prevP;S.moves.length=nMv},'予備品CSVの読み込み');
+}
 function exportStockCsv(){download(`予備品_${TODAY}.csv`,csvBlob([['品番','品名','仕様','メーカー','保管場所','在庫','単位','最低在庫','単価','使用設備'],...(S.parts||[]).map(p=>[p.code,p.name,p.spec,p.maker,p.place,p.qty,p.unit,p.min,p.price,p.equipIds.map(equipName).join('、')]),[],['日付','区分','品名','数','残','担当','関連','メモ'],...(S.moves||[]).map(m=>[m.date,m.type,partName(m.partId),m.qty,m.after,m.by,m.ref,m.note])]))}
 /* 異常案件・作業から部品を使う */
 async function useParts(ref){
