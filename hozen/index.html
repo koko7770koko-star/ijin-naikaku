@@ -2582,15 +2582,16 @@ function trendCard(n){
   const vals=pts.map(p=>p[1]),lo=numOrNull(n.min),hi=numOrNull(n.max);
   let ymin=Math.min(...vals,...[lo,hi].filter(x=>x!=null)),ymax=Math.max(...vals,...[lo,hi].filter(x=>x!=null));
   if(ymin===ymax){ymin-=1;ymax+=1}const pad_=(ymax-ymin)*.1;ymin-=pad_;ymax+=pad_;
-  const W=320,H=160,L=34,d0=pd(pts[0][0]),span=Math.max(1,diffD(pts[pts.length-1][0],pts[0][0]));
+  const W=320,H=180,L=40,d0=pd(pts[0][0]),span=Math.max(1,diffD(pts[pts.length-1][0],pts[0][0]));
   const X=k=>L+(W-L-6)*(diffD(k,pts[0][0])/span),Y=v=>8+(H-24)*(1-(v-ymin)/(ymax-ymin));
-  const line=y=>y==null?'':`<line x1="${L}" x2="${W-6}" y1="${Y(y)}" y2="${Y(y)}" stroke="#d0342c" stroke-dasharray="4 3"/><text x="${W-6}" y="${Y(y)-3}" font-size="8" fill="#d0342c" text-anchor="end">${y}</text>`;
-  const ticks=[ymin+pad_,(ymin+ymax)/2,ymax-pad_].map(v=>`<text x="${L-4}" y="${Y(v)+3}" font-size="8" text-anchor="end" fill="#6b7684">${+v.toFixed(2)}</text>`).join('');
+  const line=y=>y==null?'':`<line x1="${L}" x2="${W-6}" y1="${Y(y)}" y2="${Y(y)}" stroke="#d0342c" stroke-dasharray="4 3"/><text x="${W-6}" y="${Y(y)-3}" font-size="11" fill="#d0342c" text-anchor="end">${y}</text>`;
+  const ticks=[ymin+pad_,(ymin+ymax)/2,ymax-pad_].map(v=>`<text x="${L-4}" y="${Y(v)+3}" font-size="11" text-anchor="end" fill="#6b7684">${+v.toFixed(2)}</text>`).join('');
   const svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" role="img" aria-label="${esc(n.name)}の推移">
     <line x1="${L}" x2="${L}" y1="8" y2="${H-16}" stroke="#ccc"/><line x1="${L}" x2="${W-6}" y1="${H-16}" y2="${H-16}" stroke="#ccc"/>${ticks}${line(lo)}${line(hi)}
     <polyline fill="none" stroke="#2f6fb0" stroke-width="1.6" points="${pts.map(([k,v])=>`${X(k).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')}"/>
     ${pts.map(([k,v])=>{const o=outOfRange(n,v);return `<circle cx="${X(k).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${o?3.2:2}" fill="${o?'#d0342c':'#2f6fb0'}"><title>${md(k)} ${v}${n.unit}</title></circle>`}).join('')}
-    <text x="${L}" y="${H-4}" font-size="8" fill="#6b7684">${md(pts[0][0])}</text><text x="${W-6}" y="${H-4}" font-size="8" text-anchor="end" fill="#6b7684">${md(pts[pts.length-1][0])}</text></svg>`;
+    <text x="${L}" y="${H-3}" font-size="11" fill="#6b7684">${md(pts[0][0])}</text>${pts.length>2?`<text x="${((L+W-6)/2).toFixed(1)}" y="${H-3}" font-size="11" text-anchor="middle" fill="#6b7684">${md(pts[Math.floor((pts.length-1)/2)][0])}</text>`:''}<text x="${W-6}" y="${H-3}" font-size="11" text-anchor="end" fill="#6b7684">${md(pts[pts.length-1][0])}</text>
+    <text x="${Math.min(W-6,Math.max(L+10,+X(pts[pts.length-1][0]).toFixed(1)))}" y="${Math.max(12,+Y(pts[pts.length-1][1]).toFixed(1)-6)}" font-size="12" font-weight="700" text-anchor="end" fill="${outOfRange(n,pts[pts.length-1][1])?'#d0342c':'#2f6fb0'}">${pts[pts.length-1][1]}</text></svg>`;
   const avg=vals.reduce((a,b)=>a+b,0)/vals.length,ng=pts.filter(([,v])=>outOfRange(n,v));
   const allNg=Object.keys(S.daily).filter(k=>S.daily[k][n.id]!=null&&outOfRange(n,S.daily[k][n.id])).sort().reverse().slice(0,10);
   return `<div class="card"><div class="hd-row"><h2>${esc(n.name)}の推移 <span class="muted">${esc(n.unit)}</span></h2><button class="btn sec sm" onclick="aiTrend('${n.id}')">🤖 傾向分析</button></div>${svg}
