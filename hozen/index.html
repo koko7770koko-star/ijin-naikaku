@@ -410,6 +410,7 @@ details summary{cursor:pointer;padding:4px 0}
 .dwgv img{display:block;width:100%;height:auto}.dwgz{display:flex;gap:6px;align-items:center;margin-top:6px}.dwgz .btn{min-width:44px}
 .dwgv .pin{position:absolute;transform:translate(-50%,-100%);background:#c62828;color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px 10px 10px 2px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4);cursor:pointer;max-width:40vw;overflow:hidden;text-overflow:ellipsis}
 .dwgv .pin.hl{background:#1565c0;outline:3px solid #ffeb3b}
+.mtrow{padding:8px 0;border-bottom:1px solid #e3e8ee}.mtrow:last-child{border-bottom:0}
 .qrsheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .qrl{display:flex;gap:6px;align-items:center;border:1px dashed #999;border-radius:6px;padding:6px;background:#fff;break-inside:avoid;page-break-inside:avoid}
 .qri{width:64px;flex:none}.qri svg{width:100%;height:auto;display:block}
@@ -4527,14 +4528,14 @@ function addGenTpl(){if(!Array.isArray(S.mtpl))S.mtpl=[];if(S.mtpl.some(t=>t.id=
 let MT_ROWS=[];
 function editMtpl(id){
   const t=tplById(id)||{type:'その他',name:'',cycleM:'',kind:'',cond:'',rows:[]};MT_ROWS=clone(t.rows);
-  openModal(`<h3>測定のひな形</h3><div class="grid2"><div><label class="f">種類</label><select id="mt_type">${opts(MEAS_TYPES,t.type)}</select></div><div><label class="f">周期（か月）</label><input id="mt_cycle" type="number" min="0" step="1" value="${esc(t.cycleM)}"></div></div>
+  openModal(`<h3>測定のひな形</h3><div class="grid2"><div><label class="f">種類</label><select id="mt_type">${opts(MEAS_TYPES,t.type)}</select></div><div><label class="f">周期（か月）</label><input id="mt_cycle" type="number" inputmode="numeric" min="0" step="1" value="${esc(t.cycleM)}"></div></div>
     <div class="grp"><b>この管理値を使う条件</b><div class="muted" style="font-size:12px">同じ測定でも、設備の種別や測定条件（電圧レンジ・回路・温度など）ごとに別のひな形を作って管理値を分けられます。</div>
       <div class="grid2"><div><label class="f">対象の設備種別</label><select id="mt_kind">${opsV(['',...EQ_KINDS],t.kind||'',{'':'すべての種別'})}</select></div><div><label class="f">測定条件</label><input id="mt_cond" value="${esc(t.cond||'')}" maxlength="100" placeholder="例：高圧回路・1000Vレンジ"></div></div></div>
     <label class="f">名称 *</label><input id="mt_name" value="${esc(t.name)}" maxlength="60"><div id="mt_rows" style="margin-top:8px"></div><button type="button" class="btn sec sm" onclick="MT_ROWS.push({name:'',unit:'',min:'',max:'',ck:false});mtRender()">＋ 項目</button>
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveMtpl('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delMtpl('${id}')">削除</button>`:'')}`);mtRender();MODAL_SIG=modalSig();
 }
-function mtRender(){$('#mt_rows').innerHTML=MT_ROWS.map((r,k)=>`<div class="row" style="flex-wrap:nowrap;gap:4px;margin:3px 0"><input value="${esc(r.name)}" placeholder="項目" onchange="MT_ROWS[${k}].name=this.value"><input value="${esc(r.unit)}" placeholder="単位" style="max-width:52px" onchange="MT_ROWS[${k}].unit=this.value">
-  ${r.ck?'<span class="muted" style="min-width:120px">○／×で記録</span>':`<input type="number" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:60px" onchange="MT_ROWS[${k}].min=num16(this.value)"><input type="number" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:60px" onchange="MT_ROWS[${k}].max=num16(this.value)">`}<button class="btn sec sm" onclick="MT_ROWS.splice(${k},1);mtRender()">×</button></div>`).join('')}
+function mtRender(){$('#mt_rows').innerHTML=MT_ROWS.map((r,k)=>`<div class="mtrow"><div class="row" style="flex-wrap:nowrap;gap:6px"><input value="${esc(r.name)}" placeholder="項目（例：電圧）" aria-label="項目名" onchange="MT_ROWS[${k}].name=this.value"><input value="${esc(r.unit)}" placeholder="単位" aria-label="単位" style="max-width:68px" onchange="MT_ROWS[${k}].unit=this.value"><button class="btn sec sm" aria-label="この項目を外す" style="min-width:44px;padding:8px" onclick="MT_ROWS.splice(${k},1);mtRender()">×</button></div>
+  ${r.ck?'<div class="muted" style="margin:2px 0 0 4px">○／×で記録（管理値なし）</div>':`<div class="row" style="flex-wrap:nowrap;gap:6px;margin-top:4px;align-items:center"><span class="muted" style="white-space:nowrap">下限</span><input type="number" inputmode="decimal" step="any" value="${esc(r.min)}" placeholder="なし" aria-label="下限" onchange="MT_ROWS[${k}].min=num16(this.value)"><span class="muted" style="white-space:nowrap">上限</span><input type="number" inputmode="decimal" step="any" value="${esc(r.max)}" placeholder="なし" aria-label="上限" onchange="MT_ROWS[${k}].max=num16(this.value)"></div>`}</div>`).join('')}
 function saveMtpl(id){
   const name=txt($('#mt_name').value.trim(),60);if(!name){toast('名称を入れてください');return}
   const o={type:$('#mt_type').value,name,cycleM:num16($('#mt_cycle').value),kind:EQ_KINDS.includes($('#mt_kind').value)?$('#mt_kind').value:'',cond:txt($('#mt_cond').value.trim(),100),rows:MT_ROWS.filter(r=>String(r.name).trim()).map(r=>({name:txt(r.name,60),unit:txt(r.unit,12),min:num16(r.min),max:num16(r.max),ck:!!r.ck}))};
@@ -5367,7 +5368,7 @@ function v16Alerts(add){
 function vMset(){
   const w=S.healthCfg;
   return card('⚙ 保全の設定',`<div class="grp"><b>健全度の参考指標の重み</b><div class="muted" style="font-size:12px">0〜100。0にした要素は計算に使いません。</div>
-      <div class="grid2">${[['age','経年'],['meas','測定値'],['fail','故障'],['issue','未完了の異常']].map(([k,l])=>`<div><label class="f">${l}</label><input type="number" min="0" max="100" value="${w[k]}" onchange="setHealthW('${k}',this.value)"></div>`).join('')}</div></div>
+      <div class="grid2">${[['age','経年'],['meas','測定値'],['fail','故障'],['issue','未完了の異常']].map(([k,l])=>`<div><label class="f">${l}</label><input type="number" inputmode="numeric" min="0" max="100" value="${w[k]}" onchange="setHealthW('${k}',this.value)"></div>`).join('')}</div></div>
     <div class="grp"><b>作業前チェックリスト（新しい作業指示の初期値）</b><textarea style="min-height:120px" onchange="setChkDef('chkPre',this.value)">${esc(S.chkPre.join('\n'))}</textarea></div>
     <div class="grp"><b>作業後チェックリスト（初期値）</b><textarea style="min-height:120px" onchange="setChkDef('chkPost',this.value)">${esc(S.chkPost.join('\n'))}</textarea></div>
     <div class="row"><button class="btn sec sm grow" onclick="go('mtpl')">📐 測定のひな形・管理値</button><button class="btn sec sm grow" onclick="go('staff')">🪪 人員・資格</button></div>`);
