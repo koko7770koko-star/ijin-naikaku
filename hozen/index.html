@@ -4128,7 +4128,9 @@ function render(){
   const shiftMode=V.view==='shift';
   document.body.classList.toggle('mode-shift',shiftMode);
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===V.view||(b.dataset.v==='menu'&&SUB_VIEWS.includes(V.view))));
-  $('#pageStyle').textContent=shiftMode?'@page{size:A4 portrait;margin:0}':V.view==='year'?'@page{size:A4 landscape;margin:8mm}':'@page{size:A4 portrait;margin:10mm}';
+  // 印刷の各ページの下に「施設名　画面名　ページ／全体」（ページ番号は @page の余白枠＝新しい Chrome。使えない端末では出ないだけで、印刷はそのまま）
+  const pfName=((S.settings&&S.settings.name)||'').replace(/["\\\n]/g,''),pfTitle=(TITLES[V.view]||'').replace(/["\\\n]/g,''),pfFoot=(m)=>`@page{margin:${m}}@page{@bottom-center{content:"${pfName?pfName+'　':''}${pfTitle}　"counter(page)" / "counter(pages);font-size:8pt;color:#555}}`;
+  $('#pageStyle').textContent=shiftMode?'@page{size:A4 portrait;margin:0}':V.view==='year'?'@page{size:A4 landscape;margin:8mm}'+pfFoot('8mm 8mm 12mm'):'@page{size:A4 portrait;margin:10mm}'+pfFoot('10mm 10mm 14mm');
   if(shiftMode){if(hasShift()){SHIFT.refresh();if(!window.__shOpen){window.__shOpen=1;setTimeout(()=>{try{SHIFT.toToday(true)}catch(e){}},0)}}return}
   window.__shOpen=0;
   $('#hd').textContent=TITLES[V.view]||'';
