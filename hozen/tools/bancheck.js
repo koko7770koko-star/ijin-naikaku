@@ -7,8 +7,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
  const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});
  const old={settings:{name:'確認'},locs:[mk('l1','A棟','建屋',''),mk('l2','1F','階','l1'),mk('l3','B1F','階','l1'),mk('b1','盤1','盤','l2'),mk('b2','盤2','盤','l2')]};
- await p.addInitScript(([k,v])=>{if(sessionStorage.getItem('__bn'))return;sessionStorage.setItem('__bn','1');localStorage.clear();localStorage.setItem(k,v)},[KEY,JSON.stringify(old)]);
- await p.goto('file://'+FILE);await p.waitForTimeout(2000);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&Array.isArray(S.locs)&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.evaluate(([k,v])=>{localStorage.clear();localStorage.setItem(k,v)},[KEY,JSON.stringify(old)]);await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&Array.isArray(S.locs)&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});
  if(!(await p.evaluate(()=>S.banChk&&typeof S.banChk==='object')))errs.push('古い記録で banChk が空で補われない');
  await p.evaluate(()=>go('ban'));await p.waitForTimeout(300);
  const txt=()=>p.evaluate(()=>document.body.textContent);
@@ -24,7 +23,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  await p.evaluate(()=>banAddWizard());await p.waitForTimeout(150);await p.evaluate(()=>{document.querySelector('#ba_n').value=3;document.querySelector('#ba_floor').value='l2';applyBanAdd()});await p.waitForTimeout(200);
  const names=await p.evaluate(()=>S.locs.filter(l=>l.parent==='l2').map(l=>l.name).sort().join());if(names!=='盤1,盤2,盤3')errs.push('盤の追加が違う（重ねない）: '+names);
  if(process.argv[2])await p.screenshot({path:process.argv[2]});
- await p.evaluate(()=>save());const ls=await p.evaluate(()=>(localStorage.getItem('hospElecSched_v1').match(/banChk.{0,80}/)||['なし'])[0]);if(process.env.DBG)console.log(ls);await p.reload();await p.waitForTimeout(1500);
+ await p.evaluate(()=>save());const ls=await p.evaluate(()=>(localStorage.getItem('hospElecSched_v1').match(/banChk.{0,80}/)||['なし'])[0]);if(process.env.DBG)console.log(ls);await p.evaluate(()=>{window.__t=Date.now();save()});await p.waitForFunction(()=>(MIRROR_AT.app||0)>=window.__t,null,{timeout:10000});await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&Array.isArray(S.locs)&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});
  const dn2=await p.evaluate(()=>{let n=0;for(const ym in S.banChk)for(const id in S.banChk[ym])n+=S.banChk[ym][id].filter(x=>x==='済').length;return n});if(dn2!==6)errs.push('読み直しで消えた '+dn2);
  await p.evaluate(()=>{const d=new Date();V.ry=d.getFullYear();V.rm=d.getMonth()+1;go('report')});await p.waitForTimeout(400);
  const rep=await p.evaluate(()=>document.body.textContent);if(!/盤の点検（棟ごと/.test(rep)||!/棟の合計/.test(rep)||!/6\/6|6\/9|●/.test(rep))errs.push('月報に棟ごとの盤の表が出ない');

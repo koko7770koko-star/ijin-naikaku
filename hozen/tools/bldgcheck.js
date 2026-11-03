@@ -7,8 +7,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
  const old={settings:{name:'確認'},locs:[{id:'l1',name:'本館',type:'施設',parent:'',note:'',pos:{}},{id:'l2',name:'A棟',type:'建屋',parent:'l1',note:'',pos:{}},{id:'l3',name:'1F',type:'階',parent:'l2',note:'',pos:{floor:'1F'}},{id:'l4',name:'第1電気室',type:'電気室',parent:'l2',note:'',pos:{}}],
   equipment:[{id:'e1',code:'T-1',name:'確認設備',locId:'l3',status:'稼働',place:''}]};
- await p.addInitScript(([k,v])=>{if(sessionStorage.getItem('__bc'))return;sessionStorage.setItem('__bc','1');localStorage.clear();localStorage.setItem(k,v)},[KEY,JSON.stringify(old)]);
- await p.goto('file://'+FILE);await p.waitForTimeout(2000);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&Array.isArray(S.locs)&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.evaluate(([k,v])=>{localStorage.clear();localStorage.setItem(k,v)},[KEY,JSON.stringify(old)]);await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&Array.isArray(S.locs)&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});
  const n0=await p.evaluate(()=>S.locs.length);if(n0!==4)errs.push('古い記録の場所が変わった '+n0);
  await p.evaluate(()=>go('locs'));await p.waitForTimeout(300);
  await p.evaluate(()=>bldgWizard());await p.waitForTimeout(200);
@@ -26,7 +25,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  if(!(await p.evaluate(()=>document.body.textContent.includes('確認設備'))))errs.push('A棟で絞り込むと階の設備が出ない');
  await p.evaluate(()=>{V.eqLoc=S.locs.find(l=>l.name==='B棟').id;render()});await p.waitForTimeout(200);
  if(await p.evaluate(()=>document.body.textContent.includes('確認設備')))errs.push('B棟で絞り込んでも出る');
- await p.reload();await p.waitForTimeout(1500);
- if((await p.evaluate(()=>S.locs.length))!==n1)errs.push('読み直しで場所の数が変わった');
+ await p.evaluate(()=>{window.__t=Date.now();save()});await p.waitForFunction(()=>(MIRROR_AT.app||0)>=window.__t,null,{timeout:10000});await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&Array.isArray(S.locs)&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});
+ if((await p.evaluate(()=>S.locs.length))!==n1)errs.push('読み直しで場所の数が変わった '+n1+'→'+(await p.evaluate(()=>S.locs.length)));
  const w=await p.evaluate(()=>document.documentElement.scrollWidth);if(w>392)errs.push('横にはみ出す '+w);
  console.log(errs.length?'NG\n  '+errs.join('\n  '):'OK 棟と階');await b.close();process.exit(errs.length?1:0)})();
