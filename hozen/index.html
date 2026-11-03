@@ -4426,6 +4426,22 @@ function applyLocFix(id){const l=locById(id);if(!l)return;const nt=l.type==='階
   sel.forEach(x=>{x.parent=to.id;delete x.ord});logEdit('equip',to.id,'場所の形を直す',locPath(id),`${locPath(to.id)}へ ${sel.length}件`);
   V['lo_'+id]=true;V['lo_'+to.id]=true;save();closeModal(true);render();
   undoBar(`${sel.length}件を「${to.name}」へ移しました`,()=>{prev.forEach(([x,p,o])=>{x.parent=p;if(o===undefined)delete x.ord;else x.ord=o});if(made)S.locs=S.locs.filter(x=>x.id!==made.id)},'変更')}
+/* この場所に設備（設備台帳の物）を結びつける・外す。保存は equipment.locId のまま。ほかの場所にある物は「今：…」と出し、移すと件数を出す。元に戻せる */
+function locEquip(id){const l=locById(id);if(!l)return;const E=(S.equipment||[]).filter(e=>e.status!=='廃止'||e.locId===id);
+  if(!E.length){msgModal('設備がありません','設備台帳に設備を登録すると、ここで場所に結びつけられます。');return}
+  E.sort((a,b)=>(b.locId===id)-(a.locId===id)||(!a.locId?-1:0)-(!b.locId?-1:0)||String(a.code||a.name).localeCompare(String(b.code||b.name),'ja',{numeric:true}));
+  openModal(`<h3>🏭 ${esc(locPath(id))} の設備</h3><div class="muted" style="font-size:12px">チェックを入れた設備をここに結びつけます。外すと「場所未設定」になります（設備は消えません）。</div>
+    ${E.length>8?`<input id="le_q" type="search" placeholder="名前・番号で探す" style="margin-top:6px" oninput="const q=norm(this.value).toLowerCase();document.querySelectorAll('#le_list label').forEach(x=>x.style.display=!q||norm(x.textContent).toLowerCase().includes(q)?'':'none')">`:''}
+    <div id="le_list" style="margin-top:6px;max-height:50vh;overflow-y:auto">${E.map(e=>`<label class="chkl" style="margin:2px 0;display:flex;gap:6px;align-items:flex-start;min-height:44px"><input type="checkbox" value="${e.id}" ${e.locId===id?'checked':''}><span style="min-width:0;overflow-wrap:anywhere">${esc(eqLabel(e))}<br><small class="muted">${e.locId===id?'ここ':e.locId&&locById(e.locId)?'今：'+esc(locPath(e.locId)):'場所未設定'}</small></span></label>`).join('')}</div>
+    ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">やめる</button><button class="btn" onclick="applyLocEquip('${id}')">決める</button>`)}`)}
+function applyLocEquip(id){if(!locById(id))return;const on=new Set([...document.querySelectorAll('#le_list input:checked')].map(i=>i.value));
+  const ch=[];(S.equipment||[]).forEach(e=>{const want=on.has(e.id);if(want&&e.locId!==id)ch.push([e,e.locId||'']);else if(!want&&e.locId===id&&document.querySelector(`#le_list input[value="${e.id}"]`))ch.push([e,e.locId])});
+  if(!ch.length){closeModal(true);return}
+  const mv=ch.filter(([e,o])=>on.has(e.id)&&o&&locById(o));
+  if(mv.length&&!confirm(`ほかの場所にある設備 ${mv.length}台を、ここへ移します。よろしいですか？`))return;
+  ch.forEach(([e])=>{const to=on.has(e.id)?id:'';logEdit('equip',e.id,'場所',locPath(e.locId)||'未設定',locPath(to)||'未設定');e.locId=to});
+  V['lo_'+id]=true;save();closeModal(true);render();
+  undoBar(`設備 ${ch.length}台の場所を変えました`,()=>{ch.forEach(([e,o])=>e.locId=o)},'変更')}
 function locFold(open){(S.locs||[]).forEach(l=>{V['lo_'+l.id]=open});render()}
 /* 同じ段の中で1つ上・下へ。並べ替えた段は全部に ord を振る（ほかの段は変えない） */
 function locShift(id,d){const l=locById(id);if(!l)return;const sib=locKids(l.parent),i=sib.indexOf(l),j=i+d;if(i<0||j<0||j>=sib.length)return;
@@ -4480,6 +4496,7 @@ function locMenu(id){
     <label class="f">順番（${sib.length}件の中の ${i+1}番目）</label><div class="row" style="margin:0"><button class="btn sec grow" style="min-height:44px" ${i<=0?'disabled':''} onclick="locShift('${id}',-1);locMenu('${id}')">↑ 上へ</button><button class="btn sec grow" style="min-height:44px" ${i>=sib.length-1?'disabled':''} onclick="locShift('${id}',1);locMenu('${id}')">↓ 下へ</button></div>
     <label class="f">別の所へ移す（中の物も一緒に移ります）</label><div class="row" style="flex-wrap:nowrap;gap:6px;margin:0"><select id="lm_parent" class="grow" style="min-width:0"><option value="">（いちばん上）</option>${cand.map(c=>`<option value="${c.id}" ${c.id===l.parent?'selected':''}>${esc(c.p)}（${esc(LOC_SHOW(c.t))}）</option>`).join('')}</select><button class="btn sec" style="min-height:44px;white-space:nowrap" onclick="locMoveTo('${id}',$('#lm_parent').value)">移す</button></div>
     <div class="row" style="margin-top:12px">${LOC_CHILD[l.type]?`<button class="btn sec grow" style="min-height:44px" onclick="closeModal(true);locAdd('${id}')">＋ ${esc(LOC_SHOW(LOC_CHILD[l.type]))}を足す</button>`:''}<button class="btn sec grow" style="min-height:44px" onclick="closeModal(true);editLoc('${id}')">詳しく編集（備考・位置）</button></div>
+    <div class="row" style="margin-top:6px"><button class="btn sec grow" style="min-height:44px" onclick="closeModal(true);locEquip('${id}')">🏭 設備を結びつける（今 ${(S.equipment||[]).filter(e=>e.locId===id).length}台）</button></div>
     ${modalFoot(`<button class="btn" onclick="closeModal(true)">閉じる</button>`,`<button class="btn red sm" onclick="delLoc('${id}')">消す</button>`)}`);
 }
 function locRename(id){const l=locById(id);if(!l)return;const nm=txt($('#lm_name').value,60).trim();if(!nm){toast('名前を入れてください');return}
