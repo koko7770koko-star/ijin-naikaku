@@ -2159,7 +2159,7 @@ function editTask(id,date){
     <div id="t_crew">${crewTags(crewDay(t.date))}</div>
     <label class="f">作業内容 *</label><input id="t_title" list="dl_titles" value="${esc(t.title)}" placeholder="例：月次点検" onchange="fillFromItem()"><datalist id="dl_titles">${[...new Set(S.items.map(i=>i.name))].map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
     <div class="grid2"><div><label class="f">区分</label><select id="t_kind">${opts(['',...S.settings.kinds],t.kind)}</select></div><div><label class="f">分類</label><select id="t_cat">${opts(['',...S.settings.cats],t.cat)}</select></div></div>
-    <div class="grid2"><div><label class="f">設備・場所</label><input id="t_place" value="${esc(t.place)}"></div><div><label class="f">担当</label><input id="t_staff" list="dl_staff" value="${esc(t.staff)}"></div></div>
+    <div class="grid2"><div><label class="f">設備・場所</label><input id="t_place" list="dl_places" value="${esc(t.place)}">${placeList('dl_places')}</div><div><label class="f">担当</label><input id="t_staff" list="dl_staff" value="${esc(t.staff)}"></div></div>
     <label class="f">立会者（シフトと照合）</label><input id="t_attend" list="dl_staff" value="${esc(t.attend||'')}">${staffList('dl_staff')}
     <label class="f">設備（設備台帳）</label><span id="t_eqw">${equipSelect(t.equipId||(itemOf(t.title)||{}).equipId||'','')}</span>
     <div class="grid2"><div><label class="f">状態</label><select id="t_status">${opts(STATUS,t.status)}</select></div><div><label class="f">結果</label><select id="t_result">${opts(RESULT,t.result)}</select></div></div>
@@ -2168,6 +2168,10 @@ function editTask(id,date){
     ${id?editLogHTML('task',id):''}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveTask('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delTask('${id}')">削除</button><button class="btn sec sm" onclick="dupTask('${id}')">複製</button>`:'')}`));
 }
+// 設備・場所の候補：過去の予定・年間計画の場所と、場所の階層（棟 › 階 › 盤 など）。保存は今までどおりの文字列
+function placeList(id){const seen=new Set(),out=[];const add=v=>{v=(v||'').trim();if(v&&!seen.has(v)&&out.length<400){seen.add(v);out.push(v)}};
+  (S.tasks||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(t=>add(t.place));(S.items||[]).forEach(i=>add(i.place));(S.locs||[]).forEach(l=>add(locPath(l.id)));
+  return `<datalist id="${id}">${out.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`}
 function fillFromItem(){
   const it=itemOf($('#t_title').value);if(!it)return;
   ['place','staff','attend','time'].forEach(k=>{const e=$('#t_'+k);if(e&&!e.value&&it[k])e.value=it[k]});
