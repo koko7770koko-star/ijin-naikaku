@@ -3307,7 +3307,8 @@ function delDef(kind,id){
 
 /* 設備（第4段階の設備台帳）との関連付け */
 const equipName=id=>((S.equipment||[]).find(e=>e.id===id)||{}).name||'';
-function equipSelect(cur,on){const E=S.equipment||[];return `<select onchange="${on}"><option value="">（設備を指定しない）</option>${E.map(e=>`<option value="${e.id}" ${e.id===cur?'selected':''}>${esc(e.code?e.code+' ':'')}${esc(e.name)}</option>`).join('')}</select>`}
+function equipPickFilter(inp){const sel=inp.nextElementSibling;if(!sel||sel.tagName!=='SELECT')return;const q=norm(inp.value||''),cur=sel.value;sel.innerHTML='<option value="">（設備を指定しない）</option>'+(S.equipment||[]).filter(e=>e.id===cur||!q||norm((e.code||'')+' '+e.name+' '+(e.place||'')).includes(q)).map(e=>`<option value="${e.id}" ${e.id===cur?'selected':''}>${esc(e.code?e.code+' ':'')}${esc(e.name)}</option>`).join('');sel.value=cur}
+function equipSelect(cur,on){const E=S.equipment||[];return (E.length>30?`<input type="search" class="eqfind" aria-label="設備を名前で探す" placeholder="設備を探す（名前・番号の一部）" oninput="equipPickFilter(this)" style="margin-bottom:4px">`:'')+`<select onchange="${on}"><option value="">（設備を指定しない）</option>${E.map(e=>`<option value="${e.id}" ${e.id===cur?'selected':''}>${esc(e.code?e.code+' ':'')}${esc(e.name)}</option>`).join('')}</select>`}
 
 /* ---------- 7d 設備台帳 ---------- */
 const REPAIR_KINDS=['故障','修理','部品交換','改修','点検指摘','その他'];
