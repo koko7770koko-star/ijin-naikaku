@@ -2231,7 +2231,10 @@ function editIssue(id,preset){
 }
 function setIssueUrg(u,fromSel){const s=$('#is_urg');if(s&&!fromSel)s.value=(s.value===u?'':u);const cur=s?s.value:u;document.querySelectorAll('#is_qurg button').forEach(b=>b.classList.toggle('on',b.textContent===cur))}
 function setIssuePlace(pl){const e=$('#is_place');if(e)e.value=pl}
-function setIssueStep(x){$('#is_status').value=x;document.querySelectorAll('#is_steps button').forEach(b=>b.classList.toggle('on',b.textContent.endsWith(x)));$('#is_done').style.display=x==='完了'?'block':'none'}
+function setIssueStep(x){$('#is_status').value=x;document.querySelectorAll('#is_steps button').forEach(b=>b.classList.toggle('on',b.textContent.endsWith(x)));$('#is_done').style.display=x==='完了'?'block':'none';
+  if(x==='完了'){ // 完了にするときの手間を減らす：確認者に自分の名前・完了日に今日を先に入れ、確認の欄が見える所まで動かす（「確かめた」のチェックは人が付ける）
+    const by=$('#is_by'),cl=$('#is_closed');if(by&&!by.value.trim()){const w=who();if(w)by.value=w}if(cl&&!cl.value)cl.value=TODAY;
+    const box=$('#is_done');if(box&&box.scrollIntoView)try{box.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}}}
 function saveIssue(id){
   const g=k=>{const e=$('#is_'+k);return e?e.value.trim():''};
   const o={date:g('date'),title:txt(g('title'),100),place:txt(g('place'),100),detail:txt(g('detail'),2000),status:ISTAT.includes(g('status'))?g('status'):'発見',action:txt(g('action'),4000),photos:[...TP],auto:false,equipId:RE_ID.test(g('equip'))?g('equip'):''};
