@@ -11,5 +11,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
    const st=h.querySelector('.stamp').getBoundingClientRect(),pr=h.firstElementChild.getBoundingClientRect();
    return {oneLine:tds.every(t=>t.getBoundingClientRect().height<30),stackBelow:st.top>=pr.bottom-1,inW:st.right<=392,sw:document.documentElement.scrollWidth}});
   if(!r)bad.push(name+'：上の表が出ない');else{if(!r.oneLine)bad.push(name+'：日付が折れる');if(!r.stackBelow)bad.push(name+'：承認欄が下に来ない');if(!r.inW||r.sw>392)bad.push(name+'：横にはみ出す')}
-  if(process.argv[2])await p.screenshot({path:process.argv[2]+'-'+name+'.png'})}
+  if(name==='月報'){const w=await p.evaluate(()=>{const ts=[...document.querySelectorAll('#app .rep .sec')].find(x=>/実施概要/.test(x.textContent));const out=[];let t=ts.nextElementSibling;for(let i=0;i<2&&t&&t.tagName==='TABLE';i++,t=t.nextElementSibling)out.push([...t.querySelectorAll('th')].every(h=>h.getBoundingClientRect().height<30));return out});
+  if(w.length<2||w.some(x=>!x))bad.push('月報：実施概要の表の見出し・左の列が折れる')}
+ if(process.argv[2])await p.screenshot({path:process.argv[2]+'-'+name+'.png'})}
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
