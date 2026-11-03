@@ -3312,6 +3312,7 @@ function vEquipDetail(){
     <div class="rep"><table>${f('設備ID',e.code)}${f('設置場所',e.place)}${f('メーカー',e.maker)}${f('型式',e.model)}${f('製造番号',e.serial)}${f('設置年月',e.installed?e.installed.replace('-','年')+'月':'')}${f('点検周期',e.cycle)}${f('備考',e.note)}</table></div>
     ${thumbs(e.photos)}${docsList(e.docs)}</div>`;
   h+=eqFuelCard(e);
+  if(e.kind==='発電機'){const t=gen12m(e,TODAY.slice(0,7));if(t)h+=`<div class="card"><details id="gen12d"><summary style="min-height:44px;display:flex;align-items:center;font-weight:700">📈 過去12か月の数字（前年同月との差）</summary>${t}<div class="muted" style="font-size:12px;margin-top:4px">${gen12mNote}</div></details></div>`}
   h+=eqKarte(e);
   h+=`<div class="card"><h2>📋 点検項目と期限</h2>${L.items.length?deadlines().filter(x=>x.it.equipId===e.id).map(deadlineRow).join('')+L.items.filter(i=>!CYC[i.cycle]).map(i=>`<div class="item" onclick="editItem('${i.id}')"><div class="bd"><div class="ti">${esc(i.name)}</div><div class="meta">${esc(i.cycle||'周期未設定')}</div></div></div>`).join(''):'<div class="muted">この設備に紐づいた点検項目はありません（年間計画の項目編集で「設備」を選ぶと紐づきます）</div>'}</div>`;
   if(L.nums.length||L.checks.length){
@@ -5078,6 +5079,22 @@ function genMonthSum(y,m){
   let rec=0,ng=0;G.forEach(e=>{const M=(S.meas||[]).filter(x=>x.equipId===e.id&&x.tplId==='mt_gen'&&String(x.date||'').startsWith(p));if(M.length)rec++;M.forEach(x=>(x.rows||[]).forEach(r=>{if(rowJudge(r)==='ng')ng++}))});
   return `<tr><th>発電機の運転点検</th><td>${rec} / ${G.length} 台で記録あり${ng?`　<b class="red">▲ 管理値の外 ${ng}件</b>`:'　管理値の外 なし'}</td></tr>`;
 }
+/* 非常用発電機1台の過去12か月（月は縦・新しい月が上）。各月はその月の最後の記録。前年同月との差を小さく。累計が前の月より減った・燃料が大きく増えた月は印。読むだけ */
+function gen12m(e,endYm){const ms=[];let y=+endYm.slice(0,4),m=+endYm.slice(5,7);for(let i=0;i<12;i++){ms.push(y+'-'+String(m).padStart(2,'0'));m--;if(m<1){m=12;y--}}
+  const M=(S.meas||[]).filter(x=>x.equipId===e.id&&x.tplId==='mt_gen'&&isDate(x.date)).sort((a,b)=>a.date.localeCompare(b.date)||String(a.at||'').localeCompare(String(b.at||'')));
+  const lastIn=ym=>{const L=M.filter(x=>x.date.startsWith(ym));return L[L.length-1]};
+  const prevYm=ym=>{let yy=+ym.slice(0,4)-1;return yy+ym.slice(4)},before=ym=>{let yy=+ym.slice(0,4),mm=+ym.slice(5,7)-1;if(mm<1){mm=12;yy--}return yy+'-'+String(mm).padStart(2,'0')};
+  if(!ms.some(lastIn))return null;
+  const want=['電圧','周波数','運転時間計','燃料残量'],names=[];M.forEach(x=>(Array.isArray(x.rows)?x.rows:[]).forEach(r=>{if(!r.ck&&r.v!==''&&r.v!=null&&Number.isFinite(Number(r.v))&&!names.includes(r.name))names.push(r.name)}));
+  const cols=[...want.filter(n=>names.includes(n)),...names.filter(n=>!want.includes(n))].slice(0,4);
+  const val=(x,n)=>{const r=x&&(Array.isArray(x.rows)?x.rows:[]).find(z=>z.name===n);return r&&r.v!==''&&r.v!=null&&Number.isFinite(Number(r.v))?{v:Number(r.v),r}:null};
+  const unit=n=>{const x=M.find(x=>val(x,n));return x?val(x,n).r.unit||'':''};
+  const rows=ms.map(ym=>{const x=lastIn(ym),py=lastIn(prevYm(ym)),pm=lastIn(before(ym));
+    return `<tr data-ym="${ym}"><td style="white-space:nowrap">${ym.slice(0,4)}/${+ym.slice(5,7)}</td>${cols.map(n=>{const a=val(x,n);if(!a)return '<td class="c">－</td>';const b=val(py,n),c=val(pm,n),r={name:n,ck:false};
+      const odd=c&&((isCumRow(r)&&a.v<c.v)||(isFuelRow(r)&&a.v-c.v>Math.max(30,c.v*.5)));const d=b?Math.round((a.v-b.v)*100)/100:null;
+      return `<td class="c${odd?' red':''}">${odd?'▲':''}${esc(a.v)}${d!=null?`<br><small class="muted">前年${d>0?'+':''}${d}</small>`:''}</td>`}).join('')}</tr>`}).join('');
+  return `<div class="rep"><table class="gen12" style="table-layout:fixed;width:100%"><thead><tr><th style="width:24%">月</th>${cols.map(n=>`<th style="word-break:keep-all;font-size:12px">${esc(n)}${unit(n)?'<br><small>'+esc(unit(n))+'</small>':''}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`}
+const gen12mNote='各月はその月の最後の記録。「前年」は前の年の同じ月との差。▲ は累計が前の月より減った・燃料が大きく増えた月（打ち間違い・給油を確かめる）。';
 function genReportHTML(y,m){
   const p=y+'-'+pad(m)+'-',G=(S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止').sort((a,b)=>eqLabel(a).localeCompare(eqLabel(b),'ja',{numeric:true}));
   if(!G.length)return '';
@@ -5088,7 +5105,9 @@ function genReportHTML(y,m){
     const rows=M.map(x=>`<tr><td class="c">${md(x.date)}</td>${cols.map(c=>{const r=(x.rows||[]).find(z=>z.name===c.name);if(!r||r.v===''||r.v==null)return '<td class="c">－</td>';const ng=rowJudge(r)==='ng';return `<td class="c ${ng?'red':''}">${ng?'▲':''}${esc(r.v)}</td>`}).join('')}<td class="c ${measJudge(x).ng?'red':''}">${measJudge(x).ng?'▲管理値外':'－'}</td></tr>`).join('');
     return `<table class="gent"><thead><tr><th colspan="${cols.length+2}" style="text-align:left">${esc(eqLabel(e))}</th></tr><tr><th>日付</th>${cols.map(c=>`<th>${esc(c.name)}${c.unit?'<br><small>'+esc(c.unit)+'</small>':''}</th>`).join('')}<th>判定</th></tr></thead><tbody>${rows}</tbody></table>`;
   }).join('');
-  return `<div class="sec">6の4. 非常用発電機の数値点検（${m}月）</div>${tabs}<div class="muted" style="font-size:12px">▲ は管理値の外（印刷で色が出なくても分かる印）。管理値は測定のひな形・各記録の値。</div>`;
+  const ym=y+'-'+pad(m),t12=G.map(e=>{const t=gen12m(e,ym);return t?`<div style="break-inside:avoid;margin-top:6px"><b>${esc(eqLabel(e))}</b>${t}</div>`:''}).join('');
+  return `<div class="sec">6の4. 非常用発電機の数値点検（${m}月）</div>${tabs}<div class="muted" style="font-size:12px">▲ は管理値の外（印刷で色が出なくても分かる印）。管理値は測定のひな形・各記録の値。</div>`
+    +(t12?`<div class="sec">6の5. 非常用発電機 過去12か月（${m}月まで）</div>${t12}<div class="muted" style="font-size:12px">${gen12mNote}</div>`:'');
 }
 /* 棟の中の盤を 階 → 電気室 の順にまとめる（盤の親をたどって、いちばん近い階・電気室の名前を取る。どちらも無い古い形は「階なし」）。保存はしない */
 function banGroups(bid){
