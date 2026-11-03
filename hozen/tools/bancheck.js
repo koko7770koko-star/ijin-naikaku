@@ -28,5 +28,6 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  const dn2=await p.evaluate(()=>{let n=0;for(const ym in S.banChk)for(const id in S.banChk[ym])n+=S.banChk[ym][id].filter(x=>x==='済').length;return n});if(dn2!==6)errs.push('読み直しで消えた '+dn2);
  await p.evaluate(()=>{const d=new Date();V.ry=d.getFullYear();V.rm=d.getMonth()+1;go('report')});await p.waitForTimeout(400);
  const rep=await p.evaluate(()=>document.body.textContent);if(!/盤の点検（棟ごと/.test(rep)||!/棟の合計/.test(rep)||!/6\/6|6\/9|●/.test(rep))errs.push('月報に棟ごとの盤の表が出ない');
+ if(!/6の3\. 盤ごとの点検/.test(rep)||!/盤3/.test(rep))errs.push('月報に盤ごとの表（6の3）が出ない');
  const w=await p.evaluate(()=>document.documentElement.scrollWidth);if(w>392)errs.push('横にはみ出す '+w);
  console.log(errs.length?'NG\n  '+errs.join('\n  '):'OK 盤の点検表');await b.close();process.exit(errs.length?1:0)})();
