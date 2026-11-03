@@ -458,6 +458,9 @@ details.fold[open]>summary{margin-bottom:8px}
 .mtile .md{font-size:11px;color:var(--mut);line-height:1.3;overflow-wrap:anywhere}
 .ptabs{position:sticky;top:0;z-index:5;background:var(--bg,#f2f4f7);padding:4px 0;margin-bottom:8px;overflow-x:auto;flex-wrap:nowrap}
 .ptabs button{white-space:nowrap}
+/* 画面上の切り替えタブ：文字を折り返さず、入りきらないときは横にずらす（390px で「推奨・傾向」が2行に切れていた） */
+.seg.tabs:not(.istep){overflow-x:auto;-webkit-overflow-scrolling:touch}
+.seg.tabs:not(.istep) button{white-space:nowrap;flex:1 0 auto;padding:0 10px;min-height:44px}
 .mtile{text-align:left}.mtile .mt,.mtile .md{text-align:left}
 
 </style>
