@@ -201,6 +201,7 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
 .chk{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eef1f4}
 .chk .l{flex:1;font-size:15px}
 .chk.flash{background:#fff2c2;transition:background .3s}
+.locn.flash>.item{outline:3px solid #e0b000;background:#fff6d6}
 .seg{display:flex;border:1px solid var(--field);border-radius:var(--r-s);overflow:hidden;flex:none}
 .seg button{border:0;border-left:1px solid var(--field);background:#fff;width:50px;height:44px;font-size:17px}
 .seg button:first-child{border-left:0}
@@ -499,6 +500,8 @@ details summary{cursor:pointer;padding:4px 0}
 .dwgv img{display:block;width:100%;height:auto}.dwgz{display:flex;gap:6px;align-items:center;margin-top:6px}.dwgz .btn{min-width:44px}
 .dwgv .pin{position:absolute;transform:translate(-50%,-100%);background:#c62828;color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px 10px 10px 2px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4);cursor:pointer;max-width:40vw;overflow:hidden;text-overflow:ellipsis}
 .dwgv .pin.hl{background:#1565c0;outline:3px solid #ffeb3b;z-index:5}
+.dwgv .pin{font-size:12px;padding:3px 7px;overflow:visible}.dwgv .pin::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)} /* 押せる所は見た目より広く（44px） */
+.dwgv .pin>i{font-style:normal;display:inline-block;max-width:40vw;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
 .mtrow{padding:8px 0;border-bottom:1px solid #e3e8ee}.mtrow:last-child{border-bottom:0}
 .stdrow{display:flex;gap:6px;align-items:center;margin:4px 0}.stdrow textarea{flex:1;min-height:48px;min-width:0;resize:vertical}.stdctl{display:flex;flex-direction:column;gap:4px;align-items:stretch}
 .qrsheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -6219,7 +6222,7 @@ function vDwg(){
     ${!latest?'<div class="al warn">古い版を表示しています（最新ではありません）</div>':''}${v&&v.note?`<div class="meta">変更内容：${esc(v.note)}</div>`:''}
     ${img?`<div class="row" style="margin-top:6px"><button class="btn ${mode?'':'sec'} sm" onclick="V.pinMode=${!mode};render()">${mode?'✓ 印を置くモード（図面をタップ）':'📍 設備の印を置く'}</button><button class="btn sec sm" onclick="window.print()">🖨 印刷</button></div>`:`<button class="btn sec sm" style="margin-top:6px" onclick="openDoc('${v?v.file:''}')">📄 PDFを開く</button><div class="muted">PDFの図面には印を置けません。画像（写真・スキャン）で登録すると設備の印を置けます。</div>`}</div>
     ${img?`<div class="dwgz noprint"><button class="btn sec sm" onclick="V.dwgZ=Math.max(1,(V.dwgZ||1)-0.5);render()" aria-label="縮小">－</button><button class="btn sec sm" onclick="V.dwgZ=1;render()">全体</button><button class="btn sec sm" onclick="V.dwgZ=Math.min(4,(V.dwgZ||1)+0.5);render()" aria-label="拡大">＋</button><span class="muted">拡大 ${Math.round((V.dwgZ||1)*100)}%（拡大したら指でなぞって動かせます）</span></div>`:''}
-    ${img?`<div class="dwgw"><div class="dwgv ${(V.dwgZ||1)>1?'':'fit'}" id="dwgv" style="${(V.dwgZ||1)>1?`width:${(V.dwgZ||1)*100}%`:''}" onclick="${mode?'dwgTap(event)':''}"><img src="${esc(safeSrc(ph(v.file)))}" alt="">${d.pins.map(p=>{const e=eqById(p.equipId);return `<span class="pin ${V.pinEq===p.equipId||V.pinSel===p.id?'hl':''}" style="left:${p.x*100}%;top:${p.y*100}%" onclick="event.stopPropagation();pinTap('${d.id}','${p.id}')">${esc(p.label||(e?e.code||e.name:'?'))}</span>`}).join('')}</div></div>`:''}
+    ${img?`<div class="dwgw"><div class="dwgv ${(V.dwgZ||1)>1?'':'fit'}" id="dwgv" style="${(V.dwgZ||1)>1?`width:${(V.dwgZ||1)*100}%`:''}" onclick="${mode?'dwgTap(event)':''}"><img src="${esc(safeSrc(ph(v.file)))}" alt="">${d.pins.map(p=>{const e=eqById(p.equipId);return `<span class="pin ${V.pinEq===p.equipId||V.pinSel===p.id?'hl':''}" style="left:${p.x*100}%;top:${p.y*100}%" onclick="event.stopPropagation();pinTap('${d.id}','${p.id}')"><i>${esc(p.label||(e?e.code||e.name:'?'))}</i></span>`}).join('')}</div></div>`:''}
     <div class="card noprint"><h2>📍 設備の印 <span class="muted">${d.pins.length}</span></h2>${d.pins.map(p=>{const e=eqById(p.equipId);return `<div class="item ${V.pinSel===p.id?'on':''}" onclick="V.pinSel='${p.id}';V.pinEq='';render();const z=document.getElementById('dwgv');if(z)z.scrollIntoView({block:'center'})"><div class="bd"><div class="ti">${esc(p.label||'')}${e?' '+esc(eqLabel(e)):' <span class="muted">（設備の指定なし・削除済み）</span>'}</div><div class="meta">押すと図面の上の印が光ります</div></div>${e?`<button class="btn sec sm" style="min-height:44px" onclick="event.stopPropagation();go('equipDetail',{eq:'${e.id}'})">設備へ ›</button>`:''}<button class="btn sec sm" style="min-height:44px" onclick="event.stopPropagation();delPin('${d.id}','${p.id}')">外す</button></div>`}).join('')||emptyBox('まだありません')}</div>`;
 }
 function dwgTap(ev){
@@ -6231,7 +6234,18 @@ function dwgTap(ev){
 }
 function addPin(x,y){const d=dwgById(V.dwg),eq=$('#pn_eq').value,label=txt($('#pn_label').value.trim(),40);if(!eq&&!label){toast('設備か表示文字を入れてください');return}
   d.pins.push({id:uid(),equipId:eqById(eq)?eq:'',label,x,y});logEdit('dwg',d.id,'設備の印','',label||equipName(eq));save();closeModal(true);render()}
-function pinTap(did,pid){const d=dwgById(did),p=d.pins.find(x=>x.id===pid);if(!p)return;if(V.pinMode){delPin(did,pid);return}if(p.equipId&&eqById(p.equipId))go('equipDetail',{eq:p.equipId});else toast(p.label||'設備の指定がありません')}
+/* 印を押す：近くに重なった印が他にもあれば、どれかを選ぶ窓（設備へ・場所へ）。1つだけならそのまま設備へ（設備が無ければ場所へ） */
+function pinNear(d,p){const box=$('#dwgv');const W=box?box.getBoundingClientRect().width:390,H=box?box.getBoundingClientRect().height:390;return d.pins.filter(q=>Math.abs((q.x-p.x)*W)<30&&Math.abs((q.y-p.y)*H)<30)}
+function pinGo(did,pid,to){const d=dwgById(did),p=d&&d.pins.find(x=>x.id===pid);if(!p)return;const e=eqById(p.equipId);closeModal(true);
+  if(to==='loc'&&e&&locById(e.locId)){let x=locById(e.locId),n=0;while(x&&n++<20){V['lo_'+x.id]=true;x=locById(x.parent)}go('locs');setTimeout(()=>{const el=document.querySelector(`.locn[data-loc="${e.locId}"]`);if(el){el.scrollIntoView({block:'center'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1800)}},60);return}
+  if(e)go('equipDetail',{eq:e.id});else toast(p.label||'設備の指定がありません')}
+function pinTap(did,pid){const d=dwgById(did),p=d.pins.find(x=>x.id===pid);if(!p)return;if(V.pinMode){delPin(did,pid);return}
+  const near=pinNear(d,p);
+  if(near.length<=1){const e=eqById(p.equipId);if(e)go('equipDetail',{eq:e.id});else toast(p.label||'設備の指定がありません');return}
+  openModal(`<h3>📍 近くの印 ${near.length}個</h3><div class="muted" style="font-size:12px">重なっている印から選んでください。</div>${near.map(q=>{const e=eqById(q.equipId),lp=e&&locById(e.locId)?locPath(e.locId):'';
+    return `<div class="item" style="flex-wrap:wrap"><div class="bd" style="min-width:0"><div class="ti">${esc(q.label||'')}${e?' '+esc(eqLabel(e)):' <span class="muted">（設備の指定なし）</span>'}</div>${lp?`<div class="meta">${esc(lp)}</div>`:''}</div>
+      <div class="row" style="gap:4px;margin:0">${e?`<button class="btn sm" style="min-height:44px" onclick="pinGo('${d.id}','${q.id}','eq')">設備へ ›</button>`:''}${lp?`<button class="btn sec sm" style="min-height:44px" onclick="pinGo('${d.id}','${q.id}','loc')">場所へ ›</button>`:''}</div></div>`}).join('')}
+    ${modalFoot('<button class="btn sec" onclick="closeModal(true)">閉じる</button>')}`)}
 function delPin(did,pid){const d=dwgById(did),i=d.pins.findIndex(x=>x.id===pid);if(i<0)return;const p=d.pins[i];d.pins.splice(i,1);save();render();undoBar('印を外しました',()=>d.pins.splice(i,0,p))}
 
 /* ---------- 技術資料（検索と根拠表示） ---------- */
