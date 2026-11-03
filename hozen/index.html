@@ -5484,8 +5484,9 @@ const partById=id=>(S.parts||[]).find(p=>p.id===id);
 const partName=id=>(partById(id)||{}).name||'(削除済み)';
 function workRow(w){
   const c=workChecks(w).filter(x=>x.lv==='ng').length;
-  return `<div class="item ${w.status==='中止'?'':c&&!['完了','中止'].includes(w.status)?'ng':''}" onclick="editWork('${w.id}')"><div class="dt">${md(w.date)}<small>${esc(w.start||'')}</small></div><div class="bd"><div class="ti">${esc(w.title)}</div>
-    <div class="meta">${esc([w.no,w.kind,w.staff.join('・'),w.vendor].filter(Boolean).join('・'))}</div><span class="pill ${WORK_STAT_CLS[w.status]||''}">${esc(w.status)}</span>${w.outage.on?'<span class="pill ng">停電</span>':''}${c&&!['完了','中止'].includes(w.status)?`<span class="pill ng">要確認 ${c}</span>`:''}</div></div>`;
+  const fin=['完了','中止'].includes(w.status);
+  return `<div class="item ${w.status==='中止'?'':c&&!fin?'ng':''}" ${fin?'style="opacity:.62"':''} onclick="editWork('${w.id}')"><div class="dt">${md(w.date)}<small>${esc(w.start||'')}</small></div><div class="bd"><div class="ti">${esc(w.title)}</div>
+    <div class="meta">${esc([w.place,w.no,w.kind,w.staff.join('・'),w.vendor].filter(Boolean).join('・'))}</div><span class="pill ${WORK_STAT_CLS[w.status]||''}">${esc(w.status)}</span>${w.outage.on?'<span class="pill ng">停電</span>':''}${c&&!['完了','中止'].includes(w.status)?`<span class="pill ng">要確認 ${c}</span>`:''}</div></div>`;
 }
 /* 作業の確認事項（人員・資格・勤務表との照合など）。判断材料を示すだけ */
 function workChecks(w){
@@ -5648,13 +5649,22 @@ async function workAct(id,act){
 }
 function delWork(id){const i=S.works.findIndex(w=>w.id===id);if(i<0)return;const w=S.works[i];if(!confirm(`作業「${w.title}」を削除しますか？（中止にすれば記録として残せます）`))return;S.works.splice(i,1);save();closeModal(true);render();undoBar(`作業「${w.title}」を削除しました`,()=>S.works.splice(i,0,w))}
 let WK_ST=0;function wkSearch(el){clearTimeout(WK_ST);WK_ST=setTimeout(()=>{V.wkQ=el.value;V.wkMore=0;render();const n=document.getElementById('wkQ');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}},350)}
+/* 「すべて」のとき、終わった作業（完了・中止）は畳んで、今やる作業を上に */
+function workListHTML(L,f){
+  const n=V.wkMore||100,fin=w=>['完了','中止'].includes(w.status);
+  if(f!=='all')return L.slice(0,n).map(workRow).join('')||emptyBox('該当する作業はありません');
+  const A=L.filter(w=>!fin(w)).sort((a,b)=>a.date.localeCompare(b.date)),D=L.filter(fin);
+  let h=A.slice(0,n).map(workRow).join('');
+  if(D.length)h+=`<details id="wkFin" class="wkfin" style="margin-top:6px"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">完了・中止 ${D.length}件（押すと開く）</summary>${D.slice(0,n).map(workRow).join('')}</details>`;
+  return h||emptyBox('該当する作業はありません');
+}
 function vWorks(){
   const f=V.wkF||'open',wq=(V.wkQ||'').trim(),L=(S.works||[]).filter(w=>(f==='all'||(f==='open'?!['完了','中止'].includes(w.status):w.status===f))&&(!wq||[w.no,w.title,w.place,w.vendor,w.content,(w.staff||[]).join(' '),(w.equipIds||[]).map(equipName).join(' ')].join(' ').includes(wq))).sort((a,b)=>f==='open'?a.date.localeCompare(b.date):b.date.localeCompare(a.date));
   const cnt=s=>(S.works||[]).filter(w=>w.status===s).length;
   return `<div class="row" style="margin-bottom:8px"><select onchange="V.wkF=this.value;render()" class="grow"><option value="open" ${f==='open'?'selected':''}>未完了（予定順）</option>${WORK_STAT.map(s=>`<option ${f===s?'selected':''}>${s}</option>`).join('')}<option value="all" ${f==='all'?'selected':''}>すべて</option></select><button class="btn sm" onclick="editWork()">＋ 作業指示</button></div>
     <input id="wkQ" type="search" enterkeyhint="search" placeholder="件名・番号・設備・担当・協力会社で探す" value="${esc(V.wkQ||'')}" oninput="wkSearch(this)" style="margin-bottom:8px">
     <div class="tiles wkt">${['承認待ち','承認済み','実施中','保留'].map(s=>`<div class="tile ${s==='承認待ち'&&cnt(s)?'warn':''} ${f===s?'on':''}" role="button" onclick="V.wkF='${s}';render()"><span class="tl">${s}</span> <span class="tv">${cnt(s)}</span></div>`).join('')}</div>`
-    +card(`🧰 作業指示 <span class="muted">${L.length}件</span>`,(L.slice(0,V.wkMore||100).map(workRow).join('')||emptyBox('該当する作業はありません'))+(L.length>(V.wkMore||100)?`<button class="btn sec wide" onclick="V.wkMore=(V.wkMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.wkMore||100)}件）</button>`:''),`<button class="btn sec sm" onclick="exportWorksCsv()">CSV</button>`)
+    +card(`🧰 作業指示 <span class="muted">${L.length}件</span>`,workListHTML(L,f)+(L.length>(V.wkMore||100)?`<button class="btn sec wide" onclick="V.wkMore=(V.wkMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.wkMore||100)}件）</button>`:''),`<button class="btn sec sm" onclick="exportWorksCsv()">CSV</button>`)
     +card('📋 作業表（14日間・印刷用）',`<button class="btn sec sm" onclick="go('workSheet')">作業表を開く</button>`);
 }
 function vWorkSheet(){
