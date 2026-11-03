@@ -5519,8 +5519,18 @@ function saveMeas(id){
   const j=measJudge(o);
   save();closeModal(true);render();toast(j.ng?'保存しました（管理値外の項目があります）':'保存しました');
   if(j.ng&&o.equipId&&confirm('管理値外の項目があります。異常案件として登録しますか？（登録内容は次の画面で確認できます）'))
-    editIssue(null,{equipId:o.equipId,title:`${o.name||o.type}：管理値外`,detail:o.rows.filter(r=>rowJudge(r)==='ng').map(r=>`${r.name} ${r.v}${r.unit}（管理値 ${limText(r)}）`).join('\n'),date});
+    {editIssue(null,{equipId:o.equipId,title:`${o.name||o.type}：管理値外`,detail:o.rows.filter(r=>rowJudge(r)==='ng').map(r=>`${r.name} ${r.v}${r.unit}（管理値 ${limText(r)}）`).join('\n'),date});return}
+  if(o.tplId==='mt_gen'&&o.equipId&&String(date).startsWith(TODAY.slice(0,7)))genAskNext(o.equipId);
 }
+/* 発電機の月次の数字を保存した後：次の未入力の発電機へ（一覧と同じ 棟→階→電気室 の順で、今の台の次から。全部済みなら知らせるだけ） */
+function genOrder(){const where=e=>{let l=locById(e.locId),n=0,b='',f='',r='';while(l&&n<10){if(l.type==='階'&&!f)f=l.name;if(l.type==='電気室'&&!r)r=l.name;if(l.type==='建屋'&&!b)b=l.name;l=locById(l.parent);n++}return{b:b||(e.locId?'（棟の指定なし）':'場所未設定'),f,r}};
+  return (S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止').map(e=>({e,w:where(e)})).sort((a,b)=>a.w.b.localeCompare(b.w.b,'ja')||a.w.f.localeCompare(b.w.f,'ja',{numeric:true})||a.w.r.localeCompare(b.w.r,'ja',{numeric:true})||eqLabel(a.e).localeCompare(eqLabel(b.e),'ja')).map(x=>x.e)}
+function genAskNext(curId){const pend=new Set(genPending().map(e=>e.id)),O=genOrder(),i=O.findIndex(e=>e.id===curId);
+  const nx=[...O.slice(i+1),...O.slice(0,Math.max(0,i))].find(e=>pend.has(e.id));
+  if(!nx){if(O.length>1)setTimeout(()=>toast('今月の発電機は、すべて入力済みです'),900);return}
+  openModal(`<h3>✅ 保存しました</h3><div>次の未入力の発電機（今月 あと ${pend.size}台）</div>
+    <div class="item" style="margin-top:6px"><div class="bd" style="min-width:0"><div class="ti">${esc(eqLabel(nx))}</div><div class="meta">${esc(locPath(nx.locId)||nx.place||'')}</div></div></div>
+    ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">あとで</button><button class="btn" id="genNextBtn" onclick="closeModal(true);genStart('${nx.id}')">次の発電機へ ›</button>`)}`)}
 function delMeas(id){const i=S.meas.findIndex(x=>x.id===id);if(i<0)return;const m=S.meas[i];S.meas.splice(i,1);logEdit('meas',id,'記録の削除',`${m.name} ${m.date}`,'');save();closeModal(true);render();undoBar(`測定記録（${md(m.date)} ${m.name||m.type}）を削除しました`,()=>S.meas.splice(i,0,m))}
 /* H-2：計器写真の数値読み取り補助（下書き。人が確認して保存するまで記録にならない） */
 async function measAiRead(inp,k){
