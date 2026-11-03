@@ -17,7 +17,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
  // 場所の階層を足すと 棟 › 階 › 盤 が候補に出る
  await p.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});S.locs=[mk('l1','A棟','建屋',''),mk('l2','1F','階','l1'),mk('b1','盤1','盤','l2')];save()});
  await p.evaluate(()=>editTask(null,TODAY));await p.waitForTimeout(400);
- o=await p.evaluate(()=>[...document.querySelector('#t_place').list.options].map(x=>x.value));
+ o=await p.evaluate(()=>{const l=document.querySelector('#t_place').list;return l?[...l.options].map(x=>x.value):[]});
  if(!o.includes('A棟 › 1F › 盤1'))errs.push('場所の階層が候補に無い '+o.join('/'));
  await p.fill('#t_title','確認の予定');await p.fill('#t_place','A棟 › 1F › 盤1');
  await p.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='保存');b.click()});await p.waitForTimeout(400);
