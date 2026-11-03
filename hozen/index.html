@@ -391,9 +391,9 @@ details summary{cursor:pointer;padding:4px 0}
 .tbl th{color:var(--mut);font-weight:600}
 .tbl tr[onclick]{cursor:pointer}
 .bars{display:flex;align-items:flex-end;gap:3px;height:112px;padding:4px 0}
-.bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:0}
-.bar .bv{width:70%;background:var(--accent);border-radius:3px 3px 0 0;min-height:1px}
-.bar small{font-size:10px;color:var(--mut)}.bar b{font-size:11px;height:14px}
+.bars .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:0}
+.bars .bar .bv{width:70%;background:var(--accent);border-radius:3px 3px 0 0;min-height:1px}
+.bars .bar small{font-size:10px;color:var(--mut)}.bars .bar b{font-size:11px;height:14px}
 .grp{border:1px solid #e3e8ee;border-radius:10px;padding:8px 10px;margin-top:10px}
 .grp>b:first-child{display:block;margin-bottom:2px}
 .dwgv{position:relative;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px;touch-action:pan-x pan-y pinch-zoom}
@@ -449,8 +449,8 @@ details.fold>summary::after{content:'▸';color:var(--mut);font-size:18px;transi
 details.fold[open]>summary::after{transform:rotate(90deg)}
 details.fold[open]>summary{margin-bottom:8px}
 .msearch{margin-bottom:6px}
-.mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-@media (min-width:600px){.mgrid{grid-template-columns:repeat(3,1fr)}}
+.mtgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (min-width:600px){.mtgrid{grid-template-columns:repeat(3,1fr)}}
 .mtile{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:10px 10px 9px;cursor:pointer;display:grid;grid-template-columns:30px 1fr;grid-template-rows:auto auto;column-gap:6px;min-width:0}
 .mtile .ic{grid-row:1/3;font-size:22px;line-height:1.2}
 .mtile .mt{font-weight:700;font-size:14px;line-height:1.3;overflow-wrap:anywhere}
@@ -5125,7 +5125,7 @@ function setChkDef(k,v){S[k]=strs(v.split('\n').map(s=>s.trim()),200,40);save();
 /* ---------- メニュー（13区分） ---------- */
 function v16Menu(){
   const it=(on,ic,t,d)=>`<div class="mtile" onclick="${on}" data-q="${esc(t+' '+d)}"><span class="ic">${ic}</span><span class="mt">${t}</span><span class="md">${d}</span></div>`;
-  const g=(title,items)=>`<div class="mgrp">${title}</div><div class="mgrid">${items.join('')}</div>`;
+  const g=(title,items)=>`<div class="mgrp">${title}</div><div class="mtgrid">${items.join('')}</div>`;
   return `<input class="msearch" placeholder="🔍 機能を探す（例：校正、QR、バックアップ）" oninput="menuFilter(this.value)">`
    +g('✅ 毎日の点検・予定',[it("go('day',{day:TODAY})",'✅','日常点検','入力・判定・写真読み取り'),it("go('month')",'🗓','カレンダー','予定・点検・勤務者'),it("go('year')",'📅','年間計画・期限','点検項目・周期・法定/社内'),it("go('hist')",'📈','点検履歴・グラフ','検索・トレンド・CSV'),it("go('dailyRep',{day:TODAY})",'🗒','日報','A4印刷'),it("go('home')",'🏠','ホーム','お知らせ・今日・全体の状況')])
    +g('🏭 設備',[it("go('equip')",'🏭','設備台帳','設備カルテ・仕様・修理履歴'),it("go('locs')",'🏢','設備の階層','施設→建屋→電気室→盤'),it("go('qr')",'🔳','QRラベル','印刷・読み取り'),it("go('dwgs')",'🗺','図面','単線結線図・配置図・版管理'),it("go('lib')",'📚','技術資料','登録・検索・根拠表示')])
@@ -5137,7 +5137,7 @@ function v16Menu(){
    +`<div class="empty" id="mnone" style="display:none">見つかりません</div>`;
 }
 function menuFilter(q){q=String(q||'').trim();let n=0;document.querySelectorAll('.mtile').forEach(t=>{const ok=!q||t.dataset.q.includes(q);t.style.display=ok?'':'none';if(ok)n++});
-  document.querySelectorAll('.mgrid').forEach(g=>{const any=[...g.children].some(c=>c.style.display!=='none');g.style.display=any?'':'none';g.previousElementSibling.style.display=any?'':'none'});const e=$('#mnone');if(e)e.style.display=n?'none':''}
+  document.querySelectorAll('.mtgrid').forEach(g=>{const any=[...g.children].some(c=>c.style.display!=='none');g.style.display=any?'':'none';g.previousElementSibling.style.display=any?'':'none'});const e=$('#mnone');if(e)e.style.display=n?'none':''}
 /* ---------- 画面の登録 ---------- */
 Object.assign(VIEWS,{set:()=>tabify(vSet(),SET_TABS,'setTab','data'),equipDetail:()=>tabify(vEquipDetail(),EQ_TABS,'eqTab','ov'),stds:vStds,locs:vLocs,qr:vQr,diag:vDiag,mtpl:vMtpl,plan:vPlan,printDoc:vPrintDoc,works:vWorks,workSheet:vWorkSheet,issues:vIssues,staff:vStaff,stock:vStock,dwgs:vDwgList,dwg:vDwg,lib:vLib,ai:vAi,mset:vMset});
 Object.assign(TITLES,{stds:'作業標準',locs:'設備の階層',qr:'QRラベル',diag:'診断',mtpl:'測定のひな形',plan:'保全計画',printDoc:'報告書',works:'作業管理',workSheet:'作業表',issues:'異常・修理',staff:'人員・資格',stock:'予備品・工具・予算',dwgs:'図面',dwg:'図面',lib:'技術資料',ai:'AI支援',mset:'保全の設定',home:'電気設備 総合保全'});
