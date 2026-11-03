@@ -4866,7 +4866,7 @@ function bldgWizard(){
       <div class="muted" style="font-size:12px">盤は「名前の頭」に 1・2・3… を付けた名前になります。電気室の名前が空なら、盤は階の下に直接足します。</div></details>
     <div id="bw_sum" class="muted" style="font-size:12px;margin-top:6px"></div>
     ${modalFoot('<button class="btn sec" onclick="closeModal()">やめる</button><button class="btn" onclick="applyBldgWizard()">足す</button>')}`);
-  const m=$('#modal');if(m){m.addEventListener('input',bwSum);m.addEventListener('change',bwSum)}
+  document.querySelectorAll('#modal input,#modal select').forEach(el=>{el.addEventListener('input',bwSum);el.addEventListener('change',bwSum)}); // 窓の中の欄に付ける（窓そのものに付けると、開くたびに増えていた）
 }
 /* 足す数の目安（多くて：既にある同じ名前の物は重ねないので、実際はこれ以下） */
 function bwSum(){const el=$('#bw_sum');if(!el)return;const fr=floorRangeVal('bw'),nb=splitNames(($('#bw_names')||{}).value).length,ne=document.querySelectorAll('#bw_rows input[data-ex]:checked').length,
