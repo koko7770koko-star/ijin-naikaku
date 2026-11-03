@@ -2356,7 +2356,10 @@ async function exportHistoryCsv(){
 const fieldName=k=>k==='by'?'点検者':k==='note'?'備考':numDefs().some(n=>n.id===k)?numDef(k).name:(chkDefs().find(c=>c.id===k)||{}).name||k;
 
 function vDay(){
-  const s=V.day,r=S.daily[s]||{c:{}},prev=prevRecDay(s),dst=dayState(s),nums=numDefs();
+  const s=V.day,r=S.daily[s]||{c:{}},prev=prevRecDay(s),dst=dayState(s);
+  // 場所（棟・階）で絞る：画面だけの状態（V.dayLoc）。保存しない。設備に場所が付いた項目だけが対象
+  const dFl=V.dayLoc&&locById(V.dayLoc)?V.dayLoc:'',dSet=dFl?locDesc(dFl):null,dLoc=d=>{const e=d.equip&&eqById(d.equip);return e&&e.locId||''};
+  const dOk=d=>!dSet||dSet.has(dLoc(d)),dHas=[...numDefs(),...chkDefs()].some(d=>dLoc(d)),nums=numDefs().filter(dOk),dHide=numDefs().length+chkDefs().length-nums.length-chkDefs().filter(dOk).length;
   window._sh=n=>{V.day=addD(V.day,n);render()};
   let h=mnav(`${mdw(s)}${s===TODAY?' 今日':''}`,'_sh(-1)','_sh(1)');
   h+=`<div class="row noprint" style="margin:-4px 0 10px;flex-wrap:nowrap">${[[-1,'昨日'],[0,'今日'],[1,'明日']].map(([n,l])=>`<button class="btn ${addD(TODAY,n)===s?'':'sec'} sm grow" onclick="V.day=addD(TODAY,${n});render()">${l}</button>`).join('')}<button class="btn sec sm grow" onclick="go('dailyRep')">📄 日報</button></div>`;
@@ -2370,6 +2373,7 @@ function vDay(){
   h+=`<div class="card"><div class="hd-row"><h2>日常点検</h2><span id="dayBadge">${dayBadge(s)}</span></div>
     ${crewTags(crewDay(s))}
     <div class="row" style="margin-bottom:4px"><input type="date" value="${s}" onchange="if(isDate(this.value)){V.day=this.value;render()}" class="grow" style="width:auto">${s!==TODAY?'<button class="btn sec sm" onclick="V.day=TODAY;render()">今日</button>':''}</div>
+    ${dHas||dFl?`<div class="row noprint" style="margin:6px 0"><select class="grow" aria-label="場所で絞り込む" onchange="V.dayLoc=this.value;render()">${locOptions(dFl).replace('（指定しない）','場所：すべて')}</select></div>${dFl?`<div class="muted" style="margin-bottom:6px">絞り込み中：場所の合わない・未設定の ${dHide} 件は隠れています（記録は残ります）</div>`:''}`:''}
     <div class="grid3">${nums.map((n,i)=>{
       const p=prevVal(s,n.id),v=r[n.id],cl=(r.cp||{})[n.id]?'copied':I.ng.some(x=>x.startsWith(n.name+' '))?'bad':I.warn.some(x=>x.startsWith(n.name+' '))?'chg':'';
       const lim=[n.min!==''&&n.min!=null?'下'+n.min:'',n.max!==''&&n.max!=null?'上'+n.max:''].filter(Boolean).join('〜');
@@ -2378,7 +2382,7 @@ function vDay(){
       <input id="n_${n.id}" class="${cl}" type="number" inputmode="decimal" step="any" enterkeyhint="${i<nums.length-1?'next':'done'}" value="${esc(v??'')}" placeholder="${p?esc(p[1]):''}" onchange="setNum('${n.id}',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();${next}}">
       <div class="hint${v==null&&p?' tapprev':''}" id="h_${n.id}" ${v==null&&p?`onclick="useNumPrev('${n.id}')" title="タップで前回の値を入れる"`:''}>${numHint(s,n)}</div></div>`}).join('')}</div>
     <div id="dayAl">${dayAlerts(s)}</div>
-    <div style="margin-top:6px">${chkDefs().map(c=>{const v=(r.c||{})[c.id]||'';return `<div class="chk"><div class="l">${esc(c.name)}${c.req?'<span style="color:var(--ng)">*</span>':''}</div><div class="seg">${[['○','on-ok'],['×','on-ng'],['－','on-na']].map(([x,cl])=>`<button class="${v===x?cl:''}" onclick="setCheck('${c.id}','${x}')">${x}</button>`).join('')}</div></div>`}).join('')}</div>
+    <div style="margin-top:6px">${chkDefs().filter(dOk).map(c=>{const v=(r.c||{})[c.id]||'';return `<div class="chk"><div class="l">${esc(c.name)}${c.req?'<span style="color:var(--ng)">*</span>':''}</div><div class="seg">${[['○','on-ok'],['×','on-ng'],['－','on-na']].map(([x,cl])=>`<button class="${v===x?cl:''}" onclick="setCheck('${c.id}','${x}')">${x}</button>`).join('')}</div></div>`}).join('')}</div>
     <div class="row" style="margin-top:10px"><span class="muted grow"><span style="color:var(--ng)">*</span>＝必須</span>${fileBtn('📎 写真を添付','addDayPhoto','sec sm','image/*')}</div>
     ${thumbs(r.photos,'rmDayPhoto')}
     <label class="f">点検者${!r.by&&nightCrew(s)?'（シフトから自動）':''}</label><input list="dl_by" value="${esc(r.by||nightCrew(s))}" maxlength="100" onchange="setText('by',this.value)">${staffList('dl_by')}
