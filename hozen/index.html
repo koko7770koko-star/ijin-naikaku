@@ -5951,7 +5951,7 @@ function vPlan(){
     h+=card('📆 更新・改修計画（10年）',`<div class="muted" style="margin-bottom:6px">設備台帳の「更新予定」または「設置年月＋耐用年数」から自動で並べています（過去の年度のものは今年度にまとめて表示）。計画を追加して予算化・実施を管理できます。</div>`
       +(()=>{const shown=new Set(years.flatMap(by).filter(x=>!x.e).map(x=>x.id)),rest=P.filter(p=>!shown.has(p.id));return rest.length?`<div class="grp"><b>上記以外（年度未定・10年より先・実施済みの過去分）</b>${rest.map(x=>`<div class="item" onclick="editPlan('${x.id}')"><div class="bd"><div class="ti">${esc(x.title)}</div><div class="meta">${x.year?esc(x.year)+'年度':'年度未定'}・${esc(x.kind)}・${yen(x.cost)}</div></div><span class="pill">${esc(x.status)}</span></div>`).join('')}</div>`:''})()
       +years.map(y=>{const L=by(y),sum=L.reduce((a,x)=>a+(Number(x.cost)||0),0);return L.length?`<div class="grp"><b>${y}年度</b>${sum?` <span class="muted">計 ${yen(sum)}</span>`:''}${L.map(x=>x.e?`<div class="item" onclick="go('equipDetail',{eq:'${x.e.id}'})"><div class="bd"><div class="ti">${esc(eqLabel(x.e))}</div><div class="meta">${esc(x.src)}${x.year<fy?`（${x.year}年度・超過）`:''}・${yen(x.cost)}</div></div></div>`
-        :`<div class="item" onclick="editPlan('${x.id}')"><div class="bd"><div class="ti">${esc(x.title)}${x.equipId?`・${esc(equipName(x.equipId))}`:''}</div><div class="meta">${esc(x.kind)}・${yen(x.cost)}</div></div><span class="pill ${x.status==='実施済み'?'ok':x.status==='予算化'?'plan':''}">${esc(x.status)}</span></div>`).join('')}</div>`:''}).join('')||emptyBox('計画がありません'),`<button class="btn sm" onclick="editPlan()">＋ 計画</button>`);
+        :`<div class="item" onclick="editPlan('${x.id}')"><div class="bd"><div class="ti">${esc(x.title)}${x.equipId?`・${esc(equipName(x.equipId))}`:''}</div><div class="meta">${esc(x.kind)}・${yen(x.cost)}</div></div><span class="pill ${x.status==='実施済み'?'ok':x.status==='予算化'?'plan':''}">${esc(x.status)}</span></div>`).join('')}</div>`:''}).join('')||emptyBox('計画がありません'),`${P.length?`<button class="btn sec sm" id="planCsvBtn" style="min-height:44px" onclick="exportPlanCsv()">CSV</button> `:''}<button class="btn sm" onclick="editPlan()">＋ 計画</button>`);
     h+=`<button class="btn sec wide" onclick="aiPlan()">🤖 AIに保全計画の改善案を出させる（下書き）</button>`;
   }else{
     const L=[];(S.equipment||[]).forEach(e=>{const M=(S.meas||[]).filter(m=>m.equipId===e.id&&m.tplId).sort((a,b)=>a.date.localeCompare(b.date)),last={};M.forEach(m=>last[m.tplId]=m);
@@ -5961,6 +5961,8 @@ function vPlan(){
   }
   return h;
 }
+function planCsvRows(){return [['年度','件名','区分','設備','概算費用（円）','状況','備考'],...[...(S.plans||[])].sort((a,b)=>(Number(a.year)||9999)-(Number(b.year)||9999)).map(p=>[p.year,p.title,p.kind,p.equipId?equipName(p.equipId):'',p.cost,p.status,p.note])]}
+function exportPlanCsv(){const R=planCsvRows();if(R.length<2){toast('保全計画がまだありません');return}download(`保全計画_${TODAY}.csv`,csvBlob(R));toast(`保全計画 ${R.length-1}件を書き出しました`)}
 function editPlan(id){
   const p=(S.plans||[]).find(x=>x.id===id)||{title:'',equipId:'',year:fyNow()+1,kind:'更新',cost:'',status:'計画',note:''};
   openModal(`<h3>保全計画</h3><label class="f">件名 *</label><input id="pl_title" value="${esc(p.title)}" maxlength="100">
