@@ -319,6 +319,14 @@ table.yr th .yrmh{all:unset;display:block;box-sizing:border-box;min-height:44px;
 }
 .banprint{display:none}
 @media print{
+  table.hpt{width:100%;table-layout:fixed;border-collapse:collapse;font-size:9pt;margin-top:2mm}
+  table.hpt th{border:1px solid #888;padding:1mm;background:#eef2f6;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:700}
+  table.hpt td{border:1px solid #888;padding:1mm;vertical-align:top;overflow-wrap:anywhere;line-height:1.3}
+  table.hpt thead{display:table-header-group}
+  table.hpt tr{break-inside:avoid;page-break-inside:avoid}
+  table.hpt tr.ng td,table.hpt .ng{color:#c00000}
+}
+@media print{
   body.bbp #app>*:not(.banprint){display:none!important}
   body.bbp .banprint{display:block!important;break-after:page;page-break-after:always}
   body.bbp .banprint:last-of-type{break-after:auto;page-break-after:auto}
@@ -3167,7 +3175,7 @@ function histClearFilter(){V.hItem='';V.hKw='';V.hNg=false;V.hRange='all';V.hFro
 function vHist(){
   if(!V.hRange)V.hRange='30';
   const nums=numDefs(),checks=chkDefs(),item=V.hItem||'',isNum=nums.some(n=>n.id===item),rows=histRows();
-  let h=`<div class="card"><h2>📈 点検履歴の検索</h2>
+  let h=`<div class="card noprint"><h2>📈 点検履歴の検索</h2>
     <label class="f">項目（設備）</label><select onchange="V.hItem=this.value;render()"><option value="">すべての項目</option>
       <optgroup label="数値">${nums.map(n=>`<option value="${n.id}" ${item===n.id?'selected':''}>${esc(n.name)}（${esc(n.unit)}）${n.equip?'・'+esc(equipName(n.equip)):''}</option>`).join('')}</optgroup>
       <optgroup label="確認">${checks.map(c=>`<option value="${c.id}" ${item===c.id?'selected':''}>${esc(c.name)}${c.equip?'・'+esc(equipName(c.equip)):''}</option>`).join('')}</optgroup></select>
@@ -3175,10 +3183,24 @@ function vHist(){
     <label class="f">キーワード（備考・点検者）</label><input value="${esc(V.hKw||'')}" onchange="V.hKw=this.value;render()">
     ${V.hRange==='custom'?`<div class="grid2"><div><label class="f">から</label><input type="date" value="${esc(V.hFrom||addD(TODAY,-30))}" onchange="V.hFrom=this.value;render()"></div><div><label class="f">まで</label><input type="date" value="${esc(V.hTo||TODAY)}" onchange="V.hTo=this.value;render()"></div></div>`:''}
     <button type="button" id="hNgBtn" class="btn wide ${V.hNg?'':'sec'}" style="min-height:44px;margin-top:8px" aria-pressed="${!!V.hNg}" onclick="V.hNg=!V.hNg;render()">${V.hNg?'✔ 異常だけ表示中（押すと全部）':'異常・基準外だけ表示'}</button>
-    <div class="row" style="margin-top:10px"><span class="muted grow">該当 ${rows.length}日</span><button class="btn sec sm" ${rows.length?'':'aria-disabled="true" style="opacity:.5"'} onclick="exportDailyCsv()">${rows.length?`CSVに書き出す（${rows.length}日分）`:'CSVに書き出す'}</button></div></div>`;
-  if(isNum)h+=trendCard(numDef(item));
-  h+=`<div class="card"><h2>記録</h2>${rows.length?rows.slice(0,200).map(k=>histRow(k,item)).join('')+(rows.length>200?`<div class="muted">ほか ${rows.length-200}日（CSVで全件出力できます）</div>`:''):`<div class="empty">該当する記録はありません${Object.keys(S.daily||{}).length?'<br>期間や絞り込みを変えてみてください':'<br>日常点検を入力すると、ここに出ます'}</div>${Object.keys(S.daily||{}).length?'<button class="btn wide" id="hClearBtn" style="min-height:44px" onclick="histClearFilter()">✖ 条件を外して全期間を見る</button>':'<button class="btn sec wide" style="min-height:44px" onclick="go(\'day\')">✅ 日常点検を入力する</button>'}`}</div>`;
+    <div class="row" style="margin-top:10px"><span class="muted grow">該当 ${rows.length}日</span><button class="btn sec sm" ${rows.length?'':'aria-disabled="true" style="opacity:.5"'} onclick="exportDailyCsv()">${rows.length?`CSVに書き出す（${rows.length}日分）`:'CSVに書き出す'}</button></div>${rows.length?`<button class="btn sec sm wide" id="hPrintBtn" style="min-height:44px;margin-top:8px" onclick="window.print()">🖨 この条件で印刷（A4 縦・${rows.length}日分）</button>`:''}</div>`;
+  if(isNum)h+=trendCard(numDef(item)).replace('<div class="card">','<div class="card noprint">');
+  h+=histPrintHTML(rows,item);
+  h+=`<div class="card noprint"><h2>記録</h2>${rows.length?rows.slice(0,200).map(k=>histRow(k,item)).join('')+(rows.length>200?`<div class="muted">ほか ${rows.length-200}日（CSVで全件出力できます）</div>`:''):`<div class="empty">該当する記録はありません${Object.keys(S.daily||{}).length?'<br>期間や絞り込みを変えてみてください':'<br>日常点検を入力すると、ここに出ます'}</div>${Object.keys(S.daily||{}).length?'<button class="btn wide" id="hClearBtn" style="min-height:44px" onclick="histClearFilter()">✖ 条件を外して全期間を見る</button>':'<button class="btn sec wide" style="min-height:44px" onclick="go(\'day\')">✅ 日常点検を入力する</button>'}`}</div>`;
   return h;
+}
+// 点検履歴の印刷（A4 縦）：今の絞り込みの結果を表にする。画面には出さない（.mprint）。ページ番号は @page の余白枠（pfFoot）
+function histPrintHTML(rows,item){
+  if(!rows.length)return '';
+  const [from,to]=histRange(),nd=numDefs().find(n=>n.id===item),cd=!nd&&item?chkDefs().find(c=>c.id===item):null;
+  const cond=[`期間：${from==='0000-00-00'?'全期間':slash(from)+' 〜 '+slash(to)}`,`項目：${nd?nd.name+'（'+nd.unit+'）':cd?cd.name:'すべて'}`,V.hKw?`キーワード：${V.hKw}`:'',V.hNg?'異常・基準外だけ':''].filter(Boolean).join('　');
+  const tr=rows.slice(0,1000).map(k=>{const r=S.daily[k],st=dayState(k);let v;
+    if(nd){const o=outOfRange(nd,r[item]);v=`${esc(r[item])}${esc(nd.unit)}${o?'（'+esc(o)+'）':''}`}
+    else if(cd)v=esc((r.c||{})[item]||'');
+    else v=esc(numDefs().filter(n=>r[n.id]!=null).map(n=>`${n.short||n.name} ${r[n.id]}${n.unit}`).join('・'))+(st.I&&st.I.ng.length?`<div class="ng">${esc(st.I.ng.join('、'))}</div>`:'');
+    return `<tr class="${st.cls==='ng'?'ng':''}"><td>${slash(k)}（${WD[pd(k).getDay()]}）</td><td>${esc(st.st)}</td><td>${v}</td><td>${esc(r.by||'')}</td><td>${esc(txt(r.note||'',60))}</td></tr>`}).join('');
+  return `<div class="card mprint hprint"><div class="phd"><div><h2>点検履歴</h2><div class="muted">${esc(cond)}　（${rows.length}日）</div></div>${pStamp}</div>
+    <table class="hpt"><thead><tr><th style="width:30mm">日付</th><th style="width:22mm">状態</th><th>${nd||cd?'値':'記録・異常'}</th><th style="width:22mm">点検者</th><th style="width:40mm">備考</th></tr></thead><tbody>${tr}</tbody></table>${rows.length>1000?`<div class="muted">ほか ${rows.length-1000}日（CSVで全件出力できます）</div>`:''}</div>`;
 }
 function histRow(k,item){
   const r=S.daily[k],st=dayState(k);
