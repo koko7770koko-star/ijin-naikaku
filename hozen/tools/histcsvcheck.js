@@ -16,6 +16,10 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  if(!it||!(hd<hdAll))bad.push('項目を選んでも列が減らない '+hd+'/'+hdAll);if(it&&!/日常点検_/.test(it.n))bad.push('ファイル名が変');
  const none=await csv("V.hItem='';V.hKw='存在しない言葉zzz'");if(none)bad.push('該当なしでも書き出した');
  await p.evaluate(()=>{V.hKw='';go('hist')});await p.waitForTimeout(300);
- if(!/いま表示の\d+日分/.test(await p.evaluate(()=>document.querySelector('#app').innerText)))bad.push('ボタンの表示が分かりにくい');
+ if(!/CSVに書き出す（\d+日分）/.test(await p.evaluate(()=>document.querySelector('#app').innerText))||!/該当 \d+日/.test(await p.evaluate(()=>document.querySelector('#app').innerText)))bad.push('ボタンの表示が分かりにくい');
+ await p.evaluate(()=>{V.hKw='存在しない言葉zzz';render()});await p.waitForTimeout(200);
+ const nb=await p.evaluate(()=>{const b=[...document.querySelectorAll('#app button')].find(x=>/CSVに書き出す/.test(x.textContent));return b&&b.getAttribute('aria-disabled')==='true'&&/期間や絞り込み/.test(document.querySelector('#app').innerText)});if(!nb)bad.push('0件のとき CSV が押せない見た目になっていない・案内が無い');
+ await p.evaluate(()=>{V.hKw='';S.daily={};render()});await p.waitForTimeout(200);
+ if(!(await p.evaluate(()=>[...document.querySelectorAll('#app button')].some(x=>/日常点検を入力する/.test(x.textContent)&&x.getBoundingClientRect().height>=44))))bad.push('記録が無いとき日常点検への入口が無い');
  if(await p.evaluate(()=>document.documentElement.scrollWidth)>392)bad.push('横にはみ出す');
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
