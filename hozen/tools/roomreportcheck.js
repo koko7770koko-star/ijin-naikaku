@@ -12,7 +12,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   return {all:d.textContent.replace(/\s+/g,' '),heads:[...d.querySelectorAll('tr.rbh')].map(x=>x.textContent.trim()),rows2:[...d.querySelectorAll('table:not(.bdt):not(.bpt) tbody tr')].map(x=>[...x.children].map(c=>c.textContent.trim()).slice(0,3).join('|')),blank:[...d.querySelectorAll('table.bpt tbody tr')].map(x=>x.children[0].textContent.trim()+'/'+x.children[1].textContent.trim()),html:d.innerHTML}},[locs,mark]);
  const L4=[['bA','建屋','','A棟'],['f3','階','bA','3階'],['f1','階','bA','1階'],['r1','電気室','f3','第1電気室'],['r2','電気室','f3','第2電気室'],['k1','盤','r1','動力盤-1'],['k2','盤','r1','動力盤-2'],['k3','盤','r2','動力盤-3'],['k4','盤','f1','分電盤-1']];
  let T=await texts(L4,{k1:['済','済','済']});
- if(JSON.stringify(T.heads)!==JSON.stringify(['A棟 › 3階 › 第1電気室','A棟 › 3階 › 第2電気室','A棟 › 1階']))bad.push('見出し行 '+JSON.stringify(T.heads));
+ // 階の順は「設備の場所」の並び（盤の点検の画面と同じ。並べ替えの ord が無ければ 1階→3階）。2026-11-03 応援係：画面と紙で順がそろうように
+ if(JSON.stringify(T.heads)!==JSON.stringify(['A棟 › 1階','A棟 › 3階 › 第1電気室','A棟 › 3階 › 第2電気室']))bad.push('見出し行 '+JSON.stringify(T.heads));
  if(!T.rows2.some(r=>r.includes('3階 › 第1電気室|2'))||!T.rows2.some(r=>r.includes('1階|1')))bad.push('6の2の行 '+JSON.stringify(T.rows2));
  if(!T.blank.includes('3階 › 第1電気室/動力盤-1')||!T.blank.includes('/動力盤-2')||!T.blank.includes('1階/分電盤-1'))bad.push('空の点検表 '+JSON.stringify(T.blank));
  const i1=T.all.indexOf('動力盤-1'),i3=T.all.indexOf('動力盤-3');if(i1<0||i3<i1)bad.push('盤の順');
