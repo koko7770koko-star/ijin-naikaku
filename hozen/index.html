@@ -4387,6 +4387,7 @@ function vLocs(){
     return `<div class="locn" data-loc="${l.id}" style="margin-left:${Math.min(d,4)*8}px"><div class="item"><div class="dt" style="min-width:0"><span class="pill">${esc(LOC_SHOW(l.type))}</span></div>
       <div class="bd" style="min-width:0" onclick="V['lo_${l.id}']=${!open};render()"><div class="ti" style="overflow-wrap:anywhere">${ch.length||eq.length?(open?'▾ ':'▸ '):''}${esc(l.name)}</div><div class="meta">${cc?esc(cc)+'・':''}<span style="white-space:nowrap">設備 ${all}台</span>${l.note?'・'+esc(l.note):''}</div></div>
       <div class="row" style="flex-wrap:nowrap;gap:4px;margin:0">${btns}</div></div>
+      ${!sortM&&locFixKids(l).length?`<div class="row locfix" style="margin:2px 0 4px ${Math.min(d,4)*8+12}px;align-items:center;flex-wrap:nowrap"><span class="muted grow" style="font-size:12px;min-width:0">${l.type==='階'?`電気室を通さず盤が ${locFixKids(l).length}面あります`:`階を通さず ${esc(locCountTxt2(locFixKids(l)))} があります`}</span><button class="btn sec sm" style="min-height:44px;white-space:nowrap" onclick="locFix('${l.id}')">${l.type==='階'?'電気室を足して移す':'階を足して移す'}</button></div>`:''}
       ${open?eq.map(e=>`<div class="item" style="margin-left:${d*8+14}px" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">🏭 ${esc(e.name)}</div><div class="meta">${esc([e.kind,e.importance?'重要度'+e.importance:'',e.status!=='稼働'?e.status:''].filter(Boolean).join('・'))}</div></div></div>`).join('')+ch.map((c,j)=>node(c,d+1,ch.length,j)).join(''):''}</div>`};
   const none=E.filter(e=>!e.locId),roots=locKids(top),addTop=fac?'建屋':(roots.some(r=>r.type==='施設')?'施設':'建屋');
   const tree=roots.map((l,i)=>node(l,0,roots.length,i)).join('');
@@ -4400,6 +4401,31 @@ function vLocs(){
       `<button class="btn sm" onclick="editLoc()">詳しく追加</button>`)
     +(none.length?card(`場所が未設定の設備 <span class="muted">${none.length}台</span>`,none.map(e=>`<div class="item" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${esc(e.place||'')}</div></div></div>`).join('')):'');
 }
+/* 古い形から直す手伝い（押したときだけ。勝手には変えない）：階の下に直接ある盤 → 電気室を足して移す。棟の下に直接ある電気室・盤 → 階を足して移す。
+   移すのは parent の付け替えだけなので、盤の ◯/●・日常点検・履歴・設備の結びつき（id で持つ）はそのまま残る。元に戻せる */
+const locFixKids=l=>l.type==='階'?locKids(l.id).filter(x=>x.type==='盤'):l.type==='建屋'?locKids(l.id).filter(x=>x.type==='電気室'||x.type==='盤'):[];
+function locCountTxt2(list){const c={};list.forEach(k=>{const t=LOC_SHOW(k.type);c[t]=(c[t]||0)+1});return Object.entries(c).map(([t,n])=>t+' '+n).join('・')}
+function locFix(id){const l=locById(id);if(!l)return;const ks=locFixKids(l);if(!ks.length)return;
+  const nt=l.type==='階'?'電気室':'階',ex=locKids(id).filter(x=>x.type===nt);
+  openModal(`<h3>${esc(locPath(id))} に${esc(nt)}を足して移す</h3>
+    <div class="muted" style="font-size:12px">選んだ物を、新しい${esc(nt)}（または既にある${esc(nt)}）の中へ移します。点検の記録・設備の結びつきはそのまま残ります。</div>
+    <label class="f">移す先</label><select id="lf_to" onchange="$('#lf_nmw').style.display=this.value?'none':''"><option value="">新しい${esc(nt)}を足す</option>${ex.map(x=>`<option value="${x.id}">${esc(x.name)}（既にある${esc(nt)}）</option>`).join('')}</select>
+    <div id="lf_nmw"><label class="f">新しい${esc(nt)}の名前 *</label><input id="lf_name" maxlength="60" placeholder="${LOC_EX[nt]}"></div>
+    <label class="f">移す物</label><div id="lf_list" class="chkgrid">${ks.map(x=>`<label class="chkl" style="margin:2px 0"><input type="checkbox" value="${x.id}" checked>${esc(x.name)}（${esc(LOC_SHOW(x.type))}）</label>`).join('')}</div>
+    ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">やめる</button><button class="btn" onclick="applyLocFix('${id}')">移す</button>`)}`)}
+function applyLocFix(id){const l=locById(id);if(!l)return;const nt=l.type==='階'?'電気室':'階';
+  const sel=[...document.querySelectorAll('#lf_list input:checked')].map(i=>locById(i.value)).filter(x=>x&&x.parent===id);
+  if(!sel.length){toast('移す物を選んでください');return}
+  let to=locById($('#lf_to').value),made=null;
+  if(!to){const nm=txt($('#lf_name').value,60).trim();if(!nm){toast(nt+'の名前を入れてください');return}
+    if((S.locs||[]).some(x=>x.parent===id&&norm(x.name)===norm(nm))){toast('同じ所に同じ名前があります');return}
+    made=locMk(nt,nm,id,nt==='階'?nm:'');S.locs.push(made);to=made}
+  const clash=sel.find(x=>(S.locs||[]).some(y=>y.parent===to.id&&y.id!==x.id&&norm(y.name)===norm(x.name)));
+  if(clash){if(made)S.locs.pop();toast(`移す先に同じ名前「${clash.name}」があります`);return}
+  const prev=sel.map(x=>[x,x.parent,x.ord]);
+  sel.forEach(x=>{x.parent=to.id;delete x.ord});logEdit('equip',to.id,'場所の形を直す',locPath(id),`${locPath(to.id)}へ ${sel.length}件`);
+  V['lo_'+id]=true;V['lo_'+to.id]=true;save();closeModal(true);render();
+  undoBar(`${sel.length}件を「${to.name}」へ移しました`,()=>{prev.forEach(([x,p,o])=>{x.parent=p;if(o===undefined)delete x.ord;else x.ord=o});if(made)S.locs=S.locs.filter(x=>x.id!==made.id)},'変更')}
 function locFold(open){(S.locs||[]).forEach(l=>{V['lo_'+l.id]=open});render()}
 /* 同じ段の中で1つ上・下へ。並べ替えた段は全部に ord を振る（ほかの段は変えない） */
 function locShift(id,d){const l=locById(id);if(!l)return;const sib=locKids(l.parent),i=sib.indexOf(l),j=i+d;if(i<0||j<0||j>=sib.length)return;
