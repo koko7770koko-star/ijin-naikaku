@@ -453,6 +453,7 @@ details summary{cursor:pointer;padding:4px 0}
 #shiftApp .sheet table.sub{width:100%;border-collapse:collapse;table-layout:fixed}
 #shiftApp .sheet table.sub th,#shiftApp .sheet table.sub td{border:1px solid #000;text-align:center;padding:0 1px;font-size:8.2pt;height:5.6mm;overflow:hidden;white-space:nowrap}
 #shiftApp .sheet table.sub th{font-size:8pt;font-weight:700;height:7mm;white-space:normal;line-height:1.15;background:#d9d9d9}
+#shiftApp .sheet table.sub th.lg{font-size:6.5pt;line-height:1.05;word-break:break-all;overflow-wrap:anywhere}
 #shiftApp .sheet table.sub td.we{font-weight:700}
 #shiftApp .sheet table.sub tr.we td.dt{background:#ffe699;color:#c00000;font-weight:700}
 #shiftApp .sheet table.sub td.sA{background:#ddebf7;font-weight:700}
@@ -1307,7 +1308,7 @@ function sheetHTML(type,month,pno){
   let h='<div class="sheet"><h3>'+esc(r.title)+'</h3><div class="per">期間：'+t1.y+'/'+t1.m+'/'+t1.d+' ～ '+t2.m+'/'+t2.d+'</div>';
   const w=Math.max(7,Math.min(12,(100-17)/Math.max(1,M.length)));
   h+='<table class="sub"><colgroup><col style="width:10%"><col style="width:6%">'+M.map(()=>'<col>').join('')+'</colgroup>';
-  h+='<thead><tr><th>月日</th><th>曜日</th>'+M.map(m=>'<th>'+esc(m.name)+(m.type==='日勤'?'<br>(日勤)':'')+'</th>').join('')+'</tr></thead><tbody>';
+  h+='<thead><tr><th>月日</th><th>曜日</th>'+M.map(m=>'<th'+(m.name.length>4?' class="lg"':'')+'>'+esc(m.name)+(m.type==='日勤'?'<br>(日勤)':'')+'</th>').join('')+'</tr></thead><tbody>';
   a.rows.forEach((row,k)=>{
     const t=ymd(row.d);
     h+='<tr class="'+(row.off?'we':'')+'"><td class="dt">'+((k===0||t.d===1)?t.m+'月'+t.d+'日':t.d+'日')+'</td><td class="dt">'+WD[t.w]+'</td>'+M.map((m,i)=>{const v=a.R[i][row.d];const c=v==='A日夜勤'?'sA':v==='B日夜勤'?'sB':v==='公休'?'s休':(v==='連続NG'||v==='明けNG')?'sNG':'s'+v;return '<td class="'+c+'">'+esc(v)+'</td>';}).join('')+'</tr>';
