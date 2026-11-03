@@ -3898,20 +3898,22 @@ const tabs16=(key,list)=>`<div class="seg tabs noprint" style="margin-bottom:10p
 function vLocs(){
   const L=S.locs||[],E=S.equipment||[];
   const eqAt=id=>E.filter(e=>e.locId===id);
-  const kids=p=>L.filter(l=>l.parent===p).sort((a,b)=>LOC_TYPES.indexOf(a.type)-LOC_TYPES.indexOf(b.type)||a.name.localeCompare(b.name,'ja'));
+  const kids=p=>L.filter(l=>l.parent===p).sort((a,b)=>LOC_TYPES.indexOf(a.type)-LOC_TYPES.indexOf(b.type)||(a.type==='階'?floorKey(a.name)-floorKey(b.name):0)||a.name.localeCompare(b.name,'ja',{numeric:true})); // 階は B1F→1F→2F→10F の順
   const node=(l,d)=>{const ch=kids(l.id),eq=eqAt(l.id),all=E.filter(e=>locDesc(l.id).has(e.locId)).length,open=V['lo_'+l.id]!==false;
-    return `<div class="locn" style="margin-left:${d*14}px"><div class="item" ><div class="dt" style="min-width:58px"><span class="pill">${esc(l.type)}</span></div>
-      <div class="bd" onclick="V['lo_${l.id}']=${!open};render()"><div class="ti">${ch.length||eq.length?(open?'▾ ':'▸ '):''}${esc(l.name)}</div><div class="meta">設備 ${all}台${l.pos&&l.pos.floor?'・'+esc(l.pos.floor):''}${l.note?'・'+esc(l.note):''}</div></div>
-      <button class="btn sec sm" onclick="editLoc('${l.id}')">編集</button></div>
+    return `<div class="locn" style="margin-left:${Math.min(d,4)*10}px"><div class="item" ><div class="dt" style="min-width:0"><span class="pill">${esc(l.type)}</span></div>
+      <div class="bd" onclick="V['lo_${l.id}']=${!open};render()"><div class="ti">${ch.length||eq.length?(open?'▾ ':'▸ '):''}${esc(l.name)}</div><div class="meta"><span style="white-space:nowrap">設備 ${all}台</span>${l.pos&&l.pos.floor?'・'+esc(l.pos.floor):''}${l.note?'・'+esc(l.note):''}</div></div>
+      <button class="btn sec sm" onclick="editLoc('${l.id}')" aria-label="${esc(l.name)}を編集">編集</button></div>
       ${open?eq.map(e=>`<div class="item" style="margin-left:${d*14+14}px" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">🏭 ${esc(e.name)}</div><div class="meta">${esc([e.kind,e.importance?'重要度'+e.importance:'',e.status!=='稼働'?e.status:''].filter(Boolean).join('・'))}</div></div></div>`).join('')+ch.map(c=>node(c,d+1)).join(''):''}</div>`};
   const none=E.filter(e=>!e.locId);
   return card('🏢 設備の階層',`<div class="muted" style="margin-bottom:8px">施設 → 建屋（A棟など）→ 階 → 電気室 → 盤 の順に登録し、設備（機器）をそれぞれの場所に結びつけます。</div>
+      ${L.some(l=>L.some(c=>c.parent===l.id))?`<div class="row" style="margin-bottom:6px"><button class="btn sec sm grow" onclick="locFold(false)">▸ ぜんぶ たたむ</button><button class="btn sec sm grow" onclick="locFold(true)">▾ ぜんぶ ひらく</button></div><div class="muted" style="font-size:12px;margin-bottom:6px">名前を押すと、下の階・盤・設備を たたんだり ひらいたり できます。</div>`:''}
       ${L.length?kids('').map(l=>node(l,0)).join(''):emptyBox('まだ場所が登録されていません')}
       <div class="row" style="margin-top:10px"><button class="btn sec sm grow" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button></div>
       <div class="row" style="margin-top:6px"><button class="btn sec sm grow" onclick="suggestLocs()">設置場所の文字から階層を提案</button><button class="btn sec sm grow" onclick="go('qr')">🔳 QRラベル</button></div>`,
       `<button class="btn sm" onclick="editLoc()">＋ 場所</button>`)
     +(none.length?card(`場所が未設定の設備 <span class="muted">${none.length}台</span>`,none.map(e=>`<div class="item" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${esc(e.place||'')}</div></div></div>`).join('')):'');
 }
+function locFold(open){(S.locs||[]).forEach(l=>{V['lo_'+l.id]=open});render()}
 function editLoc(id,parent){
   const l=locById(id)||{name:'',type:parent?LOC_TYPES[Math.min(LOC_TYPES.length-1,LOC_TYPES.indexOf((locById(parent)||{}).type)+1)]:'施設',parent:parent||'',note:'',pos:{x:'',y:'',z:'',floor:''}};
   openModal(`<h3>${id?'場所の編集':'場所の追加'}</h3>
