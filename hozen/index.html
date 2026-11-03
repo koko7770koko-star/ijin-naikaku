@@ -4723,6 +4723,7 @@ function locMenu(id){
     <label class="f">順番（${sib.length}件の中の ${i+1}番目）</label><div class="row" style="margin:0"><button class="btn sec grow" style="min-height:44px" ${i<=0?'disabled':''} onclick="locShift('${id}',-1);locMenu('${id}')">↑ 上へ</button><button class="btn sec grow" style="min-height:44px" ${i>=sib.length-1?'disabled':''} onclick="locShift('${id}',1);locMenu('${id}')">↓ 下へ</button></div>
     <label class="f">別の所へ移す（中の物も一緒に移ります）</label><div class="row" style="flex-wrap:nowrap;gap:6px;margin:0"><select id="lm_parent" class="grow" style="min-width:0"><option value="">（いちばん上）</option>${cand.map(c=>`<option value="${c.id}" ${c.id===l.parent?'selected':''}>${esc(c.p)}（${esc(LOC_SHOW(c.t))}）</option>`).join('')}</select><button class="btn sec" style="min-height:44px;white-space:nowrap" onclick="locMoveTo('${id}',$('#lm_parent').value)">移す</button></div>
     <div class="row" style="margin-top:12px">${LOC_CHILD[l.type]?`<button class="btn sec grow" style="min-height:44px" onclick="closeModal(true);locAdd('${id}')">＋ ${esc(LOC_SHOW(LOC_CHILD[l.type]))}を足す</button>`:''}<button class="btn sec grow" style="min-height:44px" onclick="closeModal(true);editLoc('${id}')">詳しく編集（備考・位置）</button></div>
+    ${l.type==='盤'?`<div class="row" style="margin-top:6px"><button class="btn sec grow" style="min-height:44px" onclick="closeModal(true);banQrOne('${id}')">🔳 この盤のQRラベル</button></div>`:banBoards(id).length?`<div class="row" style="margin-top:6px"><button class="btn sec grow" style="min-height:44px" onclick="closeModal(true);go('qr',{qrKind:'ban',qrLoc:'${id}',qrBanSel:null})">🔳 中の盤のQRラベル（${banBoards(id).length}枚）</button></div>`:''}
     <div class="row" style="margin-top:6px"><button class="btn sec grow" style="min-height:44px" onclick="closeModal(true);locEquip('${id}')">🏭 設備を結びつける（今 ${(S.equipment||[]).filter(e=>e.locId===id).length}台）</button></div>
     ${modalFoot(`<button class="btn" onclick="closeModal(true)">閉じる</button>`,`<button class="btn red sm" onclick="delLoc('${id}')">消す</button>`)}`);
 }
@@ -5157,18 +5158,36 @@ function saveHealth(id){
 
 /* ---------- QRコード（設備ID）：ラベル印刷・読み取り ---------- */
 const qrText=e=>'EQ:'+(e.code||e.id);
+/* 盤の QR：中身は「BAN:場所の内部 id」だけ（端末の中の記録を指すだけで、外への送り先は無い）。読むと盤の点検のその盤へ */
+const qrBanText=l=>'BAN:'+l.id;
+function banGoBoard(id){const l=locById(id);if(!l||l.type!=='盤'){toast('この盤は見つかりません（消されたか、別の端末のラベルです）');return}
+  V.banYm=TODAY.slice(0,7);V.banEdit=false;const b=banBldgs().find(x=>banBoardsOf(x.id).some(y=>y.id===id));if(b){V.banB=b.id;banReveal(b.id,id)}go('ban');
+  setTimeout(()=>{const el=document.getElementById('ban-'+id);if(el){el.scrollIntoView({block:'center'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1800)}},60)}
+function banQrOne(id){const l=locById(id);if(!l)return;
+  openModal(`<h3>🔳 盤のQRコード</h3><div style="text-align:center"><div style="width:200px;margin:0 auto">${qrSvg(qrBanText(l),6)}</div><div style="font-weight:700;margin-top:6px">${esc(l.name)}</div><div class="muted">${esc(locPath(l.parent))}</div><div class="muted" style="font-size:12px">読むと「盤の点検」のこの盤が開きます（内容：${esc(qrBanText(l))}）</div></div>
+  ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="closeModal(true);go('qr',{qrKind:'ban',qrBanSel:['${id}'],qrLoc:''})">ラベル印刷へ</button>`)}`)}
 const _qrMemo=new Map();
 function qrSvg(text,cell=3){const mk=cell+'|'+text;if(_qrMemo.has(mk))return _qrMemo.get(mk);let r;try{const q=qrcode(0,'M');q.addData(text);q.make();r=q.createSvgTag({cellSize:cell,margin:2,scalable:true})}catch(err){return '<span class="muted">QRを作れません</span>'}if(_qrMemo.size>1500)_qrMemo.clear();_qrMemo.set(mk,r);return r}
 const QR_SHOW=150;
+const qrKindTabs=()=>(S.locs||[]).some(l=>l.type==='盤')?`<div class="seg tabs" style="margin-bottom:8px"><button class="${V.qrKind!=='ban'?'on':''}" style="min-height:44px" onclick="V.qrKind='';V.qrAll=false;render()">🏭 設備</button><button class="${V.qrKind==='ban'?'on':''}" style="min-height:44px" onclick="V.qrKind='ban';V.qrAll=false;V.qrBanSel=null;render()">⚡ 盤</button></div>`:'';
+function vQrBan(){
+  const loc=V.qrLoc||'',sel=V.qrBanSel;const all=(loc?banBoards(loc):banBoards('')).filter(l=>!sel||sel.includes(l.id));
+  const cut=!V.qrAll&&all.length>QR_SHOW;V.qrCut=cut;const list=cut?all.slice(0,QR_SHOW):all;
+  return `<div class="card noprint">${qrKindTabs()}<h2>🔳 盤のQRラベル</h2><div class="muted" style="margin-bottom:6px">盤に貼ると、「QRを読む」で盤の点検のその盤がすぐ開きます。QRの内容は「BAN:内部ID」で、この端末の記録を指すだけです（別の端末では、同じ記録を復元したときだけ開けます）。</div>
+      <div class="grid2"><div><label class="f">場所で絞り込み</label><select onchange="V.qrLoc=this.value;V.qrBanSel=null;V.qrAll=false;render()">${locOptions(loc)}</select></div><div><label class="f">枚数</label><div style="padding:8px 0">${all.length}枚${cut?`（先頭${QR_SHOW}枚を表示）`:''}</div></div></div>
+      <div class="row" style="margin-top:8px"><button class="btn grow" style="min-height:44px" onclick="qrPrint()">🖨 印刷${cut?`（全${all.length}枚）`:''}</button><button class="btn sec grow" style="min-height:44px" onclick="qrScan()">📷 QRを読む</button>${sel?`<button class="btn sec sm" style="min-height:44px" onclick="V.qrBanSel=null;render()">全件</button>`:''}</div></div>
+    <div class="qrsheet">${list.map(l=>`<div class="qrl" data-ban="${l.id}"><div class="qri">${qrSvg(qrBanText(l),3)}</div><div class="qrt"><b>${esc(l.name)}</b><div>盤の点検</div><small>${esc(locPath(l.parent))}</small></div></div>`).join('')||emptyBox('盤がありません')}</div>`;
+}
 function qrPrint(){if(V.qrCut){V.qrAll=true;render()}setTimeout(()=>window.print(),V.qrCut?50:0)}
 function qrOne(id){const e=eqById(id);if(!e)return;
   openModal(`<h3>🔳 QRコード</h3><div style="text-align:center"><div style="width:200px;margin:0 auto">${qrSvg(qrText(e),6)}</div><div style="font-weight:700;margin-top:6px">${esc(e.code||'')}</div><div>${esc(e.name)}</div><div class="muted">${esc(locPath(e.locId))}</div><div class="muted" style="font-size:12px">内容：${esc(qrText(e))}</div></div>
-  ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="closeModal(true);go('qr',{qrSel:['${id}']})">ラベル印刷へ</button>`)}`)}
+  ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="closeModal(true);go('qr',{qrKind:'',qrSel:['${id}']})">ラベル印刷へ</button>`)}`)}
 function vQr(){
+  if(V.qrKind==='ban')return vQrBan();
   const E=(S.equipment||[]).filter(e=>e.status!=='廃止');const loc=V.qrLoc||'',sel=V.qrSel;
   const all=E.filter(e=>(!loc||locDesc(loc).has(e.locId))&&(!sel||sel.includes(e.id)));
   const cut=!V.qrAll&&all.length>QR_SHOW;V.qrCut=cut;const list=cut?all.slice(0,QR_SHOW):all;
-  return `<div class="card noprint"><h2>🔳 QRラベル</h2><div class="muted" style="margin-bottom:6px">設備IDのQRコードを印刷して設備に貼ると、「QRを読む」で設備カルテを開けます。QRの内容は「EQ:設備ID」です（設備IDが空のときは内部ID）。</div>
+  return `<div class="card noprint">${qrKindTabs()}<h2>🔳 QRラベル</h2><div class="muted" style="margin-bottom:6px">設備IDのQRコードを印刷して設備に貼ると、「QRを読む」で設備カルテを開けます。QRの内容は「EQ:設備ID」です（設備IDが空のときは内部ID）。</div>
       <div class="grid2"><div><label class="f">場所で絞り込み</label><select onchange="V.qrLoc=this.value;V.qrSel=null;V.qrAll=false;render()">${locOptions(loc)}</select></div><div><label class="f">枚数</label><div style="padding:8px 0">${all.length}枚${cut?`（先頭${QR_SHOW}枚を表示）`:''}</div></div></div>
       <div class="row" style="margin-top:8px"><button class="btn grow" onclick="qrPrint()">🖨 印刷${cut?`（全${all.length}枚）`:''}</button><button class="btn sec grow" onclick="qrScan()">📷 QRを読む</button>${sel?`<button class="btn sec sm" onclick="V.qrSel=null;render()">全件</button>`:''}</div></div>
     <div class="qrsheet">${list.map(e=>`<div class="qrl"><div class="qri">${qrSvg(qrText(e),3)}</div><div class="qrt"><b>${esc(e.code||'')}</b><div>${esc(e.name)}</div><small>${esc(locPath(e.locId)||e.place||'')}</small></div></div>`).join('')||emptyBox('設備がありません')}</div>`;
@@ -5198,6 +5217,7 @@ async function qrFromFile(inp){
   try{const bm=await createImageBitmap(f),r=await new BarcodeDetector({formats:['qr_code']}).detect(bm);if(r.length)qrOpen(r[0].rawValue);else toast('QRコードが見つかりませんでした')}catch(e){toast('読み取れませんでした')}
 }
 function qrOpen(raw){
+  const bm=/^BAN:(.+)$/i.exec(String(raw||'').trim());if(bm){qrStop();closeModal(true);banGoBoard(bm[1].trim());return}
   const s=String(raw||'').trim().replace(/^EQ:/i,'');if(!s){toast('設備IDを入れてください');return}
   const hits=(S.equipment||[]).filter(x=>x.code&&normCode(x.code)===normCode(s)),byId=eqById(s);
   const list=hits.length?hits:byId?[byId]:[];
