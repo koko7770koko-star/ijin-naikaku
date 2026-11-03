@@ -169,6 +169,7 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
 .quick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .quick .btn{flex-direction:column;gap:2px;padding:12px 6px;font-size:14px}
 .quick .btn b{font-size:20px;font-weight:400}
+.quick .btn{min-height:56px}
 .quick .full{grid-column:1/-1;flex-direction:row;font-size:17px;padding:15px}
 .num input{font-size:18px;font-weight:600}
 .num input.copied{background:var(--warn-bg);border-color:var(--warn-line)}
@@ -1937,6 +1938,8 @@ function vHome(){ // v16.4：上から「今すぐ対応すること → 今日�
   const A=AL_CACHE=alerts(),tt=tasksBetween(TODAY,TODAY),j=judge(TODAY),oi=openIssues(),tst=dayState(TODAY);
   const dl=deadlines().filter(x=>x.left!=null&&x.left<=30),over=S.tasks.filter(t=>t.status==='予定'&&t.date<TODAY).length;
   let h=`<div class="hero"><div class="date">${now.getMonth()+1}月${now.getDate()}日（${WD[now.getDay()]}）</div>${S.settings.name?`<div class="muted">${esc(S.settings.name)}</div>`:''}${wxLine()}</div>`;
+  // 0 よく使う仕事（2タップ以内で着く）
+  h+=`<div class="quick" style="margin:0 0 12px;grid-template-columns:repeat(4,1fr);gap:6px"><button class="btn sec" onclick="go('day',{day:TODAY})"><b>✅</b>今日の点検</button><button class="btn sec" onclick="go('year')"><b>◯●</b>印を付ける</button><button class="btn sec" onclick="go('diag',{dgTab:'meas'});setTimeout(()=>{const g=document.getElementById('genCard');if(g)g.scrollIntoView()},80)"><b>⚡</b>発電機</button><button class="btn sec" onclick="editIssue()"><b>🛠</b>異常を記録</button></div>`;
   // 1 今すぐ対応すること
   if(A.length){
     const al=([c,t,on])=>`<div class="al ${c}" onclick="${on}">${esc(t)}</div>`,top=A.slice(0,3),rest=A.slice(3),ngN=A.filter(a=>a[0]==='ng').length;
