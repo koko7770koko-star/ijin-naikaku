@@ -1046,8 +1046,9 @@ window.exportPdf=async(all)=>{
     }
     stage.innerHTML='';
     const tl=S.sub.type==='cal'?'1日-末日':'11日-10日';
-    doc.save('夜勤シフト_'+(all?ymLabel(months[0])+'から12か月':ymLabel(months[0]))+'_'+tl+'.pdf');
-    toast('PDFを保存しました');
+    const pdfName='夜勤シフト_'+(all?ymLabel(months[0])+'から12か月':ymLabel(months[0]))+'_'+tl+'.pdf';
+    if(window.hzSave&&window.claude){if(await window.hzSave(pdfName,doc.output('blob')))toast('PDFを保存しました');}
+    else{doc.save(pdfName);toast('PDFを保存しました');}
   }catch(e){toast('PDFを作れませんでした（ネット接続が必要です）。「印刷」→PDFに保存 でも出力できます');}
   finally{busy.classList.remove('on');}
 };
@@ -1076,7 +1077,9 @@ window.resetAll=async()=>{if(!window.confirm('メンバー・予定変更・設�
 /* ---------- ファイル ---------- */
 window.saveFile=()=>{
   const b=new Blob([JSON.stringify(S)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='夜勤シフト表_'+new Date().toISOString().slice(0,10)+'.json';
+  const nm='夜勤シフト表_'+new Date().toISOString().slice(0,10)+'.json';
+  if(window.hzSave){window.hzSave(nm,b).then(ok=>{if(ok)toast('ファイルに保存しました')});return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=nm;
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);toast('ファイルに保存しました');
 };
 $('fileIn').addEventListener('change',e=>{
@@ -1522,7 +1525,7 @@ async function afterLoadChecks(){
 
 /* 保存（失敗したら画面上部に赤い帯を出し続ける） */
 let SAVE_FAIL={app:false,shift:false};
-function downloadRaw(){download(`電気設備スケジュール_原本_${TODAY}.json`,new Blob([RAW_KEEP||''],{type:'application/json'}));RAW_KEEP=null;unlockSave(true)}
+async function downloadRaw(){if(!await download(`電気設備スケジュール_原本_${TODAY}.json`,new Blob([RAW_KEEP||''],{type:'application/json'})))return;RAW_KEEP=null;unlockSave(true)}
 function unlockSave(saved){
   if(!saved&&!confirm('元のデータを残さずに続けると、元のデータは消えます。よろしいですか？'))return;
   SAVE_LOCK=false;RAW_KEEP=null;closeModal(true);save();render();toast(saved?'原本を保存しました。復元は設定の「ファイルから復元」から':'続けます');
@@ -3293,7 +3296,26 @@ async function wipe(){
   for(const k in DEF){if(k==='settings')continue;S[k]=clone(DEF[k])}
   opLog('全データ消去','消去前の状態はバックアップ履歴に保存');S.lastVer=APP_VER;S.schema=SCHEMA;syncDefs();save();render();toast('消去しました（履歴から戻せます）');
 }
-function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800)}
+/* ファイルの書き出し。アーティファクトの中では普通のダウンロードが動かないので、claude.downloads があればそれで渡す（保存するか選ぶ確認が出る）。
+   無い場合（file:// で開いたとき等）は今までどおり a download。戻り値は Promise<boolean>（渡せた=true、やめた・失敗=false） */
+window.hzSave=async function(name,blob){
+  try{
+    if(window.claude&&typeof claude.use==='function'){
+      const d=await claude.use('downloads');
+      if(d){
+        try{await d.save({filename:name,data:blob});return true}
+        catch(e){
+          if(e&&e.code==='declined'){toast('書き出しをやめました');return false}
+          if(e&&e.code==='rejected_extension'){toast('この形式のファイルはここでは書き出せません。ファイルとして開いた版で書き出してください');return false}
+          /* それ以外（使えない等）は下の普通のダウンロードを試す */
+        }
+      }
+    }
+  }catch(e){}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800);return true}
+  catch(e){toast('書き出せませんでした');return false}
+};
+function download(name,blob){return window.hzSave(name,blob)}
 function photoOwners(){return photoOwnersOf(S)}
 function photoOwnersOf(S){ // 写真ID → どこで使われているか（警告表示用）
   const m={},add=(ids,w)=>(ids||[]).forEach(i=>{(m[i]=m[i]||[]).push(w)});
@@ -3437,10 +3459,10 @@ async function finishBackup(kind,r,name){
     const file=new File([r.blob],name,{type:'application/json'});
     try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'電気設備スケジュール バックアップ'});markBackup(r.info,name);toast(r.info.complete?'共有メニューに渡しました（ドライブに保存されたかはドライブのアプリで確認してください）':'不完全なバックアップを共有しました');return}}
     catch(e){if(e.name==='AbortError')return}
-    download(name,r.blob);markBackup(r.info,name);
+    if(!await download(name,r.blob))return;markBackup(r.info,name);
     msgModal('ファイルを書き出しました','この端末では共有メニューが使えなかったため、ダウンロードとして書き出しました（保存されたかはブラウザのダウンロード一覧で確認してください）。Googleドライブのアプリから「＋ → アップロード」で保存してください。');return;
   }
-  download(name,r.blob);markBackup(r.info,name);toast(r.info.complete?`ファイルを書き出しました（写真${r.info.photosIncluded}件を含む）。保存されたかはダウンロード一覧で確認し、設定の「② 保存したファイルの検査」で確かめてください`:'不完全なバックアップを書き出しました');
+  if(!await download(name,r.blob))return;markBackup(r.info,name);toast(r.info.complete?`ファイルを書き出しました（写真${r.info.photosIncluded}件を含む）。保存されたかはダウンロード一覧で確認し、設定の「② 保存したファイルの検査」で確かめてください`:'不完全なバックアップを書き出しました');
 }
 const backupName=()=>`電気設備スケジュール_${TODAY}.json`;
 function markBackup(info,name){if(info){S.settings.bk=S.settings.bk||{};S.settings.bk.exported={at:new Date().toISOString(),digest:info.digest||'',name:txt(name||'',120),complete:!!info.complete,photos:info.photosIncluded}}opLog(info&&!info.complete?'バックアップ（不完全）':'バックアップ',info?`写真${info.photosIncluded}/${info.photosExpected}件${info.complete?'':'・欠落'+info.missing.length+'件'}`:'');if(!info||info.complete){S.settings.lastBackup=TODAY}S.settings.lastBackupInfo=info?`${TODAY} 写真${info.photosIncluded}/${info.photosExpected}件${info.complete?'':'（不完全）'}`:'';save();render()}
