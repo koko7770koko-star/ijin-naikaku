@@ -4308,7 +4308,7 @@ function importEquipCsv(inp){
   const rd=new FileReader();
   rd.onerror=()=>msgModal('読み込めません','ファイルを読めませんでした。');
   rd.onload=()=>{
-    let t=String(rd.result||'');
+    let t=csvDecode(rd.result);
     const P=planEquipCsv(t);
     if(P.fatal){msgModal('読み込めません',esc(P.fatal));return}
     if(!P.eqs.length&&!P.reps.length){msgModal('読み込めません',`取り込める行がありません。${P.skip.length?'<br>'+P.skip.slice(0,5).map(esc).join('<br>'):''}`);return}
@@ -4321,7 +4321,7 @@ function importEquipCsv(inp){
       ${P.skip.length?`<div class="al warn">読み飛ばす行：${P.skip.length}件<br>${P.skip.slice(0,8).map(esc).join('<br>')}${P.skip.length>8?'<br>ほか'+(P.skip.length-8)+'件':''}</div>`:''}
       ${modalFoot('<button class="btn sec" onclick="PENDING_EQCSV=null;closeModal(true)">やめる</button><button class="btn" onclick="applyEquipCsv()">読み込む</button>')}`);
   };
-  rd.readAsText(f,'UTF-8');
+  rd.readAsArrayBuffer(f);
 }
 async function applyEquipCsv(){
   const P=PENDING_EQCSV;if(!P)return;PENDING_EQCSV=null;
@@ -6238,13 +6238,21 @@ function planStockCsv(text){
   return {items,skip};
 }
 let PENDING_STOCKCSV=null;
+/* CSV の文字コード：まず UTF-8（BOM 付き・無し）として厳密に読み、読めなければ Shift_JIS（Excel の「CSV」保存）で読み直す。未対応の端末は UTF-8 のまま */
+function csvDecode(buf){
+  if(typeof buf==='string')return buf;
+  if(!buf)return '';
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){}
+  try{return new TextDecoder('shift_jis').decode(buf)}catch(e){}
+  try{return new TextDecoder('utf-8').decode(buf)}catch(e){return ''}
+}
 function importStockCsv(inp){
   const f=inp.files[0];inp.value='';if(!f)return;
   if(f.size>20*1024*1024){msgModal('読み込めません','ファイルが大きすぎます（20MB超）。');return}
   const rd=new FileReader();
   rd.onerror=()=>msgModal('読み込めません','ファイルを読めませんでした。');
   rd.onload=()=>{
-    const P=planStockCsv(String(rd.result||''));
+    const P=planStockCsv(csvDecode(rd.result));
     if(P.fatal){msgModal('読み込めません',esc(P.fatal));return}
     if(!P.items.length){msgModal('読み込めません',`取り込める行がありません。${P.skip.length?'<br>'+P.skip.slice(0,5).map(esc).join('<br>'):''}`);return}
     PENDING_STOCKCSV=P;const nNew=P.items.filter(x=>!x.ex).length,nUp=P.items.length-nNew;
@@ -6254,7 +6262,7 @@ function importStockCsv(inp){
       ${P.skip.length?`<div class="al warn">読み飛ばす行：${P.skip.length}件<br>${P.skip.slice(0,8).map(esc).join('<br>')}${P.skip.length>8?'<br>ほか'+(P.skip.length-8)+'件':''}</div>`:''}
       ${modalFoot('<button class="btn sec" onclick="PENDING_STOCKCSV=null;closeModal(true)">やめる</button><button class="btn" onclick="applyStockCsv()">読み込む</button>')}`);
   };
-  rd.readAsText(f,'UTF-8');
+  rd.readAsArrayBuffer(f);
 }
 async function applyStockCsv(){
   const P=PENDING_STOCKCSV;if(!P)return;PENDING_STOCKCSV=null;
