@@ -5543,9 +5543,13 @@ function wxLine(){
    ===================================================================== */
 const dwgById=id=>(S.drawings||[]).find(d=>d.id===id);
 /* ---------- 図面（単線結線図・配置図）：版管理・設備IDの印 ---------- */
+let DW_ST=0;function dwgSearch(el){clearTimeout(DW_ST);DW_ST=setTimeout(()=>{V.dwgQ=el.value;render();const n=document.getElementById('dwgQ');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}},350)}
+function dwgHay(d){return `${d.name} ${d.kind} ${d.locId?locPath(d.locId):''} ${(d.vers||[]).map(v=>v.ver).join(' ')}`.toLowerCase()}
 function vDwgList(){
-  const D=(S.drawings||[]);
-  return card(`🗺 図面 <span class="muted">${D.length}件</span>`,`<div class="muted" style="margin-bottom:6px">単線結線図・配置図などを画像（写真・スキャン）やPDFで登録します。画像の図面には設備の印を置けます。新しい版を追加しても古い版は残ります。</div>`
+  const D0=(S.drawings||[]),q=(V.dwgQ||'').trim().toLowerCase(),ws=q.split(/[\s　]+/).filter(Boolean),D=ws.length?D0.filter(d=>ws.every(w=>dwgHay(d).includes(w))):D0;
+  return card(`🗺 図面 <span class="muted">${ws.length?D.length+' / ':''}${D0.length}件</span>`,`<div class="muted" style="margin-bottom:6px">単線結線図・配置図などを画像（写真・スキャン）やPDFで登録します。画像の図面には設備の印を置けます。新しい版を追加しても古い版は残ります。</div>`
+    +(D0.length>=6||ws.length?`<input id="dwgQ" type="search" enterkeyhint="search" placeholder="名称・種類・場所で探す" value="${esc(V.dwgQ||'')}" oninput="dwgSearch(this)" style="margin-bottom:8px">`:'')
+    +(ws.length&&!D.length?'<div class="empty">見つかりません。言葉を短くしてみてください</div>':'')
     +(D.map(d=>{const v=d.vers.at(-1);return `<div class="item" onclick="go('dwg',{dwg:'${d.id}',dwgZ:1})"><div class="bd"><div class="ti">${esc(d.name)}</div><div class="meta">${esc(d.kind)}${d.locId?'・'+esc(locPath(d.locId)):''}・${v?`版 ${esc(v.ver)}（${slash(v.date)}）`:'版なし'}・設備の印 ${d.pins.length}</div></div><span class="ar">›</span></div>`}).join('')||emptyGuide('図面はまだありません。単線結線図や配置図の写真・PDFを登録すると、設備の位置に印を付けて見られます。','図面を登録','editDwg()')),
     `<button class="btn sm" onclick="editDwg()">＋ 図面</button>`);
 }
