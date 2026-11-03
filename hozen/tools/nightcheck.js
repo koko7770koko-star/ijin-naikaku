@@ -13,10 +13,11 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  if(!await p.evaluate(()=>/画面の明るさ/.test(document.querySelector('#app').innerText)))bad.push('設定に「画面の明るさ」が無い');
  await p.click('button:has-text("夜間")');await p.waitForTimeout(300);
  if(!await p.evaluate(()=>document.documentElement.classList.contains('night')&&S.settings.night==='on'))bad.push('夜間にならない');
- const views=[['home',{}],['day',{day:'TODAY'}],['ban',{}],['diag',{dgTab:'meas'}],['issues',{}],['set',{}],['month',{}],['locs',{}]];
+ const views=(await p.evaluate(()=>Object.keys(VIEWS))).filter(v=>!['printDoc','workSheet','qr'].includes(v)).map(v=>[v,{day:'TODAY',eq:'eqG',hItem:'',dgTab:'meas'}]);
+ views.push(['diag',{dgTab:'rec'}],['stock',{stTab:'tools'}],['plan',{plTab:'legal'}]);
  const low=[];
  for(const [v,ex] of views){
-  await p.evaluate(([v,ex])=>{if(ex.day)ex.day=TODAY;go(v,ex)},[v,ex]);await p.waitForTimeout(350);
+  await p.evaluate(([v,ex])=>{if(ex.day)ex.day=TODAY;try{go(v,ex)}catch(e){}},[v,ex]);await p.waitForTimeout(350);
   const r=await p.evaluate(()=>{const lum=c=>{const m=c.match(/[\d.]+/g).map(Number);const f=x=>{x/=255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)};return .2126*f(m[0])+.7152*f(m[1])+.0722*f(m[2])};
    const bgOf=e=>{let x=e;while(x){const b=getComputedStyle(x).backgroundColor;const m=b.match(/[\d.]+/g);if(m&&(m.length<4||+m[3]>.5))return b;x=x.parentElement}return 'rgb(16,21,28)'};
    const out=[];document.querySelectorAll('#app *,#modal *').forEach(e=>{if(!e.offsetParent&&getComputedStyle(e).position!=='fixed')return;const own=[...e.childNodes].some(n=>n.nodeType===3&&n.textContent.trim());if(!own)return;
@@ -26,6 +27,12 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   if(r.sw>392)bad.push(v+'：はみ出す');
   if(r.n)low.push(v+'：'+r.n+'件 '+JSON.stringify(r.out.slice(0,5)));
  }
+ for(const [n,js] of [['予定',"editTask(null,TODAY)"],['異常',"editIssue(null,{})"],['設備',"editEquip()"],['測定',"editMeas(null,{})"],['発電機',"genStart('eqG')"],['作業',"editWork&&editWork()"],['資料',"editLib()"],['盤の異常',"banIssue('p1')"]]){
+  await p.evaluate(j=>{closeModal(true);try{(0,eval)(j)}catch(e){}},js);await p.waitForTimeout(350);
+  const r=await p.evaluate(()=>{const lum=c=>{const m=c.match(/[\d.]+/g).map(Number);const f=x=>{x/=255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)};return .2126*f(m[0])+.7152*f(m[1])+.0722*f(m[2])};
+   const bgOf=e=>{let x=e;while(x){const b=getComputedStyle(x).backgroundColor;const m=b.match(/[\d.]+/g);if(m&&(m.length<4||+m[3]>.5))return b;x=x.parentElement}return 'rgb(16,21,28)'};
+   const out=[];document.querySelectorAll('#modal *').forEach(e=>{if(!e.offsetParent)return;const own=[...e.childNodes].some(n=>n.nodeType===3&&n.textContent.trim());if(!own)return;const cs=getComputedStyle(e),fg=lum(cs.color),bg=lum(bgOf(e)),hi=Math.max(fg,bg),lo=Math.min(fg,bg),cr=(hi+.05)/(lo+.05);if(cr<3)out.push({t:e.textContent.trim().slice(0,20),cls:e.className,cr:Math.round(cr*10)/10,fg:cs.color,bg:bgOf(e)})});return {out:out.slice(0,5),n:out.length,on:document.querySelector('#mask').classList.contains('on')}});
+  if(r.on&&r.n)low.push('窓 '+n+'：'+r.n+'件 '+JSON.stringify(r.out))}
  if(process.argv.includes('--list'))console.log(low.join('\n'));
  if(low.length)bad.push('コントラストが低い所：\n'+low.join('\n'));
  // 印刷は白地のまま
