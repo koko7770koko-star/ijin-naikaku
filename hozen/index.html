@@ -6076,7 +6076,9 @@ async function workAct(id,act){
     if(reqP.length){msgModal('作業完了を記録できません',`作業後の必須確認（復電の確認など）が終わっていません：<br>${reqP.map(c=>'・'+esc(c.text)).join('<br>')}`);return}
     const pend=w.post.filter(c=>!c.done);if(!w.result.trim()){toast('作業結果を入れて保存してから完了にしてください');return}
     if(pend.length&&!confirm(`作業後チェックに未確認の項目が${pend.length}つあります。責任者が確認したうえで完了にしますか？`))return;
-    signModal({title:'作業完了を記録',sub:esc(w.no+' '+w.title),byLabel:'作業完了を確認した人の名前',role:false,acts:[['完了','作業完了を記録','ok']],cancel:`closeModal(true);editWork('${id}')`,done:r=>{step('完了','作業完了',pend.length?`未確認の作業後チェック${pend.length}項目`:'',r.by);fin()}});return}
+    signModal({title:'作業完了を記録',sub:esc(w.no+' '+w.title),byLabel:'作業完了を確認した人の名前',role:false,acts:[['完了','作業完了を記録','ok']],cancel:`closeModal(true);editWork('${id}')`,done:r=>{const prevSt=w.status,nH=w.hist.length;step('完了','作業完了',pend.length?`未確認の作業後チェック${pend.length}項目`:'',r.by);fin();
+      /* 押し間違えても、数秒のうちは「元に戻す」で実施中に戻せる（記録の形は変えず、状態と経過を完了の前に戻すだけ） */
+      undoBar(`作業「${w.title}」を完了にしました`,()=>{if(w.status==='完了'&&w.hist.length===nH+1){w.status=prevSt;w.hist.length=nH}closeModal(true);editWork(id)},'作業の完了を取消')}});return}
   else if(act==='hold'||act==='stop'){const note=await ask(act==='hold'?'保留の理由':'中止（取消）の理由',true);if(note===null)return;step(act==='hold'?'保留':'中止',act==='hold'?'保留':'中止',note)}
   else if(act==='resume'){const note=await ask('再開の理由',true);if(note===null)return;const prev=[...w.hist].reverse().find(h=>h.to===w.status&&h.from&&!['保留','中止'].includes(h.from));let to=prev?prev.from:'起案';if(to==='実施中')to='承認済み';w.hist.push({at:nowIso(),act:'再開',from:w.status,to,by:who(),note});w.status=to}
   fin();
