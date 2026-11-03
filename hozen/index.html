@@ -3380,6 +3380,7 @@ function vEquipDetail(){
   h+=`<div class="card"><div class="hd-row"><h2>${esc(e.code?e.code+'　':'')}${esc(e.name)}</h2><span><button class="btn sec sm" onclick="editEquip('','${e.id}')">複製</button> <button class="btn sec sm" onclick="editEquip('${e.id}')">編集</button></span></div>
     <div class="rep"><table>${f('設備ID',e.code)}${f('設置場所',e.place)}${f('メーカー',e.maker)}${f('型式',e.model)}${f('製造番号',e.serial)}${f('設置年月',e.installed?e.installed.replace('-','年')+'月':'')}${f('点検周期',e.cycle)}${f('備考',e.note)}</table></div>
     ${thumbsFold(e.photos,'eqPhAll_'+e.id)}${docsList(e.docs)}</div>`;
+  h+=eqLibCard(e);
   h+=eqFuelCard(e);
   if(e.kind==='発電機'){const t=gen12m(e,TODAY.slice(0,7));if(t)h+=`<div class="card"><details id="gen12d"><summary style="min-height:44px;display:flex;align-items:center;font-weight:700">📈 過去12か月の数字（前年同月との差）</summary>${t}<div class="muted" style="font-size:12px;margin-top:4px">${gen12mNote}</div></details></div>`}
   h+=eqKarte(e);
@@ -3395,6 +3396,9 @@ function vEquipDetail(){
   h+=`<div class="card"><h2>🗓 作業・点検の実績</h2>${L.tasks.length?eqMore('task',L.tasks.slice(0,30),taskRow):'<div class="muted">ありません</div>'}</div>`;
   return h;
 }
+/* 設備カルテ：この設備に結んだ技術資料（S.library の equipIds）を並べ、押すとその資料が開く。0 件なら出さない。表示だけ */
+function eqLibCard(e){const D=(S.library||[]).filter(d=>(d.equipIds||[]).includes(e.id));if(!D.length)return '';
+  return `<div class="card" id="eqLib"><h2>📚 技術資料 <small class="muted">${D.length}件</small></h2>${eqMore('lib',D,d=>`<div class="item" style="min-height:44px" onclick="editLib('${d.id}')"><div class="bd"><div class="ti">${esc(d.title)}</div><div class="meta">${esc([d.tags,d.file?'📎 ファイルあり':''].filter(Boolean).join('・'))}</div></div></div>`)}</div>`}
 function dupEquipName(n){const m=String(n||'').match(/^(.*?)[\s　]*[（(](\d+)[）)]$/),b=m?m[1]:String(n||''),names=new Set((S.equipment||[]).map(x=>x.name));let k=m?Number(m[2])+1:2,r;do{r=`${b}（${k++}）`}while(names.has(r));return r}
 /* 件数が多い一覧は 8件だけ出し、「ほか○件を表示」で広げる（画面だけの状態 V.eqMore。保存しない） */
 function eqMore(key,arr,fn,n=8){const k=(V.eq||'')+':'+key,all=(V.eqMore||{})[k];const list=all?arr:arr.slice(0,n);return list.map(fn).join('')+(arr.length>n?`<button class="btn sec wide" style="min-height:44px;margin-top:6px" onclick="V.eqMore=V.eqMore||{};V.eqMore['${k}']=${all?'false':'true'};render()">${all?'▲ 先頭の'+n+'件だけにする':'ほか'+(arr.length-n)+'件を表示'}</button>`:'')}
