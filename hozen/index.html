@@ -2168,6 +2168,7 @@ function vHome(){ // v16.4：上から「今すぐ対応すること → 今日�
   }
   if(S.inbox.length)h+=`<div class="card" id="inboxCard"><h2>📥 読み取り結果（確認待ち）</h2>${S.inbox.map(x=>`<div class="item" onclick="openInbox('${x.id}')"><div class="dt">${md(x.at.slice(0,10))}</div><div class="bd"><div class="ti">${x.kind==='daily'?'日常点検 '+x.recs.length+'日分':'点検名・日時の読み取り'}</div><div class="meta">${x.kind==='daily'?'タップして確認・反映':esc(x.summary||'')}</div></div></div>`).join('')}</div>`;
   // 2 今日やること
+  h+=homeBanLine();
   const tw=(S.works||[]).filter(w=>w.date<=TODAY&&(w.endDate||w.date)>=TODAY&&!['中止','完了'].includes(w.status));
   h+=`<div class="card"><div class="hd-row"><h2>📋 今日</h2><button class="btn sm" onclick="editTask(null,TODAY)">＋ 予定</button></div>
     <div class="sub">✅ 日常点検 <span class="pill ${tst.cls==='ng'?'ng':tst.cls==='ok'?'ok':'warn'}">${esc(tst.st)}</span></div>
@@ -2187,6 +2188,13 @@ function vHome(){ // v16.4：上から「今すぐ対応すること → 今日�
   h+=fold('iss',`🛠 異常案件 <span class="muted">対応中 ${oi.length}件</span>`,`<div class="row" style="margin-bottom:6px"><label class="chkl" style="margin:0;color:var(--mut)"><input type="checkbox" ${V.allIss?'checked':''} onchange="V.allIss=this.checked;V.fold_iss=true;render()">完了も</label><span class="sp"></span>${oi.length?'<button class="btn sec sm" onclick="aiIssues()">🤖 要約</button>':''}<button class="btn sm" style="min-height:40px" onclick="editIssue(null)">＋ 追加</button></div>${list.length?(V.issMore?list:list.slice(0,10)).map(issueRow).join('')+(list.length>10?`<button class="linkbtn" style="min-height:44px" onclick="V.issMore=${!V.issMore};V.fold_iss=true;render()">${V.issMore?'▲ 10件だけ表示にする':`ほか ${list.length-10}件を表示`}</button>`:''):'<div class="empty">対応中の異常はありません</div>'}`,false,'issCard');
   return h;
 }
+/* ホーム：今月の盤の点検の残り（盤が1面も無ければ出さない）。押すと盤の点検の「次の未点検の盤」へ。表示だけ・保存しない */
+function homeBanLine(){
+  const ym=TODAY.slice(0,7),all=[];banBldgs().forEach(b=>banBoardsOf(b.id).forEach(x=>all.push(x)));
+  if(!all.length)return '';
+  const n=all.filter(x=>banPend(ym,x)).length;
+  return `<button class="btn sec wide homeban" style="min-height:48px;margin:0 0 12px;text-align:left" onclick="homeBanGo()">⚡ 今月の盤の点検　${n?`あと<b>${n}面</b>（全${all.length}面）　次の盤へ ›`:`<span class="pill ok">全${all.length}面 済み</span>`}</button>`}
+function homeBanGo(){V.banYm=TODAY.slice(0,7);V.banEdit=false;go('ban');setTimeout(banNext,60)}
 /* たたみ表示のカード（開閉は覚えておく） */
 function fold(k,title,body,openDef,id){const open=V['fold_'+k]??openDef??false;
   return `<details class="card fold" ${id?`id="${id}"`:''} ${open?'open':''} ontoggle="V['fold_${k}']=this.open"><summary><h2>${title}</h2></summary>${body}</details>`}
