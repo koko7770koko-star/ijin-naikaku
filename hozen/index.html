@@ -1951,7 +1951,7 @@ function vHome(){ // v16.4：上から「今すぐ対応すること → 今日�
   h+=`<div class="card"><div class="hd-row"><h2>📋 今日</h2><button class="btn sm" onclick="editTask(null,TODAY)">＋ 予定</button></div>
     <div class="sub">✅ 日常点検 <span class="pill ${tst.cls==='ng'?'ng':tst.cls==='ok'?'ok':'warn'}">${esc(tst.st)}</span></div>
     ${!S.daily[TODAY]||!S.daily[TODAY].done?`<div class="quick"><button class="btn ok full" onclick="quickOK(TODAY)">✓ 異常なしで記録</button><button class="btn sec" onclick="go('day',{day:TODAY})"><b>✏️</b>入力する</button>${fileBtn('<b>📷</b>写真で入力','ocrToday','sec')}</div>`:''}
-    <div class="row hqk" style="margin:8px 0 4px;gap:8px"><button class="btn sec grow" style="min-height:48px" onclick="editIssue()">🛠 異常を記録</button><button class="btn sec grow" style="min-height:48px" onclick="go('issues')">📋 異常の一覧${openIssues().length?`（${openIssues().length}）`:''}</button></div>
+    <div class="row hqk" style="margin:8px 0 4px;gap:8px"><button class="btn sec grow" style="min-height:48px" onclick="go('issues')">📋 異常の一覧${openIssues().length?`（${openIssues().length}）`:''}</button></div>
     <div class="sub">今日の予定 <span class="muted">${tt.length}件${over?`・<b style="color:var(--ng)">期限切れ ${over}件</b>`:''}</span></div>${tt.length?tt.map(taskRow).join(''):'<div class="empty">今日の予定はありません</div>'}
     ${tw.length?`<div class="sub">🧰 今日の作業 <span class="muted">${tw.length}件</span></div>${tw.map(workRow).join('')}`:''}
     <div class="sub">👥 勤務</div>${members().length?crewRow(crewDay(TODAY),'今日')+crewRow(crewDay(TOMORROW),'明日'):'<div class="muted">シフトの「メンバー」を登録すると表示されます</div>'}</div>`;
