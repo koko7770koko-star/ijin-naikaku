@@ -4300,8 +4300,12 @@ async function applyRestore(){
 }
 const csvQ=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
 const csvBlob=rows=>new Blob(['\ufeff'+rows.map(r=>r.map(csvQ).join(',')).join('\r\n')],{type:'text/csv'});
+/* 場所の4段（棟・階・電気室・盤）を取り出す：場所の id から、無ければ「A棟 › 1階 › …」の文字が登録した場所の道のりと同じときだけ（分からなければ空） */
+function loc4(id){const r={棟:'',階:'',電気室:'',盤:''};let l=locById(id),n=0;while(l&&n++<20){const k=LOC_SHOW(l.type);if(k in r&&!r[k])r[k]=l.name;l=locById(l.parent)}return r}
+function issueLoc4(i){const e=eqById(i.equipId);if(e&&locById(e.locId))return loc4(e.locId);const pl=String(i.place||'').trim();if(!pl)return loc4('');
+  const L=(S.locs||[]).filter(l=>l&&l.id);let best=null;L.forEach(l=>{const p=locPath(l.id);if(p&&(pl===p||pl.startsWith(p+' '))&&(!best||p.length>locPath(best.id).length))best=l});return loc4(best?best.id:'')}
 function exportIssuesCsv(){
-  const rows=[['発見日','内容','設置場所','設備','状態','詳細','処置・経過','完了日','確認者','状態の履歴'],...[...S.issues].sort((a,b)=>a.date.localeCompare(b.date)).map(i=>[i.date,i.title,i.place,equipName(i.equipId),i.status,i.detail,i.action,i.closed,i.confirmedBy,(i.log||[]).map(l=>`${(l.at||'').slice(0,10)} ${l.from||''}→${l.to}${l.note?'('+l.note+')':''}`).join(' / ')])];
+  const rows=[['発見日','内容','設置場所','棟','階','電気室','盤','設備','状態','詳細','処置・経過','完了日','確認者','状態の履歴'],...[...S.issues].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))).map(i=>{const q=issueLoc4(i);return [i.date,i.title,i.place,q.棟,q.階,q.電気室,q.盤,equipName(i.equipId),i.status,i.detail,i.action,i.closed,i.confirmedBy,(i.log||[]).map(l=>`${(l.at||'').slice(0,10)} ${l.from||''}→${l.to}${l.note?'('+l.note+')':''}`).join(' / ')]})];
   download(`異常案件_${TODAY}.csv`,csvBlob(rows));
 }
 function exportEquipCsv(){
