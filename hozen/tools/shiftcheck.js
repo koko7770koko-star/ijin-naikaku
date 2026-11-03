@@ -15,5 +15,15 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  const keys0=await p.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('kinmuhyo_v1')||'{}')).sort().join(','));
  await p.click('#shTable td.cell');await p.waitForTimeout(400);
  const pop=await p.evaluate(()=>{const e=document.querySelector('#pop,.pop,#popup');return !!e&&getComputedStyle(e).display!=='none'});if(!pop)bad.push('マスを押しても勤務を選ぶ窓が出ない');
+ // 入れ替え：マス→「入れ替える」→相手→確認 の4タップで、2人の変更が1回の確認で入る
+ {await p.keyboard.press('Escape');let done=false,sw={};const N=await p.evaluate(()=>document.querySelectorAll('#shTable td.cell').length);
+  for(let k=0;k<Math.min(N,80)&&!done;k++){await p.evaluate(()=>{document.getElementById('pop').classList.remove('on')});
+   await p.evaluate(k=>document.querySelectorAll('#shTable td.cell')[k].click(),k);
+   if(!await p.$('#swapBtn'))continue;await p.click('#swapBtn');const o=await p.$('#popSwap [data-sw]');if(!o)continue;
+   const d=await p.evaluate(k=>document.querySelectorAll('#shTable td.cell')[k].dataset.d,k);await o.click();await p.waitForTimeout(300);
+   sw.modal=await p.evaluate(()=>/入れ替え/.test(document.body.innerText));
+   const btn=await p.$('text=この内容で変更');if(!btn){bad.push('入れ替えの確認が出ない');done=true;break}await btn.click();await p.waitForTimeout(400);
+   const st=await p.evaluate(()=>JSON.parse(localStorage.getItem('kinmuhyo_v1')));sw.n=(st.changes||[]).length;sw.keys=Object.keys(st).filter(x=>x!=='hist').sort().join(',');done=true}
+  if(!done)console.log('入れ替えの相手がいないため確認は省略');else if(sw.modal!==undefined){if(!sw.modal)bad.push('入れ替えの確認が出ない');if(sw.n<2)bad.push('入れ替えで2人分の変更が入らない '+sw.n);if(sw.keys!==keys0)bad.push('入れ替え後に保存の項目が変わった '+sw.keys)}}
  if(process.argv[2])await p.screenshot({path:process.argv[2]});
  console.log('保存の項目:',keys0);console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
