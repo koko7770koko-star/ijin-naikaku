@@ -2068,6 +2068,14 @@ function quickDone(id){const t=S.tasks.find(x=>x.id===id);if(!t||t.status!=='予
   const prev={status:t.status,result:t.result},U={marks:[]},it=itemOf(t.title);if(it)setMark(it.id,t.date,'済',U); // 年間計画の印（●）も同時に付く。戻すときは印も戻す
   logEdit('task',id,'状態',t.status,'完了');t.status='完了';t.result=t.result||'良';storeTask(t);save();render();
   undoBar(`「${t.title}」を実施済み（●）にしました`,()=>{logEdit('task',id,'状態','完了',prev.status);t.status=prev.status;if(prev.result===undefined)delete t.result;else t.result=prev.result;for(const [fy,iid,ix,old] of U.marks.slice().reverse())if(S.marks[fy]&&S.marks[fy][iid])S.marks[fy][iid][ix]=old;save();render()})}
+// その日の ◯（予定）をまとめて ●（実施済み）に（quickDone を繰り返す形。確認1回・「元に戻す」で全部戻る）
+function dayAllDone(ds){
+  const L=S.tasks.filter(t=>t.date===ds&&t.status==='予定');if(!L.length)return;
+  if(!confirm(`${md(ds)}の ◯（予定）${L.length}件を、すべて ●（実施済み）にします。よろしいですか？`))return;
+  const R=L.map(t=>{const U={marks:[]},it=itemOf(t.title);if(it)setMark(it.id,t.date,'済',U);const prev={status:t.status,result:t.result};logEdit('task',t.id,'状態',t.status,'完了');t.status='完了';t.result=t.result||'良';storeTask(t);return {t,prev,U}});
+  save();render();
+  undoBar(`${md(ds)}の ◯ ${L.length}件を ●（実施済み）にしました`,()=>{R.forEach(({t,prev,U})=>{logEdit('task',t.id,'状態','完了',prev.status);t.status=prev.status;if(prev.result===undefined)delete t.result;else t.result=prev.result;for(const [fy,iid,ix,old] of U.marks.slice().reverse())if(S.marks[fy]&&S.marks[fy][iid])S.marks[fy][iid][ix]=old});save();render()});
+}
 function issueRow(i){
   const done=i.status==='完了';
   return `<div class="item ${done?'ok':'ng'}" onclick="editIssue('${i.id}')"><div class="dt">${md(i.date)}<small>${done?'':diffD(TODAY,i.date)+'日経過'}</small></div>
@@ -2195,8 +2203,8 @@ function vYear(){
   // 絞り込み（画面だけの状態 V.yrCat・V.yrNow。保存しない）：分類・「今月に ◯ のある項目だけ」
   const yCat=V.yrCat&&S.settings.cats.includes(V.yrCat)?V.yrCat:'',yNow=!!V.yrNow&&curIdx>=0;
   const yShow=it=>(!yCat||it.cat===yCat)&&(!yNow||(mk[it.id]||[])[curIdx]==='○');
-  const yN=S.items.filter(yShow).length;
-  h+=`<div class="card noprint" id="yrFlt" style="padding:10px"><div class="row" style="flex-wrap:nowrap"><select class="grow" aria-label="分類で絞り込む" onchange="V.yrCat=this.value;render()"><option value="">分類：すべて</option>${S.settings.cats.map(c=>`<option ${c===yCat?'selected':''}>${esc(c)}</option>`).join('')}</select>${curIdx>=0?`<button class="btn sm ${yNow?'':'sec'}" style="min-height:44px" onclick="V.yrNow=!V.yrNow;render()">${yNow?'✔ 今月の ◯ だけ':'今月の ◯ だけ'}</button>`:''}</div>${yCat||yNow?`<div class="muted" style="margin-top:6px">絞り込み中：${yN}／${S.items.length} 件を表示（記録は消えません）${yN?'':'　該当する項目がありません'} <a href="#" onclick="V.yrCat='';V.yrNow=false;render();return false">絞り込みをやめる</a></div>`:''}</div>`;
+  const yN=S.items.filter(yShow).length,yO=curIdx>=0?S.items.filter(it=>yShow(it)&&(mk[it.id]||[])[curIdx]==='○').length:0;
+  h+=`<div class="card noprint" id="yrFlt" style="padding:10px"><div class="row" style="flex-wrap:nowrap"><select class="grow" aria-label="分類で絞り込む" onchange="V.yrCat=this.value;render()"><option value="">分類：すべて</option>${S.settings.cats.map(c=>`<option ${c===yCat?'selected':''}>${esc(c)}</option>`).join('')}</select>${curIdx>=0?`<button class="btn sm ${yNow?'':'sec'}" style="min-height:44px" onclick="V.yrNow=!V.yrNow;render()">${yNow?'✔ 今月の ◯ だけ':'今月の ◯ だけ'}</button>`:''}</div>${yO?`<button class="btn sm sec wide" id="yrAllDone" style="margin-top:8px;min-height:44px" onclick="yearAllDone()">今月の ◯ ${yO}件を全部 ●（実施済み）にする</button>`:''}${yCat||yNow?`<div class="muted" style="margin-top:6px">絞り込み中：${yN}／${S.items.length} 件を表示（記録は消えません）${yN?'':'　該当する項目がありません'} <a href="#" onclick="V.yrCat='';V.yrNow=false;render();return false">絞り込みをやめる</a></div>`:''}</div>`;
   h+=`<div class="tbw"><table class="yr"><thead><tr><th class="nm">点検・作業項目</th>${MONTHS.map((m,i)=>`<th class="${i===curIdx?'cur':''}">${m}月</th>`).join('')}<th>済/予</th></tr></thead>`;
   let lastCat=null;
   for(const it of [...S.items].filter(yShow).sort((a,b)=>S.settings.cats.indexOf(a.cat)-S.settings.cats.indexOf(b.cat))){
@@ -2216,6 +2224,17 @@ function vYear(){
 // マスを押して描き直しても、見ている月の位置を動かさない（年度を替えたときと最初だけ今の月へ）
 let _yrFy=null;
 function yearToNow(){const w=$('.tbw'),c=w&&w.querySelector('th.cur');if(c)w.scrollLeft=Math.max(0,c.offsetLeft-170)}
+// 今月の列の ◯ を、表示中の項目だけまとめて ● にする（「延」は触らない。確認1回・「元に戻す」で全部戻る。保存する値は 済 のまま）
+function yearAllDone(){
+  const fy=V.fy,ci=fyOf(now.getFullYear(),now.getMonth()+1)===fy?idxOf(now.getMonth()+1):-1;if(ci<0)return;
+  const mk=S.marks[fy]||{},yCat=V.yrCat&&S.settings.cats.includes(V.yrCat)?V.yrCat:'',yNow=!!V.yrNow;
+  const L=S.items.filter(it=>(!yCat||it.cat===yCat)&&(!yNow||(mk[it.id]||[])[ci]==='○')&&(mk[it.id]||[])[ci]==='○');
+  if(!L.length)return;
+  if(!confirm(`${(ci+3)%12+1}月の ◯（予定）${L.length}件を、すべて ●（実施済み）にします。\n（「延」の印は変えません）よろしいですか？`))return;
+  const U=[];L.forEach(it=>{const r=S.marks[fy][it.id];U.push([it.id,r[ci]]);r[ci]='済'});
+  save();render();
+  undoBar(`${(ci+3)%12+1}月の ◯ ${L.length}件を ●（実施済み）にしました`,()=>{U.forEach(([id,old])=>{if(S.marks[fy]&&S.marks[fy][id])S.marks[fy][id][ci]=old})},'印');
+}
 function cycleMark(id,i,toEnki){const seq=['','○','済'];const fy=V.fy;S.marks[fy]=S.marks[fy]||{};const r=S.marks[fy][id]=S.marks[fy][id]||Array(12).fill('');const old=r[i];
   if(toEnki)r[i]=r[i]==='延'?'':'延';else r[i]=r[i]==='延'?'':seq[(seq.indexOf(r[i])+1)%3];save();render();
   // ● や 延 にした直後は、押し間違えてもすぐ戻せる（戻すと保存も元の値に）
@@ -2275,7 +2294,7 @@ function vMonth(){
     <div class="row" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div>
     <button class="btn sm sec wide" style="margin-top:8px" onclick="window.print()">🖨 この月の予定表を印刷（A4 縦）</button></div>${monthPrintHTML(y,m)}`;
   const dayT=S.tasks.filter(t=>t.date===V.sel).sort(byDate);
-  h+=`<div class="card noprint"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):'<div class="empty">予定はありません</div>'}</div>`;
+  h+=`<div class="card noprint"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.filter(t=>t.status==='予定').length>=2?`<button class="btn sec sm wide" id="dayAllDone" style="min-height:44px;margin:4px 0 8px" onclick="dayAllDone('${V.sel}')">この日の ◯ ${dayT.filter(t=>t.status==='予定').length}件を全部 ●</button>`:''}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):'<div class="empty">予定はありません</div>'}</div>`;
   const mt=tasksOf(y,m);
   h+=`<div class="card noprint"><div class="hd-row"><h2>${m}月の一覧</h2><span class="muted">完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件</span></div>${mt.length?mt.map(taskRow).join(''):'<div class="empty">この月の予定はまだありません</div>'}</div>`;
   return h;
