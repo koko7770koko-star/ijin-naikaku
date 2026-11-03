@@ -1671,7 +1671,10 @@ async function filesToPhotos(inp){
 }
 const RE_DATAURL=/^data:(image\/(jpeg|png|webp)|application\/pdf);base64,[A-Za-z0-9+/]+={0,2}$/;
 const safeSrc=v=>typeof v==='string'&&RE_DATAURL.test(v)?v:'';
-const thumbs=(ids,del)=>(ids||[]).length?`<div class="phs">${ids.map(i=>`<div class="ph"><img src="${esc(safeSrc(ph(i)))}" onclick="viewPh('${i}')">${del?`<b onclick="${del}('${i}')">×</b>`:''}</div>`).join('')}</div>`:'';
+const thumbs=(ids,del)=>(ids||[]).length?`<div class="phs">${ids.map(i=>`<div class="ph"><img src="${esc(safeSrc(ph(i)))}" loading="lazy" decoding="async" onclick="viewPh('${i}')">${del?`<b onclick="${del}('${i}')">×</b>`:''}</div>`).join('')}</div>`:'';
+/* 写真が多いとき（9枚以上）は先頭の6枚だけ出し、残りは「ほか n枚を見る」で開く（画面だけの状態。写真の記録は変えない） */
+const thumbsFold=(ids,key)=>{ids=ids||[];if(ids.length<=8||V[key])return thumbs(ids)+(ids.length>8?`<button type="button" class="btn sec sm wide" style="min-height:44px;margin-top:6px" onclick="V['${key}']=false;render()">写真をたたむ（先頭6枚だけ）</button>`:'');
+  return thumbs(ids.slice(0,6))+`<button type="button" class="btn sec sm wide" style="min-height:44px;margin-top:6px" onclick="V['${key}']=true;render()">ほか ${ids.length-6}枚の写真を見る</button>`};
 function viewPh(id){const w=document.createElement('div');w.className='phview';const im=document.createElement('img');im.src=safeSrc(PH[id]);w.appendChild(im);w.onclick=()=>w.remove();document.body.appendChild(w)}
 let TP=[]; // 編集画面で扱っている写真
 const tpBox=()=>`<div style="margin-top:10px">${fileBtn('📎 写真を添付','addTP','sec sm','image/*')}</div><div id="tp">${thumbs(TP,'rmTP')}</div>`;
@@ -3313,7 +3316,7 @@ function vEquipDetail(){
   let h=eqSummary(e,L);
   h+=`<div class="card"><div class="hd-row"><h2>${esc(e.code?e.code+'　':'')}${esc(e.name)}</h2><span><button class="btn sec sm" onclick="editEquip('','${e.id}')">複製</button> <button class="btn sec sm" onclick="editEquip('${e.id}')">編集</button></span></div>
     <div class="rep"><table>${f('設備ID',e.code)}${f('設置場所',e.place)}${f('メーカー',e.maker)}${f('型式',e.model)}${f('製造番号',e.serial)}${f('設置年月',e.installed?e.installed.replace('-','年')+'月':'')}${f('点検周期',e.cycle)}${f('備考',e.note)}</table></div>
-    ${thumbs(e.photos)}${docsList(e.docs)}</div>`;
+    ${thumbsFold(e.photos,'eqPhAll_'+e.id)}${docsList(e.docs)}</div>`;
   h+=eqFuelCard(e);
   if(e.kind==='発電機'){const t=gen12m(e,TODAY.slice(0,7));if(t)h+=`<div class="card"><details id="gen12d"><summary style="min-height:44px;display:flex;align-items:center;font-weight:700">📈 過去12か月の数字（前年同月との差）</summary>${t}<div class="muted" style="font-size:12px;margin-top:4px">${gen12mNote}</div></details></div>`}
   h+=eqKarte(e);
