@@ -2666,15 +2666,23 @@ function eqLinks(e){
 function vEquip(){
   const q=(V.eqQ||'').trim(),E=(S.equipment||[]).filter(e=>(!q||[e.code,e.name,e.place,e.maker,e.model,e.serial,e.kind,locPath(e.locId)].join(' ').includes(q))&&(!V.eqKind||e.kind===V.eqKind)&&(!V.eqImp||e.importance===V.eqImp)&&(!V.eqLoc||locDesc(V.eqLoc).has(e.locId))&&(V.eqAll||e.status!=='廃止'))
     .sort((a,b)=>(a.code||'').localeCompare(b.code||'',undefined,{numeric:true})||a.name.localeCompare(b.name));
+  const sortK=V.eqSort||'code',DLM={},OPN={};
+  if(sortK!=='code'&&sortK!=='name'){deadlines().filter(x=>x.it.equipId&&x.left!=null).forEach(x=>{if(DLM[x.it.equipId]==null||x.left<DLM[x.it.equipId])DLM[x.it.equipId]=x.left});E.forEach(e=>OPN[e.id]=eqLinks(e).issues.filter(i=>i.status!=='完了').length)}
+  if(sortK==='name')E.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
+  else if(sortK==='issue')E.sort((a,b)=>(OPN[b.id]||0)-(OPN[a.id]||0));
+  else if(sortK==='due')E.sort((a,b)=>(DLM[a.id]??1e9)-(DLM[b.id]??1e9));
+  const filt=!!(q||V.eqKind||V.eqImp||V.eqLoc);
   return `<div class="card"><div class="hd-row"><h2>🏭 設備台帳 <span class="muted">${(S.equipment||[]).length}台</span></h2><button class="btn sm" onclick="editEquip()">＋ 設備を追加</button></div>
-    <input placeholder="設備ID・名称・場所・メーカー・型式で検索" value="${esc(V.eqQ||'')}" onchange="V.eqQ=this.value;render()">
+    <input id="eqQ" type="search" enterkeyhint="search" placeholder="設備ID・名称・場所・メーカー・型式で検索" value="${esc(V.eqQ||'')}" oninput="eqSearch(this)">
     <div class="grid3" style="margin-top:6px"><select onchange="V.eqLoc=this.value;render()">${locOptions(V.eqLoc||'').replace('（指定しない）','場所：すべて')}</select><select onchange="V.eqKind=this.value;render()"><option value="">種別：すべて</option>${opts(EQ_KINDS,V.eqKind||'')}</select><select onchange="V.eqImp=this.value;render()"><option value="">重要度：すべて</option>${['A','B','C'].map(x=>`<option ${V.eqImp===x?'selected':''}>${x}</option>`).join('')}</select></div>
     <div class="row" style="margin-top:6px"><label class="chkl" style="margin:0"><input type="checkbox" ${V.eqAll?'checked':''} onchange="V.eqAll=this.checked;render()">廃止も表示</label><span class="sp"></span><button class="btn sec sm" onclick="go('locs')">🏢 階層</button><button class="btn sec sm" onclick="qrScan()">📷 QRを読む</button></div>
+    <div class="muted" style="margin-top:8px">${filt?`絞り込み：${E.length}台 ／ 全${(S.equipment||[]).length}台`:`${E.length}台を表示`}</div><div class="row" style="margin-top:4px;align-items:center">${filt?`<button class="btn sec sm" style="min-height:44px" onclick="V.eqQ='';V.eqKind='';V.eqImp='';V.eqLoc='';render()">絞り込みをやめる</button>`:''}<span class="sp"></span><select aria-label="並び順" style="width:auto" onchange="V.eqSort=this.value;render()">${[['code','ID順'],['name','名前順'],['issue','異常の多い順'],['due','期限が近い順']].map(([v,l])=>`<option value="${v}" ${sortK===v?'selected':''}>${l}</option>`).join('')}</select></div>
     <div style="margin-top:10px">${E.length?E.map(e=>{const L=eqLinks(e),open=L.issues.filter(i=>i.status!=='完了').length,dl=deadlines().filter(x=>x.it.equipId===e.id&&x.left!=null).sort((a,b)=>a.left-b.left)[0];
       return `<div class="item ${open?'ng':''}" onclick="go('equipDetail',{eq:'${e.id}',eqTab:'ov'})"><div class="dt" style="min-width:64px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}${e.importance?` <span class="pill ${e.importance==='A'?'ng':e.importance==='B'?'warn':''}">${esc(e.importance)}</span>`:''}${e.status&&e.status!=='稼働'?` <span class="pill">${esc(e.status)}</span>`:''}</div>
         <div class="meta">${esc([e.kind,locPath(e.locId)||e.place,e.maker,e.model].filter(Boolean).join('・'))}</div>
-        <div>${open?`<span class="pill ng">対応中の異常 ${open}</span>`:''}${dl?`<span class="pill ${dl.left<0?'ng':dl.left<=30?'warn':'ok'}">${esc(dl.it.name)} ${dl.left<0?(-dl.left)+'日超過':'あと'+dl.left+'日'}</span>`:''}${(e.repairs||[]).length?`<span class="pill">修理等 ${e.repairs.length}</span>`:''}</div></div></div>`}).join(''):'<div class="empty">設備がありません。「＋ 設備を追加」から登録してください。</div>'}</div></div>`;
+        <div>${open?`<span class="pill ng">対応中の異常 ${open}</span>`:''}${dl?`<span class="pill ${dl.left<0?'ng':dl.left<=30?'warn':'ok'}">${esc(dl.it.name)} ${dl.left<0?(-dl.left)+'日超過':'あと'+dl.left+'日'}</span>`:''}${(e.repairs||[]).length?`<span class="pill">修理等 ${e.repairs.length}</span>`:''}</div></div></div>`}).join(''):(filt?'<div class="empty">条件に合う設備がありません。「絞り込みをやめる」を押してください。</div>':'<div class="empty">設備がありません。「＋ 設備を追加」から登録してください。</div>')}</div></div>`;
 }
+let EQ_ST=0;function eqSearch(el){clearTimeout(EQ_ST);EQ_ST=setTimeout(()=>{V.eqQ=el.value;render();const n=document.getElementById('eqQ');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}},350)}
 function vEquipDetail(){
   const e=eqById(V.eq);if(!e)return '<div class="empty">設備が見つかりません</div>';
   const L=eqLinks(e),f=(l,v)=>v?`<tr><th style="width:96px">${l}</th><td>${esc(v)}</td></tr>`:'';
