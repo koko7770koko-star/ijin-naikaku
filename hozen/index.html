@@ -2925,7 +2925,7 @@ function vEquipDetail(){
   const e=eqById(V.eq);if(!e)return '<div class="empty">設備が見つかりません</div>';
   const L=eqLinks(e),f=(l,v)=>v?`<tr><th style="width:96px">${l}</th><td>${esc(v)}</td></tr>`:'';
   let h=eqSummary(e,L);
-  h+=`<div class="card"><div class="hd-row"><h2>${esc(e.code?e.code+'　':'')}${esc(e.name)}</h2><button class="btn sec sm" onclick="editEquip('${e.id}')">編集</button></div>
+  h+=`<div class="card"><div class="hd-row"><h2>${esc(e.code?e.code+'　':'')}${esc(e.name)}</h2><span><button class="btn sec sm" onclick="editEquip('','${e.id}')">複製</button> <button class="btn sec sm" onclick="editEquip('${e.id}')">編集</button></span></div>
     <div class="rep"><table>${f('設備ID',e.code)}${f('設置場所',e.place)}${f('メーカー',e.maker)}${f('型式',e.model)}${f('製造番号',e.serial)}${f('設置年月',e.installed?e.installed.replace('-','年')+'月':'')}${f('点検周期',e.cycle)}${f('備考',e.note)}</table></div>
     ${thumbs(e.photos)}${docsList(e.docs)}</div>`;
   h+=eqKarte(e);
@@ -2941,10 +2941,12 @@ function vEquipDetail(){
   h+=`<div class="card"><h2>🗓 作業・点検の実績</h2>${L.tasks.length?L.tasks.slice(0,30).map(taskRow).join(''):'<div class="muted">ありません</div>'}</div>`;
   return h;
 }
-function editEquip(id){
-  const e=eqById(id)||{code:'',name:'',place:'',maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[]};
+function dupEquipName(n){const m=String(n||'').match(/^(.*?)[\s　]*[（(](\d+)[）)]$/),b=m?m[1]:String(n||''),names=new Set((S.equipment||[]).map(x=>x.name));let k=m?Number(m[2])+1:2,r;do{r=`${b}（${k++}）`}while(names.has(r));return r}
+function editEquip(id,dupId){
+  const src=dupId?eqById(dupId):null;
+  const e=src?{...src,id:'',code:'',serial:'',name:dupEquipName(src.name),photos:[],docs:[],run:{...(src.run||{}),meters:[]},spec:{...(src.spec||{})}}:eqById(id)||{code:'',name:'',place:'',maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[]};
   TP=[...(e.photos||[])];TD=[...(e.docs||[])];
-  loadPhotos(TP).then(()=>openModal(`<h3>${id?'設備の編集':'設備の追加'}</h3>
+  loadPhotos(TP).then(()=>openModal(`<h3>${id?'設備の編集':src?'設備の複製':'設備の追加'}</h3>${src?`<div class="al info">「${esc(src.name)}」と同じ内容で新しい設備を作ります。<b>設備名称・設備ID・製造番号</b>を入れ直して保存してください（写真・資料・修理履歴は引き継ぎません）。</div>`:''}
     <div class="grid2"><div><label class="f">設備ID</label><input id="e_code" value="${esc(e.code)}" maxlength="30" placeholder="例：E-001"></div><div><label class="f">設置年月</label><input id="e_installed" type="month" value="${esc(e.installed)}"></div></div>
     <label class="f">設備名称 *</label><input id="e_name" value="${esc(e.name)}" maxlength="60" placeholder="例：非常用発電機 1号">
     <label class="f">設置場所</label><input id="e_place" value="${esc(e.place)}" maxlength="60">
