@@ -4303,12 +4303,22 @@ function qrSearch(q){
 }
 function addMeter(id){
   const e=eqById(id);if(!e)return;const last=(e.run.meters||[]).at(-1);
-  const v=prompt(`稼働時間計の読み値（時間）${last?`\n前回：${slash(last.date)} ${last.value}h`:''}`,'');if(v===null)return;
-  const n=Number(v);if(!String(v).trim()||!Number.isFinite(n)||n<0){toast('数値を入れてください');return}
-  if(last&&n<last.value&&!confirm('前回より小さい値です（計器の交換・リセット？）。記録すると、この前後をまたぐ期間のMTBFは算出しなくなります。このまま記録しますか？'))return;
-  const d=prompt('読んだ日（例：2026-10-31）',TODAY);if(d===null)return;if(!isDate(d)){toast('日付の形が正しくありません');return}
+  openModal(`<h3>稼働時間計を記録</h3>${last?`<div class="muted" style="margin-bottom:6px">前回：${slash(last.date)} ${last.value}h</div>`:''}
+    <label class="f">読み値（時間）*</label><input id="mt_v" type="number" inputmode="decimal" step="any" min="0" placeholder="${last?esc(last.value):'例：1250.5'}" oninput="meterChk('${id}')" style="min-height:48px">
+    <div id="mt_w" style="min-height:20px;font-size:13px;margin-top:4px"></div>
+    <label class="f">読んだ日</label><input id="mt_d" type="date" value="${TODAY}" style="min-height:48px">
+    ${modalFoot(`<button class="btn" onclick="meterSave('${id}')">記録する</button>`,'<button class="btn sec" onclick="closeModal(true)">やめる</button>')}`);
+  setTimeout(()=>{const i=$('#mt_v');if(i)i.focus()},50);
+}
+function meterChk(id){
+  const e=eqById(id),w=$('#mt_w'),i=$('#mt_v');if(!e||!w||!i)return;const last=(e.run.meters||[]).at(-1),v=i.value;
+  if(last&&String(v).trim()!==''&&Number(v)<last.value){w.innerHTML='<span style="color:var(--ng);font-weight:700">前回より小さい値です</span>（計器の交換・リセットなら記録できます。この前後をまたぐ期間のMTBFは算出しなくなります）'}else w.textContent=''}
+function meterSave(id){
+  const e=eqById(id);if(!e)return;const last=(e.run.meters||[]).at(-1),v=$('#mt_v').value,n=Number(v),d=$('#mt_d').value;
+  if(!String(v).trim()||!Number.isFinite(n)||n<0){toast('数値を入れてください');return}
+  if(!isDate(d)){toast('日付を入れてください');return}
   e.run.meters.push({date:d,value:n,by:who()});e.run.meters.sort((a,b)=>a.date.localeCompare(b.date));
-  logEdit('equip',id,'稼働時間計',last?last.value:'',n);save();render();toast('記録しました');
+  logEdit('equip',id,'稼働時間計',last?last.value:'',n);closeModal(true);save();render();toast('記録しました');
 }
 
 /* =====================================================================
