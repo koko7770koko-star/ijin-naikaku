@@ -30,6 +30,7 @@ const src=fs.readFileSync(FILE,'utf8');if(/72\s*時間/.test(src.slice(src.index
  // 設備カルテ
  await p.evaluate(()=>{closeModal(true);go('equipDetail',{eq:'g1',eqTab:'ov'})});await p.waitForTimeout(250);
  const k=await p.evaluate(()=>document.querySelector('#app').innerText);if(!/燃料と運転できる時間の目安/.test(k)||!/約15時間/.test(k))bad.push('設備カルテに目安が出ない');
+ const top=await p.evaluate(()=>{const t=[...document.querySelectorAll('#app .card')].find(c=>/いまの状況/.test(c.textContent));return t?t.innerText:''});if(!/燃料の時間\s*約15時間/.test(top))bad.push('いまの状況に燃料の時間が出ない '+top.slice(0,160));
  if(OUT)await p.screenshot({path:path.join(OUT,'fuel2-karte.png')});
  const w=await p.evaluate(()=>document.documentElement.scrollWidth);if(w>392)bad.push('横にはみ出す '+w);
  // 消費量が無い設備：出さず、案内だけ

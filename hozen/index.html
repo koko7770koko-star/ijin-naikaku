@@ -3097,9 +3097,13 @@ function eqSummary(e,L){
   return `<div class="card"><h2>📌 いまの状況</h2><div class="rep"><table>
     <tr><th style="width:96px">次の点検</th><td>${nxT}</td></tr>
     <tr><th>最後の点検</th><td>${done?slash(done):'<span class="muted">記録なし</span>'}</td></tr>
-    <tr><th>未完了の異常</th><td>${open.length?`<span class="pill ng">${open.length}件</span> ${esc(open[0].title)}${open.length>1?' ほか':''}`:'<span class="pill ok">なし</span>'}</td></tr></table></div>
+    <tr><th>未完了の異常</th><td>${open.length?`<span class="pill ng">${open.length}件</span> ${esc(open[0].title)}${open.length>1?' ほか':''}`:'<span class="pill ok">なし</span>'}</td></tr>${(()=>{const f=eqFuelLatest(e);return f&&f.f?`<tr><th>燃料の時間</th><td>約${f.f.h<10?Math.round(f.f.h*10)/10:Math.round(f.f.h)}時間 <span class="muted">（${md(f.date)} 残量 ${esc(f.v)}${esc(f.unit)}）</span></td></tr>`:''})()}</table></div>
     <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px"><button class="btn grow" id="eqRecMeas" style="min-height:44px" onclick="${e.kind==='発電機'?`genStart('${e.id}')`:`editMeas(null,{equipId:'${e.id}'})`}">${e.kind==='発電機'?'⚡ 月次点検の数字':'📏 測定を記録'}</button><button class="btn sec grow" style="min-height:44px" onclick="editIssue(null,{equipId:'${e.id}',place:${esc(JSON.stringify(e.place||''))}})">⚠ 異常を記録</button></div></div>`;
 }
+/* 最新の燃料残量の記録と目安（無ければ null） */
+function eqFuelLatest(e){if(!e||!specNum(e,['燃料消費量（L/h）','燃料消費量']))return null;
+  const L=(S.meas||[]).filter(m=>m.equipId===e.id&&isDate(m.date)).sort((a,b)=>b.date.localeCompare(a.date)||String(b.at||'').localeCompare(String(a.at||'')));
+  for(const m of L){const r=(Array.isArray(m.rows)?m.rows:[]).find(x=>isFuelRow(x)&&x.v!==''&&x.v!=null);if(r)return {date:m.date,v:r.v,unit:r.unit,f:genFuelHours(e,r.v,r.unit)}}return null}
 function eqFuelCard(e){if(!specNum(e,['燃料消費量（L/h）','燃料消費量']))return '';
   const L=(S.meas||[]).filter(m=>m.equipId===e.id).sort((a,b)=>b.date.localeCompare(a.date)||String(b.at||'').localeCompare(String(a.at||'')));
   for(const m of L){const r=(m.rows||[]).find(x=>isFuelRow(x)&&x.v!==''&&x.v!=null);if(!r)continue;const f=genFuelHours(e,r.v,r.unit);
