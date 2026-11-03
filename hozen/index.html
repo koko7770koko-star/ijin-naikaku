@@ -146,6 +146,8 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .cal .d.sel{outline:2.5px solid var(--accent);outline-offset:-1px}
 .cal .n{font-size:13px;font-weight:700;margin-bottom:2px}
 .cal .n.sun{color:#c00000}.cal .n.sat{color:var(--accent)}
+.cal .wc{display:flex;flex-wrap:wrap;gap:1px;margin-top:2px}
+.cal .wc .w{font-size:10px;font-weight:600;line-height:1.3;border-radius:3px;padding:0 2px;margin:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal .w,.cal .t{font-size:11px;font-weight:600;line-height:1.35;border-radius:4px;padding:1px 2px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal .w{text-align:center}
 .cal .w.a{background:var(--a-bg);color:var(--a)}.cal .w.b{background:var(--b-bg);color:var(--b)}.cal .w.d{color:var(--d)}.cal .w.ng{background:var(--ng-bg);color:var(--ng)}
@@ -2102,12 +2104,13 @@ function vMonth(){
     if(i>=35&&d.getMonth()!==m-1)break;
     const ts=S.tasks.filter(t=>t.date===s),cf=ts.some(t=>conflicts(t).length),o=crewDay(s);
     let crew='';
-    if(o&&st.showCrew!==false)crew+=o.A.map(n=>`<div class="w a">${esc(sn(n))}</div>`).join('')+o.B.map(n=>`<div class="w b">${esc(sn(n))}</div>`).join('');
-    if(o&&st.calDay)crew+=o.D.map(n=>`<div class="w d">${esc(sn(n))}</div>`).join('');
-    if(o&&o.lack&&st.showCrew!==false)crew+=`<div class="w ng">${esc(o.lack)}</div>`;
+    if(o&&st.showCrew!==false)crew+=o.A.map(n=>`<span class="w a">${esc(sn(n))}</span>`).join('')+o.B.map(n=>`<span class="w b">${esc(sn(n))}</span>`).join('');
+    if(o&&st.calDay)crew+=o.D.map(n=>`<span class="w d">${esc(sn(n))}</span>`).join('');
+    if(o&&o.lack&&st.showCrew!==false)crew+=`<span class="w ng">${esc(o.lack)}</span>`;
+    if(crew)crew=`<div class="wc">${crew}</div>`;
     h+=`<div class="d ${d.getMonth()!==m-1?'o':''} ${s===TODAY?'today':''} ${s===V.sel?'sel':''}" onclick="V.sel='${s}';render()">
-      <div class="n ${wd===0?'sun':wd===6?'sat':''}">${d.getDate()}${cf?' <span style="color:var(--ng)">⚠</span>':''}</div>${crew}
-      ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件 ${ts.filter(t=>t.status==='完了').length}/${ts.length}</div>`:''}</div>`;
+      <div class="n ${wd===0?'sun':wd===6?'sat':''}">${d.getDate()}${cf?' <span style="color:var(--ng)">⚠</span>':''}</div>
+      ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件 ${ts.filter(t=>t.status==='完了').length}/${ts.length}</div>`:''}${crew}</div>`;
   }
   h+=`</div><div class="tags" style="margin-top:10px">${st.showCrew!==false?'<span class="tag a" style="font-size:12px">A夜勤</span><span class="tag b" style="font-size:12px">B夜勤</span>':''}${st.calDay?'<span class="tag d" style="font-size:12px">日勤</span>':''}<span class="tag task" style="font-size:12px">点検・作業</span><span class="muted">青◯予定　緑●完了　灰＝延期　⚠＝衝突</span></div>
     <div class="row" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div></div>`;
