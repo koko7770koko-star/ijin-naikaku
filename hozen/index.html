@@ -3299,11 +3299,13 @@ function eqLinks(e){
 function vEquip(){
   const q=(V.eqQ||'').trim(),E=(S.equipment||[]).filter(e=>(!q||[e.code,e.name,e.place,e.maker,e.model,e.serial,e.kind,locPath(e.locId)].join(' ').includes(q))&&(!V.eqKind||e.kind===V.eqKind)&&(!V.eqImp||e.importance===V.eqImp)&&(!V.eqLoc||locDesc(V.eqLoc).has(e.locId))&&(V.eqAll||e.status!=='廃止'))
     .sort((a,b)=>(a.code||'').localeCompare(b.code||'',undefined,{numeric:true})||a.name.localeCompare(b.name));
-  const sortK=V.eqSort||'code',DLM={},OPN={};
+  const sortK=V.eqSort||'code',DLM={},OPN={},LD={};
   if(sortK!=='code'&&sortK!=='name'){deadlines().filter(x=>x.it.equipId&&x.left!=null).forEach(x=>{if(DLM[x.it.equipId]==null||x.left<DLM[x.it.equipId])DLM[x.it.equipId]=x.left});E.forEach(e=>OPN[e.id]=eqLinks(e).issues.filter(i=>i.status!=='完了').length)}
   if(sortK==='name')E.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
   else if(sortK==='issue')E.sort((a,b)=>(OPN[b.id]||0)-(OPN[a.id]||0));
   else if(sortK==='due')E.sort((a,b)=>(DLM[a.id]??1e9)-(DLM[b.id]??1e9));
+  else if(sortK==='loc'){const P=e=>locPath(e.locId)||e.place||'';E.sort((a,b)=>{const x=P(a),y=P(b);return (!x)-(!y)||x.localeCompare(y,'ja',{numeric:true})})}
+  else if(sortK==='last'){const DL=deadlines();E.forEach(e=>LD[e.id]=eqLastDone(e,DL));E.sort((a,b)=>LD[a.id].localeCompare(LD[b.id]))}
   const filt=!!(q||V.eqKind||V.eqImp||V.eqLoc);
   const fN=[V.eqKind,V.eqImp,V.eqLoc,V.eqAll].filter(Boolean).length,fOpen=!!(V.eqFo||fN);
   return `<div class="card"><div class="hd-row"><h2>🏭 設備台帳 <span class="muted">${(S.equipment||[]).length}台</span></h2><button class="btn sm" onclick="editEquip()">＋ 設備を追加</button></div>
@@ -3312,13 +3314,15 @@ function vEquip(){
     ${fOpen?`<div class="grid3 eqf" style="margin-top:6px"><label><span class="muted">場所</span><select onchange="V.eqLoc=this.value;render()">${locOptions(V.eqLoc||'').replace('（指定しない）','すべて')}</select></label><label><span class="muted">種別</span><select onchange="V.eqKind=this.value;render()"><option value="">すべて</option>${opts(EQ_KINDS,V.eqKind||'')}</select></label><label><span class="muted">重要度</span><select onchange="V.eqImp=this.value;render()"><option value="">すべて</option>${['A','B','C'].map(x=>`<option ${V.eqImp===x?'selected':''}>${x}</option>`).join('')}</select></label></div>
     <div class="row" style="margin-top:6px"><label class="chkl" style="margin:0"><input type="checkbox" ${V.eqAll?'checked':''} onchange="V.eqAll=this.checked;render()">廃止も表示</label></div>
     <div class="row" style="margin-top:6px"><label class="btn sec sm" style="min-height:44px">📥 CSVを読み込む<input type="file" accept=".csv,text/csv" onchange="importEquipCsv(this)"></label><span class="muted" style="font-size:12px">「CSV：設備台帳・修理履歴」で書き出したファイル</span></div>`:''}
-    <div class="row" style="margin-top:8px;align-items:center"><span class="muted">${filt?`絞り込み：${E.length}台 ／ 全${(S.equipment||[]).length}台`:`${E.length}台を表示`}</span><span class="sp"></span><select aria-label="並び順" style="width:auto" onchange="V.eqSort=this.value;render()">${[['code','ID順'],['name','名前順'],['issue','異常の多い順'],['due','期限が近い順']].map(([v,l])=>`<option value="${v}" ${sortK===v?'selected':''}>${l}</option>`).join('')}</select></div>${filt?`<div class="row" style="margin-top:4px"><button class="btn sec sm" style="min-height:44px" onclick="V.eqQ='';V.eqKind='';V.eqImp='';V.eqLoc='';render()">絞り込みをやめる</button></div>`:''}
+    <div class="row" style="margin-top:8px;align-items:center"><span class="muted">${filt?`絞り込み：${E.length}台 ／ 全${(S.equipment||[]).length}台`:`${E.length}台を表示`}</span><span class="sp"></span><select aria-label="並び順" style="width:auto" onchange="V.eqSort=this.value;render()">${[['code','ID順'],['name','名前順'],['loc','場所順'],['last','最後の点検が古い順'],['issue','異常の多い順'],['due','期限が近い順']].map(([v,l])=>`<option value="${v}" ${sortK===v?'selected':''}>${l}</option>`).join('')}</select></div>${filt?`<div class="row" style="margin-top:4px"><button class="btn sec sm" style="min-height:44px" onclick="V.eqQ='';V.eqKind='';V.eqImp='';V.eqLoc='';render()">絞り込みをやめる</button></div>`:''}
     <div style="margin-top:10px">${E.length?E.map(e=>{const L=eqLinks(e),open=L.issues.filter(i=>i.status!=='完了').length,dl=deadlines().filter(x=>x.it.equipId===e.id&&x.left!=null).sort((a,b)=>a.left-b.left)[0];
       return `<div class="item ${open?'ng':''}" onclick="go('equipDetail',{eq:'${e.id}',eqTab:'ov'})"><div class="dt" style="min-width:64px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}${e.importance?` <span class="pill ${e.importance==='A'?'ng':e.importance==='B'?'warn':''}">${esc(e.importance)}</span>`:''}${e.status&&e.status!=='稼働'?` <span class="pill">${esc(e.status)}</span>`:''}</div>
         <div class="meta">${esc([e.kind,locPath(e.locId)||e.place,e.maker,e.model].filter(Boolean).join('・'))}</div>
-        <div>${open?`<span class="pill ng">対応中の異常 ${open}</span>`:''}${dl?`<span class="pill ${dl.left<0?'ng':dl.left<=30?'warn':'ok'}">${esc(dl.it.name)} ${dl.left<0?(-dl.left)+'日超過':'あと'+dl.left+'日'}</span>`:''}${(e.repairs||[]).length?`<span class="pill">修理等 ${e.repairs.length}</span>`:''}</div></div></div>`}).join(''):(filt?'<div class="empty">条件に合う設備がありません。「絞り込みをやめる」を押してください。</div>':'<div class="empty">設備がありません。「＋ 設備を追加」から登録してください。</div>')}</div></div>`;
+        <div>${open?`<span class="pill ng">対応中の異常 ${open}</span>`:''}${dl?`<span class="pill ${dl.left<0?'ng':dl.left<=30?'warn':'ok'}">${esc(dl.it.name)} ${dl.left<0?(-dl.left)+'日超過':'あと'+dl.left+'日'}</span>`:''}${(e.repairs||[]).length?`<span class="pill">修理等 ${e.repairs.length}</span>`:''}${sortK==='last'?`<span class="pill">最後の点検 ${LD[e.id]?slash(LD[e.id]):'記録なし'}</span>`:''}</div></div></div>`}).join(''):(filt?'<div class="empty">条件に合う設備がありません。「絞り込みをやめる」を押してください。</div>':'<div class="empty">設備がありません。「＋ 設備を追加」から登録してください。</div>')}</div></div>`;
 }
 let EQ_ST=0;function eqSearch(el){clearTimeout(EQ_ST);EQ_ST=setTimeout(()=>{V.eqQ=el.value;render();const n=document.getElementById('eqQ');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}},350)}
+// 設備の最後の点検日（設備カルテの「最後の点検」と同じ数え方。記録なしは ''＝いちばん古い扱い。保存はしない）
+function eqLastDone(e,DL){const D=(DL||deadlines()).filter(x=>x.it.equipId===e.id&&x.due);return (eqLinks(e).tasks||[]).filter(t=>t.status==='完了').map(t=>t.date).sort().pop()||D.map(x=>x.ld).filter(Boolean).sort().pop()||''}
 // 設備カルテの先頭：次の点検・最後の点検・未完了の異常を1枚で（既存の記録から数えるだけ。保存はしない）
 function eqSummary(e,L){
   const D=deadlines().filter(x=>x.it.equipId===e.id&&x.due),nx=D[0];
