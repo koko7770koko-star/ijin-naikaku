@@ -1382,7 +1382,7 @@ function askBox(o){return new Promise(res=>{
   el.querySelector('[data-c]').onclick=()=>done(null);
   el.addEventListener('click',e=>{if(e.target===el)done(null)});
 })}
-const NAV_KEYS=['sel','hItem','hRange','hQ','hOnlyNg','eqQ','eqKind','eqImp','eqLoc','ry','rm','fy','day','eq','dwg','dwgVer','doc','dgTab','plTab','stTab','wkF','isF','rmode','y','m','qrSel','qrLoc','measEq','msType','libQ','wsFrom'];
+const NAV_KEYS=['sel','hItem','hRange','hQ','hOnlyNg','eqQ','eqKind','eqImp','eqLoc','ry','rm','fy','day','eq','dwg','dwgVer','doc','dgTab','plTab','stTab','wkF','isF','isQ','isB','rmode','y','m','qrSel','qrLoc','measEq','msType','libQ','wsFrom'];
 let NAV_POP=false;
 function navState(){const x={};NAV_KEYS.forEach(k=>{if(V[k]!==undefined)x[k]=V[k]});return {v:V.view,x}}
 let NAV_STACK=[];
@@ -5238,15 +5238,18 @@ function vWorkSheet(){
 function exportWorksCsv(){download(`作業指示_${TODAY}.csv`,csvBlob([['作業番号','件名','種別','状態','作業日','終了日','開始','終了','設備','担当','協力会社','停電','費用','承認'],...(S.works||[]).map(w=>[w.no,w.title,w.kind,w.status,w.date,w.endDate,w.start,w.end,w.equipIds.map(equipName).join('、'),w.staff.join('、'),w.vendor,w.outage.on?'あり':'',w.cost,w.approvals.map(a=>a.by+':'+a.act).join(' / ')])]))}
 
 /* ---------- 異常・修理（一覧） ---------- */
+let IS_ST=0;function isSearch(el){clearTimeout(IS_ST);IS_ST=setTimeout(()=>{V.isQ=el.value;render();const n=document.getElementById('isQ');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}},350)}
 function vIssues(){
-  const f=V.isF||'open',q=(V.isQ||'').trim();
-  const L=S.issues.filter(i=>(f==='all'||(f==='open'?i.status!=='完了':f==='fail'?i.failure:f==='over'?i.status!=='完了'&&i.due&&i.due<TODAY:i.urgency===f))&&(!q||[i.title,i.detail,i.action,i.cause,i.place,equipName(i.equipId)].join(' ').includes(q)))
+  const f=V.isF||'open',q=(V.isQ||'').trim(),BL=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true})),bSel=BL.find(x=>x.id===V.isB),bIds=bSel?locDesc(bSel.id):null;
+  const inB=i=>{if(!bSel)return true;const e=i.equipId&&(S.equipment||[]).find(x=>x.id===i.equipId);return !!(e&&e.locId&&bIds.has(e.locId))||String(i.place||'').includes(bSel.name)};
+  const L=S.issues.filter(i=>inB(i)&&(f==='all'||(f==='open'?i.status!=='完了':f==='fail'?i.failure:f==='over'?i.status!=='完了'&&i.due&&i.due<TODAY:i.urgency===f))&&(!q||[i.title,i.detail,i.action,i.cause,i.place,equipName(i.equipId)].join(' ').includes(q)))
     .sort((a,b)=>((a.status==='完了')-(b.status==='完了'))||(URGENCY.indexOf(a.urgency||'低')-URGENCY.indexOf(b.urgency||'低'))||b.date.localeCompare(a.date));
   const over=S.issues.filter(i=>i.status!=='完了'&&i.due&&i.due<TODAY).length;
   return `<div class="tiles">${[['open','未完了',S.issues.filter(i=>i.status!=='完了').length],['緊急','緊急',S.issues.filter(i=>i.status!=='完了'&&i.urgency==='緊急').length],['over','期限超過',over],['fail','故障（全期間）',S.issues.filter(i=>i.failure).length]]
       .map(([v,l,n])=>`<div class="tile ${(v==='緊急'||v==='over')&&n?'ng':''}" onclick="V.isF='${v}';render()"><div class="tl">${l}</div><div class="tv">${n}<small>件</small></div></div>`).join('')}</div>
     <div class="row" style="margin-bottom:8px"><select onchange="V.isF=this.value;render()">${[['open','未完了'],['all','すべて'],['over','期限超過'],['fail','故障のみ'],['緊急','緊急'],['高','高'],['中','中'],['低','低']].map(([v,l])=>`<option value="${v}" ${f===v?'selected':''}>${l}</option>`).join('')}</select>
-      <input class="grow" placeholder="キーワード（内容・原因・設備）" value="${esc(q)}" onchange="V.isQ=this.value;render()"></div>`
+      <input id="isQ" class="grow" type="search" enterkeyhint="search" placeholder="キーワード（内容・原因・設備）" value="${esc(q)}" oninput="isSearch(this)"></div>
+    ${BL.length?`<div class="row" style="margin-bottom:8px"><select aria-label="棟で絞り込む" onchange="V.isB=this.value;render()"><option value="">棟：すべて</option>${BL.map(b=>`<option value="${b.id}" ${b.id===V.isB?'selected':''}>${esc(b.name)}</option>`).join('')}</select></div>`:''}`
     +card(`🛠 異常・故障 <span class="muted">${L.length}件</span>`,L.slice(0,V.isMore||100).map(i=>issueRow(i).replace('<div class="bd">',`<div class="bd">${i.urgency?`<span class="pill ${URG_CLS[i.urgency]}">${esc(i.urgency)}</span>`:''}${i.failure?'<span class="pill ng">故障</span>':i.icat==='計画停止'?'<span class="pill plan">計画停止</span>':''}${i.due?`<span class="pill ${i.status!=='完了'&&i.due<TODAY?'ng':''}">期限 ${md(i.due)}</span>`:''}`)).join('')+(L.length>(V.isMore||100)?`<button class="btn sec wide" onclick="V.isMore=(V.isMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.isMore||100)}件）</button>`:'')||emptyBox('該当なし'),`<button class="btn sm" style="min-height:40px" onclick="editIssue()">＋ 追加</button>`)
     +`<div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sec sm grow" style="min-height:44px" onclick="exportIssuesCsv()">CSV</button><button class="btn sec sm grow" style="min-height:44px" onclick="go('diag',{dgTab:'fail'})">📉 故障分析</button><button class="btn sec sm" style="min-height:44px;flex:1 1 100%" onclick="aiSearchHist()">🔍 過去の故障・修理を検索</button></div>`;
 }
