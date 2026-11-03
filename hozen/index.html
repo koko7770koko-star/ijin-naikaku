@@ -150,6 +150,7 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .cal .d.sel{outline:2.5px solid var(--accent);outline-offset:-1px}
 .cal .n{font-size:13px;font-weight:700;margin-bottom:2px}
 .cal .n.sun{color:#c00000}.hlb{font-size:11px;font-weight:700;margin-left:2px;color:#c00000}.cal .n.sat{color:var(--accent)}
+.askov{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}.askbox{background:#fff;width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto;box-sizing:border-box}.askbox h3{margin:0 0 8px}.askmsg{white-space:pre-wrap;margin:0 0 10px;line-height:1.6}.askch{display:flex;flex-direction:column;gap:8px;margin:6px 0}.askch .btn{min-height:48px;text-align:left}.askbox input{width:100%;box-sizing:border-box}.askbox .btn:disabled{opacity:.4}@media print{.askov{display:none}}.cal .n.sat{color:var(--accent)}
 .cal .wc{display:flex;flex-wrap:wrap;gap:1px;margin-top:2px}
 .cal .wc .w{font-size:10px;font-weight:600;line-height:1.3;border-radius:3px;padding:0 2px;margin:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal .w,.cal .t{font-size:11px;font-weight:600;line-height:1.35;border-radius:4px;padding:1px 2px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1349,6 +1350,25 @@ const mnav=(label,prev,next)=>`<div class="mnav noprint"><button onclick="${prev
 const fileBtn=(label,fn,cls='sec sm',accept='image/*,application/pdf')=>`<label class="btn ${cls}">${label}<input type="file" accept="${accept}" multiple onchange="${fn}(this)"></label>`;
 const modalFoot=(right,left='')=>`<div class="row end mfoot">${left}<span class="sp"></span>${right}</div>`;
 const msgModal=(title,body)=>openModal(`<h3>${title}</h3><p>${body}</p>${modalFoot('<button class="btn" onclick="closeModal(true)">OK</button>')}`);
+/* 入力窓（prompt の代わり）：開いている入力画面を壊さないよう、別の重ね窓で出す。Promise で 文字列 / null(やめた) を返す。
+   o:{title,msg,label,value,type,inputmode,maxlength,ph,must,okLabel,danger,optional,choices:[[表示,値],…]} */
+function askBox(o){return new Promise(res=>{
+  const old=document.getElementById('askov');if(old)old.remove();
+  const el=document.createElement('div');el.id='askov';el.className='askov';
+  const done=v=>{el.remove();res(v)};
+  const ch=o.choices;
+  el.innerHTML=`<div class="askbox" role="dialog"><h3>${esc(o.title||'')}</h3>${o.msg?`<p class="askmsg">${esc(o.msg)}</p>`:''}
+    ${ch?`<div class="askch">${ch.map((c,i)=>`<button type="button" class="btn sec" data-i="${i}">${esc(c[0])}</button>`).join('')}</div>`:`<label class="f">${esc(o.label||'')}</label><input id="askin" type="${o.type||'text'}" ${o.inputmode?`inputmode="${o.inputmode}"`:''} value="${esc(o.value||'')}" maxlength="${o.maxlength||200}" placeholder="${esc(o.ph||'')}" autocomplete="off">`}
+    <div class="row end mfoot"><span class="sp"></span><button type="button" class="btn sec" data-c="1">やめる</button>${ch?'':`<button type="button" class="btn ${o.danger?'red':''}" id="askok">${esc(o.okLabel||'OK')}</button>`}</div></div>`;
+  document.body.appendChild(el);
+  const inp=el.querySelector('#askin'),ok=el.querySelector('#askok');
+  const valid=()=>o.must?inp.value.trim()===o.must:(o.optional||inp.value.trim()!=='');
+  if(inp){const sync=()=>{if(ok)ok.disabled=!valid()};inp.addEventListener('input',sync);sync();inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&valid()){e.preventDefault();done(inp.value.trim())}});setTimeout(()=>{try{inp.focus();inp.select()}catch(e){}},50)}
+  if(ok)ok.onclick=()=>{if(valid())done(inp.value.trim())};
+  el.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>done(ch[+b.dataset.i][1]));
+  el.querySelector('[data-c]').onclick=()=>done(null);
+  el.addEventListener('click',e=>{if(e.target===el)done(null)});
+})}
 const NAV_KEYS=['sel','hItem','hRange','hQ','hOnlyNg','eqQ','eqKind','eqImp','eqLoc','ry','rm','fy','day','eq','dwg','dwgVer','doc','dgTab','plTab','stTab','wkF','isF','rmode','y','m','qrSel','qrLoc','measEq','msType','libQ','wsFrom'];
 let NAV_POP=false;
 function navState(){const x={};NAV_KEYS.forEach(k=>{if(V[k]!==undefined)x[k]=V[k]});return {v:V.view,x}}
@@ -1785,7 +1805,7 @@ const GEN_KEEP=30;
 /* 復元・全消去などの前の退避。失敗したら、利用者がはっきり選ばない限り続けない */
 async function safeSnap(reason){
   if(await snapshot(reason,null,true))return true;
-  const a=prompt(`今のデータを「バックアップ履歴」に退避できませんでした（保存容量の不足などの可能性）。\nこのまま続けると、今のデータに戻せなくなるおそれがあります。先に「設定 → ファイルに保存」で今のデータを書き出してください。\n\nそれでも退避せずに続ける場合だけ「続行」と入力してください。`,'');
+  const a=await askBox({title:'履歴に退避できませんでした',msg:'今のデータを「バックアップ履歴」に退避できませんでした（保存容量の不足などの可能性）。\nこのまま続けると、今のデータに戻せなくなるおそれがあります。先に「設定 → ファイルに保存」で今のデータを書き出してください。\n\nそれでも退避せずに続ける場合だけ「続行」と入力してください。',label:'「続行」と入力',must:'続行',okLabel:'退避せずに続ける',danger:true});
   if(a==='続行'){opLog('退避できないまま続行',reason);return true}
   toast('中止しました（データは変わっていません）');return false;
 }
@@ -1823,7 +1843,7 @@ async function showGenerations(){
       <div class="row" style="margin-top:6px"><button class="btn sm" onclick="restoreGeneration('${g.key}')">${g.data.raw!=null?'この原本で戻す（修復して読込）':g.data.rawShift!=null?'シフト表をこの原本で戻す':'この時点に戻す'}</button><button class="btn sec sm" onclick="downloadGeneration('${g.key}')">ファイルに保存</button></div></div></div>`).join(''):'<div class="empty">まだありません</div>'}
     ${modalFoot('<button class="btn" onclick="closeModal(true)">閉じる</button>')}`);
 }
-async function manualSnapshot(){const m=prompt('この履歴のメモ（例：月報提出前）','手動保存');if(m===null)return;if(await snapshot('手動：'+txt(m,40),null,true)){opLog('手動で履歴に保存',txt(m,40));save();toast('履歴に保存しました');showGenerations()}}
+async function manualSnapshot(){const m=await askBox({title:'履歴に保存',label:'この履歴のメモ（例：月報提出前）',value:'手動保存',maxlength:40,okLabel:'保存',optional:true});if(m===null)return;if(await snapshot('手動：'+txt(m,40),null,true)){opLog('手動で履歴に保存',txt(m,40));save();toast('履歴に保存しました');showGenerations()}}
 async function downloadGeneration(key){
   const g=await idb('b','readonly',s=>s.get(key));if(!g)return;
   const body=g.data.raw!=null?g.data.raw:g.data.rawShift!=null?g.data.rawShift:JSON.stringify({...g.data.app,shift:g.data.shift,savedAt:g.at,generation:g.reason});
@@ -2895,11 +2915,14 @@ function setDef(kind,id,field,el){
   syncDefs();save();toast('保存しました');
   if(field==='name'||field==='req')render();
 }
-function addDef(kind){
-  const name=prompt(kind==='dnums'?'追加する数値の項目名（例：発電機 燃料残量）':'追加する確認項目の名前（例：分電盤 異臭）');if(!name||!name.trim())return;
+async function addDef(kind){
+  const name=await askBox({title:kind==='dnums'?'数値の項目を追加':'確認項目を追加',label:kind==='dnums'?'項目名（例：発電機 燃料残量）':'名前（例：分電盤 異臭）',maxlength:40,okLabel:'次へ'});if(!name||!name.trim())return;
   if(S.settings[kind].some(x=>norm(x.name)===norm(name))){toast('同じ名前の項目があります');return}
   const id=(kind==='dnums'?'n':'k')+uid();
-  const d=kind==='dnums'?{id,name:txt(name,40).trim(),short:'',unit:txt(prompt('単位（例：%、V、A、℃）')||'',10),min:'',max:'',chg:'',req:false,equip:''}:{id,name:txt(name,40).trim(),req:false,equip:''};
+  const unit=kind==='dnums'?await askBox({title:'単位',label:'単位（例：%、V、A、℃。無ければ空のまま）',maxlength:10,optional:true,okLabel:'追加'}):'';
+  if(unit===null)return;
+  if(S.settings[kind].some(x=>norm(x.name)===norm(name))){toast('同じ名前の項目があります');return}
+  const d=kind==='dnums'?{id,name:txt(name,40).trim(),short:'',unit:txt(unit||'',10),min:'',max:'',chg:'',req:false,equip:''}:{id,name:txt(name,40).trim(),req:false,equip:''};
   S.settings[kind].push(d);logLim(d.name,'項目','（なし）','追加');syncDefs();save();render();
 }
 function delDef(kind,id){
@@ -3018,7 +3041,7 @@ async function delEquip(id,force){
   delEquip0(id);
 }
 function retireEquip(id){const e=eqById(id);logEdit('equip',id,'状態',e.status||'稼働','廃止');e.status='廃止';opLog('設備の廃止',eqLabel(e));save();closeModal(true);go('equip');toast('廃止にしました（記録はすべて残っています）')}
-async function delEquipForce(id){const e=eqById(id);const a=prompt(`「${e.name}」と結びついた修理履歴などが消えます。削除する場合は「削除」と入力してください。`,'');if(a!=='削除'){toast('中止しました');return}
+async function delEquipForce(id){const e=eqById(id);const a=await askBox({title:'設備を削除',msg:`「${e.name}」と結びついた修理履歴などが消えます。削除する場合は「削除」と入力してください。`,label:'「削除」と入力',must:'削除',okLabel:'削除する',danger:true});if(a!=='削除'){toast('中止しました');return}
   if(!await safeSnap('設備の削除の前（'+e.name+'）'))return;opLog('設備の削除（記録あり）',eqLabel(e));closeModal(true);delEquip0(id,true)}
 function delEquip0(id,noConfirm){
   const e=eqById(id),L=eqLinks(e);
@@ -3618,8 +3641,8 @@ function setApiUrl(v){v=v.trim();if(v&&!/^https:\/\/[^\s]+$/.test(v)){toast('htt
 function saveKey(){const k=$('#apikey').value.trim(),m=$('#apimode').value;if(!k&&!getApiKey()){toast('APIキーを入れてください');return}
   if(!$('#apiack').checked){toast('APIキーの保存のリスクを確認して、チェックを入れてください');return}setApiKey(k||getApiKey(),m);opLog('APIキーの保存',m==='session'?'ブラウザを閉じたら消す':'この端末に保存');save();render();toast('保存しました');processQueue()}
 async function wipe(){
-  const w=prompt('スケジュールのデータ（予定・点検記録・異常案件・年間計画）をすべて消去します。シフト表・設備台帳・点検項目の設定・写真は残ります。\n消去前の状態はバックアップ履歴に残します。\n\n実行する場合は「消去」と入力してください。');
-  if(w!=='消去'){if(w!==null)toast('入力が一致しないため中止しました');return}
+  const w=await askBox({title:'スケジュールのデータを消去',msg:'スケジュールのデータ（予定・点検記録・異常案件・年間計画）をすべて消去します。シフト表・設備台帳・点検項目の設定・写真は残ります。\n消去前の状態はバックアップ履歴に残します。\n\n実行する場合は「消去」と入力してください。',label:'「消去」と入力',must:'消去',okLabel:'消去する',danger:true});
+  if(w!=='消去')return
   if(!await safeSnap('全消去の前'))return;
   /* 説明どおり、消すのは予定・点検記録・異常案件・年間計画（DEF の settings 以外の項目）だけ。設定・設備台帳・測定・作業指示・予備品・工具・図面・技術資料・場所の階層・作業標準などは残す */
   for(const k in DEF){if(k==='settings')continue;S[k]=clone(DEF[k])}
@@ -4625,7 +4648,7 @@ function measResortTpl(eq){const sel=$('#ms_tpl');if(!sel)return;const cur=sel.v
 function measTpl(id){const t=tplById(id);if(!t)return;
   if(MEAS_ROWS.some(r=>r.v!==''&&r.v!=null)&&!confirm('入力済みの測定値をひな形の項目で置き換えます。よろしいですか？'))return;
   MEAS_ROWS=t.rows.map(r=>({...r,v:''}));$('#ms_type').value=t.type;if(!$('#ms_name').value)$('#ms_name').value=t.name;measRenderRows()}
-function measAddRow(){const a=prompt('追加する項目の種類：数値なら 1、○／×なら 2','1');if(a===null)return;const ck=String(a).trim()==='2';MEAS_ROWS.push({name:'',unit:'',min:'',max:'',ck,v:''});measRenderRows()}
+async function measAddRow(){const a=await askBox({title:'追加する項目の種類',choices:[['数値（電圧・温度など）','1'],['○／×（異常なし・あり）','2']]});if(a===null)return;const ck=a==='2';MEAS_ROWS.push({name:'',unit:'',min:'',max:'',ck,v:''});measRenderRows()}
 async function measRowPhoto(inp,k){const ids=await filesToPhotos(inp);if(ids[0]){MEAS_ROWS[k].photo=ids[0];measRenderRows();MODAL_SIG='changed'}}
 function saveMeas(id){
   const g=k=>{const e=$('#ms_'+k);return e?e.value.trim():''};
@@ -5073,9 +5096,9 @@ function wkKy(){$('#wk_ky').innerHTML=WK.ky.map((k,i)=>`<div style="border-botto
 function wkKyRead(){document.querySelectorAll('#wk_ky [data-ky]').forEach(e=>{const k=WK.ky[+e.dataset.i];if(!k)return;const f=e.dataset.ky;k[f]=f==='p'||f==='s'?(e.value?+e.value:''):e.value})}
 function wkChk(kind){$('#wk_'+kind).innerHTML=WK[kind].map((c,i)=>`<label class="chkl" style="margin:3px 0"><input type="checkbox" ${c.done?'checked':''} onchange="wkTick('${kind}',${i},this)">${c.req!==false?'<span class="pill ng" style="margin:0">必須</span>':''}${esc(c.text)}${c.done?`<small class="muted">（${esc(c.by)} ${c.at?new Date(c.at).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):''}）</small>`:''}</label>`).join('')
   +`<div class="row" style="flex-wrap:nowrap;margin-top:4px"><input id="wk_add_${kind}" placeholder="項目を追加（任意の確認）" maxlength="200"><button type="button" class="btn sec sm" onclick="const v=$('#wk_add_${kind}').value.trim();if(v){WK['${kind}'].push({text:v,req:false,done:false,by:'',at:''});wkChk('${kind}')}">追加</button></div>`}
-function wkTick(kind,i,el){
+async function wkTick(kind,i,el){
   const c=WK[kind][i];
-  if(el.checked){const by=prompt(`「${c.text}」を確認した人の名前`,who());if(!by||!by.trim()){el.checked=false;return}Object.assign(c,{done:true,by:txt(by.trim(),60),at:nowIso()})}
+  if(el.checked){el.checked=false;const by=await askBox({title:'確認した人',label:`「${c.text}」を確認した人の名前`,value:who(),maxlength:60,okLabel:'確認した'});if(!by||!by.trim()){wkChk(kind);return}Object.assign(c,{done:true,by:txt(by.trim(),60),at:nowIso()})}
   else Object.assign(c,{done:false,by:'',at:''});
   wkChk(kind);
 }
@@ -5123,14 +5146,14 @@ function workActs(w){
   if(['保留','中止'].includes(s))A.push(['resume','再開']);
   return A;
 }
-function workAct(id,act){
+async function workAct(id,act){
   const st0=(workById(id)||{}).status;
   if(!['完了','中止'].includes(st0)&&!saveWork(id,true))return;
   const w=workById(id);if(!w)return;
   if(w.status!==st0){save();closeModal(true);render();toast('内容が変わったため起案に戻しました。承認を申請し直してください');editWork(id);return}
   const step=(to,actName,note,by)=>{w.hist.push({at:nowIso(),act:actName,from:w.status,to,by:by||who(),note:note||''});if(to!=='再開')w.status=to};
   const fin=()=>{opLog('作業の状態変更',`${w.no} ${w.title}：${w.hist.at(-1).act}`);save();closeModal(true);render();toast(`${w.hist.at(-1).act}を記録しました`);editWork(id);};
-  const ask=(q,req)=>{const v=prompt(q,'');if(v===null)return null;if(req&&!v.trim()){toast('入力が必要です');return null}return txt(v.trim(),500)};
+  const ask=async(q,req)=>{const v=await askBox({title:q,label:q,maxlength:500,okLabel:'記録する',optional:!req});if(v===null)return null;return txt(v.trim(),500)};
   if(act==='req'){if((w.kind==='停電作業'||w.outage.on)&&!stdOk(stdById(w.stdId))){msgModal('承認を申請できません','停電作業は、施設で承認済みの作業標準を選んで「適用」してから申請してください（作業管理 → 作業標準）。');return}step('承認待ち','承認申請')}
   else if(act==='ok'&&(w.kind==='停電作業'||w.outage.on)&&!stdOk(stdById(w.stdId))){msgModal('承認できません','停電作業は、施設で承認済みの作業標準が適用されている必要があります（作業標準が未承認・削除されています）。差し戻してください。');return}
   else if(act==='ok'||act==='back'){const nm=act==='ok'?'承認':'差し戻し';
@@ -5148,8 +5171,8 @@ function workAct(id,act){
     const pend=w.post.filter(c=>!c.done);if(!w.result.trim()){toast('作業結果を入れて保存してから完了にしてください');return}
     if(pend.length&&!confirm(`作業後チェックに未確認の項目が${pend.length}つあります。責任者が確認したうえで完了にしますか？`))return;
     signModal({title:'作業完了を記録',sub:esc(w.no+' '+w.title),byLabel:'作業完了を確認した人の名前',role:false,acts:[['完了','作業完了を記録','ok']],cancel:`closeModal(true);editWork('${id}')`,done:r=>{step('完了','作業完了',pend.length?`未確認の作業後チェック${pend.length}項目`:'',r.by);fin()}});return}
-  else if(act==='hold'||act==='stop'){const note=ask(act==='hold'?'保留の理由':'中止（取消）の理由',true);if(note===null)return;step(act==='hold'?'保留':'中止',act==='hold'?'保留':'中止',note)}
-  else if(act==='resume'){const note=ask('再開の理由',true);if(note===null)return;const prev=[...w.hist].reverse().find(h=>h.to===w.status&&h.from&&!['保留','中止'].includes(h.from));let to=prev?prev.from:'起案';if(to==='実施中')to='承認済み';w.hist.push({at:nowIso(),act:'再開',from:w.status,to,by:who(),note});w.status=to}
+  else if(act==='hold'||act==='stop'){const note=await ask(act==='hold'?'保留の理由':'中止（取消）の理由',true);if(note===null)return;step(act==='hold'?'保留':'中止',act==='hold'?'保留':'中止',note)}
+  else if(act==='resume'){const note=await ask('再開の理由',true);if(note===null)return;const prev=[...w.hist].reverse().find(h=>h.to===w.status&&h.from&&!['保留','中止'].includes(h.from));let to=prev?prev.from:'起案';if(to==='実施中')to='承認済み';w.hist.push({at:nowIso(),act:'再開',from:w.status,to,by:who(),note});w.status=to}
   fin();
 }
 function delWork(id){const i=S.works.findIndex(w=>w.id===id);if(i<0)return;const w=S.works[i];if(!confirm(`作業「${w.title}」を削除しますか？（中止にすれば記録として残せます）`))return;S.works.splice(i,1);save();closeModal(true);render();undoBar(`作業「${w.title}」を削除しました`,()=>S.works.splice(i,0,w))}
@@ -5302,10 +5325,9 @@ function stockDo(id,type,ref,from){
 function delPart(id){const i=S.parts.findIndex(p=>p.id===id),p=S.parts[i];if(!confirm(`予備品「${p.name}」を削除しますか？（入出庫履歴も一緒に外れます）`))return;const mv=S.moves.filter(m=>m.partId===id);S.parts.splice(i,1);S.moves=S.moves.filter(m=>m.partId!==id);save();closeModal(true);render();undoBar(`予備品「${p.name}」を削除しました`,()=>{S.parts.splice(i,0,p);S.moves.push(...mv)})}
 function exportStockCsv(){download(`予備品_${TODAY}.csv`,csvBlob([['品番','品名','仕様','メーカー','保管場所','在庫','単位','最低在庫','単価','使用設備'],...(S.parts||[]).map(p=>[p.code,p.name,p.spec,p.maker,p.place,p.qty,p.unit,p.min,p.price,p.equipIds.map(equipName).join('、')]),[],['日付','区分','品名','数','残','担当','関連','メモ'],...(S.moves||[]).map(m=>[m.date,m.type,partName(m.partId),m.qty,m.after,m.by,m.ref,m.note])]))}
 /* 異常案件・作業から部品を使う */
-function useParts(ref){
+async function useParts(ref){
   const P=S.parts||[];if(!P.length){toast('予備品が登録されていません');return}
-  const list=P.map((p,k)=>`${k+1}. ${p.name}（在庫${p.qty}${p.unit}）`).join('\n');
-  const v=prompt(`使った予備品の番号\n${list}`,'');if(v===null)return;const p=P[parseInt(v)-1];if(!p){toast('番号が正しくありません');return}
+  const v=await askBox({title:'使った予備品を選ぶ',choices:P.map((p,k)=>[`${p.name}（在庫 ${p.qty}${p.unit||''}）`,k])});if(v===null)return;const p=P[v];if(!p)return
   stockMove(p.id,'出庫',ref);
 }
 
