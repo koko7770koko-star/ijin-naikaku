@@ -16,6 +16,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  if(process.argv[2])await p.screenshot({path:process.argv[2]});
  await p.click('text=絞り込みをやめる');await p.waitForTimeout(300);
  const n1=await p.evaluate(()=>document.querySelectorAll('#app .item').length);if(n1<n0)bad.push('絞り込みをやめても戻らない');
+ const cut=await p.evaluate(()=>[...document.querySelectorAll('.eqf select')].filter(x=>{const t=x.options[x.selectedIndex].text;const c=document.createElement('canvas').getContext('2d');c.font=getComputedStyle(x).font;return c.measureText(t).width>x.clientWidth-28}).length);if(cut)bad.push('選んだ値の文字が切れる '+cut);
+ const lab=await p.evaluate(()=>[...document.querySelectorAll('.eqf label')].map(x=>x.firstElementChild.textContent).join());if(lab!=='場所,種別,重要度')bad.push('見出しが無い '+lab);
  const w=await p.evaluate(()=>document.documentElement.scrollWidth);if(w>392)bad.push('横にはみ出す '+w);
  for(const k of ['due','issue']){await p.selectOption('select[aria-label="並び順"]',k);await p.waitForTimeout(300)}
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
