@@ -3956,9 +3956,10 @@ function v16PhotoRefs(D,add){
 const locById=id=>(S.locs||[]).find(l=>l.id===id);
 function locPath(id){const out=[];let l=locById(id),n=0;while(l&&n<10){out.unshift(l.name);l=locById(l.parent);n++}return out.join(' › ')}
 function locOptions(cur,allowEmpty=true,exclude){
-  const kids=p=>(S.locs||[]).filter(l=>l.parent===p).sort((a,b)=>a.name.localeCompare(b.name,'ja'));
-  const out=[];const walk=(p,d)=>kids(p).forEach(l=>{if(l.id===exclude)return;out.push(`<option value="${l.id}" ${l.id===cur?'selected':''}>${'　'.repeat(d)}${esc(l.type)}：${esc(l.name)}</option>`);walk(l.id,d+1)});
-  walk('',0);return (allowEmpty?'<option value="">（指定しない）</option>':'')+out.join('');
+  // 棟→階→室→盤 の順（階は B1F→1F→2F→10F）で並べ、「A棟 › 3F › 第1電気室」の形で出す（探しやすく、同じ名前の盤も見分けられる）
+  const kids=p=>(S.locs||[]).filter(l=>l.parent===p).sort((a,b)=>(a.type==='階'&&b.type==='階'?floorKey(a.name)-floorKey(b.name):0)||a.name.localeCompare(b.name,'ja',{numeric:true}));
+  const out=[];const walk=(p,path)=>kids(p).forEach(l=>{if(l.id===exclude)return;const pa=[...path,l.name];out.push(`<option value="${l.id}" ${l.id===cur?'selected':''}>${esc(pa.join(' › '))}（${esc(l.type)}）</option>`);walk(l.id,pa)});
+  walk('',[]);return (allowEmpty?'<option value="">（指定しない）</option>':'')+out.join('');
 }
 function locDesc(id){const ids=new Set([id]);let grow=true;while(grow){grow=false;(S.locs||[]).forEach(l=>{if(l.parent&&ids.has(l.parent)&&!ids.has(l.id)){ids.add(l.id);grow=true}})}return ids}
 const yen=v=>v===''||v==null?'－':Number(v).toLocaleString('ja-JP')+'円';
