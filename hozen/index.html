@@ -143,6 +143,7 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .cal .w{text-align:center}
 .cal .w.a{background:var(--a-bg);color:var(--a)}.cal .w.b{background:var(--b-bg);color:var(--b)}.cal .w.d{color:var(--d)}.cal .w.ng{background:var(--ng-bg);color:var(--ng)}
 .cal .t{background:#e9eff6;color:#1f3b57;padding:1px 3px}
+.cal .t.ex{background:#eceff1;color:#607080;text-decoration:line-through}
 .cal .t.ok{background:var(--ok-bg);color:var(--ok)}.cal .t.ng{background:var(--ng-bg);color:var(--ng)}
 .cal .more{font-size:10px;color:var(--accent)}
 
@@ -2030,9 +2031,9 @@ function vMonth(){
     if(o&&o.lack&&st.showCrew!==false)crew+=`<div class="w ng">${esc(o.lack)}</div>`;
     h+=`<div class="d ${d.getMonth()!==m-1?'o':''} ${s===TODAY?'today':''} ${s===V.sel?'sel':''}" onclick="V.sel='${s}';render()">
       <div class="n ${wd===0?'sun':wd===6?'sat':''}">${d.getDate()}${cf?' <span style="color:var(--ng)">⚠</span>':''}</div>${crew}
-      ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':''}">${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件</div>`:''}</div>`;
+      ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件 ${ts.filter(t=>t.status==='完了').length}/${ts.length}</div>`:''}</div>`;
   }
-  h+=`</div><div class="tags" style="margin-top:10px">${st.showCrew!==false?'<span class="tag a" style="font-size:12px">A夜勤</span><span class="tag b" style="font-size:12px">B夜勤</span>':''}${st.calDay?'<span class="tag d" style="font-size:12px">日勤</span>':''}<span class="tag task" style="font-size:12px">点検・作業</span><span class="muted">⚠＝シフトと衝突</span></div>
+  h+=`</div><div class="tags" style="margin-top:10px">${st.showCrew!==false?'<span class="tag a" style="font-size:12px">A夜勤</span><span class="tag b" style="font-size:12px">B夜勤</span>':''}${st.calDay?'<span class="tag d" style="font-size:12px">日勤</span>':''}<span class="tag task" style="font-size:12px">点検・作業</span><span class="muted">青◯予定　緑●完了　灰＝延期　⚠＝衝突</span></div>
     <div class="row" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div></div>`;
   const dayT=S.tasks.filter(t=>t.date===V.sel).sort(byDate);
   h+=`<div class="card"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.length?dayT.map(taskRow).join(''):'<div class="empty">予定はありません</div>'}</div>`;
