@@ -4573,9 +4573,9 @@ function vPlan(){
 function editPlan(id){
   const p=(S.plans||[]).find(x=>x.id===id)||{title:'',equipId:'',year:fyNow()+1,kind:'更新',cost:'',status:'計画',note:''};
   openModal(`<h3>保全計画</h3><label class="f">件名 *</label><input id="pl_title" value="${esc(p.title)}" maxlength="100">
-    <div class="grid2"><div><label class="f">年度</label><input id="pl_year" type="number" value="${esc(p.year)}"></div><div><label class="f">区分</label><select id="pl_kind">${opts(['更新','改修','精密点検','診断','その他'],p.kind)}</select></div></div>
+    <div class="grid2"><div><label class="f">年度</label><input id="pl_year" type="number" inputmode="numeric" value="${esc(p.year)}"></div><div><label class="f">区分</label><select id="pl_kind">${opts(['更新','改修','精密点検','診断','その他'],p.kind)}</select></div></div>
     <label class="f">設備</label><select id="pl_eq"><option value="">（指定しない）</option>${(S.equipment||[]).map(e=>`<option value="${e.id}" ${e.id===p.equipId?'selected':''}>${esc(eqLabel(e))}</option>`).join('')}</select>
-    <div class="grid2"><div><label class="f">概算費用（円）</label><input id="pl_cost" type="number" value="${esc(p.cost)}"></div><div><label class="f">状況</label><select id="pl_status">${opts(['計画','予算化','実施済み','見送り'],p.status)}</select></div></div>
+    <div class="grid2"><div><label class="f">概算費用（円）</label><input id="pl_cost" type="number" inputmode="numeric" value="${esc(p.cost)}"></div><div><label class="f">状況</label><select id="pl_status">${opts(['計画','予算化','実施済み','見送り'],p.status)}</select></div></div>
     <label class="f">備考</label><textarea id="pl_note" maxlength="2000">${esc(p.note)}</textarea>
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="savePlan('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delPlan('${id}')">削除</button>`:'')}`);
 }
