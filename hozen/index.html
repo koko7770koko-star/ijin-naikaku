@@ -4076,9 +4076,9 @@ const tabs16=(key,list)=>`<div class="seg tabs noprint" style="margin-bottom:10p
 /* ---------- 設備の階層（施設→建屋→階→電気室→盤→機器） ---------- */
 function vLocs(){
   const L=S.locs||[],E=S.equipment||[];
-  const eqAt=id=>E.filter(e=>e.locId===id);
+  const eqAt=id=>E.filter(e=>e.locId===id),manyLocs=L.length>40;
   const kids=p=>L.filter(l=>l.parent===p).sort((a,b)=>LOC_TYPES.indexOf(a.type)-LOC_TYPES.indexOf(b.type)||(a.type==='階'?floorKey(a.name)-floorKey(b.name):0)||a.name.localeCompare(b.name,'ja',{numeric:true})); // 階は B1F→1F→2F→10F の順
-  const node=(l,d)=>{const ch=kids(l.id),eq=eqAt(l.id),all=E.filter(e=>locDesc(l.id).has(e.locId)).length,open=V['lo_'+l.id]!==false;
+  const node=(l,d)=>{const ch=kids(l.id),eq=eqAt(l.id),all=E.filter(e=>locDesc(l.id).has(e.locId)).length,open=V['lo_'+l.id]!==undefined?V['lo_'+l.id]!==false:(manyLocs?LOC_TYPES.indexOf(l.type)<LOC_TYPES.indexOf('建屋'):true); // 場所が多い（40件超）ときは、最初は施設だけ開いて建屋以下はたたむ（棟→階→電気室へ順にたどる）。押した後はその状態を覚える
     return `<div class="locn" style="margin-left:${Math.min(d,4)*10}px"><div class="item" ><div class="dt" style="min-width:0"><span class="pill">${esc(l.type)}</span></div>
       <div class="bd" onclick="V['lo_${l.id}']=${!open};render()"><div class="ti">${ch.length||eq.length?(open?'▾ ':'▸ '):''}${esc(l.name)}</div><div class="meta"><span style="white-space:nowrap">設備 ${all}台</span>${l.pos&&l.pos.floor?'・'+esc(l.pos.floor):''}${l.note?'・'+esc(l.note):''}</div></div>
       <button class="btn sec sm" onclick="editLoc('${l.id}')" aria-label="${esc(l.name)}を編集">編集</button></div>
