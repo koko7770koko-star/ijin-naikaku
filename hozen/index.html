@@ -3493,6 +3493,9 @@ function aiMonthlyNote(y,m){
   aiDraft(`${y}年${m}月 月報の所見の下書き`,`${facLabel()}の保守管理の月次報告書の「所見・特記事項」を200〜300字で書いてください。記録の事実だけを使ってください。\n\n${data}`,'所見に入れる',t=>{S.notes[key]=t;logEdit('report',key,'所見（AI下書きを採用）','',t);save();render();toast('所見に入れました。内容を確認してください')});
 }
 
+/* 空の日だけ：直近（30日以内）の特記事項のある日。写したあとは普通に直せる（入力済みは上書きしない） */
+function prevDnoteDate(ds){const d=S.dnotes||{};for(let i=1;i<=30;i++){const q=addD(ds,-i);if(d[q])return q}return ''}
+function copyPrevDnote(ds){if((S.dnotes||{})[ds])return;const q=prevDnoteDate(ds);if(!q)return;setDnote(ds,S.dnotes[q])}
 function setDnote(ds,v){S.dnotes=S.dnotes||{};const t=txt(v,2000).trim();logEdit('report',ds,'日報の特記事項',S.dnotes[ds]||'',t);if(t)S.dnotes[ds]=t;else delete S.dnotes[ds];save();render();toast('保存しました')}
 function aiDailyNote(ds){
   const r=S.daily[ds]||{},I=dailyIssues(ds);
@@ -3519,8 +3522,9 @@ function vDailyRep(){
   const iss=S.issues.filter(i=>i.date<=ds&&(!i.closed||i.closed>=ds)).sort((a,b)=>a.date.localeCompare(b.date));
   window._sh=n=>{V.day=addD(V.day,n);render()};
   return mnav(mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button></div>
-    <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">特記事項（日報に印刷）</label><button class="btn sec sm" onclick="aiDailyNote('${ds}')">🤖 下書き</button></div>
-    <textarea maxlength="2000" onchange="setDnote('${ds}',this.value)">${esc((S.dnotes||{})[ds]||'')}</textarea></div>
+    <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">特記事項（日報に印刷）</label><button class="btn sec sm" style="min-height:44px" onclick="aiDailyNote('${ds}')">🤖 下書き</button></div>
+    <textarea maxlength="2000" onchange="setDnote('${ds}',this.value)">${esc((S.dnotes||{})[ds]||'')}</textarea>
+    ${(S.dnotes||{})[ds]?'':(()=>{const q=prevDnoteDate(ds);return q?`<button class="btn sec wide" id="dnCopy" style="min-height:44px;margin-top:6px" onclick="copyPrevDnote('${ds}')">⧉ ${md(q)}の特記事項を写す（あとで直せます）</button>`:''})()}</div>
   <div class="card"><div class="rep">${repHead('電気設備 日報',`${ds.replace(/-/g,'/')}（${WD[pd(ds).getDay()]}）`)}
     <div class="sec">1. 勤務者</div><table><tr><th>A夜勤</th><td>${esc(o?o.A.join('・'):'')}</td><th>B夜勤</th><td>${esc(o?o.B.join('・'):'')}</td><th>日勤</th><td>${esc(o?o.D.join('・'):'')}</td></tr></table>
     <div class="sec">2. 日常点検（${esc(dayState(ds).st)}）</div>
