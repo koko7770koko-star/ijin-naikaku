@@ -2007,6 +2007,7 @@ function vYear(){
   h+=`<div class="card"><h2>年間点検計画 <span class="muted">${fy}/4〜${fy+1}/3</span></h2>
     <div class="row" style="margin-bottom:8px">${fileBtn('📷 写真から追加','ocrItems','sec sm grow')}<button class="btn sm grow" onclick="editItem()">＋ 項目追加</button></div>
     <button class="btn sm wide" onclick="genPlan(${fy})">⚙ 周期から予定を自動作成</button>
+    ${curIdx>=0?'<button class="btn sm sec wide" style="margin-top:8px" onclick="yearToNow()">📍 今月の列へ</button>':''}
     <div class="muted" style="margin:10px 0 8px">マスをタップ：空 → ◯予定 → ●実施済み → 空　／　長押し・右クリックで「延」（延期）　／　項目名タップで編集</div>
     <button class="btn sm wide ${_mkEnji?'':'sec'}" id="enjiBtn" onclick="toggleEnji()">${_mkEnji?'✔ 延期モード中（マスをタップ＝延期／解除）　タップで終了':'延期モード（マスをタップして「延」を付ける）'}</button>`;
   if(!S.items.length)return h+`<div class="empty">まだ項目がありません。「📷 写真から追加」で点検表や計画表を撮ると、点検名が自動で入ります。</div></div>`;
@@ -2026,6 +2027,9 @@ function vYear(){
     <div class="muted" style="margin-top:8px">前回＝カレンダーで「完了」にした日（無ければ年間計画の「済」の月末）</div></div>`;
   return h;
 }
+// マスを押して描き直しても、見ている月の位置を動かさない（年度を替えたときと最初だけ今の月へ）
+let _yrFy=null;
+function yearToNow(){const w=$('.tbw'),c=w&&w.querySelector('th.cur');if(c)w.scrollLeft=Math.max(0,c.offsetLeft-170)}
 function cycleMark(id,i,toEnki){const seq=['','○','済'];const fy=V.fy;S.marks[fy]=S.marks[fy]||{};const r=S.marks[fy][id]=S.marks[fy][id]||Array(12).fill('');
   if(toEnki)r[i]=r[i]==='延'?'':'延';else r[i]=r[i]==='延'?'':seq[(seq.indexOf(r[i])+1)%3];save();render()}
 let _mkT=null,_mkLong=false;
@@ -3644,10 +3648,11 @@ function render(){
   $('#hd').textContent=TITLES[V.view]||'';
   $('#hback').style.display=SUB_VIEWS.includes(V.view)?'inline':'none';$('#hback').onclick=()=>goBack(BACK[V.view]||'menu');
   PH_NEED=[];
+  const _yw=V.view==='year'&&_yrFy===V.fy&&$('.tbw'),_yl=_yw?_yw.scrollLeft:-1;
   $('#app').innerHTML=VIEWS[V.view]();
   updateNavBadge(true);
   if(V.view==='day')restoreDraft();
-  if(V.view==='year'){const w=$('.tbw'),c=w&&w.querySelector('th.cur');if(c)w.scrollLeft=Math.max(0,c.offsetLeft-180)}
+  if(V.view==='year'){const w=$('.tbw');if(w){if(_yl>=0)w.scrollLeft=_yl;else yearToNow();_yrFy=V.fy}}else _yrFy=null
   if(PH_NEED.length){const need=PH_NEED;PH_NEED=[];loadPhotos(need).then(ch=>{if(ch)render()})}
 }
 async function start(){
