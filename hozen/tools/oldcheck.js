@@ -21,6 +21,8 @@ const CASES=[
   p.on('dialog',d=>d.dismiss().catch(()=>{}));
   await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
   await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});
+  // 起動直後のシフト表の save()（250ms 遅れ）が入れ替えの後に走ると、入れた壊れた記録を初期値で上書きしてしまう（テスト側の競合。hz-tool-flaky3）。保存が済むまで待ってから入れ替える
+  await p.waitForFunction(()=>localStorage.getItem('kinmuhyo_v1')!=null,null,{timeout:15000}).catch(()=>{});await p.waitForTimeout(400);
   await p.evaluate(ls=>{localStorage.clear();for(const k in ls)localStorage.setItem(k,ls[k])},c.ls);await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(500);
   const views=await p.evaluate(()=>Object.keys(VIEWS));
   for(const v of views){if(v==='equipDetail')continue;await p.evaluate(v=>{try{go(v)}catch(e){console.error('go '+v+' '+e.message)}},v);await p.waitForTimeout(150)}
