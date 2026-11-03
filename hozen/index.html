@@ -813,7 +813,7 @@ html.night [style*="border:2px solid #c00000"]{border-color:var(--ng-line)!impor
   </div>
   <div class="judge" id="judge"></div>
   <div class="shper noprint" id="shPer" aria-label="一人ずつの回数"></div>
-  <div class="shhint noprint">左右・上下にスクロールできます（日付と見出しは固定）。マスを押すと勤務を選べます。名前を押すと資格と今月の勤務が見られます。<button type="button" class="btn sec sm" id="shLegBtn" style="min-height:44px;margin-left:6px;vertical-align:middle" onclick="document.querySelector('#pg-shift .legend').scrollIntoView({block:'center',behavior:'smooth'})">色の意味へ ↓</button></div>
+  <div class="shhint noprint">左右・上下にスクロールできます（日付と見出しは固定）。マスを押すと勤務を選べます。名前を押すと資格と今月の勤務が見られます。<button type="button" class="btn sec sm" id="shLegBtn" style="min-height:44px;margin-left:6px;vertical-align:middle" onclick="document.querySelector('#pg-shift .legend').scrollIntoView({block:'center',behavior:'smooth'})">色の意味へ ↓</button><button type="button" class="btn sec sm" id="shCsvBtn" style="min-height:44px;margin-left:6px;vertical-align:middle" onclick="exportShiftCsv()">CSV に書き出す</button></div>
   <div class="tblwrap"><table class="sh" id="shTable"></table></div>
   <div class="legend">
     <span><i style="background:#DDEBF7"></i>A日夜勤</span><span><i style="background:#F4B183"></i>B日夜勤</span>
@@ -1119,6 +1119,9 @@ function fillMonthSel(sel,val){
 let cur=null;
 const TODAY_N=(()=>{const n=new Date();return Math.round(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())/DAY)})();
 function shiftToToday(){const tr=document.querySelector('#shTable tr.today'),w=$('shTable').parentElement;if(!tr||!w)return false;w.scrollTop=Math.max(0,tr.offsetTop-w.querySelector('thead').offsetHeight-44);return true}
+/* 表示中の期間の勤務表（日付×人）を CSV に。シフト表の記録（kinmuhyo_v1）は読むだけ */
+function shiftCsvRows(){const a=cur,M=a.c.mem.filter(m=>m.name.trim());const idx=M.map(m=>a.c.mem.indexOf(m));return [['日付','曜日',...M.map(m=>m.name)],...a.rows.map(r=>{const t=ymd(r.d);return [t.y+'-'+String(t.m).padStart(2,'0')+'-'+String(t.d).padStart(2,'0'),WD[t.w],...idx.map(i=>a.R[i][r.d])]})]}
+window.exportShiftCsv=function(){if(!cur||!cur.rows||!cur.rows.length){toast('勤務表がまだありません');return}const R=shiftCsvRows();download(`勤務表_${S.view}.csv`,csvBlob(R));toast(`勤務表 ${R.length-1}日分を書き出しました`)};
 function renderShift(){
   fillMonthSel($('monthSel'),S.view);
   const {from,to}=periodOf(S.view);
