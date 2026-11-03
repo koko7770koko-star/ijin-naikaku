@@ -277,6 +277,9 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
 }
 
 .mprint{display:none}
+/* 紙で回覧する印の欄（担当・確認・承認）。画面には出さない */
+.pstamp{display:none}
+@media print{.phd{display:flex;justify-content:space-between;align-items:flex-start;gap:4mm}.phd>div{min-width:0}.pstamp{display:table!important;width:auto;flex:none;border-collapse:collapse;font-size:8pt}.pstamp th,.pstamp td{border:1px solid #888;padding:0;width:15mm;text-align:center}.pstamp th{background:#eef2f6;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:400;line-height:1.3}.pstamp td{height:10mm}}
 @media print{
   .mprint{display:block!important}
   .mprint h2{font-size:14pt;margin:0 0 2mm}
@@ -2227,9 +2230,10 @@ function monthPrintHTML(y,m){
     rows+=`<tr>${tds}</tr>`;
   }
   const mt=tasksOf(y,m);
-  return `<div class="card mprint"><h2>${y}年${m}月 点検予定表</h2><div class="muted">◯＝予定　●＝実施済み　（完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件）</div>
+  return `<div class="card mprint"><div class="phd"><div><h2>${y}年${m}月 点検予定表</h2><div class="muted">◯＝予定　●＝実施済み　（完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件）</div></div>${pStamp}</div>
     <table class="mpt"><thead><tr>${[...WD].map((w,i)=>`<th class="${i===0?'sun':i===6?'sat':''}">${w}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+const pStamp='<table class="pstamp"><tr><th>担当</th><th>確認</th><th>承認</th></tr><tr><td></td><td></td><td></td></tr></table>';
 function vMonth(){
   const {y,m}=V,first=new Date(y,m-1,1),start=new Date(y,m-1,1-first.getDay()),st=S.settings;
   let h=mnav(`${y}年 ${m}月`,"shiftYM('y','m',-1)","shiftYM('y','m',1)");
@@ -4279,7 +4283,7 @@ function banBlankHTML(ym,B){
     floors.forEach(f=>{const bs=banBoards(f.id);bs.forEach(x=>inF.add(x.id));line(f.name,bs)});
     line('階なし',banBoards(b.id).filter(x=>!inF.has(x.id)));
     if(!rows.length)return;
-    h+=`<div class="banprint"><h2>盤の点検表　${esc(b.name)}　${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><div class="muted">実施したら ● ／ 予定なら ◯ ／ 異常があれば右の欄に書く　点検者：＿＿＿＿＿＿　点検日：＿＿月＿＿日</div>
+    h+=`<div class="banprint"><div class="phd"><div><h2>盤の点検表　${esc(b.name)}　${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><div class="muted">実施したら ● ／ 予定なら ◯ ／ 異常があれば右の欄に書く　点検者：＿＿＿＿＿＿　点検日：＿＿月＿＿日</div></div>${pStamp}</div>
       <table class="bpt"><thead><tr><th style="width:13%">階</th><th style="width:15%">盤</th>${BAN_ITEMS.map(n=>`<th>${esc(n)}</th>`).join('')}<th style="width:20%">異常・メモ</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
   });
   return h;
