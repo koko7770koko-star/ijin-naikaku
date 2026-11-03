@@ -41,6 +41,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
  if(await p.evaluate(()=>S.issues.find(x=>x.id==='zz1').status)==='完了')bad.push('確認のチェックが無いのに完了で保存できた');
  // 書きかけ：入力→再読み込み→同じ窓を開くと「戻す」が出る・戻せる・保存すると消える（異常・工事）
  await p.evaluate(()=>{closeModal(true);editIssue('')});await p.waitForTimeout(400);
+ await p.evaluate(()=>{const m=document.getElementById('is_more');if(m)m.open=true});
  await p.fill('#is_title','書きかけの題');await p.fill('#is_detail','書きかけの詳細');await p.waitForTimeout(700);
  await p.reload();await p.waitForTimeout(1500);await p.evaluate(()=>editIssue(''));await p.waitForTimeout(500);
  if(!await p.evaluate(()=>!!document.querySelector('#dr_bar')))bad.push('異常：再読み込み後に書きかけの案内が出ない');
