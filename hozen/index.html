@@ -245,6 +245,15 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
 .rph img{width:100%;aspect-ratio:4/3;object-fit:cover;border:1px solid #999}
 .rph figcaption{font-size:9pt;text-align:center}
 
+/* 画面（スマホ）だけ：報告書の見本の上の表と承認欄を縦に並べ、日付を途中で折らない（印刷は触らない） */
+@media screen and (max-width:480px){
+  .rep .head{flex-direction:column;gap:4px;align-items:stretch}
+  .rep .head>div{width:100%}
+  .rep .head td{white-space:nowrap;overflow-wrap:normal}
+  .rep .stamp{width:100%;table-layout:fixed}
+  .rep .stamp td{width:auto}
+}
+
 @media print{
   body{background:#fff}
   header,nav,.noprint,.toast,.mask{display:none!important}
