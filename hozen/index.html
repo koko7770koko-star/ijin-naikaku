@@ -298,6 +298,7 @@ details summary{cursor:pointer;padding:4px 0}
 #shiftApp table.sh .dc{position:sticky;left:0;z-index:2;background:#fff;text-align:left;border-right:1px solid #000;min-width:62px}
 #shiftApp table.sh thead .dc{z-index:4;background:#f2f2f2}
 #shiftApp table.sh td.cell{min-width:46px;cursor:pointer;font-weight:700}
+@media screen{#shiftApp table.sh td.cell{min-width:52px;height:44px}#shiftApp .shhint{font-size:12px;color:var(--mut);margin:6px 0 4px}}
 #shiftApp td.v-A{background:#ddebf7!important}
 #shiftApp td.v-B{background:#f4b183!important}
 #shiftApp td.v-明{font-weight:400!important}
@@ -516,6 +517,7 @@ details.fold[open]>summary{margin-bottom:8px}
     <span class="period" id="periodTxt"></span>
   </div>
   <div class="judge" id="judge"></div>
+  <div class="shhint noprint">左右・上下にスクロールできます（日付と見出しは固定）。マスを押すと勤務を選べます。</div>
   <div class="tblwrap"><table class="sh" id="shTable"></table></div>
   <div class="legend">
     <span><i style="background:#DDEBF7"></i>A日夜勤</span><span><i style="background:#F4B183"></i>B日夜勤</span>
