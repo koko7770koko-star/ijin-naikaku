@@ -3893,6 +3893,12 @@ function dnoteDraftText(ds){
   if(h)a.push('日常点検：'+dayState(ds).st+(I.ng.length?'（異常：'+I.ng.join('、')+'）':'（異常なし）')+'。');
   if(ts.length)a.push('作業：'+ts.map(t=>t.title+(t.status?'['+t.status+(t.result?'・'+t.result:'')+']':'')).join('、')+'。');
   if(iss.length)a.push('異常案件：'+iss.map(i=>i.title+'['+(i.closed&&i.closed<=ds?'完了':i.status)+']').join('、')+'。');
+  /* 引き継ぎ用に1行ずつ（無い物は出さない）：未完了の異常・今夜〜明朝の作業・出ている警報 */
+  const op=iss.filter(i=>!(i.closed&&i.closed<=ds)&&i.status!=='完了');
+  if(op.length)a.push(`未完了の異常 ${op.length}件：`+op.slice(0,5).map(i=>i.title+(i.place?'（'+i.place+'）':'')).join('、')+(op.length>5?' ほか':'')+'。');
+  const wk=(S.works||[]).filter(w=>!['完了','中止'].includes(w.status)&&w.date<=addD(ds,1)&&(w.endDate||w.date)>=ds);
+  if(wk.length)a.push(`今夜〜明朝の作業 ${wk.length}件：`+wk.slice(0,5).map(w=>w.title).join('、')+(wk.length>5?' ほか':'')+'。');
+  if(ds===TODAY){const c=wxCache(),wl=c&&c.warn&&c.warn.list;if(wl&&wl.length)a.push('警報：'+wl.join('、')+'。')}
   return a.join('\n');
 }
 function addDnoteDraft(ds){const t=dnoteDraftText(ds);if(!t){toast('入れる記録がありません');return}const cur=(S.dnotes||{})[ds]||'';setDnote(ds,cur?cur+'\n'+t:t)}
