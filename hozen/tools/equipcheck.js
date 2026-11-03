@@ -28,6 +28,10 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   await p.fill('#mt_v','50');await p.click('text=記録する');await p.waitForTimeout(300);
   const ms=await p.evaluate(()=>S.equipment[0].run.meters.map(m=>Object.keys(m).sort().join()+':'+m.value));if(ms.length!==2||ms[1]!=='by,date,value:50')bad.push('保存の形が違う '+ms);}
  if(pr)bad.push('prompt/confirm が出た '+pr);
+ // 設備カルテ(概要)：名前・型式が長くても、カードのボタン(QRコード・測定記録・作業指示)の文字が2行に折れない・はみ出さない
+ await p.evaluate(()=>{S.equipment.push({id:'zzL',code:'EQ-LONG-0001-ABCDEFGHIJKLMNOP',name:'非常用発電機設備ディーゼル機関付き高圧受電盤第一系統',place:'A棟地下1階第一電気室の南側奥',maker:'',model:'MODEL-ABCDEFGHIJKLMNOPQRSTUVWXYZ-0123456789',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[],repairs:[],health:[],status:'稼働',kind:'',importance:'A',locId:''});go('equipDetail',{eq:'zzL',eqTab:'ov'})});await p.waitForTimeout(400);
+ const wr=await p.evaluate(()=>[...document.querySelectorAll('#app .row .btn.grow')].filter(x=>x.getBoundingClientRect().height>46).map(x=>x.textContent.trim()));if(wr.length)bad.push('カルテのボタンの文字が折れる '+wr);
+ await p.evaluate(()=>go('equip'));await p.waitForTimeout(300);
  const w=await p.evaluate(()=>document.documentElement.scrollWidth);if(w>392)bad.push('横にはみ出す '+w);
  for(const k of ['due','issue']){await p.selectOption('select[aria-label="並び順"]',k);await p.waitForTimeout(300)}
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();

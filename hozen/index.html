@@ -4216,7 +4216,7 @@ function eqKarte(e){
       <tr><th>種別・重要度</th><td>${esc(e.kind||'未設定')}　${e.importance?`<span class="pill ${e.importance==='A'?'ng':e.importance==='B'?'warn':''}">重要度${esc(e.importance)}</span>`:'<span class="muted">重要度 未設定</span>'}　<span class="pill ${e.status==='稼働'?'ok':'warn'}">${esc(e.status||'稼働')}</span></td></tr>
       ${sp.map(([k,v])=>`<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}
     </table></div>
-    <div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="qrOne('${e.id}')">🔳 QRコード</button><button class="btn sec sm grow" onclick="editMeas(null,{equipId:'${e.id}'})">＋ 測定記録</button><button class="btn sec sm grow" onclick="editWork(null,{equipIds:['${e.id}']})">＋ 作業指示</button></div></div>`;
+    <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn sec sm grow" style="white-space:nowrap" onclick="qrOne('${e.id}')">🔳 QRコード</button><button class="btn sec sm grow" style="white-space:nowrap" onclick="editMeas(null,{equipId:'${e.id}'})">＋ 測定記録</button><button class="btn sec sm grow" style="white-space:nowrap" onclick="editWork(null,{equipIds:['${e.id}']})">＋ 作業指示</button></div></div>`;
   // 健全度
   h+=`<div class="card"><div class="hd-row"><h2>💯 健全度</h2><button class="btn sm" onclick="rateHealth('${e.id}')">評価を記録</button></div>
     <div class="row" style="align-items:flex-start">
