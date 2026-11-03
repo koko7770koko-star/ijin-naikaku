@@ -3383,7 +3383,7 @@ function vMonthly(){
   const nextRows=[...nplan.map(it=>{const t=nT.find(t=>norm(t.title)===norm(it.name));return [it.name,t?md(t.date):'',it.who]}),...nT.filter(t=>!nplan.some(it=>norm(it.name)===norm(t.title))).map(t=>[t.title,md(t.date),t.staff])];
   const abn=[...ngT.map(t=>[t.date,t.title+(t.place?'（'+t.place+'）':''),t.result,t.note]),...ngDays.map(k=>[k,'日常点検：'+dailyIssues(k).ng.join('、'),'異常',S.daily[k].note||''])].sort((a,b)=>a[0].localeCompare(b[0]));
   let h=mnav(`${y}年 ${m}月分`,"shiftYM('ry','rm',-1)","shiftYM('ry','rm',1)");
-  h+=`<div class="card noprint"><div class="row"><span class="muted grow">内容はすべて自動で入ります。所見だけ書いて「印刷／PDF」→ PDFに保存して提出。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button></div>
+  h+=`<div class="card noprint"><div class="row"><span class="muted grow">内容はすべて自動で入ります。所見だけ書いて「印刷／PDF」→ PDFに保存して提出。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div>
     <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">所見・特記事項（この月）</label><button class="btn sec sm" onclick="aiMonthlyNote(${y},${m})">🤖 所見の下書き</button></div><textarea onchange="logEdit('report','${key}','所見',S.notes['${key}'],this.value);S.notes['${key}']=txt(this.value,4000);save();render()">${esc(S.notes[key]||'')}</textarea>
     <label class="chkl"><input type="checkbox" ${S.settings.repPhotos!==false?'checked':''} onchange="S.settings.repPhotos=this.checked;save();render()">写真を報告書に載せる</label></div>`;
   h+=`<div class="card"><div class="rep">${repHead('電気設備 保守管理 月次報告書',`${y}/${m}/1 ～ ${y}/${m}/${st.last}`)}
@@ -3422,7 +3422,7 @@ function vAnnual(){
     ${rows.map((r,i)=>r.tot?`<circle cx="${i*bw+bw/2}" cy="${yRate(r)}" r="2" fill="#c00000"/>`:'').join('')}
     <text x="-24" y="8" font-size="7" fill="#1f4e78">kW</text><text x="${W-4}" y="8" font-size="7" fill="#c00000" text-anchor="end">― 完了率</text></g></svg>`;
   let h=mnav(`${fy}年度`,'V.rfy--;render()','V.rfy++;render()');
-  h+=`<div class="card noprint"><div class="row"><span class="muted grow">年度の実績を自動で集計します。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button></div></div>`;
+  h+=`<div class="card noprint"><div class="row"><span class="muted grow">年度の実績を自動で集計します。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div></div>`;
   h+=`<div class="card"><div class="rep">${repHead('電気設備 保守管理 年次報告書',`${fy}/4/1 ～ ${fy+1}/3/31`)}
     <div class="sec">1. 月別実績</div>
     <div class="muted noprint" style="font-size:12px;margin:-2px 0 4px">表は左右にスクロールできます</div><div class="scrx"><table><tr><th>月</th><th>予定</th><th>完了</th><th>完了率</th><th>要観察/不良</th><th>点検日数</th><th>異常日数</th><th>最大需要(kW)</th><th>最高温度(℃)</th><th>計画 済/予</th></tr>
@@ -3562,7 +3562,7 @@ function vDailyRep(){
   const ds=V.day,r=S.daily[ds]||{},I=dailyIssues(ds),o=crewDay(ds),st=S.settings,ts=tasksBetween(ds,ds),h=handoverOf(ds);
   const iss=S.issues.filter(i=>i.date<=ds&&(!i.closed||i.closed>=ds)).sort((a,b)=>a.date.localeCompare(b.date));
   window._sh=n=>{V.day=addD(V.day,n);render()};
-  return mnav(mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button></div>
+  return mnav(mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div>
     <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">特記事項（日報に印刷）</label><button class="btn sec sm" style="min-height:44px" onclick="aiDailyNote('${ds}')">🤖 下書き</button></div>
     <textarea maxlength="2000" onchange="setDnote('${ds}',this.value)">${esc((S.dnotes||{})[ds]||'')}</textarea>
     ${(S.dnotes||{})[ds]?'':(()=>{const q=prevDnoteDate(ds);return q?`<button class="btn sec wide" id="dnCopy" style="min-height:44px;margin-top:6px" onclick="copyPrevDnote('${ds}')">⧉ ${md(q)}の特記事項を写す（あとで直せます）</button>`:''})()}</div>
@@ -4296,6 +4296,21 @@ function banBlankHTML(ym,B){
   });
   return h;
 }
+/* 印刷する内容を文字にして、端末の「共有」（メール・LINE など）で送る。共有が使えない端末・画面では、コピー→ファイル保存の順に落ちる。通信先は増やさない */
+function reportText(){
+  const root=$('#app');if(!root)return '';const c=root.cloneNode(true);
+  c.querySelectorAll('.noprint,script,style,button,input,select,textarea,svg,img,canvas').forEach(e=>e.remove());
+  c.querySelectorAll('tr').forEach(tr=>{tr.replaceWith(Object.assign(document.createElement('div'),{textContent:[...tr.children].map(x=>x.textContent.replace(/\s+/g,' ').trim()).filter(Boolean).join(' | ')}))});
+  c.querySelectorAll('h1,h2,h3,p,div,li,br').forEach(e=>e.insertAdjacentText('afterend','\n'));
+  return c.textContent.split('\n').map(l=>l.trim()).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+async function shareReport(){
+  const text=reportText();if(!text){toast('共有できる内容がありません');return}
+  const title=(TITLES[V.view]||'報告書')+'　'+TODAY;
+  try{if(navigator.share){await navigator.share({title,text});return}}catch(e){if(e&&e.name==='AbortError')return}
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(title+'\n\n'+text);toast('文字をコピーしました（メールやLINEに貼り付けて送れます）');return}}catch(e){}
+  if(window.hzSave){const ok=await window.hzSave(`${title}.txt`.replace(/[\\/:*?"<>|\s]/g,'_'),new Blob([title+'\n\n'+text],{type:'text/plain;charset=utf-8'}));if(ok)toast('文字のファイルとして保存しました')}
+}
 function banPrintBlank(){
   if(!(S.locs||[]).some(l=>l.type==='盤')){toast('盤がまだありません。先に盤を足してください');return}
   document.body.classList.add('bbp');const off=()=>{document.body.classList.remove('bbp');window.removeEventListener('afterprint',off)};
@@ -4983,7 +4998,7 @@ function delPlan(id){const i=S.plans.findIndex(x=>x.id===id);if(i<0)return;const
 
 /* ---------- 報告書（点検報告書・修理報告書・作業報告書） ---------- */
 function vPrintDoc(){
-  const d=V.doc||{},head=t=>`<div class="noprint row" style="margin-bottom:8px"><button class="btn grow" onclick="window.print()">🖨 印刷・PDF</button><button class="btn sec" onclick="history.length;go(${d.t==='meas'?"'diag',{dgTab:'meas'}":d.t==='work'?"'works'":"'issues'"})">戻る</button></div><div class="rep"><h1 style="text-align:center;font-size:20px;margin:6px 0">${t}</h1><div style="text-align:right">${esc(S.settings.name)} ${esc(S.settings.dept)}</div>`;
+  const d=V.doc||{},head=t=>`<div class="noprint row" style="margin-bottom:8px"><button class="btn grow" onclick="window.print()">🖨 印刷・PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button><button class="btn sec" onclick="history.length;go(${d.t==='meas'?"'diag',{dgTab:'meas'}":d.t==='work'?"'works'":"'issues'"})">戻る</button></div><div class="rep"><h1 style="text-align:center;font-size:20px;margin:6px 0">${t}</h1><div style="text-align:right">${esc(S.settings.name)} ${esc(S.settings.dept)}</div>`;
   const sign=`<table style="margin-top:14px;width:auto;margin-left:auto"><tr><th>作成</th><th>確認</th><th>承認</th></tr><tr><td style="height:48px;width:70px"></td><td style="width:70px"></td><td style="width:70px"></td></tr></table></div>`;
   if(d.t==='meas'){const m=(S.meas||[]).find(x=>x.id===d.id);if(!m)return emptyBox('記録がありません');const e=eqById(m.equipId),j=measJudge(m);
     return head('点 検 報 告 書')+`<table><tr><th style="width:90px">測定日</th><td>${slash(m.date)}</td><th style="width:80px">測定者</th><td>${esc(m.by)}</td></tr><tr><th>設備</th><td colspan="3">${esc(eqLabel(e))}${e&&e.locId?'（'+esc(locPath(e.locId))+'）':''}</td></tr><tr><th>点検名</th><td colspan="3">${esc(m.name||m.type)}</td></tr>
@@ -5197,7 +5212,7 @@ function vWorks(){
 }
 function vWorkSheet(){
   const from=V.wsFrom||TODAY,to=addD(from,13),L=(S.works||[]).filter(w=>w.date<=to&&(w.endDate||w.date)>=from&&w.status!=='中止').sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
-  return `<div class="noprint row" style="margin-bottom:8px;flex-wrap:wrap;gap:6px"><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=addD('${from}',-14);render()">‹ 前の2週</button><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=TODAY;render()">今日</button><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=addD('${from}',14);render()">次の2週 ›</button><input type="date" class="grow" value="${from}" onchange="if(this.value){V.wsFrom=this.value;render()}"><button class="btn grow" style="min-height:44px" onclick="window.print()">🖨 印刷</button></div>
+  return `<div class="noprint row" style="margin-bottom:8px;flex-wrap:wrap;gap:6px"><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=addD('${from}',-14);render()">‹ 前の2週</button><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=TODAY;render()">今日</button><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=addD('${from}',14);render()">次の2週 ›</button><input type="date" class="grow" value="${from}" onchange="if(this.value){V.wsFrom=this.value;render()}"><button class="btn grow" style="min-height:44px" onclick="window.print()">🖨 印刷</button><button class="btn sec" style="min-height:44px" onclick="shareReport()">📤 共有</button></div>
   <div class="rep"><h1 style="text-align:center;font-size:18px">作業予定表（${slash(from)}〜${slash(to)}）</h1><table><thead><tr><th>日付</th><th>時間</th><th>作業</th><th>担当・協力会社</th><th>勤務</th><th>状態</th></tr></thead><tbody>
   ${L.map(w=>{const o=crewDay(w.date);return `<tr><td style="white-space:nowrap">${md(w.date)}${holName(w.date)?'<small class="hlb">祝</small>':''}${w.endDate&&w.endDate!==w.date?'〜<br>'+md(w.endDate):''}</td><td style="white-space:nowrap">${esc(w.start)}〜<br>${esc(w.end)}</td><td>${esc(w.no)} ${esc(w.title)}${w.outage.on?'【停電】':''}</td><td>${w.staff.map(n=>`<span style="white-space:nowrap">${esc(n)}</span>`).join('、')}${w.vendor?'<br>'+esc(w.vendor):''}</td><td style="font-size:11px">${o?`<span style="white-space:nowrap">A:${esc(o.A.join('・'))}</span><br><span style="white-space:nowrap">B:${esc(o.B.join('・'))}</span>`:''}</td><td style="white-space:nowrap">${esc(w.status)}</td></tr>`}).join('')||'<tr><td colspan="6">予定はありません</td></tr>'}</tbody></table></div>${L.length?'':`<div class="noprint card"><div class="muted" style="margin-bottom:8px">この2週間に作業の予定はありません。前後の2週間を見るか、予定を足してください。</div><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sec sm grow" style="min-height:44px" onclick="go('month')">📅 カレンダーで予定を足す</button><button class="btn sec sm grow" style="min-height:44px" onclick="go('works')">📝 作業指示書を作る</button></div></div>`}`;
 }
