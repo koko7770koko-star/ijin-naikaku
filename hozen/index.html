@@ -3906,23 +3906,25 @@ function vDailyRep(){
   const ds=V.day,r=S.daily[ds]||{},I=dailyIssues(ds),o=crewDay(ds),st=S.settings,ts=tasksBetween(ds,ds),h=handoverOf(ds);
   const iss=S.issues.filter(i=>i.date<=ds&&(!i.closed||i.closed>=ds)).sort((a,b)=>a.date.localeCompare(b.date));
   window._sh=n=>{V.day=addD(V.day,n);render()};
+  const emptyDay=!Object.keys(r).length&&!ts.length&&!(S.meas||[]).some(m=>m.date===ds)&&!h&&!(S.dnotes||{})[ds],AUTO='<span class="muted" style="font-weight:400;font-size:11px">（記録から自動）</span>',HAND='<span class="muted" style="font-weight:400;font-size:11px">（手で入力）</span>';
   return mnav(mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div>
     <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">特記事項（日報に印刷）</label><button class="btn sec sm" style="min-height:44px" onclick="aiDailyNote('${ds}')">🤖 下書き</button></div>
     <button class="btn sec wide" id="dnDraft" style="min-height:44px;margin-top:6px" onclick="addDnoteDraft('${ds}')">📝 今日の記録から入れる（ネット不要・あとで直せます）</button>
     <textarea maxlength="2000" onchange="setDnote('${ds}',this.value)">${esc((S.dnotes||{})[ds]||'')}</textarea>
     ${(S.dnotes||{})[ds]?'':(()=>{const q=prevDnoteDate(ds);return q?`<button class="btn sec wide" id="dnCopy" style="min-height:44px;margin-top:6px" onclick="copyPrevDnote('${ds}')">⧉ ${md(q)}の特記事項を写す（あとで直せます）</button>`:''})()}</div>
   <div class="card"><div class="rep">${repHead('電気設備 日報',`${ds.replace(/-/g,'/')}（${WD[pd(ds).getDay()]}）`)}
-    <div class="sec">1. 勤務者</div><table><tr><th>A夜勤</th><td>${esc(o?o.A.join('・'):'')}</td><th>B夜勤</th><td>${esc(o?o.B.join('・'):'')}</td><th>日勤</th><td>${esc(o?o.D.join('・'):'')}</td></tr></table>
-    <div class="sec">2. 日常点検（${esc(dayState(ds).st)}）</div>
+    ${emptyDay?'<div class="obs dayempty" style="margin:6px 0;font-weight:700">この日の記録はありません（日常点検・作業・測定・申し送り・特記事項が、まだ入っていません）</div>':''}
+    <div class="sec">1. 勤務者 ${AUTO}</div><table><tr><th>A夜勤</th><td>${esc(o?o.A.join('・'):'')}</td><th>B夜勤</th><td>${esc(o?o.B.join('・'):'')}</td><th>日勤</th><td>${esc(o?o.D.join('・'):'')}</td></tr></table>
+    <div class="sec">2. 日常点検（${esc(dayState(ds).st)}） ${AUTO}</div>
     <table><tr><th>項目</th><th>値</th><th>管理値</th><th>前回比</th></tr>${numDefs().map(n=>{const v=r[n.id],o2=outOfRange(n,v),p=prevVal(ds,n.id);return `<tr><td>${esc(n.name)}</td><td class="c ${o2?'red':''}">${v==null?'－':esc(v)+esc(n.unit)}</td><td class="c">${[n.min!==''&&n.min!=null?n.min+'以上':'',n.max!==''&&n.max!=null?n.max+'以下':''].filter(Boolean).join('・')||'－'}</td><td class="c">${v!=null&&p?esc(diffText(v,p,'')):'－'}</td></tr>`}).join('')}</table>
     <div class="repscroll"><table><tr>${chkDefs().map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr><tr>${chkDefs().map(c=>{const v=(r.c||{})[c.id];return `<td class="c ${v==='×'?'red':''}">${esc(v||'－')}</td>`}).join('')}</tr></table></div>
     <table><tr><th style="width:72px">点検者</th><td>${esc(r.by||'')}</td><th style="width:72px">完了</th><td>${r.done?esc(r.done==='移行'?'記録済':new Date(r.done).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})):'未完了'}</td></tr>${r.note?`<tr><th>備考</th><td colspan="3">${esc(r.note)}</td></tr>`:''}</table>
     ${I.ng.length?`<div class="red">異常：${esc(I.ng.join('、'))}</div>`:''}
-    <div class="sec">3. 作業・点検の実績</div>${repTable('<th>時刻</th><th>作業内容</th><th>設備・場所</th><th>担当</th><th>状態</th><th>結果</th>',ts.map(t=>`<tr><td class="c">${esc(t.time)}</td><td>${esc(t.title)}</td><td>${esc(t.place)}</td><td class="c">${esc(t.staff)}</td><td class="c">${esc(t.status)}</td><td class="c ${isNG(t)?'red':''}">${esc(t.result)}</td></tr>`),'なし')}
-    <div class="sec">4. 測定記録・盤の点検</div>${repMeasBan(ds)}
-    <div class="sec">5. 異常案件（この日時点）</div>${repTable('<th>発見日</th><th>内容</th><th>状態</th><th>処置</th>',iss.map(i=>`<tr><td class="c">${md(i.date)}</td><td>${esc(i.title)}${i.place?'（'+esc(i.place)+'）':''}</td><td class="c">${esc(i.closed&&i.closed<=ds?'完了':i.status)}</td><td>${esc(i.action)}</td></tr>`),'なし')}
-    <div class="sec">6. 申し送り</div><table><tr><td class="obs">${esc(h?h.text:'')}</td></tr></table>
-    <div class="sec">7. 特記事項</div><table><tr><td class="obs">${esc((S.dnotes||{})[ds]||'')}</td></tr></table>
+    <div class="sec">3. 作業・点検の実績 ${AUTO}</div>${repTable('<th>時刻</th><th>作業内容</th><th>設備・場所</th><th>担当</th><th>状態</th><th>結果</th>',ts.map(t=>`<tr><td class="c">${esc(t.time)}</td><td>${esc(t.title)}</td><td>${esc(t.place)}</td><td class="c">${esc(t.staff)}</td><td class="c">${esc(t.status)}</td><td class="c ${isNG(t)?'red':''}">${esc(t.result)}</td></tr>`),'なし')}
+    <div class="sec">4. 測定記録・盤の点検 ${AUTO}</div>${repMeasBan(ds)}
+    <div class="sec">5. 異常案件（この日時点） ${AUTO}</div>${repTable('<th>発見日</th><th>内容</th><th>状態</th><th>処置</th>',iss.map(i=>`<tr><td class="c">${md(i.date)}</td><td>${esc(i.title)}${i.place?'（'+esc(i.place)+'）':''}</td><td class="c">${esc(i.closed&&i.closed<=ds?'完了':i.status)}</td><td>${esc(i.action)}</td></tr>`),'なし')}
+    <div class="sec">6. 申し送り ${HAND}</div><table><tr><td class="obs">${esc(h?h.text:'')}</td></tr></table>
+    <div class="sec">7. 特記事項 ${HAND}</div><table><tr><td class="obs">${esc((S.dnotes||{})[ds]||'')}</td></tr></table>
   </div></div>`;
 }
 
