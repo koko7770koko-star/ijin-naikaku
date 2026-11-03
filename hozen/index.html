@@ -5354,7 +5354,7 @@ function workRow(w){
 function workChecks(w){
   const R=[],add=(lv,t)=>R.push({lv,t});
   if(w.needN&&w.staff.length+(w.vendorStaff?w.vendorStaff.split(/[、,・\s]+/).filter(Boolean).length:0)<w.needN)add('ng',`必要人数 ${w.needN}人に対して担当者が ${w.staff.length}人${w.vendorStaff?'（協力会社を含めても不足）':''}`);
-  w.needQuals.forEach(q=>{const has=w.staff.filter(n=>(S.quals[n]||[]).includes(q));if(!has.length)add('ng',`必要資格「${q}」を持つ担当者がいません（資格の登録：人員・資格）`)});
+  (w.needQuals||[]).forEach(q=>{const has=(w.staff||[]).filter(n=>(S.quals[n]||[]).includes(q));if(!has.length)add('ng',`必要資格「${q}」を持つ担当者がいません（資格の登録：人員・資格）`)});
   const o=crewDay(w.date);
   if(o&&o.all)w.staff.forEach(n=>{const v=o.all[n];if(v&&['明','公休','有給','希望休','連続NG','明けNG'].includes(v))add('ng',`${n}さんは勤務表で${md(w.date)}が「${v}」です`)});
   if(w.endDate&&w.endDate>w.date&&o)for(let d=addD(w.date,1);d<=w.endDate&&d<=addD(w.date,14);d=addD(d,1)){const x=crewDay(d);if(x&&x.all)w.staff.forEach(n=>{const v=x.all[n];if(v&&['明','公休','有給','希望休'].includes(v))add('warn',`${n}さんは${md(d)}が「${v}」です`)})}

@@ -12,7 +12,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   S.meas=[{id:'m1',equipId:'eqp',date:TODAY,by:'',name:'',type:'その他',cond:{},rows:[{name:'電圧',v:'',unit:'V',min:'',max:'',ck:false}],note:'',photos:[]},
           {id:'m2',equipId:'eqp',date:TODAY,by:'確認者',name:'月次点検',type:'絶縁抵抗',cond:{tplCond:LONG,temp:'20',hum:'50',weather:'晴'},rows:[{name:'電圧',v:200,unit:'V',min:190,max:210,ck:false},{name:'外観',v:'○',unit:'',min:'',max:'',ck:true}],note:LONG,photos:[]}];
   S.issues=[{id:'i1',date:TODAY,status:'対応中',title:'確認',place:'',equipId:'',detail:'',action:'',photos:[],approvals:[]},{id:'i2',date:TODAY,status:'完了',closed:TODAY,title:LONG,place:'',equipId:'eqp',detail:LONG,action:LONG,cause:LONG,prevent:LONG,urgency:'高',downH:2,cost:1000,photos:[],approvals:[]}];
-  const w=(id,x)=>Object.assign({id,no:'W-'+id,title:'作業',kind:'点検',status:'予定',date:TODAY,endDate:'',start:'',end:'',place:'',equipIds:[],staff:[],vendor:'',vendorStaff:'',content:'',result:'',pre:[],post:[],outage:{on:false},approvals:[],hist:[],photos:[],checks:{},cost:'',resp:''},x);
+  const w=(id,x)=>Object.assign({id,no:'W-'+id,title:'作業',kind:'点検',status:'予定',date:TODAY,endDate:'',start:'',end:'',place:'',equipIds:[],staff:[],vendor:'',vendorStaff:'',content:'',result:'',pre:[],post:[],outage:{on:false},approvals:[],hist:[],photos:[],checks:{},cost:'',resp:'',needQuals:[],needN:0},x);
   S.works=[w('w1',{}),w('w2',{title:LONG,content:LONG,result:LONG,place:LONG,staff:['職員甲','職員乙'],vendor:'○○電気工事株式会社',pre:[{text:LONG,done:true,by:'甲'}],post:[{text:'確認',done:false}]})];
   return ['meas:m1','meas:m2','issue:i1','issue:i2','work:w1','work:w2']},LONG);
  for(const k of ids){const [t,id]=k.split(':');
