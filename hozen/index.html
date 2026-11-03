@@ -3100,6 +3100,11 @@ function eqSummary(e,L){
     <tr><th>未完了の異常</th><td>${open.length?`<span class="pill ng">${open.length}件</span> ${esc(open[0].title)}${open.length>1?' ほか':''}`:'<span class="pill ok">なし</span>'}</td></tr></table></div>
     <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px"><button class="btn grow" id="eqRecMeas" style="min-height:44px" onclick="${e.kind==='発電機'?`genStart('${e.id}')`:`editMeas(null,{equipId:'${e.id}'})`}">${e.kind==='発電機'?'⚡ 月次点検の数字':'📏 測定を記録'}</button><button class="btn sec grow" style="min-height:44px" onclick="editIssue(null,{equipId:'${e.id}',place:${esc(JSON.stringify(e.place||''))}})">⚠ 異常を記録</button></div></div>`;
 }
+function eqFuelCard(e){if(!specNum(e,['燃料消費量（L/h）','燃料消費量']))return '';
+  const L=(S.meas||[]).filter(m=>m.equipId===e.id).sort((a,b)=>b.date.localeCompare(a.date)||String(b.at||'').localeCompare(String(a.at||'')));
+  for(const m of L){const r=(m.rows||[]).find(x=>isFuelRow(x)&&x.v!==''&&x.v!=null);if(!r)continue;const f=genFuelHours(e,r.v,r.unit);
+    return `<div class="card"><h2>⛽ 燃料と運転できる時間の目安</h2><div>${slash(m.date)} の燃料残量 <b>${esc(r.v)}${esc(r.unit)}</b></div>${f?`<div style="margin-top:4px;font-size:17px"><b>${esc(fuelText(f))}</b></div>`:`<div class="muted" style="margin-top:4px">${r.unit==='%'?'仕様に「燃料タンク容量」を入れると目安が出ます。':'残量の単位が % か L のときに目安が出ます。'}</div>`}<div class="muted" style="font-size:12px;margin-top:4px">仕様の燃料消費量（${specNum(e,['燃料消費量（L/h）','燃料消費量'])}L/h）から出した目安です。実際の運転時間は負荷で変わります。</div></div>`}
+  return ''}
 function vEquipDetail(){
   const e=eqById(V.eq);if(!e)return '<div class="empty">設備が見つかりません</div>';
   const L=eqLinks(e),f=(l,v)=>v?`<tr><th style="width:96px">${l}</th><td>${esc(v)}</td></tr>`:'';
@@ -3107,6 +3112,7 @@ function vEquipDetail(){
   h+=`<div class="card"><div class="hd-row"><h2>${esc(e.code?e.code+'　':'')}${esc(e.name)}</h2><span><button class="btn sec sm" onclick="editEquip('','${e.id}')">複製</button> <button class="btn sec sm" onclick="editEquip('${e.id}')">編集</button></span></div>
     <div class="rep"><table>${f('設備ID',e.code)}${f('設置場所',e.place)}${f('メーカー',e.maker)}${f('型式',e.model)}${f('製造番号',e.serial)}${f('設置年月',e.installed?e.installed.replace('-','年')+'月':'')}${f('点検周期',e.cycle)}${f('備考',e.note)}</table></div>
     ${thumbs(e.photos)}${docsList(e.docs)}</div>`;
+  h+=eqFuelCard(e);
   h+=eqKarte(e);
   h+=`<div class="card"><h2>📋 点検項目と期限</h2>${L.items.length?deadlines().filter(x=>x.it.equipId===e.id).map(deadlineRow).join('')+L.items.filter(i=>!CYC[i.cycle]).map(i=>`<div class="item" onclick="editItem('${i.id}')"><div class="bd"><div class="ti">${esc(i.name)}</div><div class="meta">${esc(i.cycle||'周期未設定')}</div></div></div>`).join(''):'<div class="muted">この設備に紐づいた点検項目はありません（年間計画の項目編集で「設備」を選ぶと紐づきます）</div>'}</div>`;
   if(L.nums.length||L.checks.length){
@@ -4223,7 +4229,7 @@ const SPEC_FIELDS={
   '計器用変成器':['種類（CT・VT等）','変成比','確度階級','負担'],
   'コンデンサ':['定格容量','定格電圧','直列リアクトル'],
   '蓄電池':['種類','公称電圧','容量（Ah）','セル数','期待寿命（年）'],
-  '発電機':['出力','電圧','原動機','燃料','燃料タンク容量'],
+  '発電機':['出力','電圧','原動機','燃料','燃料タンク容量','燃料消費量（L/h）'],
   'UPS':['容量','方式','蓄電池','バックアップ時間'],
   '配電盤・分電盤':['電気方式','主幹容量','回路数'],
   'その他':[]
@@ -5088,8 +5094,22 @@ function measPrevHTML(r){
 /* 入力欄の薄い文字：前回の値があればそれを、なければ「測定値」 */
 function measPh(r){const p=measPrev(r);return p?`前回 ${p.v}${r.unit||''}`:'測定値'}
 /* 入力中にその場で管理値の内外を色で知らせる（再描画しないので入力は途切れない） */
+/* 非常用発電機：燃料の残量から「停電時に運転できる時間の目安」。設備の仕様「燃料消費量（L/h）」（% で入れるときは「燃料タンク容量」も）から計算する。
+   どちらかが空なら出さない（決まった時間の基準は書かない）。保存の形は変えない（仕様は自由な項目の表のまま） */
+const specNum=(e,keys)=>{for(const k of keys){const v=((e&&e.spec)||{})[k];if(v!=null&&String(v).trim()){const n=parseFloat(String(v).normalize('NFKC').replace(/[,，]/g,'').replace(/[^0-9.]+/g,' ').trim().split(' ')[0]);if(Number.isFinite(n)&&n>0)return n}}return null};
+function genFuelHours(e,val,unit){
+  const per=specNum(e,['燃料消費量（L/h）','燃料消費量']);if(!per||val===''||val==null||!Number.isFinite(Number(val))||Number(val)<0)return null;
+  const u=String(unit||'').normalize('NFKC').trim().toLowerCase();let L;
+  if(u==='%'){const cap=specNum(e,['燃料タンク容量']);if(!cap)return null;L=cap*Number(val)/100}else if(u==='l'||u==='リットル'||u==='ℓ')L=Number(val);else return null;
+  return {h:L/per,L,per};
+}
+const isFuelRow=r=>r&&!r.ck&&/燃料/.test(String(r.name||''))&&/残|量/.test(String(r.name||''));
+const fuelText=f=>f?`停電時に運転できる目安：約${f.h<10?(Math.round(f.h*10)/10):Math.round(f.h)}時間（残り 約${Math.round(f.L)}L ÷ ${f.per}L/h）`:'';
+function measFuelHTML(r){if(!isFuelRow(r))return '';const e=eqById(($('#ms_eq')||{}).value||'');if(!e)return '';const f=genFuelHours(e,r.v,r.unit);
+  return `<div class="mfuel muted" style="font-size:13px;margin-top:4px;${f?'':'display:none'}">⛽ ${esc(fuelText(f))}</div>`+(specNum(e,['燃料消費量（L/h）','燃料消費量'])?'':`<div class="muted" style="font-size:12px;margin-top:2px">設備の仕様に「燃料消費量（L/h）」を入れると、運転できる時間の目安が出ます。</div>`)}
 function measLive(inp,k){
   const r=MEAS_ROWS[k];if(!r)return;const v=inp.value===''?'':Number(inp.value);if(v!==''&&!Number.isFinite(v))return;
+  const fu=inp.closest('.mrow')&&inp.closest('.mrow').querySelector('.mfuel');if(fu){const f=genFuelHours(eqById(($('#ms_eq')||{}).value||''),v,r.unit);fu.style.display=f?'':'none';fu.textContent='⛽ '+fuelText(f)}
   const st=rowJudge({...r,v});inp.style.borderColor=st==='ng'?'var(--ng,#c0392b)':'';inp.style.background=st==='ng'?'#fdecea':st==='ok'?'#eaf6ec':'';
   const row=inp.closest('.mrow');if(row){const bg=row.querySelector('.mbig');if(bg)bg.hidden=!measBig(measPrev(r),v===''?null:v);row.classList.toggle('ng',st==='ng');const pl=row.querySelector('.pill');if(pl){pl.className='pill '+(st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':'');pl.textContent={ng:'管理値外',ok:'管理値内',nolim:'基準未設定',none:'未入力',na:'該当なし'}[st]}}
 }
@@ -5105,6 +5125,7 @@ function measRenderRows(){
     <div class="row" style="gap:4px;margin-top:4px;align-items:center"><span class="pill ${st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':''}">${{ng:'管理値外',ok:'管理値内',nolim:'基準未設定',none:'未入力',na:'該当なし'}[st]}</span>
       ${measPrevHTML(r)}${r.ai?'<span class="pill warn">AI読取（要確認）</span>':r.src==='AI'?'<span class="pill plan">AI読取値（人が確認済み）</span>':''}
       ${r.photo?`<img src="${esc(safeSrc(ph(r.photo)))}" style="height:34px;border-radius:4px" onclick="viewPh('${r.photo}')"><button type="button" class="btn sec sm" onclick="MEAS_ROWS[${k}].photo='';measRenderRows()">写真を外す</button>`:`<label class="btn sec sm">📷 写真<input type="file" accept="image/*" onchange="measRowPhoto(this,${k})"></label>`}
+      ${measFuelHTML(r)}
       ${r.ck?'':`<label class="btn sec sm">🤖 計器写真から読む<input type="file" accept="image/*" onclick="if(!aiReady()){toast('APIキーが未設定です（設定 → 写真読み取り）');return false}" onchange="measAiRead(this,${k})"></label>`}</div></div>`}).join('')||'<div class="muted">項目がありません。ひな形を選ぶか、項目を追加してください。</div>';
 }
 function tplSorted(eqId){const k=(eqById(eqId)||{}).kind||'';return (S.mtpl||[]).slice().sort((a,b)=>(a.kind===k?0:a.kind?2:1)-(b.kind===k?0:b.kind?2:1))}
