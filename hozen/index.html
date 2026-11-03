@@ -286,6 +286,18 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
   table.mpt .t{overflow-wrap:anywhere;line-height:1.25;margin-top:.5mm}
   table.mpt .wc{margin-top:1mm;font-size:7.5pt;color:#444}table.mpt .wc span{margin-right:2mm;white-space:nowrap}
 }
+.banprint{display:none}
+@media print{
+  body.bbp #app>*:not(.banprint){display:none!important}
+  body.bbp .banprint{display:block!important;break-after:page;page-break-after:always}
+  body.bbp .banprint:last-of-type{break-after:auto;page-break-after:auto}
+  .banprint h2{font-size:13pt;margin:0 0 1mm}
+  table.bpt{width:100%;table-layout:fixed;border-collapse:collapse;font-size:10pt;margin-top:2mm}
+  table.bpt th{border:1px solid #666;padding:1mm;background:#eef2f6;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:9pt}
+  table.bpt td{border:1px solid #666;height:10mm;padding:0 1mm}
+  table.bpt tr{break-inside:avoid;page-break-inside:avoid}
+  table.bpt thead{display:table-header-group}
+}
 @media print{
   body{background:#fff}
   header,nav,.noprint,.toast,.mask{display:none!important}
@@ -4191,7 +4203,27 @@ function vBan(){
   return head+tabs+`<div class="card" style="padding:8px 12px"><b>${esc(bl.name)}</b>：${tot.t?`${tot.d}/${tot.t} 実施済み（●）`:'盤がまだ登録されていません'}</div>`
     +floors.map(f=>grp(f.name,banBoards(f.id),f.id)).join('')+(rest.length?grp('階なし',rest,''):'')
     +(!floors.length&&!rest.length?card('階がありません','<button class="btn wide" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button>'):'')
-    +`<div class="row" style="margin:8px 0"><button class="btn sec grow" onclick="banAddWizard()">＋ 盤をまとめて足す</button></div>`;
+    +`<div class="row" style="margin:8px 0"><button class="btn sec grow" onclick="banAddWizard()">＋ 盤をまとめて足す</button></div>
+    <div class="row" style="margin:8px 0"><button class="btn sec grow" style="min-height:44px" onclick="banPrintBlank()">🖨 現場用の空の点検表を印刷（手書き・A4）</button></div>`+banBlankHTML(ym,B);
+}
+/* 現場で手書きする空の点検表（画面では出ない。棟ごとに A4 縦1枚〜、階→盤→3項目の空欄。保存・画面の記録は変えない） */
+function banBlankHTML(ym,B){
+  let h='';
+  B.forEach(b=>{
+    const floors=(S.locs||[]).filter(l=>l.type==='階'&&l.parent===b.id).sort((a,c)=>floorKey(c.name)-floorKey(a.name)||a.name.localeCompare(c.name,'ja')),inF=new Set(),rows=[];
+    const line=(label,bs)=>bs.forEach((x,i)=>rows.push(`<tr><td>${i?'':esc(label)}</td><td class="bnm">${esc(x.name)}</td>${BAN_ITEMS.map(()=>'<td class="bx"></td>').join('')}<td class="bx"></td></tr>`));
+    floors.forEach(f=>{const bs=banBoards(f.id);bs.forEach(x=>inF.add(x.id));line(f.name,bs)});
+    line('階なし',banBoards(b.id).filter(x=>!inF.has(x.id)));
+    if(!rows.length)return;
+    h+=`<div class="banprint"><h2>盤の点検表　${esc(b.name)}　${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><div class="muted">実施したら ● ／ 予定なら ◯ ／ 異常があれば右の欄に書く　点検者：＿＿＿＿＿＿　点検日：＿＿月＿＿日</div>
+      <table class="bpt"><thead><tr><th style="width:13%">階</th><th style="width:15%">盤</th>${BAN_ITEMS.map(n=>`<th>${esc(n)}</th>`).join('')}<th style="width:20%">異常・メモ</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+  });
+  return h;
+}
+function banPrintBlank(){
+  if(!(S.locs||[]).some(l=>l.type==='盤')){toast('盤がまだありません。先に盤を足してください');return}
+  document.body.classList.add('bbp');const off=()=>{document.body.classList.remove('bbp');window.removeEventListener('afterprint',off)};
+  window.addEventListener('afterprint',off);setTimeout(()=>window.print(),30);setTimeout(off,60000);
 }
 /* 月報・印刷：棟ごとの盤の点検表（● の件数／盤の数） */
 /* 月報・印刷：非常用発電機1台ごとの数値点検（日付×電圧・周波数・燃料など）。管理値の外は ▲ と赤（色が出ない印刷でも分かる） */
