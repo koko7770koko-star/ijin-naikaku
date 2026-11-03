@@ -4453,7 +4453,7 @@ function eqKarte(e){
   const sp=Object.entries(e.spec||{}),H=healthOf(e),last=(e.health||[]).slice(-1)[0],F=failStats(e.id);
   let h=`<div class="card"><h2>🗂 設備カルテ</h2>
     <div class="rep"><table>
-      <tr><th style="width:96px">場所</th><td>${e.locId?`<a href="#" onclick="go('locs');return false">${esc(locPath(e.locId))}</a>`:'<span class="muted">未設定</span>'}</td></tr>
+      <tr><th style="width:96px">場所</th><td>${e.locId?`<a href="#" style="display:inline-block;padding:15px 0;min-height:20px;min-width:44px" onclick="go('locs');return false">${esc(locPath(e.locId))}</a>`:'<span class="muted">未設定</span>'}</td></tr>
       <tr><th>種別・重要度</th><td>${esc(e.kind||'未設定')}　${e.importance?`<span class="pill ${e.importance==='A'?'ng':e.importance==='B'?'warn':''}">重要度${esc(e.importance)}</span>`:'<span class="muted">重要度 未設定</span>'}　<span class="pill ${e.status==='稼働'?'ok':'warn'}">${esc(e.status||'稼働')}</span></td></tr>
       ${sp.map(([k,v])=>`<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}
     </table></div>
