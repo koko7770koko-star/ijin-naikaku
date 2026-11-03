@@ -5734,9 +5734,16 @@ function vIssues(){
 }
 
 /* ---------- 人員・資格 ---------- */
+/* これから先の作業が求める資格と、それを持つ人の数（持つ人がいない資格を上に）。表示だけ・保存しない */
+function qualNeedRows(){
+  const need={};(S.works||[]).filter(w=>(w.endDate||w.date)>=TODAY&&!['中止','完了'].includes(w.status)).forEach(w=>(w.needQuals||[]).forEach(q=>{need[q]=(need[q]||0)+1}));
+  return Object.keys(need).map(q=>({q,works:need[q],n:Object.keys(S.quals||{}).filter(nm=>(S.quals[nm]||[]).includes(q)).length})).sort((x,y)=>(x.n>0)-(y.n>0)||y.works-x.works||x.q.localeCompare(y.q,'ja'))}
+function qualNeedHTML(){
+  const R=qualNeedRows();if(!R.length)return '';const miss=R.filter(r=>!r.n).length;
+  return card(`🎯 作業が求める資格 <span class="muted">${miss?`持つ人がいない ${miss}件`:'すべて持つ人がいます'}</span>`,R.map(r=>`<div class="item ${r.n?'':'ng'}" style="min-height:44px"><div class="bd"><div class="ti">${esc(r.q)}</div><div class="meta">求める作業 ${r.works}件</div></div><span class="pill ${r.n?'ok':'ng'}">${r.n?'持つ人 '+r.n+'人':'持つ人がいません'}</span></div>`).join(''))}
 function vStaff(){
   const names=[...new Set([...staffAll(),...Object.keys(S.quals)])];
-  return card('🪪 人員・資格',`<div class="muted" style="margin-bottom:8px">シフトのメンバーと設定の担当者が表示されます。資格を登録すると、作業指示で必要な資格・人数を照合します。</div>`
+  return qualNeedHTML()+card('🪪 人員・資格',`<div class="muted" style="margin-bottom:8px">シフトのメンバーと設定の担当者が表示されます。資格を登録すると、作業指示で必要な資格・人数を照合します。</div>`
     +(names.length?names.map(n=>`<div class="item" onclick="editQual(${esc(JSON.stringify(n))})"><div class="bd"><div class="ti">${esc(n)}</div><div class="meta">${(S.quals[n]||[]).map(esc).join('・')||'<b class="qadd" style="color:var(--accent)">資格を登録 ›</b>'}</div></div><span class="ar">›</span></div>`).join(''):emptyBox('メンバーがいません')),`<button class="btn sec sm" onclick="editQualList()">資格の種類</button>`)
     +card('📅 今後14日の作業と勤務',[...Array(14)].map((_,k)=>{const d=addD(TODAY,k),W=(S.works||[]).filter(w=>w.date<=d&&(w.endDate||w.date)>=d&&!['中止','完了'].includes(w.status));if(!W.length)return '';const o=crewDay(d);
       return `<div class="grp"><b>${md(d)}（${WD[pd(d).getDay()]}）</b>${o?crewRow(o,'勤務'):''}${W.map(workRow).join('')}</div>`}).join('')||emptyBox('予定されている作業はありません'));
