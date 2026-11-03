@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const n0=await p.evaluate(()=>{const N=numDefs(),C=chkDefs();for(let i=0;i<400;i++){const d=addD(TODAY,-i);const r=S.daily[d]={};N.forEach((n,k)=>{r[n.id]=(Number(n.min)||10)+((i+k)%9)*1.7});r.c={};C.forEach((c,k)=>{r.c[c.id]=(i+k)%11===0?'×':'○'});r.by='職員'+(i%5);r.note=i%4?'':'備考の試し（名前の長い備考 受変電設備 高圧交流負荷開閉器の点検で気づいたこと）';r.done=new Date().toISOString()}save();return Object.keys(S.daily).length});
  const t0=Date.now();await p.evaluate(()=>go('hist'));await p.waitForSelector('#app .item, #app .card');const t1=Date.now()-t0;
  if(t1>1000)bad.push('点検履歴を開くのに '+t1+'ms');

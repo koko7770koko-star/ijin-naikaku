@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);await p.click('#nav button[data-v="shift"]');await p.waitForTimeout(700);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);await p.click('#nav button[data-v="shift"]');await p.waitForTimeout(700);
  const keys0=await p.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('kinmuhyo_v1')||'{}')).sort().join(','));
  const r=await p.evaluate(()=>{const cs=[...document.querySelectorAll('#shPer .pc')];const foot=[...document.querySelectorAll('#shTable tfoot tr')].find(t=>t.cells[0].textContent==='夜勤回数');
   return {n:cs.length,txt:cs.map(x=>x.innerText.replace(/\n/g,' ')),over:cs.filter(x=>x.scrollWidth>x.clientWidth+1).length,sw:document.documentElement.scrollWidth,

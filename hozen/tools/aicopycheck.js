@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844},permissions:['clipboard-read','clipboard-write']});const p=await c.newPage();const errs=[];let sent=0;
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>{const u=r.request().url();if(/^(file|data|blob):/.test(u))return r.continue();if(/anthropic/.test(u)){sent++;return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({content:[{type:'text',text:'試験の下書きです。'}]})})}r.abort()});
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{sessionStorage.setItem(KEYSTORE,'dummy-not-a-key')});
  const run=async use=>{await p.evaluate(u=>aiDraft('試験','テスト本文','使う',u?(t=>{window.__used=t}):null),use);await p.waitForTimeout(200);await p.click('text=この内容を送る');await p.waitForSelector('#ai_text',{timeout:5000});};
  // 記録に使う下書き

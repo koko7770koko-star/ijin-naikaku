@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{
   S.items=[...Array(25)].map((_,i)=>({id:'it'+i,name:'法定点検'+i+'（名前の長い項目 受変電設備）',cat:'受変電',cycle:'年1回',base:addD(TODAY,-340+i),who:'委託',track:true,legal:'法定'}));
   S.tasks=[...Array(22)].map((_,i)=>({id:'t'+i,date:i<22?TODAY:TODAY,time:'09:'+String(i).padStart(2,'0'),kind:'月次',cat:'',title:'今日の点検'+i+'（名前の長い作業 受変電設備の点検）',place:'A棟',staff:'職員'+i,attend:'',status:'予定',result:'',note:'',photos:[]}))

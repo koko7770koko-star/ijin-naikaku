@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844},hasTouch:true});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const mk=i=>{const cv=document.createElement('canvas');cv.width=80;cv.height=60;const x=cv.getContext('2d');x.fillStyle='hsl('+(i*50)+',50%,60%)';x.fillRect(0,0,80,60);return cv.toDataURL('image/png')};
   const ids=[...Array(6)].map((_,i)=>{PH['ip'+i]=mk(i);return 'ip'+i});S.issues=[{id:'is1',date:TODAY,title:'異常の試し',place:'A棟',status:'対応中',detail:'',action:'',closed:'',photos:ids}];editIssue('is1')});await p.waitForTimeout(500);
  await p.evaluate(()=>{document.querySelector('#modal .ph').scrollIntoView({block:'center'})});await p.waitForTimeout(300);

@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.equipment=[{id:'e0',code:'E-001',name:'分電盤',place:'○○棟 1F',maker:'甲',model:'M1',serial:'S1',installed:'2015-04',cycle:'年1回',note:'',kind:'',status:'稼働',importance:'B',spec:{'定格電圧':'200V'},photos:[],docs:[],repairs:[{id:'r1',date:TODAY,kind:'修理',content:'x',vendor:'',cost:'',photos:[]}],health:[]}];save();go('equipDetail',{eq:'e0'})});
  await p.waitForTimeout(300);
  const btn=await p.evaluate(()=>[...document.querySelectorAll('#app button')].filter(x=>x.textContent.trim()==='複製').map(x=>{const r=x.getBoundingClientRect();return {w:r.width,h:r.height}}));

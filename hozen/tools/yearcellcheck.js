@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const fy=fyNow();S.items=[{id:'i1',cat:'受変電',name:'高圧受電盤 年次点検',cycle:'年1回',who:'委託'}];S.marks[fy]=S.marks[fy]||{};S.marks[fy].i1=['','','','','','','','','','','',''];save();go('year')});await p.waitForTimeout(600);
  const r=await p.evaluate(()=>({sw:document.documentElement.scrollWidth,sz:[...document.querySelectorAll('table.yr td.mk')].map(e=>{const r=e.getBoundingClientRect();return Math.min(r.width,r.height)}),cur:!!document.querySelector('table.yr th.now,table.yr .now,table.yr th[class*=cur]')||document.querySelectorAll('table.yr th').length>0}));
  if(!r.sz.length)errs.push('マスが無い');else if(Math.min(...r.sz)<43.5)errs.push('マスが小さい '+Math.min(...r.sz));

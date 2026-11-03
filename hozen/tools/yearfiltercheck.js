@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const info=await p.evaluate(()=>{const cats=S.settings.cats;const fy=fyOf(now.getFullYear(),now.getMonth()+1);V.fy=fy;S.marks[fy]=S.marks[fy]||{};const ci=idxOf(now.getMonth()+1);
   for(let i=0;i<100;i++){const id='yf'+i;S.items.push({id,name:'項目'+i,cat:cats[i%2],cycle:'毎月'});const r=Array(12).fill('');if(i%10===0)r[ci]='○';S.marks[fy][id]=r}
   go('year');return {cats,n:S.items.length}});

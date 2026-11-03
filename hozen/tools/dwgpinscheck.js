@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const before=await p.evaluate(async()=>{const cv=document.createElement('canvas');cv.width=800;cv.height=500;const x=cv.getContext('2d');x.fillStyle='#ccd';x.fillRect(0,0,800,500);const id=await putPhoto(cv.toDataURL('image/png'));
   S.equipment=[...Array(30)].map((_,i)=>({id:'e'+i,code:'E-'+String(i+1).padStart(3,'0'),name:'設備'+i+'（名前の長い設備 高圧交流負荷開閉器）',kind:'',status:'稼働',locId:'',run:{meters:[]},repairs:[],docs:[],photos:[],health:[]}));
   S.drawings=[{id:'d1',name:'試験図面',kind:'単線結線図',locId:'',vers:[{id:'v1',ver:'1',date:TODAY,note:'',by:'',file:id,type:'image/png'}],pins:[...Array(30)].map((_,i)=>({id:'p'+i,equipId:'e'+i,label:'',x:i<15?.5:.1+(i%10)*.08,y:i<15?.5:.2+Math.floor(i/10)*.2}))}];

@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});S.locs=[mk('bA','A棟','建屋',''),mk('fA','1F','階','bA'),mk('bB','B棟','建屋',''),mk('fB','1F','階','bB')];
   S.equipment=[{id:'eA',code:'A-1',name:'受電盤A',kind:'分電盤',status:'稼働',locId:'fA',photos:[],docs:[],repairs:[],health:[]},{id:'eB',code:'B-1',name:'受電盤B',kind:'分電盤',status:'稼働',locId:'fB',photos:[],docs:[],repairs:[],health:[]}];
   S.issues=[...Array(50)].map((_,i)=>({id:'i'+i,date:addD(TODAY,-i),title:(i%5===0?'異臭 ':'点検 ')+i,place:i%10===0?'B棟 電気室':'',status:'発見',equipId:i%10===0?'':(i%2?'eA':'eB'),urgency:'中',detail:'',action:'',cause:''}));

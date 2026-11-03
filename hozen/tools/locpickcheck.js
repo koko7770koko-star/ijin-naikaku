@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});const L=[];'ABCDEF'.split('').forEach(x=>{L.push(mk('b'+x,x+'棟','建屋',''));for(let f=1;f<=10;f++){L.push(mk('f'+x+f,f+'F','階','b'+x));L.push(mk('p'+x+f,'盤'+f,'盤','f'+x+f))}});S.locs=L;
   S.equipment=[{id:'e1',code:'E-1',name:'設備1',kind:'',status:'稼働',locId:'fC3',photos:[],docs:[],repairs:[],health:[]}];save();go('equip')});
  const r=await p.evaluate(()=>{const d=document.createElement('div');d.innerHTML='<select>'+locOptions('fC3')+'</select>';const s=d.firstChild;return {groups:[...s.querySelectorAll('optgroup')].map(g=>g.label),n:s.querySelectorAll('option').length,sel:s.querySelectorAll('option[selected]').length}});

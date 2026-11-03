@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.accept().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const mk=(id,eq,date,status,title)=>({id,date,title,place:'',detail:'',status,action:'',closed:status==='完了'?date:'',photos:[],equipId:eq,log:[]});
   S.equipment=[{id:'e1',code:'E-1',name:'分電盤A',kind:'',status:'稼働',photos:[],docs:[],repairs:[],health:[]},{id:'e2',code:'E-2',name:'分電盤B',kind:'',status:'稼働',photos:[],docs:[],repairs:[],health:[]}];
   S.issues=[mk('i1','e1',addD(TODAY,-5),'対応中','球切れ'),mk('i2','e1',addD(TODAY,-100),'完了','異音'),mk('i3','e1',addD(TODAY,-500),'完了','古い件')];save();editIssue()});await p.waitForTimeout(500);

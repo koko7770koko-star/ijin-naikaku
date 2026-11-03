@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];let sent=0,status=429;
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>{const u=r.request().url();if(/^(file|data|blob):/.test(u))return r.continue();if(/anthropic/.test(u)){sent++;return r.fulfill({status,contentType:'application/json',body:JSON.stringify({error:{message:'x'}})})}r.abort()});
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const modal=()=>p.evaluate(()=>document.querySelector('#mask').classList.contains('on')?document.querySelector('#modal').innerText:'');
  await p.evaluate(()=>{go('ai')});await p.waitForTimeout(300);
  if(await p.evaluate(()=>document.documentElement.scrollWidth)>392)bad.push('AI画面がはみ出す');

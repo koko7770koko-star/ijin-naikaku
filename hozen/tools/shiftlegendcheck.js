@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);await p.click('#nav button[data-v="shift"]');await p.waitForTimeout(700);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);await p.click('#nav button[data-v="shift"]');await p.waitForTimeout(700);
  const keys0=await p.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('kinmuhyo_v1')||'{}')).sort().join(','));
  const m=await p.evaluate(()=>{const x=document.getElementById('shLegBtn');if(!x)return null;const r=x.getBoundingClientRect();return{h:r.height,sw:document.documentElement.scrollWidth,cut:[...document.querySelectorAll('#shPer .pc span')].filter(s=>s.scrollWidth>s.parentElement.clientWidth).length}});
  if(!m)bad.push('ボタンが無い');else{if(m.h<44)bad.push('小さい '+m.h);if(m.sw>392)bad.push('はみ出す');if(m.cut)bad.push('回数カードが切れる '+m.cut)}

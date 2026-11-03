@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.accept().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.equipment=[{id:'e1',code:'E-1',name:'分電盤',photos:[],docs:[],repairs:[],health:[]}];
   S.parts=[{id:'p1',code:'F-10',name:'ヒューズ 10A',spec:'ガラス管',maker:'甲',place:'棚1',unit:'本',qty:12,min:5,price:80,equipIds:['e1'],note:'メモ,"引用"'},{id:'p2',code:'',name:'端子台',spec:'',maker:'',place:'',unit:'個',qty:0,min:'',price:'',equipIds:[],note:''}];
   S.moves=[{id:'m1',partId:'p1',date:TODAY,type:'入庫',qty:12,after:12,ref:'init',by:'',note:'初期'}];save();go('stock')});await p.waitForTimeout(300);

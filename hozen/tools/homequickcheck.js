@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const q=()=>p.evaluate(()=>[...document.querySelectorAll('.hq4 button')].map(x=>{const r=x.getBoundingClientRect();return {t:x.textContent.replace(/\s+/g,''),h:r.height,r:r.right}}));
  let B=await q();if(B.length!==4)bad.push('ボタンが '+B.length);
  B.forEach(x=>{if(x.h<44||x.r>390)bad.push('大きさ/位置 '+JSON.stringify(x))});

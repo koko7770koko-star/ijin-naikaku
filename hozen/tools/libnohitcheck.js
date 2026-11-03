@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.library=[{id:'l1',title:'資料1',tags:'VCB',text:'開閉回数',equipIds:[],file:'',type:''}];S.stds=[1,2,3,4].map(i=>({id:'s'+i,name:'標準'+i,docNo:'',ver:'1',kinds:[],pre:[],post:[],note:'',hist:[]}));go('lib')});await p.waitForTimeout(300);
  let r=await p.evaluate(()=>{const q=document.querySelector('#lib_q').getBoundingClientRect().top,t=[...document.querySelectorAll('#app .muted')].find(e=>/取扱説明書・保安規程/.test(e.textContent));return{q,t:t?t.getBoundingClientRect().top:-1}});
  if(!(r.t>r.q))bad.push('探す欄が説明より上にない');

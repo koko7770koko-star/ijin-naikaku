@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.library=[{id:'l1',title:'取扱説明書',tags:'VCB',text:'開閉回数の目安は vcb の仕様による',file:'',type:'',equipIds:[]},{id:'l2',title:'保安規程',tags:'',text:'',file:'',type:'',equipIds:[]}];
   S.stds=['A','B','C','D','E'].map((n,i)=>({id:'s'+i,name:'標準'+n,docNo:'No'+i,ver:'1',kinds:['停電作業'],pre:[],post:[],note:'',approvedBy:'',approvedRole:'',approvedDate:'',method:'',hist:[]}));
   V.libQ='VCB';go('lib')});await p.waitForTimeout(300);

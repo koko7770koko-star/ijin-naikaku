@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:1123,height:794}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const fy=fyOf(now.getFullYear(),now.getMonth()+1);V.fy=fy;S.items=Array.from({length:60},(_,i)=>({id:'yi'+i,name:i%6===0?'高圧受電設備の年次精密点検（停電作業を伴う長い名前）':'点検項目'+(i+1),cat:S.settings.cats[i%S.settings.cats.length]||'その他',cycle:'毎月'}));
   S.marks[fy]={};S.items.forEach((it,i)=>{S.marks[fy][it.id]=Array.from({length:12},(_,m)=>(m+i)%3===0?'済':(m+i)%3===1?'○':'')});go('year')});
  await p.waitForTimeout(300);

@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const nm=i=>'高圧ケーブルヘッド用ストレスコーン 3心 150sq 屋内'+(i+1)+'番'.padEnd(2,'　');
   S.parts=[...Array(30)].map((_,i)=>({id:'pm'+i,code:'P-'+(1000+i),name:nm(i).slice(0,40),spec:'型式 ABCDEFGHIJ-1234567890 定格 6.6kV',maker:'○○電機',place:'○○棟 地下1階 予備品庫 第3棚',unit:'個',qty:i%3?5:1,min:i%3?2:3,price:1200,equipIds:[],note:''}));
   S.tools=[...Array(10)].map((_,i)=>({id:'tm'+i,code:'T-'+i,name:'絶縁抵抗計 高電圧用 長い名前の測定器の例 '+(i+1),kind:i%2?'測定器':'工具',maker:'○○計器株式会社',model:'ABCDE-12345',serial:'',place:'○○棟 電気室',calDue:i%2?addD(TODAY,i*20-40):'',calCycleM:'12',calHist:[],loans:i%3===0?[{id:'l'+i,out:TODAY,to:'○○電気工事株式会社 第二営業所',due:addD(TODAY,3),back:'',note:''}]:[],note:''}));

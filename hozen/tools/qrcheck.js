@@ -6,7 +6,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  await p.addInitScript(()=>{window.__stopped=0;window.BarcodeDetector=function(){this.detect=async()=>[]};
   Object.defineProperty(navigator,'mediaDevices',{value:{getUserMedia:()=>new Promise(r=>setTimeout(()=>r({getTracks:()=>[{stop(){window.__stopped++}}]}),500))},configurable:true});
   Object.defineProperty(window,'isSecureContext',{value:true})});
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.equipment=[{id:'eqx1',code:'E-001',name:'試験設備',locId:'',status:'稼働',run:{meters:[]}}];go('qr')});await p.waitForTimeout(300);
  const w=await p.evaluate(()=>document.documentElement.scrollWidth);if(w>392)bad.push('横にはみ出す '+w);
  await p.evaluate(()=>{qrScan()});await p.waitForTimeout(100);await p.evaluate(()=>closeModal(true));await p.waitForTimeout(800);

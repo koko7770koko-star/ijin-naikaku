@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.accept().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const m=now.getMonth()+1,fy=fyOf(now.getFullYear(),m),ci=idxOf(m),row=v=>{const r=Array(12).fill('');r[ci]=v;return r};
   S.items=[{id:'a',name:'項目A',cat:S.settings.cats[0]},{id:'b',name:'項目B',cat:S.settings.cats[0]},{id:'c',name:'項目C',cat:S.settings.cats[1]||S.settings.cats[0]},{id:'d',name:'項目D',cat:S.settings.cats[0]},{id:'e',name:'項目E',cat:S.settings.cats[0]}];
   S.marks={[fy]:{a:row('○'),b:row('○'),c:row('○'),d:row('延'),e:row('済')}};

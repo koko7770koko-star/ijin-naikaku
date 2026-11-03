@@ -5,7 +5,7 @@ const EXP={'2026-01-01':'元日','2026-01-12':'成人の日','2026-02-11':'建�
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const got=await p.evaluate(e=>Object.fromEntries(Object.keys(e).map(k=>[k,holName(k)])),EXP);
  for(const k in EXP)if(got[k]!==EXP[k])bad.push(k+' は「'+got[k]+'」（正：'+EXP[k]+'）');
  const n=await p.evaluate(()=>Object.keys(holMap(2026)).length);if(n!==18)bad.push("2026年の祝日数 "+n+"（18のはず）");

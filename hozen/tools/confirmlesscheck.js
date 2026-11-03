@@ -8,7 +8,7 @@ for(const t of ['この項目を削除しますか？','この案件を削除し
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];let dlg=0;
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>{dlg++;d.accept().catch(()=>{})});
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const cases=[
   ['予定',()=>{S.tasks=[{id:'t1',date:TODAY,time:'',kind:'臨時',cat:S.settings.cats[0],title:'試験',place:'',staff:'',attend:'',status:'予定',result:'',note:'',photos:[]}]},()=>delTask('t1'),()=>S.tasks.length],
   ['計画',()=>{S.plans=[{id:'p1',title:'計画1'}]},()=>delPlan('p1'),()=>S.plans.length],

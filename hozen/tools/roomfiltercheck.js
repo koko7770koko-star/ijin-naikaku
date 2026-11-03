@@ -6,7 +6,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const setup=(locs,eqs)=>p.evaluate(([locs,eqs])=>{S.locs=locs.map(([id,type,parent,name])=>({id,type,parent,name,note:'',pos:{floor:'',x:'',y:'',z:''}}));
   S.equipment=eqs.map(([id,name,locId,kind])=>({id,code:id,name,kind,locId,status:'稼働',photos:[],docs:[],repairs:[],health:[]}));
   const n=S.settings.dnums;n[0].equip=eqs[0][0];if(n[1]&&eqs[1])n[1].equip=eqs[1][0];S.meas=S.meas||[];V.dayLoc='';save();go('day',{day:TODAY})},[locs,eqs]);

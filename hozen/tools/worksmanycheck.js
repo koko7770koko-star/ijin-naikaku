@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const ST=['承認待ち','承認済み','実施中','保留','予定'];
   S.works=[...Array(30)].map((_,i)=>({id:'wm'+i,no:'W-'+String(100+i),title:'高圧受電設備 年次点検に伴う停電作業（A棟 受変電室〜屋上キュービクル）第'+(i+1)+'回',kind:'点検',status:ST[i%5],date:addD(TODAY,i%7),endDate:i%3?addD(TODAY,(i%7)+2):'',start:'09:00',end:'17:00',equipIds:[],staff:['職員甲','職員乙','職員丙','職員丁'],vendor:'○○電気工事株式会社 第二営業所 東日本支店',vendorStaff:'',needN:6,needQuals:[],outage:{on:i%2===0,range:''},cost:'',approvals:[],pre:[],post:[],checks:{pre:[],post:[]}}));
   save()});await p.reload();await p.waitForTimeout(1500);await p.evaluate(()=>go('works'));await p.waitForTimeout(500); // 足りない項目はアプリが初期値で補う（古い形の記録でも開ける）

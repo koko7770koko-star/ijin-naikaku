@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const L=[];['A','B','C','D','E','F'].forEach((x,i)=>{L.push({id:'b'+i,name:x+'棟',type:'建屋',parent:''});for(let f=1;f<=3;f++){L.push({id:'f'+i+f,name:f+'F',type:'階',parent:'b'+i});for(let k=1;k<=4;k++)L.push({id:'k'+i+f+k,name:'盤'+k,type:'盤',parent:'f'+i+f})}});S.locs=L;
   S.equipment=[{id:'g1',code:'G-1',name:'非常用発電機',kind:'発電機',status:'稼働',locId:'f11',run:{meters:[]}}];
   S.banChk={[TODAY.slice(0,7)]:{}};L.filter(l=>l.type==='盤').forEach((l,i)=>{S.banChk[TODAY.slice(0,7)][l.id]=['済','○',''].slice(0,i%3+1)});

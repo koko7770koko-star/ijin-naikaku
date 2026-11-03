@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.tasks=[{id:'t1',title:'x',date:'2026-11-03'}];S.issues=[{id:'i1',date:'2026-11-01',title:'a',status:'完了'},{id:'i2',date:'2026-11-02',title:'b',status:'完了'}];save();go('set')});await p.waitForTimeout(300);
  await p.evaluate(()=>{wipe()});await p.waitForTimeout(400);
  const t=await p.evaluate(()=>document.body.innerText);

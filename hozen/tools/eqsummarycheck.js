@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  for(const kind of ['変圧器','発電機']){
   await p.evaluate(k=>{const e=eqById((S.equipment[0]||{}).id)||null;S.equipment=[{id:'eqT',code:'',name:'試験設備',kind:k,place:'',maker:'',model:'',serial:'',installed:'',cycle:'',photos:[],docs:[],repairs:[],run:{meters:[]},spec:{}}];S.issues=[{id:'isT',equipId:'eqT',title:'試験の異常',status:'未対応',date:'2026-01-01'}];go('equipDetail',{eq:'eqT'})},kind);await p.waitForTimeout(400);
   const r=await p.evaluate(()=>{const H=window.innerHeight,t=document.querySelector('#app').innerText,btn=[...document.querySelectorAll('#app .card:first-of-type .btn')].map(x=>{const q=x.getBoundingClientRect();return{h:q.height,b:q.bottom}}).filter(x=>x.h>0);const th=[...document.querySelectorAll('#app th')].map(x=>x.textContent);return{H,th,btn,sw:document.documentElement.scrollWidth,t:t.slice(0,300)}});

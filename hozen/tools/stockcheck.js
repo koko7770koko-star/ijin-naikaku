@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const mk=(id,name,qty,min)=>({id,code:'',name,spec:'',maker:'',place:'',unit:'個',qty,min,price:'',equipIds:[],note:''});
   S.parts=[mk('p1','ヒューズ 10A',8,2),mk('p2','電球 LED 40形 長い名前の予備品の例として入れる',1,2),mk('p3','端子 R2-4',5,'')];save();go('stock',{stTab:'parts'})});await p.waitForTimeout(400);
  const r=await p.evaluate(()=>{const it=[...document.querySelectorAll('#app .item')].filter(x=>x.querySelector('.pqb'));const bs=[...document.querySelectorAll('.pqb button')];
