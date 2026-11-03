@@ -37,12 +37,19 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  // 元に戻す
  await p.evaluate(()=>{document.querySelector('#undobar button').click()});await p.waitForTimeout(200);
  const u=await p.evaluate(()=>S.equipment.length);if(u!==2)bad.push('元に戻しても '+u);
+ // 階層が見つからない設備は件数を知らせる（新規は場所を空のまま・既存の場所は消さない）
+ const tl='区分,設備ID,設備名称,設置場所,メーカー,型式,製造番号,設置年月,点検周期,日付,種類,内容,業者・対応者,費用,備考,階層\r\n設備,E-300,場所不明の設備,A棟,,,,,,,,,,,,存在しない棟 › 3階\r\n';
+ const nl=await p.evaluate(t=>{const P=planEquipCsv(t);return {noLoc:P.noLoc,loc:P.eqs[0].o.locId||''}},tl);
+ if(nl.noLoc!==1||nl.loc!=='')bad.push('階層なしの数え方 '+JSON.stringify(nl));
  // 画面（確認の窓）の幅
  await p.evaluate(t=>{const P=planEquipCsv(t);PENDING_EQCSV=P;openModal('<h3>x</h3>')},t2);
  // ファイルを選ぶ経路（確認の窓が出る・件数が見える）
  await p.setInputFiles('#app input[type=file][accept*=csv]',{name:'e.csv',mimeType:'text/csv',buffer:Buffer.from(t2,'utf-8')});await p.waitForTimeout(500);
  const m=await p.evaluate(()=>({t:$('#modal').textContent,sw:document.documentElement.scrollWidth,mw:$('#modal').getBoundingClientRect().width}));
  if(!m.t.includes('新規 1件')||!m.t.includes('読み飛ばす行：2件'))bad.push('確認の窓 '+m.t.slice(0,160));if(m.sw>392||m.mw>390)bad.push('窓がはみ出す '+JSON.stringify(m));
+ await p.evaluate(()=>closeModal(true));
+ await p.setInputFiles('#app input[type=file][accept*=csv]',{name:'l.csv',mimeType:'text/csv',buffer:Buffer.from(tl,'utf-8')});await p.waitForTimeout(400);
+ if(!(await p.evaluate(()=>$('#modal').textContent)).includes('見つからない設備が 1件'))bad.push('窓に階層の案内が出ない');
  if(process.argv[2])await p.screenshot({path:process.argv[2]});
  // 違うCSVは理由を出して止まる
  await p.evaluate(()=>closeModal(true));
