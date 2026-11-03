@@ -4141,19 +4141,21 @@ let QR_STREAM=null;
 async function qrScan(){
   openModal(`<h3>📷 QRコードを読む</h3><div id="qr_area"><video id="qr_v" playsinline muted style="width:100%;max-height:50vh;background:#000;border-radius:8px;display:none"></video><div id="qr_msg" class="muted">カメラを準備しています…</div></div>
     <div class="row" style="margin-top:8px">${fileBtn('写真から読む','qrFromFile','sec sm grow','image/*')}</div>
-    <label class="f">設備ID・名称・場所で探す（読み取れないとき）</label><div class="row" style="flex-wrap:nowrap"><input id="qr_id" placeholder="例：E-001、変圧器" oninput="qrSearch(this.value)"><button class="btn sm" onclick="qrOpen($('#qr_id').value)">開く</button></div><div id="qr_res" style="margin-top:6px"></div>
+    <label class="f">設備ID・名称・場所で探す（読み取れないとき）</label><div class="row" style="flex-wrap:nowrap"><input id="qr_id" placeholder="例：E-001、変圧器" oninput="qrSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();qrOpen(this.value)}"><button class="btn sm" onclick="qrOpen($('#qr_id').value)">開く</button></div><div id="qr_res" style="margin-top:6px"></div>
     ${modalFoot('<button class="btn sec" onclick="qrStop();closeModal(true)">閉じる</button>')}`);
   const msg=t=>{const e=$('#qr_msg');if(e)e.textContent=t};
   if(!('BarcodeDetector' in window)){msg('このブラウザはQRコードの読み取り（BarcodeDetector）に対応していません。下の欄に設備IDや名称を入れて探してください（AndroidのChromeは対応していることが多いです）。');return}
   if(!window.isSecureContext||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){msg('この開き方ではカメラを使えません（ファイルとして開いた場合など）。「写真から読む」でカメラで撮った写真を選ぶか、設備IDを入れて探してください。');return}
   try{
     const det=new BarcodeDetector({formats:['qr_code']});
-    QR_STREAM=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-    const v=$('#qr_v');v.srcObject=QR_STREAM;v.style.display='block';await v.play();$('#qr_msg').textContent='QRコードを枠に入れてください';
-    const loop=async()=>{if(!QR_STREAM||!$('#qr_v'))return;try{const r=await det.detect(v);if(r.length){qrStop();qrOpen(r[0].rawValue);return}}catch(e){}setTimeout(loop,300)};loop();
+    const stm=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    if(!$('#qr_v')||!$('#mask').classList.contains('on')){stm.getTracks().forEach(t=>t.stop());return} // 待っている間に閉じられたらカメラを止める
+    QR_STREAM=stm;const v=$('#qr_v');v.srcObject=QR_STREAM;v.style.display='block';await v.play();$('#qr_msg').textContent='QRコードを枠に入れてください';
+    const loop=async()=>{if(!QR_STREAM||!$('#qr_v')||!$('#mask').classList.contains('on'))return;try{const r=await det.detect(v);if(r.length){qrStop();qrOpen(r[0].rawValue);return}}catch(e){}setTimeout(loop,300)};loop();
   }catch(e){const n=e&&e.name;msg(n==='NotAllowedError'||n==='SecurityError'?'カメラの使用が許可されていません。ブラウザのサイト設定でカメラを「許可」にするか、「写真から読む」を使ってください。':n==='NotFoundError'||n==='OverconstrainedError'?'カメラが見つかりません。「写真から読む」か、設備IDを入れて探してください。':n==='NotReadableError'?'カメラを使えません（ほかのアプリが使用中の可能性）。':'カメラを使えませんでした。「写真から読む」か、設備IDを入れて探してください。')}
 }
-function qrStop(){if(QR_STREAM){QR_STREAM.getTracks().forEach(t=>t.stop());QR_STREAM=null}}
+function qrStop(){if(QR_STREAM){QR_STREAM.getTracks().forEach(t=>t.stop());QR_STREAM=null}const v=document.getElementById('qr_v');if(v)v.srcObject=null}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)qrStop()});window.addEventListener('pagehide',()=>qrStop());
 async function qrFromFile(inp){
   const f=inp.files[0];inp.value='';if(!f)return;
   if(!('BarcodeDetector' in window)){toast('このブラウザはQR読み取りに対応していません。設備IDを入力してください');return}
