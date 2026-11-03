@@ -11,6 +11,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  await p.evaluate(()=>{S.equipment=[
   {id:'e0',code:'E-001',name:'分電盤',place:'○○棟 1F',maker:'甲',model:'M1',serial:'S1',installed:'2015-04',cycle:'年1回',note:'備考,"引用符"\n改行',kind:'配電盤・分電盤',status:'稼働',importance:'B',spec:{'定格電圧':'200V'},life:20,photos:[],docs:[],repairs:[{id:'r1',date:'2026-01-05',kind:'修理',content:'端子の増し締め',vendor:'○○電気',cost:12000,photos:[]}],health:[{x:1}]},
   {id:'e1',code:'E-002',name:'古い形の設備',place:'',maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[]}];save();go('equip')});
+ await p.evaluate(()=>{V.eqFo=true;render()});
  await p.waitForTimeout(300);
  const sw=await p.evaluate(()=>({sw:document.documentElement.scrollWidth,btn:[...document.querySelectorAll('#app label.btn')].filter(x=>x.textContent.includes('CSVを読み込む')).map(x=>{const r=x.getBoundingClientRect();return {w:r.width,h:r.height,r:r.right}})}));
  if(sw.btn.length!==1)bad.push('読み込みボタンが '+sw.btn.length);else if(sw.btn[0].h<40||sw.btn[0].r>390)bad.push('読み込みボタンの大きさ/位置 '+JSON.stringify(sw.btn[0]));if(sw.sw>392)bad.push('台帳が横にはみ出す '+sw.sw);
