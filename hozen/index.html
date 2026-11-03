@@ -130,6 +130,9 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .mitem{display:flex;align-items:center;gap:14px;background:#fff;border-radius:var(--r);padding:16px;box-shadow:var(--shadow);cursor:pointer;font-weight:700}
 .mitem .ic{font-size:26px;width:36px;text-align:center}
 .mitem .ds{font-size:13px;font-weight:400;color:var(--mut)}
+.aibadge{display:inline-block;font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px;vertical-align:middle;white-space:nowrap}
+.aibadge.free{background:#e3f4e8;color:#1d6b35}
+.aibadge.need{background:#eef1f5;color:#5a6675}
 .mitem .ar{margin-left:auto;color:#a0aab5;font-size:20px}
 
 /* ---------- カレンダー ---------- */
@@ -5353,13 +5356,14 @@ function delLib(id){const i=S.library.findIndex(x=>x.id===id),d=S.library[i];if(
 /* ---------- AI支援 ---------- */
 function vAi(){
   const key=aiReady(),on=navigator.onLine;
-  const it=(ic,t,d,on)=>`<div class="mitem" onclick="${on}"><span class="ic">${ic}</span><div>${t}<div class="ds">${d}</div></div><span class="ar">›</span></div>`;
-  return `<div class="al ${key&&on?'info':'warn'}">${key?'':'APIキー（またはサーバー経由の設定）が未設定です（設定 → 写真読み取り）。'}${on?'':'今は通信できません。'}AIの結果はすべて下書きです。人が確認して「入れる」「保存」を押すまで記録には入りません。設備の正常・異常の判定はAIではなく、設定した管理値で行います。<br>APIがなくても、検索・判定・推奨・集計はすべて使えます。</div>
+  const it=(ic,t,d,on,free)=>`<div class="mitem" onclick="${on}"><span class="ic">${ic}</span><div>${t} <small class="aibadge ${free?'free':'need'}">${free?'🔎 AIなしで使える':'🤖 APIキーが要る'}</small><div class="ds">${d}</div></div><span class="ar">›</span></div>`;
+  return `<div class="al ${key&&on?'info':'warn'}" style="cursor:default">${key?'':'APIキーが未設定です（設定 → 写真読み取り）。'}${on?'':'今は通信できません。'}AIの結果は下書きです。人が確認するまで記録には入りません。<br>🔎 の機能はAIなしで使えます。
+    <details style="margin-top:4px"><summary style="cursor:pointer;font-weight:700">詳しく</summary>設備の正常・異常の判定はAIではなく、設定した管理値で行います。APIがなくても、検索・判定・推奨・集計はすべて使えます。APIキーを入れるのは 設定 → 写真読み取り。</details></div>
     <div class="mlist">${it('📷','手書き点検表の読み取り','写真から日常点検の値・点検名・日付を読み取り、確認してから反映',"go('day',{day:TODAY})")}
     ${it('🔢','計器写真の数値読み取り','測定記録の各項目の「🤖 計器写真から読む」から使います',"editMeas()")}
     ${it('⚠','異常候補の抽出','日常点検・測定の記録から、注意して見るべき点の候補を挙げる',"aiCandidates()")}
-    ${it('🔍','過去の故障・修理履歴の検索','キーワードで端末内を検索し、必要ならAIが要約',"aiSearchHist()")}
-    ${it('📚','技術資料の検索と根拠表示','登録した資料から検索し、その文章だけを根拠にAIが回答',"go('lib')")}
+    ${it('🔍','過去の故障・修理履歴の検索','キーワードで端末内を検索し、必要ならAIが要約',"aiSearchHist()",1)}
+    ${it('📚','技術資料の検索と根拠表示','登録した資料から検索し、その文章だけを根拠にAIが回答',"go('lib')",1)}
     ${it('📝','報告書の下書き','月報の所見・日報の特記事項・申し送り（各画面の🤖ボタン）',"go('report')")}
     ${it('🏭','設備診断の補助説明','設備カルテの記録をもとに、状態の説明文を下書き',"aiPickEq()")}
     ${it('📆','保全計画の改善案','設備の経年・故障・健全度・更新計画から改善案を下書き',"aiPlan()")}</div>`;
