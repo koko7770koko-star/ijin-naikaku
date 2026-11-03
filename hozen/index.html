@@ -2104,9 +2104,14 @@ function vYear(){
     <button class="btn sm wide ${_mkEnji?'':'sec'}" id="enjiBtn" onclick="toggleEnji()">${_mkEnji?'✔ 延期モード中（マスをタップ＝延期／解除）　タップで終了':'延期モード（マスをタップして「延」を付ける）'}</button>
     <button class="btn sm sec wide" style="margin-top:8px" onclick="window.print()">🖨 年間計画を印刷（A4 横）</button></div>`;
   if(!S.items.length)return h+`<div class="empty">まだ項目がありません。「📷 写真から追加」で点検表や計画表を撮ると、点検名が自動で入ります。</div></div>`;
+  // 絞り込み（画面だけの状態 V.yrCat・V.yrNow。保存しない）：分類・「今月に ◯ のある項目だけ」
+  const yCat=V.yrCat&&S.settings.cats.includes(V.yrCat)?V.yrCat:'',yNow=!!V.yrNow&&curIdx>=0;
+  const yShow=it=>(!yCat||it.cat===yCat)&&(!yNow||(mk[it.id]||[])[curIdx]==='○');
+  const yN=S.items.filter(yShow).length;
+  h+=`<div class="card noprint" id="yrFlt" style="padding:10px"><div class="row" style="flex-wrap:nowrap"><select class="grow" aria-label="分類で絞り込む" onchange="V.yrCat=this.value;render()"><option value="">分類：すべて</option>${S.settings.cats.map(c=>`<option ${c===yCat?'selected':''}>${esc(c)}</option>`).join('')}</select>${curIdx>=0?`<button class="btn sm ${yNow?'':'sec'}" style="min-height:44px" onclick="V.yrNow=!V.yrNow;render()">${yNow?'✔ 今月の ◯ だけ':'今月の ◯ だけ'}</button>`:''}</div>${yCat||yNow?`<div class="muted" style="margin-top:6px">絞り込み中：${yN}／${S.items.length} 件を表示（記録は消えません）${yN?'':'　該当する項目がありません'} <a href="#" onclick="V.yrCat='';V.yrNow=false;render();return false">絞り込みをやめる</a></div>`:''}</div>`;
   h+=`<div class="tbw"><table class="yr"><thead><tr><th class="nm">点検・作業項目</th>${MONTHS.map((m,i)=>`<th class="${i===curIdx?'cur':''}">${m}月</th>`).join('')}<th>済/予</th></tr></thead>`;
   let lastCat=null;
-  for(const it of [...S.items].sort((a,b)=>S.settings.cats.indexOf(a.cat)-S.settings.cats.indexOf(b.cat))){
+  for(const it of [...S.items].filter(yShow).sort((a,b)=>S.settings.cats.indexOf(a.cat)-S.settings.cats.indexOf(b.cat))){
     const row=mk[it.id]||Array(12).fill('');
     if(it.cat!==lastCat){h+=`<tr class="cat"><td colspan="14"><span>${esc(it.cat||'未分類')}</span></td></tr>`;lastCat=it.cat}
     const sub=[it.cycle,it.who,it.base?'初回'+md(it.base):''].filter(Boolean).join('・');
