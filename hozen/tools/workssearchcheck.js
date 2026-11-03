@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const before=await p.evaluate(()=>{S.works=[...Array(300)].map((_,i)=>({id:'w'+i,no:'W'+String(i+1).padStart(3,'0'),title:'作業'+i+'（名前の長い作業 受変電設備の絶縁抵抗測定と清掃）',kind:'点検',status:['起案','承認待ち','承認済み','実施中','完了'][i%5],date:addD(TODAY,i%40-10),start:'09:00',endDate:'',end:'17:00',equipIds:[],locId:'',place:'A棟',staff:['職員'+(i%6+1)],vendor:i%7?'':'○○電気工事（株）',vendorStaff:'',needQuals:[],needN:0,content:'',outage:{on:false,range:'',from:'',to:'',affect:'',contact:''},ky:[],kyBy:'',pre:[],post:[],stdId:'',stdVer:'',stdName:'',result:'',cost:'',photos:[],docs:[],approvals:[],hist:[],issueId:''}));save();return JSON.stringify(S.works)});
  const t0=Date.now();await p.evaluate(()=>go('works'));await p.waitForSelector('#wkQ');const ms=Date.now()-t0;if(ms>300)bad.push('開くのが遅い '+ms+'ms');
  await p.fill('#wkQ','');await p.focus('#wkQ');await p.keyboard.type('W001');await p.waitForTimeout(700);

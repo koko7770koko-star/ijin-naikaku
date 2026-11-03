@@ -6,7 +6,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:844}});const p=await ctx.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(2000);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  // 最近の場所が出るよう古い案件を1件入れる
  await p.evaluate(()=>{S.issues.push({id:'zz1',src:'manual:zz1',date:TODAY,title:'確認用',place:'○○棟 1F',detail:'',status:'発見',action:'',closed:'',photos:[],equipId:'',log:[]});save();go('issues')});
  await p.waitForTimeout(300);

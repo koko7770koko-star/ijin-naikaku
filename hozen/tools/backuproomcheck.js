@@ -6,7 +6,7 @@ const PNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
 async function open(b){const ctx=await b.newContext({viewport:{width:390,height:844},acceptDownloads:true});const p=await ctx.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(2000);return {ctx,p,errs}}
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);return {ctx,p,errs}}
 const snap=p=>p.evaluate(()=>({locs:JSON.stringify((S.locs||[]).map(l=>[l.id,l.type,l.parent,l.name,l.ord==null?null:l.ord])),ban:JSON.stringify(S.banChk||{}),eq:JSON.stringify((S.equipment||[]).map(e=>[e.id,e.locId||''])),iss:JSON.stringify((S.issues||[]).map(i=>[i.id,i.place,i.status])),n:(S.locs||[]).length}));
 (async()=>{const b=await chromium.launch();
  const A=await open(b);

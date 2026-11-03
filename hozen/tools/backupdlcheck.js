@@ -7,7 +7,7 @@ const {chromium}=require('playwright');const path=require('path');const fs=requi
 async function open(b){const ctx=await b.newContext({viewport:{width:390,height:844},acceptDownloads:true});const p=await ctx.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);return {ctx,p,errs}}
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);return {ctx,p,errs}}
 const snap=p=>p.evaluate(()=>({locs:JSON.stringify((S.locs||[]).map(l=>[l.id,l.type,l.parent,l.name])),ban:JSON.stringify(S.banChk||{}),eq:JSON.stringify((S.equipment||[]).map(e=>[e.id,e.locId||'']))}));
 (async()=>{const b=await chromium.launch();const A=await open(b);
  await A.p.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});S.locs=[mk('b1','A棟','建屋',''),mk('f1','1階','階','b1'),mk('r1','第1電気室','電気室','f1'),mk('p1','動力盤-1','盤','r1')];

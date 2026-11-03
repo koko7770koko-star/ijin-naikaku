@@ -7,7 +7,7 @@ const FILE=path.resolve(__dirname,'..','index.html');
  const long='非常用発電機 無負荷運転および負荷運転試験（消防法・保安規程に基づく定期点検）';const items=[],tasks=[],marks={};
  for(let i=0;i<12;i++){items.push({id:'it'+i,name:long+i,cat:'電気',cycle:'毎月',who:'委託'});marks['it'+i]=Array(12).fill('○');tasks.push({id:'t'+i,date:ym+'-'+String(1+i).padStart(2,'0'),title:long+i,status:'完了',type:'点検'})}
  await p.addInitScript(([k,v])=>{if(sessionStorage.getItem('x'))return;sessionStorage.setItem('x','1');localStorage.clear();localStorage.setItem(k,v)},['hospElecSched_v1',JSON.stringify({settings:{name:'確認'},items,tasks,marks:{[fy]:marks}})]);
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);await p.emulateMedia({media:'print'});
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);await p.emulateMedia({media:'print'});
  for(const [v,ex] of [['report',{}],['dailyRep',{day:ym+'-05'}]]){
   await p.evaluate(([v,ex])=>{const d=new Date();V.ry=d.getFullYear();V.rm=d.getMonth()+1;go(v,ex)},[v,ex]);await p.waitForTimeout(300);
   const r=await p.evaluate(()=>{const bad=[];document.querySelectorAll('.rep th,.rep td.c,.rep td.cat').forEach(e=>{const t=(e.textContent||'').trim();if(t.length>=2&&t.length<=5&&!/\s/.test(t)&&e.childElementCount===0){const rg=document.createRange();rg.selectNodeContents(e);const tops=new Set([...rg.getClientRects()].map(x=>Math.round(x.top)));if(tops.size>1)bad.push(t)}});

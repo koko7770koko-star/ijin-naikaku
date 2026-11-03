@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const mk=i=>{const cv=document.createElement('canvas');cv.width=160;cv.height=120;const x=cv.getContext('2d');x.fillStyle='hsl('+(i*30)+',50%,60%)';x.fillRect(0,0,160,120);return cv.toDataURL('image/png')};
   const ym=TODAY.slice(0,7);S.tasks=[...Array(12)].map((_,i)=>{PH['rp'+i]=mk(i);return {id:'t'+i,date:ym+'-'+String(1+i).padStart(2,'0'),time:'',kind:'月次',cat:'',title:'点検の試し'+i+(i%4===0?'（名前の長い項目 受変電設備 高圧交流負荷開閉器の絶縁抵抗測定）':''),place:'',staff:'',attend:'',status:'完了',result:'良',note:'',photos:['rp'+i]}});
   S.settings.repPhotos=true;V.ry=now.getFullYear();V.rm=now.getMonth()+1;go('report')});await p.waitForTimeout(500);

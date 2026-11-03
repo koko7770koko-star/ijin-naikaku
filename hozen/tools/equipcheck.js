@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const keys=Object.keys((S.equipment||[])[0]||{});for(let i=0;i<200;i++)S.equipment.push({id:'qq'+i,code:'EQ-'+String(i).padStart(3,'0'),name:(i%2?'変圧器':'受電盤')+i,place:'○○棟',maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[],repairs:[],status:'稼働',kind:'',importance:'',locId:''});go('equip')});
  await p.waitForTimeout(500);
  const n0=await p.evaluate(()=>document.querySelectorAll('#app .item').length);

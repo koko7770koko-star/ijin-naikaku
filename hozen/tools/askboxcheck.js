@@ -6,7 +6,7 @@ if(/\bprompt\(/.test(fs.readFileSync(FILE,'utf8').replace(/askClaudeText\(prompt
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));let dlg=0;p.on('dialog',d=>{dlg++;d.dismiss().catch(()=>{})});
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  // 1) 入力画面の上に重ねても下が残る
  await p.evaluate(()=>{openModal('<h3>下の画面</h3><input id="keep" value="入力中">')});
  const pr=p.evaluate(()=>askBox({title:'確認',label:'名前',value:'既定',maxlength:60}));

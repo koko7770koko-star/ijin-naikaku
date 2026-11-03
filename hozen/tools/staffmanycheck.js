@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const before=await p.evaluate(()=>{const L=['第三種電気主任技術者','第二種電気工事士','消防設備士（甲種第4類）','高圧ケーブル絶縁診断技術者','低圧電気取扱特別教育修了'];S.qualList=[...new Set([...S.qualList,...L])];
   S.settings.staff=[...Array(30)].map((_,i)=>'職員'+(i+1));S.quals={};S.settings.staff.forEach((n,i)=>{if(i%3!==2)S.quals[n]=L.slice(0,i%3===0?5:2)});go('staff');return JSON.stringify(S.quals)});await p.waitForTimeout(400);
  const r=await p.evaluate(()=>{const it=[...document.querySelectorAll('#app .item')];const w=document.documentElement.clientWidth;

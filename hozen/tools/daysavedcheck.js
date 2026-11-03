@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const y=addD(TODAY,-1),n=numDefs()[0];S.daily[y]={[n.id]:10,c:{},done:new Date().toISOString()};save();go('day',{day:TODAY})});await p.waitForTimeout(300);
  const t0=await p.evaluate(()=>$('#daySaved').textContent);if(t0)bad.push('入れる前から表示 '+t0);
  const hint=await p.evaluate(()=>{const x=document.querySelector('.hint.tapprev');if(!x)return null;const r=x.getBoundingClientRect();return {h:r.height,r:r.right}});

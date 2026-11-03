@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const T=TODAY;S.equipment=[{id:'e1',code:'E-1',name:'非常用発電機 1号',place:'A棟',kind:'発電機',status:'稼働',importance:'A',photos:[],docs:[],health:[],repairs:[...Array(30)].map((_,i)=>({id:'r'+i,date:addD(T,-i*7),kind:'修理',content:'修理内容 '+i,vendor:'業者',cost:1000,photos:[]}))}];
   S.issues=[...Array(30)].map((_,i)=>({id:'i'+i,date:addD(T,-i),title:'異常 '+i,place:'',status:i%3?'完了':'対応中',equipId:'e1',urgency:'中',detail:'',action:'',cause:''}));
   S.tasks=[...Array(30)].map((_,i)=>({id:'t'+i,date:addD(T,-i),time:'',kind:'臨時',cat:S.settings.cats[0],title:'作業 '+i,place:'',staff:'',attend:'',status:'完了',result:'良',note:'',photos:[],equipId:'e1'}));

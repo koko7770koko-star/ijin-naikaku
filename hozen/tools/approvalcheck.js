@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:600}});const p=await c.newPage();const errs=[];let dlg=0;
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>{dlg++;d.dismiss().catch(()=>{})});
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const inView=async n=>{const r=await p.evaluate(()=>{const bs=[...document.querySelectorAll('#modal button')].filter(x=>/を記録|^承認$|^差し戻し$/.test(x.textContent.trim()));const bt=bs[bs.length-1];if(!bt)return null;const rc=bt.getBoundingClientRect();return {b:rc.bottom,h:rc.height,vh:innerHeight,sw:document.documentElement.scrollWidth}});
   if(!r)bad.push(n+'：記録のボタンが無い');else{if(r.h<44)bad.push(n+'：ボタンが小さい '+r.h);if(r.sw>392)bad.push(n+'：横にはみ出す')}return r};
  // 1) 異常の承認（枠の中。入力中の内容が消えない）

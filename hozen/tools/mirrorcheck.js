@@ -11,17 +11,17 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  // ① localStorage を消して開き直す
  await p.evaluate(()=>{localStorage.removeItem('hospElecSched_v1');localStorage.removeItem('hospElecSched_v1_at')});
  await p.evaluate(()=>{window.__noSave=true});
- await p.goto('file://'+FILE);await p.waitForTimeout(2200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  let t=await p.evaluate(()=>document.querySelector('#modal').innerText+' '+(document.querySelector('#mask').classList.contains('on')?'ON':'OFF'));
  if(!/予備保存から戻せます/.test(t))bad.push('①写しからの復元の提案が出ない：'+t.slice(0,80));
  else{await p.click('button:has-text("予備保存の内容に戻す")');await p.waitForTimeout(1500);const v=await p.evaluate(()=>(S.tasks[0]||{}).title);if(v!=='MIRROR_OK')bad.push('①戻しても記録が戻らない '+v)}
  // ② 本体が新しい（写しが古い）ときは提案が出ない
  await p.evaluate(()=>{S.tasks[0].title='NEWER';save()});await p.waitForTimeout(800);
- await p.goto('file://'+FILE);await p.waitForTimeout(2200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  t=await p.evaluate(()=>document.querySelector('#modal').innerText);if(/予備保存から戻せます/.test(t))bad.push('②本体が新しいのに提案が出た');
  const keep=await p.evaluate(()=>(S.tasks[0]||{}).title);if(keep!=='NEWER')bad.push('②本体の内容が変わった '+keep);
  // ③ 写しが壊れている
  await p.evaluate(()=>new Promise(res=>{const r=indexedDB.databases?indexedDB.databases():Promise.resolve([]);r.then(async ds=>{for(const d of ds){const q=indexedDB.open(d.name);q.onsuccess=()=>{const db=q.result;const names=[...db.objectStoreNames];if(names.includes('m')){const tx=db.transaction('m','readwrite');tx.objectStore('m').put({at:Date.now()+1000,ver:'x',data:'これはJSONではない'},'app');tx.oncomplete=()=>{db.close();res()}}else{db.close();res()}}}})}));
- await p.goto('file://'+FILE);await p.waitForTimeout(2200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const ok=await p.evaluate(()=>typeof S==='object'&&!!document.querySelector('#app')&&document.querySelector('#app').children.length>0);if(!ok)bad.push('③写しが壊れていると固まる');
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();

@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.quals={'職員A':['第三種電気主任技術者'],'職員B':[]};go('staff')});await p.waitForTimeout(300);
  const r=await p.evaluate(()=>({n:document.querySelectorAll('#app .qadd').length,t:document.getElementById('app').innerText,sw:document.documentElement.scrollWidth}));
  if(r.n<1)bad.push('未登録の人に「資格を登録 ›」が出ない');if(!/第三種電気主任技術者/.test(r.t))bad.push('登録済みの資格名が出ない');if(r.sw>392)bad.push('横にはみ出す '+r.sw);

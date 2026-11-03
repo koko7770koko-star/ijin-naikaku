@@ -10,7 +10,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const KEY='hospElecSched_v1
   equipment:[{id:'e1',code:'G-1',name:'発電機1',kind:'発電機',locId:'l3',status:'稼働',place:''},{id:'e2',code:'G-2',name:'発電機2',kind:'発電機',locId:'l5',status:'稼働',place:''},{id:'e3',code:'G-3',name:'発電機3',kind:'発電機',locId:'',status:'稼働',place:''}],
   meas:[{id:'m1',date:ymd(today),equipId:'e1',tplId:'mt_gen',type:'電圧・電流・電力',name:'月次',rows:[{name:'電圧',unit:'V',v:'200'}],cond:{},note:''}]};
  await p.addInitScript(([k,v])=>{if(sessionStorage.getItem('__gc'))return;sessionStorage.setItem('__gc','1');localStorage.clear();localStorage.setItem(k,v)},[KEY,JSON.stringify(old)]);
- await p.goto('file://'+FILE);await p.waitForTimeout(2000);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>go('diag',{dgTab:'meas'}));await p.waitForTimeout(300);
  const t=await p.$eval('#genCard',e=>e.innerText);
  if(!/A棟 › 1F/.test(t))errs.push('A棟 › 1F のまとまりが無い');

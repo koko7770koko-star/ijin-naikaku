@@ -7,7 +7,7 @@ const fake=iso=>`(()=>{const R=Date,T=new R('${iso}').getTime(),D0=R.now();class
  const run=async(iso,pre)=>{const c=await b.newContext({viewport:{width:390,height:844},timezoneId:'Asia/Tokyo'});const p=await c.newPage();const errs=[];
   p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
   await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
-  await p.addInitScript(fake(iso));await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+  await p.addInitScript(fake(iso));await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
   if(pre)await p.evaluate(pre);await p.evaluate(()=>go('day',{day:TODAY}));await p.waitForTimeout(300);return {p,c,errs}};
  let {p,c,errs}=await run('2026-11-04T00:30:00+09:00');
  const info=await p.evaluate(()=>{const e=document.getElementById('dayCross');if(!e)return null;const bt=e.querySelector('button').getBoundingClientRect();return {td:TODAY,h:bt.height,r:bt.right,sw:document.documentElement.scrollWidth,t:e.textContent}});

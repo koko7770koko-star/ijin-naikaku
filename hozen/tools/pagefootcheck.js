@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const css=()=>p.evaluate(()=>document.getElementById('pageStyle').textContent);
  await p.evaluate(()=>{S.settings.name='○○総合病院';save();go('report')});await p.waitForTimeout(300);
  let t=await css();if(!t.includes('counter(page)')||!t.includes('counter(pages)')||!t.includes('○○総合病院')||!t.includes('月報・年報'))bad.push('月報の余白枠 '+t);if(!t.includes('size:A4 portrait'))bad.push('縦のまま');

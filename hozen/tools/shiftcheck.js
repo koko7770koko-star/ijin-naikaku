@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);await p.click('#nav button[data-v="shift"]');await p.waitForTimeout(700);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);await p.click('#nav button[data-v="shift"]');await p.waitForTimeout(700);
  const r=await p.evaluate(()=>{const cs=[...document.querySelectorAll('#shTable td.cell')];const w=document.querySelector('#shTable').parentElement;
   return {n:cs.length,min:Math.min(...cs.map(x=>x.getBoundingClientRect().height)),hint:!!document.querySelector('.shhint'),sw:document.documentElement.scrollWidth,wscroll:w.scrollWidth>w.clientWidth}});
  if(!r.n)bad.push('マスが無い');if(r.min<44)bad.push('マスの高さが44px未満 '+r.min);if(!r.hint)bad.push('案内が無い');if(r.sw>392)bad.push('ページが横にはみ出す '+r.sw);

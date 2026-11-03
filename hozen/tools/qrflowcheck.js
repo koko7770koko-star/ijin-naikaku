@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.locs=[{id:'b1',name:'A棟',type:'建屋',parent:'',note:'',pos:{}}];S.equipment=[{id:'e1',code:'E-001',name:'変圧器',kind:'変圧器',status:'稼働',locId:'b1',run:{meters:[]},repairs:[],docs:[],photos:[],health:[]},{id:'g1',code:'G-1',name:'非常用発電機',kind:'発電機',status:'稼働',locId:'b1',run:{meters:[]},repairs:[],docs:[],photos:[],health:[]}];save();go('qr')});
  let taps=0;
  for(const [code,kind] of [['E-001','meas'],['G-1','gen']]){

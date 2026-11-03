@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];let sent=0;
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));
  await c.route('**/*',r=>{const u=r.request().url();if(/^(file|data|blob):/.test(u))return r.continue();sent++;return r.abort()});
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>go('ai'));await p.waitForTimeout(300);
  const r=await p.evaluate(()=>({n:document.querySelectorAll('#app .mitem').length,s:[...document.querySelectorAll('#app .aisend')].map(e=>({t:e.textContent,f:parseFloat(getComputedStyle(e).fontSize)})),sw:document.documentElement.scrollWidth}));
  if(r.s.length!==r.n)bad.push('送る物の行が足りない '+r.s.length+'/'+r.n);

@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.accept().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.settings.operator='';S.issues.push({id:'ic1',src:'m:ic1',date:addD(TODAY,-3),title:'○○棟 2階 分電盤の端子の緩み',place:'○○棟 2F',detail:'',status:'対応中',action:'増し締めを実施',closed:'',photos:[],equipId:'',urgency:'中',log:[]});save();go('issues')});await p.waitForTimeout(400);
  let taps=0;
  await p.click('#app .item:has-text("分電盤の端子の緩み")');taps++;await p.waitForTimeout(400); // 行を開く（数えない）

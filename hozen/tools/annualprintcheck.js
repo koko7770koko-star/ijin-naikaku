@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const before=await p.evaluate(()=>{const fy=now.getMonth()+1>=4?now.getFullYear():now.getFullYear()-1;
   S.items=[...Array(60)].map((_,i)=>({id:'it'+i,name:'点検項目'+i+'（受変電設備 高圧交流負荷開閉器の点検）',cat:['受変電','発電機','空調','消防'][i%4],cycle:['毎月','3ヶ月','6ヶ月','年1回'][i%4],base:fy+'-04-10',who:i%2?'委託':'自主'}));
   S.marks={[fy]:Object.fromEntries(S.items.map((it,i)=>[it.id,[...Array(12)].map((_,k)=>(k+i)%3===0?'済':(k+i)%3===1?'○':'')]))};

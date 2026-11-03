@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.library=[...Array(25)].map((_,i)=>({id:'l'+i,title:i%2?'高圧受電設備 真空遮断器 取扱説明書 保守点検要領 第'+i+'版（メーカー提出資料の写し）':'VCB-ABCDEFGHIJKLMNOPQRSTUVWXYZ-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-'+i,tags:'真空遮断器 取扱説明書 保安規程 点検要領 メーカー名 型式 '+'タグ'.repeat(10),text:i%3?'開閉回数の目安 VCB 仕様':'',file:i%4?'':'f'+i,type:'application/pdf',equipIds:[]}));go('lib')});await p.waitForTimeout(400);
  const r=await p.evaluate(()=>{const it=[...document.querySelectorAll('#app .item')];const w=document.documentElement.clientWidth;
   return {n:it.length,sw:document.documentElement.scrollWidth,cut:it.filter(e=>e.scrollWidth>e.clientWidth+1||e.getBoundingClientRect().right>w+1).length,small:it.filter(e=>e.getBoundingClientRect().height<44).length,ov:it.some((e,i)=>i&&e.getBoundingClientRect().top<it[i-1].getBoundingClientRect().bottom-1)}});

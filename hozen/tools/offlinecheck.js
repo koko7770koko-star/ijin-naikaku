@@ -5,7 +5,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:844}});const p=await ctx.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.settings.wx={on:true,lat:35,lng:135,label:'○○',pref:'270000'};});
  const r1=await p.evaluate(async()=>{try{const r=await wxFetch(true);return {r:r===null?'null':'ok',err:WX_ERR}}catch(e){return {thrown:e.message}}});
  if(r1.thrown)bad.push('天気の取得が例外で止まった '+r1.thrown);else if(r1.r==='null'&&!r1.err)bad.push('天気が取れないのに案内（WX_ERR）が空');

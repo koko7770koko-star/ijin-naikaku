@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.accept().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const eq='区分,設備ID,設備名称,設置場所,メーカー,型式,製造番号,設置年月,点検周期,日付,種類,内容,業者・対応者,費用,備考,階層,種別,重要度,状態,耐用年数,更新予定,更新費用\r\n設備,E-1,分電盤,,,,,,,,,,,,,,,,,２０,２０３０,"1,200,000"\r\n履歴,E-1,分電盤,,,,,,,2026-01-05,修理,増し締め,,"３，０００",\r\n';
  const r=await p.evaluate(t=>{const P=planEquipCsv(t);return {life:P.eqs[0].o.life,y:P.eqs[0].o.renewYear,cost:P.eqs[0].o.renewCost,rc:P.reps[0]&&P.reps[0].o.cost,skip:P.skip.length}},eq);
  if(r.life!==20||r.y!==2030||r.cost!==1200000||r.rc!==3000||r.skip)bad.push('設備台帳の全角・カンマ '+JSON.stringify(r));

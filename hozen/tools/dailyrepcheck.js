@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.locs=[{id:'b1',name:'A棟',type:'建屋',parent:''},{id:'f1',name:'1F',type:'階',parent:'b1'},{id:'k1',name:'盤1',type:'盤',parent:'f1'}];
   S.equipment=[{id:'g1',code:'G-1',name:'非常用発電機',kind:'発電機',status:'稼働',locId:'f1',run:{meters:[]}}];
   S.banChk={[TODAY.slice(0,7)]:{k1:['済','○','']}};

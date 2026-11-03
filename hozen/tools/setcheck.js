@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);await p.evaluate(()=>go('set'));await p.waitForTimeout(400);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);await p.evaluate(()=>go('set'));await p.waitForTimeout(400);
  const r=await p.evaluate(()=>{const d=document.querySelector('#dangerCard');if(!d)return null;const bk=[...document.querySelectorAll('.card')].find(x=>/データ・バックアップ/.test(x.textContent.slice(0,20)));
   const w=d.querySelector('button.red');return {inBk:bk&&bk.contains(d),hasWipe:!!w,h:w&&w.getBoundingClientRect().height,vis:d.closest('.tabpane').style.display!=='none',last:[...d.closest('.tabpane').children].pop()===d}});
  if(!r)bad.push('危険な操作の欄が無い');else{if(r.inBk)bad.push('バックアップ欄の中にある');if(!r.hasWipe)bad.push('消去ボタンが無い');if(r.h<44)bad.push('消去ボタンが小さい '+r.h);if(!r.vis)bad.push('データタブに無い');if(!r.last)bad.push('タブの一番下でない')}

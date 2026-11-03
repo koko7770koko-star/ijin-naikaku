@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);await p.evaluate(()=>go('menu'));await p.waitForTimeout(300);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);await p.evaluate(()=>go('menu'));await p.waitForTimeout(300);
  const r=await p.evaluate(()=>{const s=document.querySelector('.msearch');const cv=document.createElement('canvas').getContext('2d');cv.font=getComputedStyle(s).font;
   const tw=cv.measureText(s.placeholder).width,iw=s.clientWidth-parseFloat(getComputedStyle(s).paddingLeft)-parseFloat(getComputedStyle(s).paddingRight);
   const md=[...document.querySelectorAll('.mtile .md')].map(e=>{const cs=getComputedStyle(e);return {t:e.textContent,lines:Math.round(e.getBoundingClientRect().height/parseFloat(cs.lineHeight)),fs:parseFloat(cs.fontSize)}});

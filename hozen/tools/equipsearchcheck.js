@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.locs=[{id:'b1',name:'A棟',type:'建屋',parent:'',note:'',pos:{}},{id:'f1',name:'1F',type:'階',parent:'b1',note:'',pos:{}}];
   S.equipment=[...Array(200)].map((_,i)=>({id:'e'+i,code:'E-'+String(i+1).padStart(3,'0'),name:'設備'+i+'（名前の長い設備 高圧交流負荷開閉器）',kind:['変圧器','発電機','遮断器'][i%3],status:'稼働',importance:['A','B','C'][i%3],locId:'f1',maker:'メーカー'+(i%7),model:'型式'+i,place:'',run:{meters:[]},repairs:i%5?[]:[{id:'r'+i,date:TODAY,kind:'修理',content:'x',vendor:''}],docs:[],photos:[],health:[]}));
   S.items=[...Array(300)].map((_,i)=>({id:'it'+i,name:'点検'+i,cat:'受変電',cycle:'年1回',base:addD(TODAY,-300+i%200),who:'委託',equipId:'e'+(i%200),track:true}));

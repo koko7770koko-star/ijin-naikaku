@@ -8,7 +8,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   await p.addInitScript(n=>{window.BarcodeDetector=function(){this.detect=async()=>[]};
    Object.defineProperty(navigator,'mediaDevices',{value:{getUserMedia:()=>Promise.reject(Object.assign(new Error('x'),{name:n}))},configurable:true});
    Object.defineProperty(window,'isSecureContext',{value:true})},name);
-  await p.goto('file://'+FILE);await p.waitForTimeout(900);
+  await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
   await p.evaluate(()=>{go('qr');qrScan()});await p.waitForTimeout(500);
   const r=await p.evaluate(()=>({m:document.querySelector('#qr_msg').textContent,inp:!!document.querySelector('#qr_id'),w:document.documentElement.scrollWidth}));
   if(/準備しています/.test(r.m))bad.push(name+'：準備中のまま');

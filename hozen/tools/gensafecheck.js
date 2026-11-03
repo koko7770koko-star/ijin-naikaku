@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];let confirmMsg='';
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>{if(d.type()==='confirm')confirmMsg=d.message();d.accept().catch(()=>{})});
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  // 世代を30件つくる
  await p.evaluate(async()=>{for(let i=0;i<30;i++){await snapshot('試し'+i,null,true);await new Promise(r=>setTimeout(r,3))}});
  const n0=await p.evaluate(async()=>(await listGenerations()).length);if(n0<30)bad.push('世代が30件にならない '+n0);

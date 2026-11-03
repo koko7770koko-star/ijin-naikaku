@@ -37,7 +37,7 @@ const CASES=[
   await p.waitForFunction(()=>localStorage.getItem('kinmuhyo_v1')!=null,null,{timeout:15000}).catch(()=>{});await p.waitForTimeout(400);
   await p.evaluate(ls=>{localStorage.clear();for(const k in ls)localStorage.setItem(k,ls[k])},c.ls);await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(500);
   const views=await p.evaluate(()=>Object.keys(VIEWS));
-  for(const v of views){if(v==='equipDetail')continue;await p.evaluate(v=>{try{go(v)}catch(e){console.error('go '+v+' '+e.message)}},v);await p.waitForTimeout(150)}
+  for(const v of views){if(v==='equipDetail')continue;await p.evaluate(v=>{try{go(v)}catch(e){console.error('go '+v+' '+e.message)}},v);await p.waitForTimeout(40)} // 描き直しはその場で終わるので短く（遅い確かめの道具を短く：hz-tools-slow）
   if(c.extra){// 今日足した画面と操作を、その記録で1つずつ開く（エラーが出ないこと）
    await p.evaluate(()=>{const tr=(n,f)=>{try{f()}catch(e){console.error(n+' '+e.message)}};const L=S.locs||[],E=S.equipment||[];
     tr('locs',()=>{go('locs');locFold(true)});L.forEach(l=>{tr('locMenu '+l.id,()=>{locMenu(l.id);closeModal(true)});tr('locEquip '+l.id,()=>{locEquip(l.id);closeModal(true)});tr('locAdd '+l.id,()=>{locAdd(l.id);closeModal(true)})});

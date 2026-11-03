@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const r=await p.evaluate(()=>{const mk=(i,st,date,end)=>({id:'w'+i,no:'W-00'+i,title:'作業'+i,kind:'点検',status:st,date,endDate:end||'',start:'09:00',end:'17:00',equipIds:[],staff:['職員甲'],vendor:'',outage:{on:false,range:''},cost:'',approvals:[],pre:[],post:[],ky:[],hist:[],photos:[],docs:[],needQuals:[]});
   const keys0=Object.keys(mk(0,'起案',TODAY)).join();
   S.works=[mk(1,'実施中',addD(TODAY,-3)),mk(2,'完了',addD(TODAY,-3)),mk(3,'中止',addD(TODAY,-3)),mk(4,'承認待ち',TODAY),mk(5,'起案',addD(TODAY,2)),mk(6,'実施中',addD(TODAY,-10),addD(TODAY,-1))];

@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{const n=numDefs()[0];n.min=5;n.max=50;const f=addM(TODAY.slice(0,7)+'-01',-1);
   [TODAY.slice(0,7)+'-01',TODAY,f,f.slice(0,7)+'-'+pad(lastDayOf(+f.slice(0,4),+f.slice(5,7))),addM(TODAY.slice(0,7)+'-01',-2)].forEach((d,i)=>{S.daily[d]=S.daily[d]||{};S.daily[d][n.id]=i===1?999:10;S.daily[d].done=new Date().toISOString()});
   V.hRange='30';V.hNg=false;V.hItem='';V.hKw='';save();go('hist')});await p.waitForTimeout(300);

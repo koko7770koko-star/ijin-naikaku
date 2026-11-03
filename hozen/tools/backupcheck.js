@@ -6,7 +6,7 @@ const PNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAA
 async function open(b){const ctx=await b.newContext({viewport:{width:390,height:844},acceptDownloads:true});const p=await ctx.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(2000);return {ctx,p,errs}}
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);return {ctx,p,errs}}
 const snap=p=>p.evaluate(()=>({tasks:S.tasks.map(t=>t.id+'|'+t.title+'|'+t.date),daily:Object.keys(S.daily).sort(),issues:S.issues.map(i=>i.id+'|'+i.title),equip:(S.equipment||[]).map(e=>e.id+'|'+e.name),
   photoIds:[...referencedPhotos()].sort(),shift:hasShift()?SHIFT.members().join(','):null,apiKey:S.settings.apiKey||''}));
 (async()=>{const b=await chromium.launch();

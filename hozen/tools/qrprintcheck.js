@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:794,height:1123}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1200);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.equipment=Array.from({length:40},(_,i)=>({id:'eq'+i,code:'E-'+String(i+1).padStart(3,'0'),name:i%5===0?'非常用発電機設備の長い名前テスト用ABCDEFGHIJKLMN':'設備'+(i+1),locId:'',status:'稼働',run:{meters:[]}}));go('qr')});
  await p.waitForTimeout(300);await p.emulateMedia({media:'print'});await p.waitForTimeout(200);
  const r=await p.evaluate(()=>{const L=[...document.querySelectorAll('.qrl')];const sh=document.querySelector('.qrsheet').getBoundingClientRect();

@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const mk=long=>p.evaluate(long=>{S.settings.dnums=[...Array(25)].map((_,i)=>({id:'n'+i,name:long?'測定項目'+i+'（名前の長い項目）':'電圧'+i,short:'',unit:'kV',min:10,max:20,chg:'',equip:'',req:i<5}));S.settings.dchecks=[...Array(15)].map((_,i)=>({id:'c'+i,name:'確認項目'+i,req:false,equip:''}));go('day',{day:TODAY})},long);
  const meas=()=>p.evaluate(()=>{const L=[...document.querySelectorAll('#app .num label')],I=[...document.querySelectorAll('#app .num input')];return {n:L.length,lh:Math.max(...L.map(e=>e.getBoundingClientRect().height)),ell:L.filter(e=>getComputedStyle(e).textOverflow==='ellipsis').length,ih:Math.min(...I.map(e=>e.getBoundingClientRect().height)),sw:document.documentElement.scrollWidth,cut:L.filter(e=>e.getBoundingClientRect().right>innerWidth+1).length}});
  await mk(true);await p.waitForTimeout(400);let r=await meas();

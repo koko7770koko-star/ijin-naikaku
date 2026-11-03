@@ -6,7 +6,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.accept().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  await p.evaluate(()=>{S.issues=[];save();go('home');editIssue()});await p.waitForTimeout(500);
  const v=await p.evaluate(()=>{const vis=id=>{const e=document.getElementById(id);if(!e)return null;const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&!e.closest('details:not([open])')};
   return {title:vis('is_title'),place:vis('is_place'),detail:vis('is_detail'),date:vis('is_date'),action:vis('is_action'),cost:vis('is_cost'),exists:['is_detail','is_date','is_action','is_cost','is_status','is_urg'].every(i=>!!document.getElementById(i)),open:document.getElementById('is_more').open,sw:document.documentElement.scrollWidth,sum:document.querySelector('#is_more summary').getBoundingClientRect().height}});

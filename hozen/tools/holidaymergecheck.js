@@ -5,7 +5,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const h=await p.evaluate(()=>({a:holidays().has('2099-01-01'),b:holidays().has('2099-01-02'),c:holidays().has('2026-11-23')}));
  if(!h.a||h.b||!h.c)bad.push('holidays().has の結果 '+JSON.stringify(h));
  // 2027-11-23（火）は勤労感謝の日。初回日をそこにして年1回→2027年度の予定は 11-24（水）へずれる。
