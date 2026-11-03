@@ -1423,6 +1423,9 @@ const hasShift=()=>!!window.SHIFT;
 window.getOperator=()=>S&&S.settings?S.settings.operator||'':'';
 const members=()=>hasShift()?SHIFT.members():[];
 const staffAll=()=>[...new Set([...members(),...S.settings.staff])];
+/* 前に入れた名前の候補（記録から重複を除いて出す。初期値の名前は入れない）。保存する値は今までどおり文字列 */
+const pastNames=(vals,max=60)=>{const seen=new Set(),out=[];vals.forEach(v=>String(v||'').split(/[、,，]/).forEach(x=>{x=x.trim();if(x&&!seen.has(x)&&out.length<max){seen.add(x);out.push(x)}}));return out};
+const namesList=(id,vals)=>`<datalist id="${id}">${pastNames(vals).map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
 const staffList=id=>`<datalist id="${id}">${staffAll().map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
 /* 祝日の判定：シフト表に入れた祝日（職場の休みなど）＋内蔵の祝日表 holName。has(日付) で調べる */
 function holidays(){let u=new Set();try{u=new Set(hasShift()?SHIFT.holidays():[])}catch(e){}return {has:d=>u.has(d)||!!holName(d)}}
@@ -5503,7 +5506,7 @@ function editWork(id,preset){
       <label class="f">担当者</label><div class="chkgrid" id="wk_staff">${[...new Set([...staff,...w.staff])].map(n=>{const o=crewDay(w.date),v=o&&o.all?o.all[n]:'';return `<label class="chkl" style="margin:2px 0"><input type="checkbox" value="${esc(n)}" ${w.staff.includes(n)?'checked':''}>${esc(n)}${v?`<small class="muted">（${esc(v)}）</small>`:''}${(S.quals[n]||[]).length?`<small class="muted"> ${esc(S.quals[n].join('・'))}</small>`:''}</label>`}).join('')||'<div class="muted">シフトのメンバーか設定の担当者を登録してください</div>'}</div>
       <div class="grid2"><div><label class="f">必要人数</label><input type="number" min="0" step="1" id="wk_needN" value="${esc(w.needN||'')}"></div><div></div></div>
       <label class="f">必要な資格</label><div class="chkgrid" id="wk_quals">${[...new Set([...S.qualList,...w.needQuals])].map(q=>`<label class="chkl" style="margin:2px 0"><input type="checkbox" value="${esc(q)}" ${w.needQuals.includes(q)?'checked':''}>${esc(q)}</label>`).join('')}</div>
-      <div class="grid2"><div><label class="f">協力会社</label><input id="wk_vendor" value="${esc(w.vendor)}" maxlength="100"></div><div><label class="f">協力会社の作業者</label><input id="wk_vendorStaff" value="${esc(w.vendorStaff)}" maxlength="200" placeholder="氏名（、区切り）"></div></div></div>
+      <div class="grid2"><div><label class="f">協力会社</label><input id="wk_vendor" list="dl_wkv" value="${esc(w.vendor)}" maxlength="100">${namesList('dl_wkv',[...(S.works||[]).map(x=>x.vendor),...(S.equipment||[]).flatMap(e=>(e.repairs||[]).map(r=>r.vendor))])}</div><div><label class="f">協力会社の作業者</label><input id="wk_vendorStaff" list="dl_wkvs" value="${esc(w.vendorStaff)}" maxlength="200" placeholder="氏名（、区切り）">${namesList('dl_wkvs',(S.works||[]).map(x=>x.vendorStaff))}</div></div></div>
     <label class="chkl"><input type="checkbox" id="wk_imp" ${w.important?'checked':''}>重要作業（作業開始の前に責任者確認の記録を必須にする）<small class="muted">停電作業・重要度Aの設備は自動で重要作業になります</small></label>
     <label class="f">作業内容・手順</label><textarea id="wk_content" style="min-height:80px" maxlength="4000">${esc(w.content)}</textarea>
     <div class="grp"><label class="chkl" style="margin:0"><input type="checkbox" id="wk_out" ${w.outage.on?'checked':''} onchange="$('#wk_outbox').style.display=this.checked?'block':'none'"><b>停電作業計画</b></label>
@@ -5512,7 +5515,7 @@ function editWork(id,preset){
         <label class="f">影響（部署・医療機器・非常電源への切替など）</label><textarea id="wk_oaffect" maxlength="1000" style="min-height:44px">${esc(w.outage.affect)}</textarea>
         <label class="f">連絡先・周知</label><input id="wk_ocontact" value="${esc(w.outage.contact)}" maxlength="500"></div></div>
     <div class="grp"><b>KY活動・リスクアセスメント</b><div class="muted" style="font-size:12px">可能性・重大性を1〜3で評価（積が6以上は対策の記入が必要）。評価は作業者が行います。</div><div id="wk_ky"></div>
-      <button type="button" class="btn sec sm" onclick="wkKyRead();WK.ky.push({risk:'',measure:'',p:'',s:''});wkKy()">＋ 危険の項目</button><label class="f">KY実施者</label><input id="wk_kyBy" value="${esc(w.kyBy)}" maxlength="200"></div>
+      <button type="button" class="btn sec sm" onclick="wkKyRead();WK.ky.push({risk:'',measure:'',p:'',s:''});wkKy()">＋ 危険の項目</button><label class="f">KY実施者</label><input id="wk_kyBy" list="dl_wkky" value="${esc(w.kyBy)}" maxlength="200">${namesList('dl_wkky',[...(S.works||[]).map(x=>x.kyBy),...staff])}</div>
     <div class="grp"><b>作業標準（施設で承認済みのもの）</b><div class="row" style="flex-wrap:nowrap"><select id="wk_std"><option value="">（選ばない）</option>${(S.stds||[]).filter(stdOk).map(t=>`<option value="${t.id}" ${t.id===w.stdId?'selected':''}>${esc(t.name)} 版${esc(t.ver)}${t.kinds.length?'（'+esc(t.kinds.join('・'))+'）':''}</option>`).join('')}</select><button type="button" class="btn sec sm" onclick="applyStd()">適用</button></div>
       <div id="wk_stdinfo" class="meta" style="margin-top:4px">${stdInfo(w)}</div><div class="muted" style="font-size:12px">停電作業は承認済みの作業標準を選ばないと承認を申請できません。作業標準は「作業管理 → 作業標準」で登録します。</div></div>
     <div class="grp"><b>作業前チェックリスト</b><div class="muted" style="font-size:12px">「必須」がすべて確認されるまで作業開始を記録できません。確認は現場で人が行ってください。</div><div id="wk_pre"></div></div>
