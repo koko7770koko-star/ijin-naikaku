@@ -2759,7 +2759,9 @@ function setIssueStep(x){$('#is_status').value=x;document.querySelectorAll('#is_
   if(x==='完了'){ // 完了にするときの手間を減らす：確認者に自分の名前・完了日に今日を先に入れ、確認の欄が見える所まで動かす（「確かめた」のチェックは人が付ける）
     const by=$('#is_by'),cl=$('#is_closed');if(by&&!by.value.trim()){const w=who();if(w)by.value=w}if(cl&&!cl.value)cl.value=TODAY;
     const box=$('#is_done');if(box&&box.scrollIntoView)try{box.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}}}
+let ISSAVING=false;
 function saveIssue(id){
+  if(ISSAVING)return; // 素早い2度押しで同じ記録が2件できないように
   const g=k=>{const e=$('#is_'+k);return e?e.value.trim():''};
   const o={date:g('date'),title:txt(g('title'),100),place:txt(g('place'),100),detail:txt(g('detail'),2000),status:ISTAT.includes(g('status'))?g('status'):'発見',action:txt(g('action'),4000),photos:[...TP],auto:false,equipId:RE_ID.test(g('equip'))?g('equip'):''};
   Object.assign(o,issueReadExtra());
@@ -2777,11 +2779,12 @@ function saveIssue(id){
     if(!o.action&&!confirm('処置内容が空欄です。このまま完了にしますか？'))return;
     Object.assign(o,{closed,confirmedBy:by,confirmedAt:(old&&old.status==='完了'&&old.confirmedAt)||new Date().toISOString()});
   }else Object.assign(o,{closed:'',confirmedBy:'',confirmedAt:''});
-  if(!id&&S.issues.some(x=>x.date===o.date&&norm(x.title)===norm(o.title))&&!confirm('同じ日に同じ内容の案件があります。重ねて登録しますか？'))return;
+  ISSAVING=true;setTimeout(()=>{ISSAVING=false},800);
+  if(!id&&S.issues.some(x=>x.date===o.date&&norm(x.title)===norm(o.title))&&!confirm('同じ日に同じ内容の案件があります。重ねて登録しますか？')){ISSAVING=false;return}
   const from=old?old.status:'',who=o.status==='完了'?o.confirmedBy:(S.settings.operator||'');
   let reopenNote='';
   if(old&&old.status==='完了'&&o.status!=='完了'){
-    if(!memo){toast('完了した案件を再開するには、理由を「状態を変えた理由・メモ」に書いてください');const e=$('#is_memo');if(e)e.focus();return}
+    if(!memo){toast('完了した案件を再開するには、理由を「状態を変えた理由・メモ」に書いてください');const e=$('#is_memo');if(e)e.focus();ISSAVING=false;return}
     reopenNote=`再開：${memo}（前回の完了 ${old.closed||'－'}・確認者 ${old.confirmedBy||'－'}）`;
     o.reopened=(old.reopened||0)+1;
   }
