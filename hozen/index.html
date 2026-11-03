@@ -2584,7 +2584,7 @@ function vHist(){
       <div><label class="f">キーワード（備考・点検者）</label><input value="${esc(V.hKw||'')}" onchange="V.hKw=this.value;render()"></div></div>
     ${V.hRange==='custom'?`<div class="grid2"><div><label class="f">から</label><input type="date" value="${esc(V.hFrom||addD(TODAY,-30))}" onchange="V.hFrom=this.value;render()"></div><div><label class="f">まで</label><input type="date" value="${esc(V.hTo||TODAY)}" onchange="V.hTo=this.value;render()"></div></div>`:''}
     <label class="chkl"><input type="checkbox" ${V.hNg?'checked':''} onchange="V.hNg=this.checked;render()">異常・基準外だけ表示</label>
-    <div class="row" style="margin-top:10px"><span class="muted grow">${rows.length}日分</span><button class="btn sec sm" onclick="exportDailyCsv()">CSV出力（この条件）</button></div></div>`;
+    <div class="row" style="margin-top:10px"><span class="muted grow">${rows.length}日分</span><button class="btn sec sm" onclick="exportDailyCsv()">CSV出力（いま表示の${rows.length}日分）</button></div></div>`;
   if(isNum)h+=trendCard(numDef(item));
   h+=`<div class="card"><h2>記録</h2>${rows.length?rows.slice(0,200).map(k=>histRow(k,item)).join('')+(rows.length>200?`<div class="muted">ほか ${rows.length-200}日（CSVで全件出力できます）</div>`:''):'<div class="empty">該当する記録はありません</div>'}</div>`;
   return h;
@@ -2622,10 +2622,14 @@ function trendCard(n){
 }
 function exportAllDaily(){const keep={hRange:V.hRange,hItem:V.hItem,hNg:V.hNg,hKw:V.hKw};Object.assign(V,{hRange:'all',hItem:'',hNg:false,hKw:''});try{exportDailyCsv()}finally{Object.assign(V,keep)}}
 function exportDailyCsv(){
-  const rows=histRows().slice().reverse(),nums=numDefs(),checks=chkDefs(),q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=histRows().slice().reverse(),it=V.hItem||'',q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  if(!rows.length){toast('今の絞り込みに合う記録がないので、書き出しません');return}
+  // 項目を選んでいるときは、その項目の列だけを書き出す（画面の絞り込みのまま）
+  const nums=numDefs().filter(n=>!it||n.id===it),checks=chkDefs().filter(c=>!it||c.id===it);
   const H=['日付','状態','判定',...nums.map(n=>`${n.name}(${n.unit})`),...checks.map(c=>c.name),'点検者','備考','完了日時','完了後の修正','写真枚数'];
   const body=rows.map(k=>{const r=S.daily[k],st=dayState(k);return [k,st.st,judge(k),...nums.map(n=>r[n.id]??''),...checks.map(c=>(r.c||{})[c.id]||''),r.by,r.note,r.done&&r.done!=='移行'?new Date(r.done).toLocaleString('ja-JP'):r.done||'',r.mod?'あり':'',(r.photos||[]).length].map(q).join(',')});
-  download(`日常点検_${histRange()[0].replace('0000-00-00','全期間')}_${histRange()[1]}.csv`,new Blob(['﻿'+[H.map(q).join(','),...body].join('\r\n')],{type:'text/csv'}));
+  const itn=it?'_'+String((numDefs().find(n=>n.id===it)||chkDefs().find(c=>c.id===it)||{name:''}).name).replace(/[\\/:*?"<>|\s]/g,''):'';
+  download(`日常点検${itn}_${histRange()[0].replace('0000-00-00','全期間')}_${histRange()[1]}.csv`,new Blob(['﻿'+[H.map(q).join(','),...body].join('\r\n')],{type:'text/csv'}));
 }
 
 /* ---------- 7c 日常点検の項目・管理値の設定 ---------- */
