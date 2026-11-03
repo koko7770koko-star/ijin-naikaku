@@ -6149,16 +6149,24 @@ function qualNeedRows(){
 function qualNeedHTML(){
   const R=qualNeedRows();if(!R.length)return '';const miss=R.filter(r=>!r.n).length;
   return card(`🎯 作業が求める資格 <span class="muted">${miss?`持つ人がいない ${miss}件`:'すべて持つ人がいます'}</span>`,R.map(r=>`<div class="item ${r.n?'':'ng'}" style="min-height:44px"><div class="bd"><div class="ti">${esc(r.q)}</div><div class="meta">求める作業 ${r.works}件</div></div><span class="pill ${r.n?'ok':'ng'}">${r.n?'持つ人 '+r.n+'人':'持つ人がいません'}</span></div>`).join(''))}
+// 人員とシフト表の行き来（hz-staff-shift-link）：その人の今月の勤務（シフト表 kinmuhyo_v1 を読むだけ。形は変えない）
+function staffMonth(name){const k=TODAY.slice(0,7),y=+k.slice(0,4),m=+k.slice(5),out=[];
+  for(let d=1;d<=lastDayOf(y,m);d++){const ds=`${k}-${pad(d)}`,o=crewDay(ds),v=o&&o.all?o.all[name]:'';if(v&&['A日夜勤','B日夜勤','日勤','有給','希望休'].includes(v))out.push({d:ds,v})}return out}
+function staffMonthSum(L){const n=f=>L.filter(x=>f(x.v)).length,a=n(v=>/夜勤/.test(v)),dd=n(v=>v==='日勤'),o=n(v=>v==='有給'||v==='希望休');
+  return [a?`夜勤 ${a}日`:'',dd?`日勤 ${dd}日`:'',o?`休み ${o}日`:''].filter(Boolean).join('・')}
+function staffMonthHTML(name){if(!hasShift())return '';const L=staffMonth(name),m=+TODAY.slice(5,7);
+  return `<div class="stmon" style="margin-top:12px"><b>📅 ${m}月の勤務（シフト表）</b>${L.length?`<div class="muted" style="margin:2px 0 6px">${esc(staffMonthSum(L))}</div><div class="tags">${L.map(x=>`<span class="tag ${/A日/.test(x.v)?'a':/B日/.test(x.v)?'b':x.v==='日勤'?'d':'off'}${x.d===TODAY?' today':''}">${+x.d.slice(8)}日 ${esc(x.v==='A日夜勤'?'A夜勤':x.v==='B日夜勤'?'B夜勤':x.v)}</span>`).join('')}</div>`:'<div class="muted">今月の勤務はシフト表にありません（シフト表のメンバーでない人は出ません）</div>'}
+  <button class="btn sec sm" style="min-height:44px;margin-top:8px" onclick="closeModal();if(!$('#mask').classList.contains('on'))go('shift')">シフト表を開く ›</button></div>`}
 function vStaff(){
   const names=[...new Set([...staffAll(),...Object.keys(S.quals)])];
   return qualNeedHTML()+card('🪪 人員・資格',`<div class="muted" style="margin-bottom:8px">シフトのメンバーと設定の担当者が表示されます。資格を登録すると、作業指示で必要な資格・人数を照合します。</div>`
-    +(names.length?names.map(n=>`<div class="item" onclick="editQual(${esc(JSON.stringify(n))})"><div class="bd"><div class="ti">${esc(n)}</div><div class="meta">${(S.quals[n]||[]).map(esc).join('・')||'<b class="qadd" style="color:var(--accent)">資格を登録 ›</b>'}</div></div><span class="ar">›</span></div>`).join(''):emptyBox('メンバーがいません')),`<button class="btn sec sm" onclick="editQualList()">資格の種類</button>`)
+    +(names.length?names.map(n=>`<div class="item" onclick="editQual(${esc(JSON.stringify(n))})"><div class="bd"><div class="ti">${esc(n)}</div><div class="meta">${(S.quals[n]||[]).map(esc).join('・')||'<b class="qadd" style="color:var(--accent)">資格を登録 ›</b>'}</div>${(()=>{const t=hasShift()?staffMonthSum(staffMonth(n)):'';return t?`<div class="meta stsum">今月：${esc(t)}</div>`:''})()}</div><span class="ar">›</span></div>`).join(''):emptyBox('メンバーがいません')),`<button class="btn sec sm" onclick="editQualList()">資格の種類</button>`)
     +card('📅 今後14日の作業と勤務',[...Array(14)].map((_,k)=>{const d=addD(TODAY,k),W=(S.works||[]).filter(w=>w.date<=d&&(w.endDate||w.date)>=d&&!['中止','完了'].includes(w.status));if(!W.length)return '';const o=crewDay(d);
       return `<div class="grp"><b>${md(d)}（${WD[pd(d).getDay()]}）</b>${o?crewRow(o,'勤務'):''}${W.map(workRow).join('')}</div>`}).join('')||emptyBox('予定されている作業はありません'));
 }
 function editQual(name){
   const has=S.quals[name]||[];
-  openModal(`<h3>資格：${esc(name)}</h3><div class="chkgrid" id="ql">${[...new Set([...S.qualList,...has])].map(q=>`<label class="chkl"><input type="checkbox" value="${esc(q)}" ${has.includes(q)?'checked':''}>${esc(q)}</label>`).join('')}</div>
+  openModal(`<h3>資格：${esc(name)}</h3><div class="chkgrid" id="ql">${[...new Set([...S.qualList,...has])].map(q=>`<label class="chkl"><input type="checkbox" value="${esc(q)}" ${has.includes(q)?'checked':''}>${esc(q)}</label>`).join('')}</div>${staffMonthHTML(name)}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveQual(${esc(JSON.stringify(name))})">保存</button>`)}`);
 }
 function saveQual(name){const v=[...document.querySelectorAll('#ql input:checked')].map(i=>txt(i.value,60));logEdit('staff',name,'資格',(S.quals[name]||[]).join('・'),v.join('・'));if(v.length)S.quals[name]=v;else delete S.quals[name];save();closeModal(true);render();toast('保存しました')}
