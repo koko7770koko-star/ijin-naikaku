@@ -3436,13 +3436,13 @@ function vDailyRep(){
 /* ---------- 10 設定・バックアップ ---------- */
 function vSet(){
   const st=S.settings,L=st.lim,mode=apiKeyMode(),key=getApiKey();
-  const field=(k,l,ph)=>`<label class="f">${l}</label><input value="${esc(st[k])}" placeholder="${ph}" maxlength="100" onchange="S.settings.${k}=txt(this.value,100).trim();save()">`;
-  const list=(k,l)=>`<label class="f">${l}（1行に1つ）</label><textarea style="min-height:80px" onchange="setList('${k}',this.value)">${esc(st[k].join('\n'))}</textarea>`;
+  const field=(k,l,ph,hp)=>`<label class="f">${l}</label><input value="${esc(st[k])}" placeholder="${ph}" maxlength="100" onchange="S.settings.${k}=txt(this.value,100).trim();save()">${hp?`<div class="muted sethelp" style="font-size:12px;margin-top:2px">${hp}</div>`:''}`;
+  const list=(k,l,hp)=>`<label class="f">${l}（1行に1つ）</label><textarea style="min-height:80px" onchange="setList('${k}',this.value)">${esc(st[k].join('\n'))}</textarea>${hp?`<div class="muted sethelp" style="font-size:12px;margin-top:2px">${hp}</div>`:''}`;
   const lim=(k,l)=>`<div><label class="f">${l}</label><input type="number" step="any" inputmode="decimal" value="${esc(L[k])}" onchange="setLim('${k}',this)"></div>`;
-  return `<div class="card"><h2>基本情報（報告書に表示）</h2>${field('name','施設名','例：○○総合病院')}${field('facType','施設の種類（AIへの指示に使います）','例：病院、工場、事務所ビル')}${field('dept','担当部署','例：施設管理課 電気係')}${field('reporter','報告者','氏名')}${field('to','提出先','例：施設管理課長')}${field('operator','この端末を使う人（修正履歴に残る名前）','氏名')}</div>
+  return `<div class="card"><h2>基本情報（報告書に表示）</h2>${field('name','施設名','例：○○総合病院','報告書・印刷物の見出しに出ます')}${field('facType','施設の種類（AIへの指示に使います）','例：病院、工場、事務所ビル','AIに質問するときの前提になります')}${field('dept','担当部署','例：施設管理課 電気係','報告書の担当部署の欄に出ます')}${field('reporter','報告者','氏名','報告書の「報告者」欄に出ます')}${field('to','提出先','例：施設管理課長','報告書の「提出先」欄に出ます')}${field('operator','この端末を使う人（修正履歴に残る名前）','氏名','記録を直したとき「誰が直したか」に使います')}</div>
   <div class="card"><h2>棟と階</h2><div class="muted">A棟〜F棟と各階（地下も）を一度に作ります。既にある物は重ねません。</div><button class="btn sec wide" style="margin-top:8px" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button></div>
   ${defsCard()}
-  <div class="card"><h2>選択肢</h2><div class="muted">シフトの「メンバー」は自動で担当者・点検者の候補に入ります。ここにはそれ以外（委託業者など）を追加。</div>${list('staff','担当者・点検者（追加分）')}${list('cats','分類')}${list('kinds','区分')}</div>
+  <div class="card"><h2>選択肢</h2><div class="muted">シフトの「メンバー」は自動で担当者・点検者の候補に入ります。ここにはそれ以外（委託業者など）を追加。</div>${list('staff','担当者・点検者（追加分）','点検・作業の担当者を選ぶ一覧に加わります')}${list('cats','分類','点検項目の「分類」の選択肢になります')}${list('kinds','区分','点検項目の「区分」の選択肢になります')}</div>
   <div class="card"><h2>写真読み取り（Claude API）</h2>
     <div class="row"><span class="grow">APIキー：<b>${esc(maskKey(key))}</b></span>${key?'<button class="btn red sm" onclick="if(confirm(\'この端末からAPIキーを削除しますか？\')){setApiKey(\'\');render();toast(\'削除しました\')}">削除</button>':''}</div>
     <label class="f">${key?'新しいキーに入れ替える':'APIキーを入れる'}</label><input id="apikey" type="password" placeholder="sk-ant-..." autocomplete="off">

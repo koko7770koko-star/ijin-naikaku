@@ -10,4 +10,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  if(!r)bad.push('危険な操作の欄が無い');else{if(r.inBk)bad.push('バックアップ欄の中にある');if(!r.hasWipe)bad.push('消去ボタンが無い');if(r.h<44)bad.push('消去ボタンが小さい '+r.h);if(!r.vis)bad.push('データタブに無い');if(!r.last)bad.push('タブの一番下でない')}
  const w=await p.evaluate(()=>document.documentElement.scrollWidth);if(w>392)bad.push('横にはみ出す '+w);
  if(process.argv[2]){await p.evaluate(()=>document.querySelector('#dangerCard').scrollIntoView());await p.screenshot({path:process.argv[2]})}
+ // 基本情報・選択肢の各欄に「何に使われるか」の説明が出て、はみ出さない（390px）
+ const hp=await p.evaluate(()=>{go('set',{setTab:'basic'});return null});await p.waitForTimeout(300);
+ const hh=await p.evaluate(()=>{const h=[...document.querySelectorAll('.sethelp')];return {n:h.length,over:h.some(x=>x.getBoundingClientRect().right>document.documentElement.clientWidth),sw:document.documentElement.scrollWidth}});
+ if(hh.n<8)bad.push('設定の欄の説明が足りない '+hh.n);if(hh.over||hh.sw>392)bad.push('設定の説明がはみ出す');
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
