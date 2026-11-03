@@ -3713,6 +3713,15 @@ function vMonthly(){
   </div></div>`;
   return h;
 }
+/* 年報：盤の点検の年間の済み件数（棟ごと・月ごと。● の項目数／全項目数）。表示だけで保存しない */
+function banYearHTML(fy){
+  const B=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true})).filter(b=>banBoards(b.id).length);
+  if(!B.length)return '';
+  const yms=MONTHS.map(m=>(m>=4?fy:fy+1)+'-'+pad(m));let gd=0,gt=0;
+  const rows=B.map(b=>{const bs=banBoards(b.id);let d=0;const cs=yms.map(ym=>{const c=banCount(ym,bs);d+=c.d;return c.d});const t=bs.length*3*12;gd+=d;gt+=t;
+    return `<tr><td>${esc(b.name)}</td><td class="c">${bs.length}</td>${cs.map(x=>`<td class="c">${x}</td>`).join('')}<td class="c"><b>${d}</b>/${t}</td></tr>`});
+  return `<div class="sec">6. 盤の点検（年間の済み件数・棟ごと）</div><div class="scrx">`+repTable('<th>棟</th><th>盤数</th>'+MONTHS.map(m=>`<th>${m}月</th>`).join('')+'<th>年間（●／全項目）</th>',rows,'該当なし')+`</div>`
+   +`<div class="muted" style="font-size:12px">各月の数字は ●（実施済み）の項目数。1面あたり ${BAN_ITEMS.length} 項目×12か月が全項目です。年間 合計 ${gd}／${gt}。</div>`}
 function vAnnual(){
   const fy=V.rfy,rows=MONTHS.map(m=>{const y=m>=4?fy:fy+1;return {y,m,...monthStats(y,m)}}),T=k=>rows.reduce((a,r)=>a+(r[k]||0),0),mk=S.marks[fy]||{};
   const fis=S.issues.filter(i=>i.date>=fy+'-04-01'&&i.date<=(fy+1)+'-03-31');
@@ -3738,6 +3747,7 @@ function vAnnual(){
     ${fis.length?repTable('<th style="width:44px">発生日</th><th>内容</th><th>状態</th><th>処置</th>',fis.map(i=>`<tr><td class="c">${md(i.date)}</td><td>${esc(i.title)}${i.place?'（'+esc(i.place)+'）':''}</td><td class="c ${i.status==='完了'?'grn':'red'}">${esc(i.status)}${i.closed?' '+md(i.closed):''}</td><td>${esc(i.action||'')}</td></tr>`),''):''}
     <div class="sec">5. 法定点検等の期限状況（作成日時点）</div>
     ${repTable('<th>点検・作業項目</th><th>周期</th><th>前回実施</th><th>次回期限</th><th>状況</th>',deadlines().map(x=>`<tr><td>${esc(x.it.name)}</td><td class="c">${esc(x.it.cycle)}</td><td class="c">${slash(x.ld)}</td><td class="c">${slash(x.due)}</td><td class="c ${x.left!=null&&x.left<0?'red':''}">${x.left==null?'記録なし':x.left<0?(-x.left)+'日超過':'残'+x.left+'日'}</td></tr>`),'該当なし')}
+    ${banYearHTML(fy)}
   </div></div>`;
   return h;
 }
