@@ -2544,10 +2544,12 @@ function vDay(){
     <div class="row" style="margin-bottom:4px"><input type="date" value="${s}" onchange="if(isDate(this.value)){V.day=this.value;render()}" class="grow" style="width:auto">${s!==TODAY?'<button class="btn sec sm" onclick="V.day=TODAY;render()">今日</button>':''}</div>
     ${dHas||dFl?`<div class="row noprint" style="margin:6px 0"><select class="grow" aria-label="場所で絞り込む" onchange="V.dayLoc=this.value;render()">${locOptions(dFl).replace('（指定しない）','場所：すべて')}</select></div>${dFl?`<div class="muted" style="margin-bottom:6px">絞り込み中：場所の合わない・未設定の ${dHide} 件は隠れています（記録は残ります）</div>`:''}`:''}
     <div class="grid3">${nums.map((n,i)=>{
+      const longN=nums.some(x=>(x.short||x.name).length>7); // 名前が長い項目があるときだけ、ラベルを2行まで出す（短い名前のときは今までどおり1行）
+      const lblSt=longN?'overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.25;min-height:2.5em;word-break:break-all':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
       const p=prevVal(s,n.id),v=r[n.id],cl=(r.cp||{})[n.id]?'copied':I.ng.some(x=>x.startsWith(n.name+' '))?'bad':I.warn.some(x=>x.startsWith(n.name+' '))?'chg':'';
       const lim=[n.min!==''&&n.min!=null?'下'+n.min:'',n.max!==''&&n.max!=null?'上'+n.max:''].filter(Boolean).join('〜');
       const next=i<nums.length-1?`$('#n_${nums[i+1].id}').focus()`:'this.blur()';
-      return `<div class="num"><label class="f" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(n.short||n.name)}<span style="font-weight:400">(${esc(n.unit)})</span>${n.req?'<span style="color:var(--ng)">*</span>':''}</label>
+      return `<div class="num"><label class="f" style="${lblSt}" title="${esc(n.name)}">${esc(n.short||n.name)}<span style="font-weight:400">(${esc(n.unit)})</span>${n.req?'<span style="color:var(--ng)">*</span>':''}</label>
       <input id="n_${n.id}" class="${cl}" type="number" inputmode="decimal" step="any" enterkeyhint="${i<nums.length-1?'next':'done'}" value="${esc(v??'')}" placeholder="${p?esc(p[1]):''}" onchange="setNum('${n.id}',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();${next}}">
       <div class="hint${v==null&&p?' tapprev':''}" id="h_${n.id}" ${v==null&&p?`onclick="useNumPrev('${n.id}')" title="タップで前回の値を入れる"`:''}>${numHint(s,n)}</div></div>`}).join('')}</div>
     <div id="dayAl">${dayAlerts(s)}</div>
