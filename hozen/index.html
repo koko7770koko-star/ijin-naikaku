@@ -5744,6 +5744,10 @@ function approveIssue(id){
 }
 
 /* ---------- 画面：診断 ---------- */
+async function dgStoreFill(){const el=document.getElementById('dgStore');if(!el)return;let i;try{i=await storageInfo()}catch(e){el.textContent='調べられませんでした';return}
+  const pc=Math.round(i.ls/i.lsMax*100),ph=(S.equipment||[]).reduce((n,e)=>n+((e.photos||[]).length),0)+(S.issues||[]).reduce((n,x)=>n+((x.photos||[]).length),0),big=pc>=80||(i.usage&&i.quota&&i.usage/i.quota>=.8);
+  el.className=big?'al warn':'muted';el.innerHTML=`記録 <b>${fmtCh(i.ls)}</b> / 約${fmtCh(i.lsMax)}（${pc}%）・写真など ${fmtMB(i.usage)} / ${fmtMB(i.quota)}・設備と異常の写真 ${ph}枚`
+   +(big?`<div style="margin-top:6px"><b>いっぱいに近づいています。</b>写真を減らし、バックアップを取ってから古い記録を整理してください。</div><div class="row" style="margin-top:6px"><button class="btn sm grow" style="min-height:44px" onclick="backup()">💾 バックアップを取る</button><button class="btn sec sm grow" style="min-height:44px" onclick="dataCheck()">データ点検</button></div>`:'')}
 function vDiag(){
   const t=V.dgTab||'health';
   let h=tabs16('dgTab',[['health','健全度'],['rec','推奨・傾向'],['fail','故障分析'],['meas','測定記録']]);
@@ -5752,6 +5756,7 @@ function vDiag(){
     const L=E.map(e=>({e,H:healthOf(e),last:(e.health||[]).slice(-1)[0]})).sort((a,b)=>(a.H.score??999)-(b.H.score??999));
     h+=card('💯 設備の健全度',`<div class="muted" style="margin-bottom:6px">参考指標は記録から自動計算した目安です（判定ではありません）。人による評価と合わせて見てください。</div>`+(L.length?L.map(({e,H,last})=>`<div class="item ${H.score!=null&&H.score<50?'ng':''}" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:52px"><b style="font-size:18px">${H.score??'－'}</b><small>参考</small></div>
       <div class="bd"><div class="ti">${esc(eqLabel(e))}${e.importance?` <span class="pill ${e.importance==='A'?'ng':''}">重要度${esc(e.importance)}</span>`:''}</div><div class="meta">${esc(locPath(e.locId)||e.place||'')}${last?`・人の評価 ${'★'.repeat(last.score)}（${slash(last.date)}）`:'・人の評価 未'}</div></div></div>`).join(''):emptyBox('設備がありません')));
+    h+=card('💾 端末の記録の大きさ',`<div id="dgStore" class="muted">調べています…</div>`);setTimeout(dgStoreFill,0);
   }else if(t==='rec'){
     const L=E.flatMap(e=>recommendFor(e.id).map(r=>({...r,e}))).sort((a,b)=>(a.lv==='ng'?0:1)-(b.lv==='ng'?0:1));
     const D=numDefs().filter(n=>!n.equip).map(n=>{const pts=Object.keys(S.daily).sort().filter(k=>S.daily[k][n.id]!=null).slice(-30).map(k=>[k,Number(S.daily[k][n.id])]);const c=trendCross(pts,n.min,n.max);return c&&c.days<=180?{lv:c.days<=30?'ng':'warn',text:`日常点検「${n.name}」：直近${c.n}件の直線近似では約${c.days}日後に${c.which}に達する見込み`}:null}).filter(Boolean);
