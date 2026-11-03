@@ -136,6 +136,7 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .aibadge{display:inline-block;font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px;vertical-align:middle;white-space:nowrap}
 .aibadge.free{background:#e3f4e8;color:#1d6b35}
 .aibadge.need{background:#eef1f5;color:#5a6675}
+.aibadge.off{background:#fdecea;color:#a02020}
 .mitem .ar{margin-left:auto;color:#a0aab5;font-size:20px}
 
 /* ---------- カレンダー ---------- */
@@ -3855,7 +3856,7 @@ async function start(){
   try{history.replaceState({v:'home',x:{},root:1},'');history.pushState({v:'home',x:{}},'');NAV_STACK=['home','home']}catch(e){} // 番兵：最初の戻るで入力画面が開いていても、アプリから出ない
   $('#mask').onclick=e=>{if(e.target.id==='mask')closeModal()};
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
-  window.addEventListener('online',()=>processQueue());
+  window.addEventListener('online',()=>{processQueue();if(V.view==='ai')render()});window.addEventListener('offline',()=>{if(V.view==='ai')render()});
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState!=='visible')return;
     if(ymd(new Date())!==TODAY){location.reload();return} // 日付が変わったら「今日」を更新
@@ -5587,9 +5588,9 @@ function delLib(id){const i=S.library.findIndex(x=>x.id===id),d=S.library[i];if(
 
 /* ---------- AI支援 ---------- */
 function vAi(){
-  const key=aiReady(),on=navigator.onLine;
-  const it=(ic,t,d,on,free)=>`<div class="mitem" onclick="${on}"><span class="ic">${ic}</span><div>${t} <small class="aibadge ${free?'free':'need'}">${free?'🔎 AIなしで使える':'🤖 APIキーが要る'}</small><div class="ds">${d}</div></div><span class="ar">›</span></div>`;
-  return `<div class="al ${key&&on?'info':'warn'}" style="cursor:default">${key?'':'APIキーが未設定です（設定 → 写真読み取り）。'}${on?'':'今は通信できません。'}AIの結果は下書きです。人が確認するまで記録には入りません。<br>🔎 の機能はAIなしで使えます。
+  const key=aiReady(),net=navigator.onLine;
+  const it=(ic,t,d,on,free)=>`<div class="mitem" onclick="${on}"><span class="ic">${ic}</span><div>${t} <small class="aibadge ${free?'free':'need'}${!free&&(!key||!net)?' off':''}">${free?'🔎 AIなしで使える':!key?'🔑 キー未設定（設定で入れる）':!net?'📵 今は通信なし':'🤖 APIキーが要る'}</small><div class="ds">${d}</div></div><span class="ar">›</span></div>`;
+  return `<div class="al ${key&&net?'info':'warn'}" style="cursor:default">${key?'':'APIキーが未設定です（設定 → 写真読み取り）。'}${net?'':'今は通信できません。'}AIの結果は下書きです。人が確認するまで記録には入りません。<br>🔎 の機能はAIなしで使えます。
     <details style="margin-top:4px"><summary style="cursor:pointer;font-weight:700">詳しく</summary>設備の正常・異常の判定はAIではなく、設定した管理値で行います。APIがなくても、検索・判定・推奨・集計はすべて使えます。APIキーを入れるのは 設定 → 写真読み取り。</details></div>
     <div class="mlist">${it('📷','手書き点検表の読み取り','写真から日常点検の値・点検名・日付を読み取り、確認してから反映',"go('day',{day:TODAY})")}
     ${it('🔢','計器写真の数値読み取り','測定記録の各項目の「🤖 計器写真から読む」から使います',"editMeas()")}
