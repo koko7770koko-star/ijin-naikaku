@@ -4917,8 +4917,9 @@ function delTool(id){const i=S.tools.findIndex(x=>x.id===id),t=S.tools[i];if(!co
 const stdById=id=>(S.stds||[]).find(t=>t.id===id);
 const stdOk=t=>!!(t&&t.approvedBy&&t.approvedDate);
 function vStds(){
-  const L=S.stds||[];
-  return card(`📘 作業標準 <span class="muted">${L.length}件</span>`,`<div class="al info">停電作業・検電・接地・復電確認などの手順とチェック項目は、<b>施設で承認された作業標準</b>の内容を登録して使ってください。アプリは手順の妥当性や安全の成立を判断しません。承認者の記録は名前の入力のみで、本人認証ではありません。</div>`
+  const all=S.stds||[],sq=(V.stdQ||'').trim().toLowerCase(),L=sq?all.filter(t=>[t.name,t.docNo,(t.kinds||[]).join(' ')].join(' ').toLowerCase().includes(sq)):all;
+  return card(`📘 作業標準 <span class="muted">${sq?L.length+'/':''}${all.length}件</span>`,`<div class="al info">停電作業・検電・接地・復電確認などの手順とチェック項目は、<b>施設で承認された作業標準</b>の内容を登録して使ってください。アプリは手順の妥当性や安全の成立を判断しません。承認者の記録は名前の入力のみで、本人認証ではありません。</div>`
+    +(all.length>4?`<div class="row" style="flex-wrap:nowrap;margin:8px 0"><input id="std_q" placeholder="名称・文書番号・作業の種別で探す" value="${esc(V.stdQ||'')}" onkeydown="if(event.key==='Enter'){V.stdQ=this.value;render()}"><button class="btn sm" onclick="V.stdQ=$('#std_q').value;render()">探す</button>${sq?`<button class="btn sec sm" onclick="V.stdQ='';render()">クリア</button>`:''}</div>`:'')
     +(L.map(t=>`<div class="item ${stdOk(t)?'':'ng'}" onclick="editStd('${t.id}')"><div class="bd"><div class="ti">${esc(t.name)}${t.ver?` <span class="muted">版${esc(t.ver)}</span>`:''}</div><div class="meta">${esc(t.docNo||'')}${t.kinds.length?'・'+esc(t.kinds.join('・')):''}・作業前${t.pre.length}項目（必須${t.pre.filter(c=>c.req).length}）・作業後${t.post.length}項目</div>
       <span class="pill ${stdOk(t)?'ok':'warn'}">${stdOk(t)?`承認済み ${slash(t.approvedDate)} ${esc(t.approvedBy)}`:'未承認（作業に使えません）'}</span></div></div>`).join('')||emptyBox('まだありません')),`<button class="btn sm" onclick="editStd()">＋ 作業標準</button>`);
 }
@@ -5199,16 +5200,17 @@ function vLib(){
   const q=(V.libQ||'').trim(),L=S.library||[];
   const hits=q?libSearch(q):[];
   return card(`📚 技術資料 <span class="muted">${L.length}件</span>`,`<div class="muted" style="margin-bottom:6px">取扱説明書・保安規程・点検要領などを登録します。検索は本文に入れた文字（必要な部分を貼り付け）と題名・タグが対象です。PDFの中身は自動では読みません。</div>
-      <div class="row" style="flex-wrap:nowrap"><input id="lib_q" placeholder="検索（例：VCB 開閉回数）" value="${esc(q)}" onkeydown="if(event.key==='Enter'){V.libQ=this.value;render()}"><button class="btn sm" onclick="V.libQ=$('#lib_q').value;render()">検索</button></div>
-      ${q?`<div style="margin-top:8px">${hits.length?hits.slice(0,20).map(h=>`<div class="item" onclick="editLib('${h.d.id}')"><div class="bd"><div class="ti">${esc(h.d.title)}</div><div class="meta">根拠：…${esc(h.before)}<mark>${esc(h.mid)}</mark>${esc(h.after)}…</div></div></div>`).join('')+`<button class="btn sec wide" onclick="aiLib()">🤖 この検索結果だけを根拠にAIに答えさせる（下書き）</button>`:emptyBox('見つかりませんでした')}</div>`:''}
-      <div style="margin-top:10px">${L.map(d=>`<div class="item" onclick="editLib('${d.id}')"><div class="bd"><div class="ti">${esc(d.title)}</div><div class="meta">${esc(d.tags)}${d.file?'・📎添付あり':''}${d.text?`・本文 ${d.text.length}字`:''}${d.equipIds.length?'・'+d.equipIds.map(equipName).map(esc).join('、'):''}</div></div></div>`).join('')||emptyBox('まだありません')}</div>`,
+      <div class="row" style="flex-wrap:nowrap"><input id="lib_q" placeholder="検索（例：VCB 開閉回数）" value="${esc(q)}" onkeydown="if(event.key==='Enter'){V.libQ=this.value;render()}"><button class="btn sm" onclick="V.libQ=$('#lib_q').value;render()">検索</button>${q?`<button class="btn sec sm" onclick="V.libQ='';render()">クリア</button>`:''}</div>
+      ${q?`<div style="margin-top:8px">${hits.length?`<div class="muted" style="margin-bottom:4px">${hits.length}件見つかりました${hits.length>20?'（先頭の20件を表示。言葉を足すと絞れます）':''}</div>`+hits.slice(0,20).map(h=>`<div class="item" onclick="editLib('${h.d.id}')"><div class="bd"><div class="ti">${esc(h.d.title)}</div><div class="meta">根拠：…${esc(h.before)}<mark>${esc(h.mid)}</mark>${esc(h.after)}…</div></div></div>`).join('')+`<button class="btn sec wide" onclick="aiLib()">🤖 この検索結果だけを根拠にAIに答えさせる（下書き）</button>`:emptyBox('見つかりませんでした')}</div>`:''}
+      <div style="margin-top:10px">${L.slice().sort((a,b)=>String(a.title).localeCompare(String(b.title),'ja')).map(d=>`<div class="item" onclick="editLib('${d.id}')"><div class="bd"><div class="ti">${esc(d.title)}</div><div class="meta">${esc(d.tags)}${d.file?'・📎添付あり':''}${d.text?`・本文 ${d.text.length}字`:''}${d.equipIds.length?'・'+d.equipIds.map(equipName).map(esc).join('、'):''}</div></div></div>`).join('')||emptyBox('まだありません')}</div>`,
     `<button class="btn sm" onclick="editLib()">＋ 資料</button>`);
 }
 function libSearch(q){
   const words=q.split(/[\s　]+/).filter(Boolean),out=[];
-  (S.library||[]).forEach(d=>{const hay=`${d.title}\n${d.tags}\n${d.text}`;if(!words.every(w=>hay.includes(w)))return;
-    const w=words[0],i=d.text.indexOf(w);
-    if(i>=0)out.push({d,before:d.text.slice(Math.max(0,i-60),i),mid:w,after:d.text.slice(i+w.length,i+w.length+100),pos:i,ctx:d.text.slice(Math.max(0,i-300),i+500)});
+  const lw=words.map(w=>w.toLowerCase());
+  (S.library||[]).forEach(d=>{const hay=`${d.title}\n${d.tags}\n${d.text}`.toLowerCase();if(!lw.every(w=>hay.includes(w)))return;
+    const w=words[0],i=d.text.toLowerCase().indexOf(lw[0]);
+    if(i>=0)out.push({d,before:d.text.slice(Math.max(0,i-60),i),mid:d.text.substr(i,w.length),after:d.text.slice(i+w.length,i+w.length+100),pos:i,ctx:d.text.slice(Math.max(0,i-300),i+500)});
     else out.push({d,before:'',mid:'',after:(d.title+' '+d.tags).slice(0,100),pos:-1,ctx:d.text.slice(0,600)})});
   return out;
 }
