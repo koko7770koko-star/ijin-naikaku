@@ -3103,8 +3103,8 @@ function dupEquipName(n){const m=String(n||'').match(/^(.*?)[\s　]*[（(](\d+)[
 /* 件数が多い一覧は 8件だけ出し、「ほか○件を表示」で広げる（画面だけの状態 V.eqMore。保存しない） */
 function eqMore(key,arr,fn,n=8){const k=(V.eq||'')+':'+key,all=(V.eqMore||{})[k];const list=all?arr:arr.slice(0,n);return list.map(fn).join('')+(arr.length>n?`<button class="btn sec wide" style="min-height:44px;margin-top:6px" onclick="V.eqMore=V.eqMore||{};V.eqMore['${k}']=${all?'false':'true'};render()">${all?'▲ 先頭の'+n+'件だけにする':'ほか'+(arr.length-n)+'件を表示'}</button>`:'')}
 function editEquip(id,dupId){
-  const src=dupId?eqById(dupId):null;
-  const e=src?{...src,id:'',code:'',serial:'',name:dupEquipName(src.name),photos:[],docs:[],run:{...(src.run||{}),meters:[]},spec:{...(src.spec||{})}}:eqById(id)||{code:'',name:'',place:'',maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[]};
+  const src=dupId?eqById(dupId):null,pre=!id&&!src&&locById(V.eqNewLoc)?V.eqNewLoc:'';V.eqNewLoc='';
+  const e=src?{...src,id:'',code:'',serial:'',name:dupEquipName(src.name),photos:[],docs:[],run:{...(src.run||{}),meters:[]},spec:{...(src.spec||{})}}:eqById(id)||{code:'',name:'',place:pre?locPath(pre):'',locId:pre,maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[]};
   TP=[...(e.photos||[])];TD=[...(e.docs||[])];
   loadPhotos(TP).then(()=>openModal(`<h3>${id?'設備の編集':src?'設備の複製':'設備の追加'}</h3>${src?`<div class="al info">「${esc(src.name)}」と同じ内容で新しい設備を作ります。<b>設備名称・設備ID・製造番号</b>を入れ直して保存してください（写真・資料・修理履歴は引き継ぎません）。</div>`:''}
     <div class="grid2"><div><label class="f">設備ID</label><input id="e_code" value="${esc(e.code)}" maxlength="30" placeholder="例：E-001"></div><div><label class="f">設置年月</label><input id="e_installed" type="month" value="${esc(e.installed)}"></div></div>
@@ -4437,11 +4437,12 @@ function applyLocFix(id){const l=locById(id);if(!l)return;const nt=l.type==='階
   undoBar(`${sel.length}件を「${to.name}」へ移しました`,()=>{prev.forEach(([x,p,o])=>{x.parent=p;if(o===undefined)delete x.ord;else x.ord=o});if(made)S.locs=S.locs.filter(x=>x.id!==made.id)},'変更')}
 /* この場所に設備（設備台帳の物）を結びつける・外す。保存は equipment.locId のまま。ほかの場所にある物は「今：…」と出し、移すと件数を出す。元に戻せる */
 function locEquip(id){const l=locById(id);if(!l)return;const E=(S.equipment||[]).filter(e=>e.status!=='廃止'||e.locId===id);
-  if(!E.length){msgModal('設備がありません','設備台帳に設備を登録すると、ここで場所に結びつけられます。');return}
+  if(!E.length){openModal(`<h3>🏭 ${esc(locPath(id))} の設備</h3><div class="muted">設備台帳にまだ設備がありません。ここに置く設備を登録できます。</div>${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="closeModal(true);V.eqNewLoc='${id}';editEquip()">＋ ここに設備を登録</button>`)}`);return}
   E.sort((a,b)=>(b.locId===id)-(a.locId===id)||(!a.locId?-1:0)-(!b.locId?-1:0)||String(a.code||a.name).localeCompare(String(b.code||b.name),'ja',{numeric:true}));
   openModal(`<h3>🏭 ${esc(locPath(id))} の設備</h3><div class="muted" style="font-size:12px">チェックを入れた設備をここに結びつけます。外すと「場所未設定」になります（設備は消えません）。</div>
     ${E.length>8?`<input id="le_q" type="search" placeholder="名前・番号で探す" style="margin-top:6px" oninput="const q=norm(this.value).toLowerCase();document.querySelectorAll('#le_list label').forEach(x=>x.style.display=!q||norm(x.textContent).toLowerCase().includes(q)?'':'none')">`:''}
     <div id="le_list" style="margin-top:6px;max-height:50vh;overflow-y:auto">${E.map(e=>`<label class="chkl" style="margin:2px 0;display:flex;gap:6px;align-items:flex-start;min-height:44px"><input type="checkbox" value="${e.id}" ${e.locId===id?'checked':''}><span style="min-width:0;overflow-wrap:anywhere">${esc(eqLabel(e))}<br><small class="muted">${e.locId===id?'ここ':e.locId&&locById(e.locId)?'今：'+esc(locPath(e.locId)):'場所未設定'}</small></span></label>`).join('')}</div>
+    <button class="btn sec wide" style="min-height:44px;margin-top:8px" onclick="closeModal(true);V.eqNewLoc='${id}';editEquip()">＋ 新しい設備をここに登録</button>
     ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">やめる</button><button class="btn" onclick="applyLocEquip('${id}')">決める</button>`)}`)}
 function applyLocEquip(id){if(!locById(id))return;const on=new Set([...document.querySelectorAll('#le_list input:checked')].map(i=>i.value));
   const ch=[];(S.equipment||[]).forEach(e=>{const want=on.has(e.id);if(want&&e.locId!==id)ch.push([e,e.locId||'']);else if(!want&&e.locId===id&&document.querySelector(`#le_list input[value="${e.id}"]`))ch.push([e,e.locId])});
