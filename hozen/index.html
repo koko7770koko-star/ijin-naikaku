@@ -4023,7 +4023,19 @@ function banReportHTML(y,m){
     line('階なし',banBoards(b.id).filter(x=>!inF.has(x.id)),false);
     line('棟の合計',banBoards(b.id),true);
   });
-  return `<div class="sec">6の2. 盤の点検（棟ごと・${m}月）</div>`+repTable('<th>棟</th><th>階</th><th>盤数</th>'+BAN_ITEMS.map(n=>`<th>${esc(n)}</th>`).join('')+'<th>状況</th>',rows,'該当なし')+`<div class="muted" style="font-size:11px">各項目は ●（実施済み）の盤数／盤の数</div>`;
+  return `<div class="sec">6の2. 盤の点検（棟ごと・${m}月）</div>`+repTable('<th>棟</th><th>階</th><th>盤数</th>'+BAN_ITEMS.map(n=>`<th>${esc(n)}</th>`).join('')+'<th>状況</th>',rows,'該当なし')+`<div class="muted" style="font-size:11px">各項目は ●（実施済み）の盤数／盤の数</div>`+banDetailHTML(ym,B,m);
+}
+// 盤ごとの ◯（予定）・●（実施済み）。棟→階→盤の順。A4 縦で切れないよう 3 項目は細い列にする
+function banDetailHTML(ym,B,m){
+  const rows=[];
+  B.forEach(b=>{
+    const floors=(S.locs||[]).filter(l=>l.type==='階'&&l.parent===b.id).sort((a,c)=>floorKey(c.name)-floorKey(a.name)||a.name.localeCompare(c.name,'ja')),inF=new Set();
+    rows.push(`<tr class="rbh"><td colspan="5" style="text-align:left;font-weight:700;background:#f0f4f8">${esc(b.name)}</td></tr>`);
+    const line=(label,bs)=>bs.forEach((x,i)=>rows.push(`<tr><td>${i?'':esc(label)}</td><td style="text-align:left">${esc(x.name)}</td>${[0,1,2].map(k=>`<td class="c">${mkShow(banVal(ym,x.id,k))||'－'}</td>`).join('')}</tr>`));
+    floors.forEach(f=>{const bs=banBoards(f.id);bs.forEach(x=>inF.add(x.id));line(f.name,bs)});
+    line('階なし',banBoards(b.id).filter(x=>!inF.has(x.id)));
+  });
+  return rows.length?`<div class="sec">6の3. 盤ごとの点検（${m}月）</div><table style="table-layout:fixed;width:100%;break-inside:auto"><tr><th style="width:15%">階</th><th>盤</th>${BAN_ITEMS.map(n=>`<th style="width:17%;font-size:11px">${esc(n)}</th>`).join('')}</tr>${rows.join('')}</table><div class="muted" style="font-size:11px">◯＝予定、●＝実施済み、－＝まだ印なし</div>`:'';
 }
 function banAddWizard(){
   const F=(S.locs||[]).filter(l=>l.type==='階').sort((a,b)=>locPath(a.id).localeCompare(locPath(b.id),'ja',{numeric:true}));
