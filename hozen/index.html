@@ -272,6 +272,15 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
   .rep .sec,.rep th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .rep tr{break-inside:avoid}
   body:not(.mode-shift) #shiftApp,body.mode-shift #app{display:none!important}
+  /* 年間計画：A4 横に12か月が収まり、項目名が折れず、◯●が読め、行がページの境で割れない */
+  .tbw{overflow:visible;border:0}
+  table.yr{min-width:0;font-size:9pt;table-layout:fixed;width:100%}
+  table.yr .nm{position:static;min-width:0;max-width:none;width:62mm;text-align:left;overflow-wrap:anywhere}
+  table.yr th,table.yr td{padding:1px 2px}
+  table.yr td.mk{width:auto;height:6.5mm;font-size:12pt}
+  table.yr tr{break-inside:avoid;page-break-inside:avoid}
+  table.yr th,table.yr .cat td,table.yr td.mk{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table.yr .cur{box-shadow:none}
 }
 
 details summary{cursor:pointer;padding:4px 0}
@@ -2038,13 +2047,14 @@ function vYear(){
   const fy=V.fy,mk=S.marks[fy]||{},curIdx=fyOf(now.getFullYear(),now.getMonth()+1)===fy?idxOf(now.getMonth()+1):-1;
   let h=mnav(`${fy}年度`,'V.fy--;render()','V.fy++;render()');
   h+=`<div class="card"><h2>年間点検計画 <span class="muted">${fy}/4〜${fy+1}/3</span></h2>
-    <div class="row" style="margin-bottom:8px">${fileBtn('📷 写真から追加','ocrItems','sec sm grow')}<button class="btn sm grow" onclick="editItem()">＋ 項目追加</button></div>
+    <div class="noprint"><div class="row" style="margin-bottom:8px">${fileBtn('📷 写真から追加','ocrItems','sec sm grow')}<button class="btn sm grow" onclick="editItem()">＋ 項目追加</button></div>
     <button class="btn sm wide" onclick="genPlan(${fy})">⚙ 周期から予定を自動作成</button>
     ${curIdx>=0?'<button class="btn sm sec wide" style="margin-top:8px" onclick="yearToNow()">📍 今月の列へ</button>':''}
     <div class="muted" style="margin:10px 0 8px">マスをタップ：空 → ◯予定 → ●実施済み → 空　／　長押し・右クリックで「延」（延期）　／　項目名タップで編集</div>
-    <button class="btn sm wide ${_mkEnji?'':'sec'}" id="enjiBtn" onclick="toggleEnji()">${_mkEnji?'✔ 延期モード中（マスをタップ＝延期／解除）　タップで終了':'延期モード（マスをタップして「延」を付ける）'}</button>`;
+    <button class="btn sm wide ${_mkEnji?'':'sec'}" id="enjiBtn" onclick="toggleEnji()">${_mkEnji?'✔ 延期モード中（マスをタップ＝延期／解除）　タップで終了':'延期モード（マスをタップして「延」を付ける）'}</button>
+    <button class="btn sm sec wide" style="margin-top:8px" onclick="window.print()">🖨 年間計画を印刷（A4 横）</button></div>`;
   if(!S.items.length)return h+`<div class="empty">まだ項目がありません。「📷 写真から追加」で点検表や計画表を撮ると、点検名が自動で入ります。</div></div>`;
-  h+=`<div class="tbw"><table class="yr"><tr><th class="nm">点検・作業項目</th>${MONTHS.map((m,i)=>`<th class="${i===curIdx?'cur':''}">${m}月</th>`).join('')}<th>済/予</th></tr>`;
+  h+=`<div class="tbw"><table class="yr"><thead><tr><th class="nm">点検・作業項目</th>${MONTHS.map((m,i)=>`<th class="${i===curIdx?'cur':''}">${m}月</th>`).join('')}<th>済/予</th></tr></thead>`;
   let lastCat=null;
   for(const it of [...S.items].sort((a,b)=>S.settings.cats.indexOf(a.cat)-S.settings.cats.indexOf(b.cat))){
     const row=mk[it.id]||Array(12).fill('');
@@ -2056,7 +2066,7 @@ function vYear(){
   }
   h+=`</table></div></div>`;
   const dl=deadlines();
-  h+=`<div class="card"><h2>⏰ 期限管理 <span class="muted">前回実施日から自動計算</span></h2>${dl.length?dl.map(deadlineRow).join(''):'<div class="empty">周期を設定した項目がありません</div>'}
+  h+=`<div class="card noprint"><h2>⏰ 期限管理 <span class="muted">前回実施日から自動計算</span></h2>${dl.length?dl.map(deadlineRow).join(''):'<div class="empty">周期を設定した項目がありません</div>'}
     <div class="muted" style="margin-top:8px">前回＝カレンダーで「完了」にした日（無ければ年間計画の「済」の月末）</div></div>`;
   return h;
 }
@@ -3704,7 +3714,7 @@ function render(){
   const shiftMode=V.view==='shift';
   document.body.classList.toggle('mode-shift',shiftMode);
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===V.view||(b.dataset.v==='menu'&&SUB_VIEWS.includes(V.view))));
-  $('#pageStyle').textContent=shiftMode?'@page{size:A4 portrait;margin:0}':'@page{size:A4 portrait;margin:10mm}';
+  $('#pageStyle').textContent=shiftMode?'@page{size:A4 portrait;margin:0}':V.view==='year'?'@page{size:A4 landscape;margin:8mm}':'@page{size:A4 portrait;margin:10mm}';
   if(shiftMode){if(hasShift())SHIFT.refresh();return}
   $('#hd').textContent=TITLES[V.view]||'';
   $('#hback').style.display=SUB_VIEWS.includes(V.view)?'inline':'none';$('#hback').onclick=()=>goBack(BACK[V.view]||'menu');
