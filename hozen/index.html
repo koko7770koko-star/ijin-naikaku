@@ -1537,7 +1537,9 @@ function mdraftBind(key,ids){
 function openModal(h){MD.key='';$('#modal').innerHTML=h;$('#mask').classList.add('on');MODAL_SIG=modalSig();if(MD_NEXT){const n=MD_NEXT;MD_NEXT=null;mdraftBind(n.key,n.ids)}}
 function closeModal(force){
   if(force!==true&&$('#mask').classList.contains('on')&&MODAL_SIG!==null&&modalSig()!==MODAL_SIG&&!confirm('入力中の内容を保存せずに閉じますか？'))return false;
-  if(typeof qrStop==='function')qrStop();$('#mask').classList.remove('on');MODAL_SIG=null;return true;
+  const bk=MTPL_BACK;MTPL_BACK=null;
+  if(typeof qrStop==='function')qrStop();$('#mask').classList.remove('on');MODAL_SIG=null;
+  if(bk&&$('#mt_rows'))setTimeout(()=>measResume(bk),0);return true;
 }
 const opts=(arr,cur)=>arr.map(v=>`<option${v===cur?' selected':''}>${esc(v)}</option>`).join('');
 const mnav=(label,prev,next)=>`<div class="mnav noprint"><button onclick="${prev}">‹</button><div class="t">${label}</div><button onclick="${next}">›</button></div>`;
@@ -5304,9 +5306,23 @@ function measRow(m){
 }
 
 /* ---------- 測定記録の入力 ---------- */
-let MEAS_ROWS=[],MEAS_PH=[],MEAS_CTX={};
+let MEAS_ROWS=[],MEAS_PH=[],MEAS_CTX={},MTPL_BACK=null;
+/* 管理値が空の行：ひな形の編集へ行って、閉じたら入力中の測定記録に戻る（入力した値はそのまま残る） */
+function measLimGo(){
+  const tp=tplById(($('#ms_tpl')||{}).value);if(!tp){toast('この記録だけの管理値は、その行の下限・上限に入れてください');return}
+  const g=k=>{const e=$('#ms_'+k);return e?e.value.trim():''};
+  MTPL_BACK={id:MEAS_CTX.id||null,preset:{date:g('date'),equipId:g('eq'),tplId:tp.id,type:g('type'),name:g('name'),rows:clone(MEAS_ROWS),
+    cond:{temp:g('temp'),hum:g('hum'),weather:g('weather'),tool:g('tool'),toolName:g('toolName'),method:g('method'),wxSrc:g('wxSrc')},by:g('by'),note:($('#ms_note')||{}).value||'',photos:[...TP],workId:MEAS_CTX.workId||''}};
+  editMtpl(tp.id);
+}
+function measResume(b){
+  const pr=b.preset,t=tplById(pr.tplId);if(!t)pr.tplId='';
+  if(t)pr.rows.forEach(r=>{if(!r.ck&&(r.min===''||r.min==null)&&(r.max===''||r.max==null)){const x=t.rows.find(y=>y.name===r.name&&!y.ck);if(x){r.min=x.min;r.max=x.max}}});
+  editMeas(b.id,pr);
+}
 function editMeas(id,preset){
-  const m=(S.meas||[]).find(x=>x.id===id)||{date:TODAY,equipId:'',tplId:'',type:'その他',name:'',rows:[],cond:{temp:'',hum:'',weather:'',tool:'',toolName:'',method:''},by:who(),note:'',photos:[],...(preset||{})};
+  const m0=(S.meas||[]).find(x=>x.id===id);
+  const m=m0?(preset?{...m0,...preset}:m0):{date:TODAY,equipId:'',tplId:'',type:'その他',name:'',rows:[],cond:{temp:'',hum:'',weather:'',tool:'',toolName:'',method:''},by:who(),note:'',photos:[],...(preset||{})};
   MEAS_ROWS=clone(m.rows);TP=[...(m.photos||[])];MEAS_CTX={id:id||'',workId:RE_ID.test(m.workId||'')?m.workId:''};
   const tools=(S.tools||[]).filter(t=>t.kind==='測定器');
   loadPhotos([...TP,...MEAS_ROWS.map(r=>r.photo).filter(Boolean)]).then(()=>{openModal(`<h3>${id?'測定記録':'測定記録の追加'}</h3>
@@ -5379,6 +5395,7 @@ function measRenderRows(){
       <input type="number" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].min=num16(this.value);measRenderRows()">
       <input type="number" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].max=num16(this.value);measRenderRows()">`}</div>
     <div class="row" style="gap:4px;margin-top:4px;align-items:center"><span class="pill ${st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':''}">${esc(judgeWord(r,st))}</span>
+      ${!r.ck&&(r.min===''||r.min==null)&&(r.max===''||r.max==null)?(tplById(($('#ms_tpl')||{}).value)?`<button type="button" class="btn sec sm mlim" style="min-height:44px" onclick="measLimGo()">📐 管理値をひな形で入れる</button>`:`<span class="muted mlim" style="font-size:12px;flex-basis:100%">この記録だけの管理値は右の下限・上限に入れてください</span>`):''}
       ${measPrevHTML(r)}${r.ai?'<span class="pill warn">AI読取（要確認）</span>':r.src==='AI'?'<span class="pill plan">AI読取値（人が確認済み）</span>':''}
       ${r.photo?`<img src="${esc(safeSrc(ph(r.photo)))}" style="height:34px;border-radius:4px" onclick="viewPh('${r.photo}')"><button type="button" class="btn sec sm" onclick="MEAS_ROWS[${k}].photo='';measRenderRows()">写真を外す</button>`:`<label class="btn sec sm">📷 写真<input type="file" accept="image/*" onchange="measRowPhoto(this,${k})"></label>`}
       ${measFuelHTML(r)}
