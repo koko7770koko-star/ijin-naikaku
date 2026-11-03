@@ -3303,7 +3303,8 @@ function vSet(){
     <div class="muted" style="margin-top:6px">記録は本体とは別に「予備保存」（端末内の二重保存）にも自動で残します。本体の保存に失敗したときは、次に開いたときに予備保存から戻せます。</div>
     <div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="exportCsv()">CSV：予定・実績</button><button class="btn sec sm grow" onclick="exportAllDaily()">CSV：日常点検</button></div>
     <div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="exportIssuesCsv()">CSV：異常案件</button><button class="btn sec sm grow" onclick="exportHistoryCsv()">CSV：修正履歴（全件）</button><button class="btn sec sm grow" onclick="exportEquipCsv()">CSV：設備台帳・修理履歴</button></div>
-    <div class="row" style="margin-top:12px"><span class="muted grow">シフト表のPDF出力は初回だけネット接続が必要です（印刷→PDF保存はオフラインで可）。</span><button class="btn red sm" onclick="wipe()">全データ消去</button></div></div>`;
+    <div class="muted" style="margin-top:12px">シフト表のPDF出力は初回だけネット接続が必要です（印刷→PDF保存はオフラインで可）。</div></div>
+  <div class="card" id="dangerCard" style="border:2px solid #c00000"><h2 style="color:#c00000">⚠ 危険な操作</h2><div class="muted" style="margin-bottom:10px">予定・点検記録・異常案件・年間計画を消します（消す前の状態はバックアップ履歴に残ります）。先に上の「ファイルに保存」でバックアップを取ってください。</div><button class="btn red wide" onclick="wipe()">全データ消去</button></div>`;
 }
 function setList(k,v){
   const arr=[...new Set(v.split('\n').map(s=>txt(s,60).trim()).filter(Boolean))];
