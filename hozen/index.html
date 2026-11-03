@@ -5095,12 +5095,17 @@ function measPrevHTML(r){
   return `<span class="pill">前回 ${esc(p.v)}${esc(r.unit)}（${md(p.date)}）</span><span class="pill ng mbig" ${measBig(p,cur)?'':'hidden'}>⚠ 前回と桁が違います</span>${d==null?'':`<span class="pill ${d===0?'':'plan'}">差 ${d>0?'+':''}${d}${esc(r.unit)}</span>`}`;
 }
 /* 入力欄の薄い文字：前回の値があればそれを、なければ「測定値」 */
+/* 判定の言葉：管理値を外れたら「超えています（管理値 ○以下）」「下回っています（管理値 ○以上）」と、その場で言葉で出す（色だけにしない） */
+function judgeWord(r,st,v){const u=r.ck?'':(r.unit||''),x=v===undefined?r.v:v;
+  if(st==='ng'&&!r.ck){if(r.max!==''&&r.max!=null&&Number(x)>Number(r.max))return `超えています（管理値 ${r.max}${u} 以下）`;if(r.min!==''&&r.min!=null&&Number(x)<Number(r.min))return `下回っています（管理値 ${r.min}${u} 以上）`}
+  if(st==='ok'&&!r.ck)return '管理値内（'+limText(r)+'）';
+  return {ng:'管理値外',ok:'管理値内',nolim:'基準未設定',none:'未入力',na:'該当なし'}[st]}
 function measPh(r){const p=measPrev(r);return p?`前回 ${p.v}${r.unit||''}`:'測定値'}
 /* 入力中にその場で管理値の内外を色で知らせる（再描画しないので入力は途切れない） */
 function measLive(inp,k){
   const r=MEAS_ROWS[k];if(!r)return;const v=inp.value===''?'':Number(inp.value);if(v!==''&&!Number.isFinite(v))return;
   const st=rowJudge({...r,v});inp.style.borderColor=st==='ng'?'var(--ng,#c0392b)':'';inp.style.background=st==='ng'?'#fdecea':st==='ok'?'#eaf6ec':'';
-  const row=inp.closest('.mrow');if(row){const bg=row.querySelector('.mbig');if(bg)bg.hidden=!measBig(measPrev(r),v===''?null:v);row.classList.toggle('ng',st==='ng');const pl=row.querySelector('.pill');if(pl){pl.className='pill '+(st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':'');pl.textContent={ng:'管理値外',ok:'管理値内',nolim:'基準未設定',none:'未入力',na:'該当なし'}[st]}}
+  const row=inp.closest('.mrow');if(row){const bg=row.querySelector('.mbig');if(bg)bg.hidden=!measBig(measPrev(r),v===''?null:v);row.classList.toggle('ng',st==='ng');const pl=row.querySelector('.pill');if(pl){pl.className='pill '+(st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':'');pl.textContent=judgeWord(r,st,v)}}
 }
 function measRenderRows(){
   const box=$('#ms_rows');if(!box)return;
@@ -5111,7 +5116,7 @@ function measRenderRows(){
       <input value="${esc(r.unit)}" maxlength="12" placeholder="単位" style="max-width:52px;padding-left:6px;padding-right:6px" onchange="MEAS_ROWS[${k}].unit=this.value">
       <input type="number" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].min=num16(this.value);measRenderRows()">
       <input type="number" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].max=num16(this.value);measRenderRows()">`}</div>
-    <div class="row" style="gap:4px;margin-top:4px;align-items:center"><span class="pill ${st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':''}">${{ng:'管理値外',ok:'管理値内',nolim:'基準未設定',none:'未入力',na:'該当なし'}[st]}</span>
+    <div class="row" style="gap:4px;margin-top:4px;align-items:center"><span class="pill ${st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':''}">${esc(judgeWord(r,st))}</span>
       ${measPrevHTML(r)}${r.ai?'<span class="pill warn">AI読取（要確認）</span>':r.src==='AI'?'<span class="pill plan">AI読取値（人が確認済み）</span>':''}
       ${r.photo?`<img src="${esc(safeSrc(ph(r.photo)))}" style="height:34px;border-radius:4px" onclick="viewPh('${r.photo}')"><button type="button" class="btn sec sm" onclick="MEAS_ROWS[${k}].photo='';measRenderRows()">写真を外す</button>`:`<label class="btn sec sm">📷 写真<input type="file" accept="image/*" onchange="measRowPhoto(this,${k})"></label>`}
       ${r.ck?'':`<label class="btn sec sm">🤖 計器写真から読む<input type="file" accept="image/*" onclick="if(!aiReady()){toast('APIキーが未設定です（設定 → 写真読み取り）');return false}" onchange="measAiRead(this,${k})"></label>`}</div></div>`}).join('')||'<div class="muted">項目がありません。ひな形を選ぶか、項目を追加してください。</div>';
