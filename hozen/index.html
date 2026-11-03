@@ -3938,7 +3938,7 @@ function vDailyRep(){
 /* ---------- 10 設定・バックアップ ---------- */
 function vSet(){
   const st=S.settings,L=st.lim,mode=apiKeyMode(),key=getApiKey();
-  const field=(k,l,ph,hp)=>`<label class="f">${l}</label><input value="${esc(st[k])}" placeholder="${ph}" maxlength="100" onchange="S.settings.${k}=txt(this.value,100).trim();save()">${hp?`<div class="muted sethelp" style="font-size:12px;margin-top:2px">${hp}</div>`:''}`;
+  const field=(k,l,ph,hp)=>`<label class="f">${l}</label><input value="${esc(st[k])}" placeholder="${ph}" maxlength="100" onchange="S.settings.${k}=txt(this.value,100).trim();save();toast('保存しました')">${hp?`<div class="muted sethelp" style="font-size:12px;margin-top:2px">${hp}</div>`:''}`;
   const list=(k,l,hp)=>`<label class="f">${l}（1行に1つ）</label><textarea style="min-height:80px" onchange="setList('${k}',this.value)">${esc(st[k].join('\n'))}</textarea>${hp?`<div class="muted sethelp" style="font-size:12px;margin-top:2px">${hp}</div>`:''}`;
   const lim=(k,l)=>`<div><label class="f">${l}</label><input type="number" step="any" inputmode="decimal" value="${esc(L[k])}" onchange="setLim('${k}',this)"></div>`;
   return `<div class="card"><h2>画面の明るさ</h2><div class="muted sethelp" style="font-size:12px;margin-bottom:6px">暗い電気室・夜間の見回りでまぶしいときは「夜間」にします（印刷は今までどおり白地です）。</div>
@@ -3963,7 +3963,7 @@ function vSet(){
       対策：このアプリ専用のキーを作り、管理画面で<b>使用上限額を低く</b>設定してください。完全に守るにはキーを持つ中継サーバーが必要で、このHTMLだけでは実現できません。</div>
     <label class="chkl"><input type="checkbox" id="apiack">上のリスクを理解しました</label>
     <button class="btn wide" style="margin-top:10px" onclick="saveKey()">保存</button>
-    <label class="f">モデル</label><select onchange="S.settings.model=this.value;save()">${[['claude-sonnet-5-5','Sonnet（標準・おすすめ）'],['claude-opus-5-5','Opus（高精度・高コスト）'],['claude-haiku-5-5','Haiku（速い・安い）']].map(([v,l])=>`<option value="${v}"${st.model===v?' selected':''}>${l}</option>`).join('')}</select>
+    <label class="f">モデル</label><select onchange="S.settings.model=this.value;save();toast('保存しました')">${[['claude-sonnet-5-5','Sonnet（標準・おすすめ）'],['claude-opus-5-5','Opus（高精度・高コスト）'],['claude-haiku-5-5','Haiku（速い・安い）']].map(([v,l])=>`<option value="${v}"${st.model===v?' selected':''}>${l}</option>`).join('')}</select>
     <details style="margin-top:10px"><summary class="muted">接続方式（将来のサーバー経由に備えた設定）</summary>
       <select onchange="setApiMode(this.value)"><option value="direct" ${st.apiMode!=='server'?'selected':''}>ブラウザから直接（APIキーをこの端末に保存）</option><option value="server" ${st.apiMode==='server'?'selected':''}>施設のサーバー経由（キーは端末に置かない）</option></select>
       <input placeholder="https://（施設の中継サーバーのURL）" value="${esc(st.apiUrl||'')}" onchange="setApiUrl(this.value)" style="margin-top:6px">
