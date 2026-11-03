@@ -222,6 +222,7 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
 .seg.tabs{width:100%;margin-bottom:12px}
 .seg.tabs button{flex:1;width:auto}
 .seg.tabs button.on{background:var(--navy);color:#fff;font-weight:700}
+.seg.tabs.t4 button{min-width:0;padding:0 2px;font-size:14px;line-height:1.2}
 .istep button{font-size:12px;height:44px;padding:0 1px;line-height:1.2}
 .mgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .mgrid div{font-size:12px;text-align:center;padding:13px 0;border-radius:6px;background:#fff;border:1px solid var(--line);cursor:pointer}
@@ -4654,7 +4655,7 @@ const eqMultiVal=idp=>[...document.querySelectorAll('#'+idp+' input:checked')].m
 const card=(title,body,right='')=>`<div class="card"><div class="hd-row"><h2>${title}</h2>${right}</div>${body}</div>`;
 const emptyBox=t=>`<div class="empty">${t}</div>`;
 const emptyGuide=(t,label,on)=>`<div class="empty emptyg">${t}<div><button type="button" class="btn" style="min-height:44px;margin-top:10px" onclick="${on}">＋ ${label}</button></div></div>`;
-const tabs16=(key,list)=>`<div class="seg tabs noprint" style="margin-bottom:10px">${list.map(([v,l])=>`<button class="${(V[key]||list[0][0])===v?'on':''}" onclick="V.${key}='${v}';render()">${l}</button>`).join('')}</div>`;
+const tabs16=(key,list)=>`<div class="seg tabs noprint${list.length>=4?' t4':''}" style="margin-bottom:10px">${list.map(([v,l])=>`<button class="${(V[key]||list[0][0])===v?'on':''}" onclick="V.${key}='${v}';render()">${l}</button>`).join('')}</div>`;
 
 /* =====================================================================
    v16 第2段階：設備管理の基盤（階層・種別・重要度・仕様・設備カルテ・QR）
