@@ -4887,7 +4887,8 @@ function banCarryGo(){const ym=V.banYm||TODAY.slice(0,7),L=banCarry(ym);if(!L.le
   const el=document.getElementById('ban-'+t.id);if(el){el.scrollIntoView({block:'center'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1800)}}
 function banSet(ym,id,k,v){S.banChk=S.banChk||{};const m=S.banChk[ym]=S.banChk[ym]||{};const r=m[id]=m[id]||['','',''];r[k]=v}
 function banTap(id,k){const ym=V.banYm||TODAY.slice(0,7),cur=banVal(ym,id,k),nv=cur===''?'○':cur==='○'?'済':'';banSet(ym,id,k,nv);save();render();
-  if(nv==='済'){const b=locById(id);undoBar(`「${b?b.name:'盤'}」の「${BAN_ITEMS[k]}」を ●（実施済み）にしました`,()=>{banSet(ym,id,k,cur)},'印')}}
+  if(nv==='済'){const b=locById(id);undoBar(`「${b?b.name:'盤'}」の「${BAN_ITEMS[k]}」を ●（実施済み）にしました`,()=>{banSet(ym,id,k,cur)},'印')}
+  else if(cur==='済'){const b=locById(id);undoBar(`「${b?b.name:'盤'}」の「${BAN_ITEMS[k]}」の ● を外して空にしました`,()=>{banSet(ym,id,k,cur)},'印')}}
 /* 「この階を全部 ●」「この電気室を全部 ●」：押す前に件数を出して確かめる。延期（延）の印は上書きしない。元に戻せる */
 function banAllAsk(rootId){const ym=V.banYm||TODAY.slice(0,7),bs=banBoards(rootId),l=locById(rootId);if(!bs.length||!l)return;
   let n=0;bs.forEach(b=>{for(let k=0;k<3;k++){const v=banVal(ym,b.id,k);if(v!=='済'&&v!=='延')n++}});

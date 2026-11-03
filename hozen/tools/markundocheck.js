@@ -19,5 +19,9 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  await bm.tap();await p.waitForTimeout(100);await bm.tap();await p.waitForTimeout(150);r=await bar();if(!r.on)bad.push('盤：● にしても元に戻すが出ない');
  await p.locator('#undobar button').tap();await p.waitForTimeout(200);
  const bv=await p.evaluate(()=>S.banChk[V.banYm||TODAY.slice(0,7)].k1[0]);if(bv!=='○')bad.push('盤：元に戻しても ○ に戻らない: '+bv);
+ // ● をもう一度押して空にしたときも戻せる
+ await bm.tap();await p.waitForTimeout(100);await bm.tap();await p.waitForTimeout(150);r=await bar();if(!r.on)bad.push('盤：● を外しても元に戻すが出ない');
+ await p.locator('#undobar button').tap();await p.waitForTimeout(200);
+ const bw=await p.evaluate(()=>S.banChk[V.banYm||TODAY.slice(0,7)].k1[0]);if(bw!=='済')bad.push('盤：● を外して戻しても ● に戻らない: '+bw);
  if(await p.evaluate(()=>document.documentElement.scrollWidth)>392)bad.push('横にはみ出す');
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
