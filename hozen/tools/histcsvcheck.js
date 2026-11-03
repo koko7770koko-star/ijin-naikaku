@@ -6,7 +6,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
  await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0);
  const csv=async(prep)=>p.evaluate(async(prep)=>{window.__out=null;window.hzSave=async(n,bl)=>{window.__out={n,t:await bl.text()};return true};
-   eval(prep);exportDailyCsv();await new Promise(r=>setTimeout(r,200));return window.__out},prep);
+   eval(prep);exportDailyCsv();for(let k=0;k<20&&!window.__out;k++)await new Promise(r=>setTimeout(r,50));if(!window.__out)await new Promise(r=>setTimeout(r,2000));return window.__out},prep);
  await p.evaluate(()=>{const n=numDefs()[0];n.min=0;n.max=100;for(let i=0;i<10;i++){const d=addD(TODAY,-i);S.daily[d]={[n.id]:i%2?150:50,c:{},by:'確認'};}save()}); // 奇数日は上限100を超える（基準外）
  const all=await csv("V.hRange='30';V.hItem='';V.hNg=false;V.hKw=''");
  const nRows=a=>a.t.replace(/^﻿/,'').split('\r\n').length-1;
