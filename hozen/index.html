@@ -363,6 +363,7 @@ details summary{cursor:pointer;padding:4px 0}
 #shiftApp .pop .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 #shiftApp .pop .opts button{padding:12px 4px;border:1px solid var(--field);border-radius:var(--r-s);background:#fff;font-weight:700}
 #shiftApp .pop .opts button.cur{background:var(--navy);color:#fff}
+#shiftApp .pop .swap{margin-top:10px}#shiftApp .pop .swap .opts{margin-top:6px}#shiftApp .pop .swap>button{width:100%;padding:12px;border:1px solid var(--navy);border-radius:var(--r-s);background:#fff;font-weight:700;color:var(--navy)}
 #shiftApp .pop .foot{display:flex;gap:8px;margin-top:12px}
 #shiftApp .pop .foot button{flex:1}
 #shiftApp table.lst{width:100%;border-collapse:collapse;font-size:13px}
@@ -658,6 +659,7 @@ details.fold[open]>summary{margin-bottom:8px}
 <div class="pop" id="pop"><div class="box">
   <div class="ttl" id="popTtl"></div><div class="sub" id="popSub"></div>
   <div class="opts" id="popOpts"></div>
+  <div id="popSwap"></div>
   <div class="foot"><button type="button" class="btn" id="popAuto">自動に戻す</button><button type="button" class="btn" onclick="closePop()">閉じる</button></div>
 </div></div>
 
@@ -915,11 +917,27 @@ function openPop(i,d){
   $('popTtl').textContent=m.name+'　'+t.m+'月'+t.d+'日（'+WD[t.w]+'）';
   $('popSub').textContent='いま：'+v+(cur.c.chg.has(m.name+'|'+d)?'（変更あり）':'（自動）');
   $('popOpts').innerHTML=VALS.map(x=>'<button type="button" class="'+(x===v?'cur':'')+'" data-v="'+x+'">'+x+'</button>').join('');
+  $('popSwap').innerHTML=VALS.includes(v)?'<div class="swap"><button type="button" id="swapBtn">⇄ この日、ほかの人と入れ替える</button></div>':'';
   $('pop').classList.add('on');
+}
+function swapList(){
+  const i=cur.c.mem.findIndex(m=>m.name===popT.name),d=popT.d,v=cur.R[i][d];
+  const o=cur.c.mem.map((m,j)=>({m,j,x:cur.R[j][d]})).filter(o=>o.j!==i&&o.m.name.trim()&&o.x!==v&&VALS.includes(o.x));
+  $('popSwap').innerHTML='<div class="swap"><div class="sub">入れ替える相手を選ぶ（あなた：'+esc(v)+'）</div><div class="opts">'+(o.length?o.map(o=>'<button type="button" data-sw="'+o.j+'">'+esc(o.m.name)+'<br><span style="font-weight:400;font-size:12px">'+esc(o.x)+'</span></button>').join(''):'<div class="sub" style="grid-column:1/-1">この日、入れ替えられる人がいません</div>')+'</div></div>';
+}
+function swapDo(j){
+  const i=cur.c.mem.findIndex(m=>m.name===popT.name),d=popT.d,date=ds(d),a=popT.name,b=cur.c.mem[j].name,va=cur.R[i][d],vb=cur.R[j][d];
+  const ns=clone(S);ns.changes=ns.changes.filter(c=>!(c.date===date&&(c.name===a||c.name===b)));ns.changes.push({name:a,date,val:vb},{name:b,date,val:va});
+  const ck=withS(ns,()=>[checkChange({name:a,date,val:vb}),checkChange({name:b,date,val:va})].filter(x=>x!=='OK'));
+  closePop();
+  confirmShift(a+'と'+b+' '+md(dn(date))+' を入れ替え（'+a+'：'+vb+'／'+b+'：'+va+'）',ns,affectedPeriods(date),()=>{
+    S.changes=ns.changes;logShift('勤務変更',{name:a,date,from:va,to:vb});logShift('勤務変更',{name:b,date,from:vb,to:va});save();renderAll();toast(a+'と'+b+'を入れ替えました');
+  },ck);
 }
 window.closePop=()=>$('pop').classList.remove('on');
 $('pop').addEventListener('click',e=>{if(e.target.id==='pop')closePop();});
 $('popOpts').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setChange(popT.name,ds(popT.d),b.dataset.v);closePop();});
+$('popSwap').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='swapBtn'){swapList();return}if(b.dataset.sw!==undefined)swapDo(+b.dataset.sw)});
 $('popAuto').addEventListener('click',()=>{removeChange(popT.name,ds(popT.d));closePop();});
 /* ---------- 変更前の確認（前後比較）と変更履歴 ---------- */
 const clone=o=>JSON.parse(JSON.stringify(o));
