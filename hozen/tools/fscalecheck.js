@@ -7,8 +7,8 @@ const src=fs.readFileSync(FILE,'utf8');if(!/@media print\{#sysbar[^]*?html\{zoom
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
  // 古い記録：fscale が無い
- await p.addInitScript(()=>{if(!localStorage.getItem('hospElecSched_v1'))localStorage.setItem('hospElecSched_v1',JSON.stringify({settings:{name:'旧'},items:[],marks:{},tasks:[],daily:{},notes:{},issues:[],inbox:[]}))});
- await p.goto('file://'+FILE);await p.waitForTimeout(1500);
+ // 古い記録は1回だけ入れる（addInitScript で毎回入れると、読み直しの瞬間に localStorage が空に見えたとき古い記録で上書きしてしまい、試験が時々落ちていた）
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&S.settings&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.evaluate(()=>{localStorage.clear();localStorage.setItem('hospElecSched_v1',JSON.stringify({settings:{name:'旧'},items:[],marks:{},tasks:[],daily:{},notes:{},issues:[],inbox:[]}))});await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&S.settings&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});
  let r=await p.evaluate(()=>({f:S.settings.fscale,z:document.documentElement.style.zoom,n:S.settings.name}));if(r.f!==''||r.z!==''||r.n!=='旧')bad.push('古い記録の読み込み '+JSON.stringify(r));
  await p.evaluate(()=>{go('set',{setTab:'basic'})});await p.waitForTimeout(300);
  if(!await p.evaluate(()=>[...document.querySelectorAll('#app button')].some(x=>x.textContent.trim()==='特大')))bad.push('特大のボタンが無い（設定の基本）');
@@ -16,7 +16,7 @@ const src=fs.readFileSync(FILE,'utf8');if(!/@media print\{#sysbar[^]*?html\{zoom
  r=await p.evaluate(()=>({f:S.settings.fscale,z:document.documentElement.style.zoom,ls:JSON.parse(localStorage.getItem('hospElecSched_v1')).settings.fscale}));
  if(r.f!=='xl'||r.z!=='1.25')bad.push('特大にならない '+JSON.stringify(r));
  await p.waitForTimeout(600);r=await p.evaluate(()=>JSON.parse(localStorage.getItem('hospElecSched_v1')).settings.fscale);if(r!=='xl')bad.push('保存されない '+r);
- await p.reload();await p.waitForTimeout(1500);r=await p.evaluate(()=>document.documentElement.style.zoom);if(r!=='1.25')bad.push('読み直しで戻る '+r);
+ await p.evaluate(()=>{window.__t=Date.now();save()});await p.waitForFunction(()=>(MIRROR_AT.app||0)>=window.__t,null,{timeout:10000});await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&S.settings&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForFunction(()=>document.documentElement.style.zoom==='1.25',null,{timeout:5000}).catch(()=>{});r=await p.evaluate(()=>document.documentElement.style.zoom);if(r!=='1.25')bad.push('読み直しで戻る '+r);
  // 特大で全画面にはみ出しが無い
  const views=await p.evaluate(()=>Object.keys(VIEWS));
  for(const v of views){await p.evaluate(x=>{try{go(x)}catch(e){}},v);await p.waitForTimeout(120);const o=await p.evaluate(()=>({sw:document.documentElement.scrollWidth,iw:window.innerWidth}));if(o.sw>o.iw+2){const w=await p.evaluate(()=>{const r=[];document.querySelectorAll('#app *,nav *,header *').forEach(e=>{const b=e.getBoundingClientRect();if(b.right>innerWidth+1&&b.width>0)r.push((e.className||e.tagName)+' '+Math.round(b.right)+' '+(e.textContent||'').trim().slice(0,16))});return r.slice(0,4).join(',')});bad.push(v+' が特大ではみ出す '+o.sw+'/'+o.iw+' '+w)}}
