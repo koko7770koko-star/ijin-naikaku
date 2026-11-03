@@ -5271,7 +5271,7 @@ async function wxFetch(force){
     const o={at:Date.now(),lat:c.lat,lng:c.lng,pref:c.pref||'',data,warn};
     try{localStorage.setItem(WX_KEY,JSON.stringify(o))}catch(e){}
     WX_ERR='';return o;
-  }catch(e){WX_ERR='天気を取得できませんでした（'+(e.name==='AbortError'?'時間切れ':e.message)+'）';return same?old:null}
+  }catch(e){WX_ERR='天気を取得できませんでした（'+(e.name==='AbortError'?'時間切れ':/Failed to fetch|NetworkError|Load failed/i.test(e.message)?'通信できません':e.message)+'）';return same?old:null}
   finally{WX_BUSY=false}
 }
 function jmaWarnings(data){
@@ -5313,8 +5313,11 @@ function wxCard(){
   if(!wxCfg().on)return '';
   if(!wxReady())return card('☀ 天気',`<div class="muted">天気を表示する地点が登録されていません。</div><button class="btn sec sm" style="margin-top:6px" onclick="go('set');setTimeout(()=>scrollToId('wxSet'),50)">地点を登録</button>`);
   const c=wxCache();
-  if(!c||Date.now()-c.at>WX_TTL)wxRefreshSoon();
-  if(!c)return card('☀ 天気',`<div class="muted">${navigator.onLine?'取得しています…':'圏外のため取得できません（ネット接続が必要です）'}${WX_ERR?'<br>'+esc(WX_ERR):''}</div>`);
+  if((!c||Date.now()-c.at>WX_TTL)&&!(WX_ERR&&!c))wxRefreshSoon();
+  if(!c){
+    if(!navigator.onLine)return card('☀ 天気',`<div class="muted">圏外のため取得できません（ネット接続が必要です）</div>`);
+    if(WX_ERR&&!WX_BUSY)return card('☀ 天気',`<div class="row" style="align-items:center;gap:8px"><span class="muted" style="flex:1">${esc(WX_ERR)}。ほかの機能は使えます。</span><button class="btn sec sm" onclick="wxReload()">再取得</button></div>`);
+    return card('☀ 天気',`<div class="muted">取得しています…</div>`)}
   const d=c.data,cur=d.current||{},h=d.hourly,now=Date.now();let st=0;for(let i=0;i<h.time.length;i++){if(new Date(h.time[i]).getTime()>=now-20*60000){st=i;break}}
   const adv=wxAdvice(h,st,st+8),stale=now-c.at>3*3600000;
   const hours=[];for(let i=st;i<h.time.length&&i<st+12;i++){const p=h.precipitation_probability?h.precipitation_probability[i]:null;hours.push(`<div class="wxh ${p>=50?'wet':''} ${h.wind_speed_10m[i]>=8?'windy':''}"><b>${new Date(h.time[i]).getHours()}時</b><span>${esc(WMO[h.weather_code[i]]||'—')}</span><span>${Math.round(h.temperature_2m[i])}℃</span><span>${p!=null?p+'%':'—'}</span><span>${Math.round(h.wind_speed_10m[i])}m</span></div>`)}
@@ -5327,7 +5330,7 @@ function wxCard(){
     <div class="muted" style="font-size:11px;margin-top:4px">取得 ${new Date(c.at).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}（${wxAge(c)}）${stale?'・<b>古い情報です</b>':''}${WX_ERR?'・'+esc(WX_ERR):''}・気象データ：Open-Meteo${c.warn?'／警報・注意報：気象庁':''}</div></div>`;
 }
 let WX_T=null;
-function wxRefreshSoon(){if(WX_T||!navigator.onLine)return;WX_T=setTimeout(async()=>{const r=await wxFetch(false);WX_T=null;if(r&&['home','works'].includes(V.view)&&!$('#mask').classList.contains('on'))render()},50)}
+function wxRefreshSoon(){if(WX_T||!navigator.onLine)return;WX_T=setTimeout(async()=>{const r=await wxFetch(false);WX_T=null;if((r||WX_ERR)&&['home','works'].includes(V.view)&&!$('#mask').classList.contains('on'))render()},50)}
 async function wxReload(){toast('天気を取得しています…');const r=await wxFetch(true);if(r){toast('更新しました')}else toast(WX_ERR||'取得できませんでした');if(!$('#mask').classList.contains('on'))render()}
 /* 測定記録：外気の気象データを測定条件に入れる（屋外の値であることを記録） */
 async function wxToMeas(){
