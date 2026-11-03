@@ -85,6 +85,7 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .tag.off{background:#fff2c2;color:#8a5a00}.tag.ng{background:var(--ng-bg);color:var(--ng)}.tag.task{background:#e9eff6;color:#1f3b57}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
 
+@media screen{.scrx{overflow-x:auto;-webkit-overflow-scrolling:touch}.scrx td,.scrx th{white-space:nowrap;padding:3px 5px;font-size:12px}}
 .al{padding:11px 12px;border-radius:var(--r-s);font-size:14px;margin:8px 0;border-left:4px solid;cursor:pointer;line-height:1.45}
 .alchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
 .alchip{min-height:44px;min-width:44px;padding:0 12px;border:1px solid currentColor;border-radius:var(--r-s);background:#fff;color:inherit;font-size:14px;font-weight:700}
@@ -3234,9 +3235,9 @@ function vAnnual(){
   h+=`<div class="card noprint"><div class="row"><span class="muted grow">年度の実績を自動で集計します。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button></div></div>`;
   h+=`<div class="card"><div class="rep">${repHead('電気設備 保守管理 年次報告書',`${fy}/4/1 ～ ${fy+1}/3/31`)}
     <div class="sec">1. 月別実績</div>
-    <table><tr><th>月</th><th>予定</th><th>完了</th><th>完了率</th><th>要観察/不良</th><th>点検日数</th><th>異常日数</th><th>最大需要(kW)</th><th>最高温度(℃)</th><th>計画 済/予</th></tr>
+    <div class="muted noprint" style="font-size:12px;margin:-2px 0 4px">表は左右にスクロールできます</div><div class="scrx"><table><tr><th>月</th><th>予定</th><th>完了</th><th>完了率</th><th>要観察/不良</th><th>点検日数</th><th>異常日数</th><th>最大需要(kW)</th><th>最高温度(℃)</th><th>計画 済/予</th></tr>
     ${rows.map(r=>`<tr><td class="c">${r.m}月</td><td class="c">${r.tot}</td><td class="c">${r.done}</td><td class="c">${r.tot?Math.round(r.done/r.tot*100)+'%':'-'}</td><td class="c ${r.ng?'red':''}">${r.ng}</td><td class="c">${r.ddays}</td><td class="c ${r.dng?'red':''}">${r.dng}</td><td class="c">${r.kw??'-'}</td><td class="c">${r.t??'-'}</td><td class="c">${r.pd}/${r.pt}</td></tr>`).join('')}
-    <tr><th>計</th><th>${T('tot')}</th><th>${T('done')}</th><th>${T('tot')?Math.round(T('done')/T('tot')*100)+'%':'-'}</th><th>${T('ng')}</th><th>${T('ddays')}</th><th>${T('dng')}</th><th>${Math.max(0,...rows.map(r=>r.kw||0))||'-'}</th><th>${Math.max(0,...rows.map(r=>r.t||0))||'-'}</th><th>${T('pd')}/${T('pt')}</th></tr></table>
+    <tr><th>計</th><th>${T('tot')}</th><th>${T('done')}</th><th>${T('tot')?Math.round(T('done')/T('tot')*100)+'%':'-'}</th><th>${T('ng')}</th><th>${T('ddays')}</th><th>${T('dng')}</th><th>${Math.max(0,...rows.map(r=>r.kw||0))||'-'}</th><th>${Math.max(0,...rows.map(r=>r.t||0))||'-'}</th><th>${T('pd')}/${T('pt')}</th></tr></table></div>
     <div class="sec">2. 最大需要電力と完了率の推移</div>${chart}
     <div class="sec">3. 年間計画の実施状況</div>
     ${repTable('<th>分類</th><th>点検・作業項目</th><th>周期</th><th>◯予定</th><th>●済</th><th>延期</th><th>未実施</th>',S.items.filter(it=>(mk[it.id]||[]).some(Boolean)).map(it=>{const r=mk[it.id],c=v=>r.filter(x=>x===v).length,un=r.map((v,i)=>v==='○'?MONTHS[i]+'月':'').filter(Boolean);return `<tr><td class="cat">${esc(it.cat)}</td><td>${esc(it.name)}</td><td class="c">${esc(it.cycle)}</td><td class="c">${r.filter(Boolean).length}</td><td class="c grn">${c('済')}</td><td class="c">${c('延')}</td><td class="${un.length?'red':''}">${un.join('・')}</td></tr>`}),'該当なし')}
