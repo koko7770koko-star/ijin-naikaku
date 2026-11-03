@@ -1572,7 +1572,11 @@ function navState(){const x={};NAV_KEYS.forEach(k=>{if(V[k]!==undefined)x[k]=V[k
 let NAV_STACK=[],BACK_AT=0;
 const NAV_RECENT=[];/* その場で最近開いた画面（メニューの先頭に出す。保存しない） */
 function navRecent(v){if(!v||['home','menu'].includes(v))return;const i=NAV_RECENT.indexOf(v);if(i>=0)NAV_RECENT.splice(i,1);NAV_RECENT.unshift(v);if(NAV_RECENT.length>8)NAV_RECENT.length=8}
-function go(v,extra){navRecent(v);V.view=v;if(extra)Object.assign(V,extra);if(!NAV_POP){try{const st=JSON.parse(JSON.stringify(navState()));history.pushState(st,'');NAV_STACK.push(st.v)}catch(e){}}render();scrollTo(0,0)}
+/* 図面から別の画面へ移るとき、拡大と見ていた位置を覚えておき、「戻る」で同じ図面に戻ったらそこへ戻す（画面の状態だけ。保存しない） */
+function dwgKeep(){const w=document.querySelector('.dwgw');V.dwgPos={id:V.dwg,z:V.dwgZ||1,y:window.scrollY,l:w?w.scrollLeft:0,t:w?w.scrollTop:0}}
+function dwgPutBack(){const P=V.dwgPos;if(!P)return false;const w=document.querySelector('.dwgw');if(w){w.scrollLeft=P.l;w.scrollTop=P.t}window.scrollTo(0,P.y);return true}
+function go(v,extra){navRecent(v);if(V.view==='dwg'&&v!=='dwg')dwgKeep();const back=v==='dwg'&&NAV_POP&&V.dwgPos&&V.dwgPos.id===(extra&&extra.dwg||V.dwg);
+  V.view=v;if(extra)Object.assign(V,extra);if(back)V.dwgZ=V.dwgPos.z;if(!NAV_POP){try{const st=JSON.parse(JSON.stringify(navState()));history.pushState(st,'');NAV_STACK.push(st.v)}catch(e){}}render();if(!(back&&dwgPutBack()))scrollTo(0,0)}
 function goBack(target){if(NAV_STACK.length>=2&&NAV_STACK[NAV_STACK.length-2]===target){history.back();return}go(target)}
 window.addEventListener('popstate',ev=>{
   const pop=document.getElementById('pop');
@@ -4377,7 +4381,7 @@ function render(){
   if(shiftMode){if(hasShift()){SHIFT.refresh();if(!window.__shOpen){window.__shOpen=1;setTimeout(()=>{try{SHIFT.toToday(true)}catch(e){}},0)}}return}
   window.__shOpen=0;
   $('#hd').textContent=TITLES[V.view]||'';
-  $('#hback').style.display=SUB_VIEWS.includes(V.view)?'inline':'none';$('#hback').onclick=()=>goBack(BACK[V.view]||'menu');
+  $('#hback').style.display=SUB_VIEWS.includes(V.view)?'inline':'none';$('#hback').onclick=()=>goBack(V.view==='equipDetail'&&NAV_STACK[NAV_STACK.length-2]==='dwg'?'dwg':(BACK[V.view]||'menu')); // 図面の印から来た設備カルテは、‹ で図面へ戻る
   PH_NEED=[];
   const _yw=V.view==='year'&&_yrFy===V.fy&&$('.tbw'),_yl=_yw?_yw.scrollLeft:-1;
   $('#app').innerHTML=VIEWS[V.view]();
