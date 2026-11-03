@@ -1242,11 +1242,11 @@ function removeChange(name,date){
   });
 }
 /* 構造が変わる設定（基準日・勤務パターン・メンバー）は前後比較してから反映 */
-function confirmStructural(title,mutate,act,log){
+function confirmStructural(title,mutate,act,log,extraWarn){
   const ns=clone(S);mutate(ns);const r=periodOf(S.view),r2=periodOf(ymAdd(S.view,1)),range={from:r.from,to:r2.to};
   const apply=()=>{const h=S.hist;S=ns;S.hist=h;logShift(act,log);save();renderAll();};
   if(!diffShift(S,ns,range.from,range.to).length){apply();return;}
-  confirmShift(title,ns,range,apply,['過去の月を含め、勤務表全体が計算し直されます。確定した月は「保存」でファイルに残してください。']);
+  confirmShift(title,ns,range,apply,(extraWarn||[]).concat(['過去の月を含め、勤務表全体が計算し直されます。確定した月は「保存」でファイルに残してください。']));
 }
 
 /* ---------- 月別の勤務時間集計 ---------- */
@@ -1315,8 +1315,17 @@ $('memList').addEventListener('click',e=>{
   if(b.dataset.del!=null){const i=+b.dataset.del,nm=S.members[i].name;
     if(!nm.trim()){S.members.splice(i,1);save();renderAll();return;}
     if(S.changes.some(c=>c.name===nm)&&!window.confirm('「'+nm+'」の予定変更（有給など）が残っています。メンバーから外しても予定変更の記録は残ります。続けますか？'))return;
-    confirmStructural('メンバー「'+nm+'」を削除',ns=>{ns.members.splice(i,1);},'メンバー',{field:'削除',name:nm,from:nm,to:''});}
+    confirmStructural('メンバー「'+nm+'」を削除',ns=>{ns.members.splice(i,1);},'メンバー',{field:'削除',name:nm,from:nm,to:''},delWarn(i,nm));}
 });
+/* 削除の前の知らせ（hz-shift-midadd）：その人が表示中の期間に入っている日数と、後ろの人の割り当てが変わること。記録の形は変えない */
+function delWarn(i,nm){
+  const c=ctx(),k=c.mem.findIndex(m=>m.name===nm);if(k<0)return [];
+  const r=periodOf(S.view),p=analyze(r.from,r.to).per[k],w=[];
+  const nn=p.nights,dd=p.cnt['日勤'];
+  if(nn||dd)w.push('「'+nm+'」は '+md(r.from)+'〜'+md(r.to)+' に '+(nn?'夜勤'+nn+'回':'')+(nn&&dd?'・':'')+(dd?'日勤'+dd+'日':'')+' 入っています。外すとこの日は空きになります。');
+  if(S.members.slice(i+1).some(m=>m.name.trim()&&m.type!=='日勤'&&S.members[i].type!=='日勤'))w.push('夜勤は並び順でローテーションを決めるため、「'+nm+'」より後ろの人の割り当てが変わります。');
+  return w;
+}
 window.addMember=()=>{if(S.members.length>=15){toast('最大15名です');return;}S.members.push({name:'',type:'夜勤'});save();renderMem();const ins=$('memList').querySelectorAll('input');ins[ins.length-1].focus();};
 
 /* ---------- 提出用 ---------- */
