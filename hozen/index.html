@@ -290,7 +290,9 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
   .card{box-shadow:none;padding:0;margin:0}
   .rep{font-size:10.5pt}
   .rep .sec,.rep th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .rep tr{break-inside:avoid}
+  .rep tr{break-inside:avoid;page-break-inside:avoid}
+  .rep thead{display:table-header-group}
+  .rep .sec{break-after:avoid;page-break-after:avoid}
   body:not(.mode-shift) #shiftApp,body.mode-shift #app{display:none!important}
   /* 年間計画：A4 横に12か月が収まり、項目名が折れず、◯●が読め、行がページの境で割れない */
   .tbw{overflow:visible;border:0}
@@ -3271,7 +3273,7 @@ function repHead(title,period){
     <table><tr><th style="width:72px">施設名</th><td>${esc(st.name)}</td></tr><tr><th>対象期間</th><td>${period}</td></tr><tr><th>担当</th><td>${esc([st.dept,st.reporter].filter(Boolean).join('　'))}</td></tr><tr><th>作成日</th><td>${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日</td></tr></table></div>
     <table class="stamp"><tr><th>承認</th><th>確認</th><th>作成</th></tr><tr><td></td><td></td><td></td></tr></table></div>`;
 }
-const repTable=(heads,rows,empty)=>`<table><tr>${heads}</tr>${rows.length?rows.join(''):`<tr><td colspan="20" class="c">${empty}</td></tr>`}</table>`;
+const repTable=(heads,rows,empty)=>`<table><thead><tr>${heads}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="20" class="c">${empty}</td></tr>`}</tbody></table>`;
 function monthStats(y,m){
   const ts=tasksOf(y,m),last=lastDayOf(y,m),days=[];
   for(let i=1;i<=last;i++){const k=`${y}-${pad(m)}-${pad(i)}`;if(judge(k))days.push(k)}
@@ -3470,7 +3472,7 @@ function repMeasBan(ds){
   const B=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}));
   const brows=B.map(b=>({b,c:banCount(ym,banBoards(b.id))})).filter(x=>x.c.t).map(x=>`<td>${esc(x.b.name)}</td><td class="c">${x.c.d}/${x.c.t}</td>`);
   const bt=brows.length?`<table><tr><th colspan="${brows.length*2}">盤の点検（${+ym.slice(5,7)}月の進み・●の数/全体）</th></tr><tr>${brows.join('')}</tr></table>`:'';
-  return (mrows?`<table><tr><th>設備</th><th>点検</th><th>測定値</th><th>判定</th></tr>${mrows}</table>`:'<table><tr><td class="obs" style="min-height:0">この日の測定記録はありません</td></tr></table>')+bt;
+  return (mrows?`<table><thead><tr><th>設備</th><th>点検</th><th>測定値</th><th>判定</th></tr></thead><tbody>${mrows}</tbody></table>`:'<table><tr><td class="obs" style="min-height:0">この日の測定記録はありません</td></tr></table>')+bt;
 }
 function vDailyRep(){
   const ds=V.day,r=S.daily[ds]||{},I=dailyIssues(ds),o=crewDay(ds),st=S.settings,ts=tasksBetween(ds,ds),h=handoverOf(ds);
