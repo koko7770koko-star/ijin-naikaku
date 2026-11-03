@@ -1191,7 +1191,7 @@ function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clea
 function openModal(h){$('#modal').innerHTML=h;$('#mask').classList.add('on');MODAL_SIG=modalSig()}
 function closeModal(force){
   if(force!==true&&$('#mask').classList.contains('on')&&MODAL_SIG!==null&&modalSig()!==MODAL_SIG&&!confirm('入力中の内容を保存せずに閉じますか？'))return false;
-  $('#mask').classList.remove('on');MODAL_SIG=null;return true;
+  if(typeof qrStop==='function')qrStop();$('#mask').classList.remove('on');MODAL_SIG=null;return true;
 }
 const opts=(arr,cur)=>arr.map(v=>`<option${v===cur?' selected':''}>${esc(v)}</option>`).join('');
 const mnav=(label,prev,next)=>`<div class="mnav noprint"><button onclick="${prev}">‹</button><div class="t">${label}</div><button onclick="${next}">›</button></div>`;
@@ -3043,7 +3043,7 @@ function monthStats(y,m){
 function issuesInMonth(y,m){
   const a=`${y}-${pad(m)}-01`,b=`${y}-${pad(m)}-${pad(lastDayOf(y,m))}`;
   return S.issues.filter(i=>i.date<=b&&(!i.closed||i.closed>=a)).sort((x,z)=>x.date.localeCompare(z.date))
-    .map(i=>({...i,st:i.closed&&i.closed<=b?'完了（'+md(i.closed)+'）':i.date>=a?'当月発生・'+(i.status==='完了'?'対応中':i.status):'継続中（'+i.status+'）'}));
+    .map(i=>({...i,st:i.closed&&i.closed<=b?'完了（'+md(i.closed)+'）':i.date>=a?'当月発生・'+(i.status==='完了'&&!i.closed?'完了':i.status==='完了'?'対応中':i.status):'継続中（'+i.status+'）'}));
 }
 function vMonthly(){
   const y=V.ry,m=V.rm,ix=idxOf(m),mk=S.marks[fyOf(y,m)]||{},ny=m===12?y+1:y,nm=m===12?1:m+1,nmk=S.marks[fyOf(ny,nm)]||{},nix=idxOf(nm);
@@ -3258,7 +3258,7 @@ function vSet(){
     <tr><th style="width:38%">ネット不要</th><td>記録の入力・判定・集計・検索、設備・作業・予備品・図面、報告書の印刷（印刷→PDFに保存）、QRラベルの作成、バックアップ・復元・検査</td></tr>
     <tr><th>ネットが必要</th><td>天気・屋外作業の目安・警報（圏外では最後に取得した内容を表示）、AI支援（写真・計器の読み取り、下書き）、シフト表の「PDF出力」ボタン（外部ライブラリ html2canvas・jsPDF を読み込みます。読めないときは「印刷→PDFに保存」を使ってください）、Googleドライブへの共有</td></tr>
     <tr><th>内蔵のライブラリ</th><td>QRコードの作成（qrcode-generator、MITライセンス）</td></tr></table></div></div>
-  <div class="card"><h2>データ・バックアップ</h2><div class="muted" style="margin-bottom:10px">データ（シフト表・写真を含む）はこの端末のブラウザ内に保存されます。${bkStateHTML()}<span style="display:none">前回の<b>完全な</b>バックアップの書き出し：<b>${st.lastBackup?slash(st.lastBackup):'なし'}</b>（7日以上空くとホームでお知らせ）<br>書き出したファイルの検査で確認できた日：<b>${st.lastVerified?slash(st.lastVerified):'なし'}</b>${st.lastVerifiedInfo?'（'+esc(st.lastVerifiedInfo)+'）':''}<br><span style="font-size:12px"></span>${st.lastBackupInfo?`<br>直近に保存したファイル：${esc(st.lastBackupInfo)}`:''}</div>
+  <div class="card"><h2>データ・バックアップ</h2><div class="muted" style="margin-bottom:10px">データ（シフト表・写真を含む）はこの端末のブラウザ内に保存されます。${bkStateHTML()}<span style="display:none">前回の<b>完全な</b>バックアップの書き出し：<b>${st.lastBackup?slash(st.lastBackup):'なし'}</b>（7日以上空くとホームでお知らせ）<br>書き出したファイルの検査で確認できた日：<b>${st.lastVerified?slash(st.lastVerified):'なし'}</b>${st.lastVerifiedInfo?'（'+esc(st.lastVerifiedInfo)+'）':''}<br><span style="font-size:12px"></span>${st.lastBackupInfo?`<br>直近に保存したファイル：${esc(st.lastBackupInfo)}`:''}</span></div>
     <button class="btn wide" style="margin-bottom:8px" onclick="driveBackup()">☁ Googleドライブに保存（共有メニュー）</button>
     <div class="row"><button class="btn sec grow" onclick="backup()">⬇ ファイルに保存</button>${fileBtn('⬆ ファイルから復元','restore','sec grow','.json,application/json')}</div>
     <div class="row" style="margin-top:8px">${fileBtn('🔍 ② 保存したファイルの検査','verifyBackupFile','sec grow','.json,application/json')}</div>
