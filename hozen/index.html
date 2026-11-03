@@ -3101,6 +3101,7 @@ function vMonthly(){
     ${repTable('<th style="width:28px">No</th><th style="width:44px">発生日</th><th>内容</th><th>月末時点</th><th>処置・経過</th>',IS.map((i,k)=>`<tr><td class="c">${k+1}</td><td class="c">${md(i.date)}</td><td>${esc(i.title)}${i.place?'（'+esc(i.place)+'）':''}<div class="small">${esc(i.detail||'')}</div></td><td class="c ${i.st.startsWith('完了')?'grn':'red'}">${esc(i.st)}</td><td>${esc(i.action||'')}</td></tr>`),'該当なし')}
     <div class="sec">6. 来月（${nm}月）の主な予定</div>
     ${repTable('<th style="width:28px">No</th><th>点検・作業項目</th><th>予定日</th><th>委託/自主・担当</th>',nextRows.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${esc(r[0])}</td><td class="c">${esc(r[1])}</td><td class="c">${esc(r[2])}</td></tr>`),'予定なし')}
+    ${banReportHTML(y,m)}
     <div class="sec">7. 所見・特記事項</div>
     <table><tr><td class="obs">${esc(S.notes[key]||'')}</td></tr></table>
     ${S.settings.repPhotos!==false&&photos.length?`<div class="sec">8. 写真</div><div class="rph">${photos.map(([i,c])=>`<figure><img src="${esc(safeSrc(ph(i)))}"><figcaption>${esc(c)}</figcaption></figure>`).join('')}</div>`:''}
@@ -3926,6 +3927,22 @@ function vBan(){
     +floors.map(f=>grp(f.name,banBoards(f.id),f.id)).join('')+(rest.length?grp('階なし',rest,''):'')
     +(!floors.length&&!rest.length?card('階がありません','<button class="btn wide" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button>'):'')
     +`<div class="row" style="margin:8px 0"><button class="btn sec grow" onclick="banAddWizard()">＋ 盤をまとめて足す</button></div>`;
+}
+/* 月報・印刷：棟ごとの盤の点検表（● の件数／盤の数） */
+function banReportHTML(y,m){
+  const ym=y+'-'+pad(m),B=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true})).filter(b=>banBoards(b.id).length);
+  if(!B.length)return '';
+  const cnt=(bs,k)=>bs.filter(b=>banVal(ym,b.id,k)==='済').length;
+  const rows=[];
+  B.forEach(b=>{
+    const floors=(S.locs||[]).filter(l=>l.type==='階'&&l.parent===b.id).sort((a,c)=>floorKey(c.name)-floorKey(a.name)||a.name.localeCompare(c.name,'ja')),inF=new Set();
+    floors.forEach(f=>banBoards(f.id).forEach(x=>inF.add(x.id)));
+    const line=(label,bs,tot)=>{if(!bs.length)return;const c=banCount(ym,bs);rows.push(`<tr${tot?' style="font-weight:700"':''}><td>${esc(b.name)}</td><td>${esc(label)}</td><td class="c">${bs.length}</td>${[0,1,2].map(k=>`<td class="c">${cnt(bs,k)}/${bs.length}</td>`).join('')}<td class="c ${c.d===c.t?'grn':'red'}">${c.d===c.t?'● 完了':c.d+'/'+c.t}</td></tr>`)};
+    floors.forEach(f=>line(f.name,banBoards(f.id),false));
+    line('階なし',banBoards(b.id).filter(x=>!inF.has(x.id)),false);
+    line('棟の合計',banBoards(b.id),true);
+  });
+  return `<div class="sec">6の2. 盤の点検（棟ごと・${m}月）</div>`+repTable('<th>棟</th><th>階</th><th>盤数</th>'+BAN_ITEMS.map(n=>`<th>${esc(n)}</th>`).join('')+'<th>状況</th>',rows,'該当なし')+`<div class="muted" style="font-size:11px">各項目は ●（実施済み）の盤数／盤の数</div>`;
 }
 function banAddWizard(){
   const F=(S.locs||[]).filter(l=>l.type==='階').sort((a,b)=>locPath(a.id).localeCompare(locPath(b.id),'ja',{numeric:true}));
