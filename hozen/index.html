@@ -4215,7 +4215,7 @@ function editMeas(id,preset){
     <label class="f">ひな形（項目と管理値）</label><select id="ms_tpl" onchange="measTpl(this.value)"><option value="">（自由入力）</option>${tplSorted(m.equipId).map(t=>`<option value="${t.id}" ${t.id===m.tplId?'selected':''}>${esc(t.type)}：${esc(t.name)}${tplCondText(t)?'【'+esc(tplCondText(t))+'】':''}</option>`).join('')}</select>
     <div class="grid2"><div><label class="f">種類</label><select id="ms_type">${opts(MEAS_TYPES,m.type)}</select></div><div><label class="f">名称</label><input id="ms_name" value="${esc(m.name)}" maxlength="60" placeholder="例：絶縁抵抗測定"></div></div>
     <div class="grp"><b>測定値</b><div class="muted" style="font-size:12px">判定は各項目の管理値（ひな形・この記録の値）だけで行います。管理値が空欄の項目は判定しません。</div><div id="ms_rows"></div>
-      <button type="button" class="btn sec sm" onclick="measAddRow()">＋ 項目を追加</button></div>
+      <button type="button" class="btn sec sm" style="min-height:44px" onclick="measAddRow()">＋ 項目を追加</button></div>
     <div class="grp"><b>測定条件（判定の根拠として表示）</b>
       <div class="grid3"><div><label class="f">気温（℃）</label><input id="ms_temp" type="number" step="any" value="${esc(m.cond.temp)}"></div><div><label class="f">湿度（%）</label><input id="ms_hum" type="number" step="any" value="${esc(m.cond.hum)}"></div><div><label class="f">天候</label><input id="ms_weather" value="${esc(m.cond.weather)}" maxlength="20"></div></div>
       ${wxCfg().on?`<button type="button" class="btn sec sm" style="margin-top:6px" onclick="wxToMeas()">🌤 外気の気象データを入れる</button>`:''}<input type="hidden" id="ms_wxSrc" value="${esc(m.cond.wxSrc||'')}"><div id="ms_wxSrcView" class="meta">${m.cond.wxSrc?'気温・湿度・天候：'+esc(m.cond.wxSrc):''}</div>
@@ -4244,12 +4244,12 @@ function measPrevHTML(r){
 function measRenderRows(){
   const box=$('#ms_rows');if(!box)return;
   box.innerHTML=MEAS_ROWS.map((r,k)=>{const st=rowJudge(r);return `<div class="mrow ${st==='ng'?'ng':''}" style="border-bottom:1px solid #eef1f4;padding:6px 0">
-    <div class="row" style="flex-wrap:nowrap"><input value="${esc(r.name)}" maxlength="60" placeholder="項目名" onchange="MEAS_ROWS[${k}].name=this.value"><button type="button" class="btn sec sm" onclick="MEAS_ROWS.splice(${k},1);measRenderRows()">×</button></div>
+    <div class="row" style="flex-wrap:nowrap"><input value="${esc(r.name)}" maxlength="60" placeholder="項目名" onchange="MEAS_ROWS[${k}].name=this.value"><button type="button" class="btn sec sm" style="min-height:44px;min-width:44px" aria-label="この項目を外す" onclick="MEAS_ROWS.splice(${k},1);measRenderRows()">×</button></div>
     <div class="row" style="flex-wrap:nowrap;gap:4px;margin-top:4px">${r.ck?`<select onchange="MEAS_ROWS[${k}].v=this.value;measRenderRows()">${opsV(['','○','×','－'],r.v||'')}</select>`:
       `<input type="number" step="any" inputmode="decimal" enterkeyhint="next" data-mv="1" onkeydown="measEnter(event)" value="${esc(r.v)}" placeholder="測定値" style="${r.ai?'background:var(--warn-bg)':''}" onchange="MEAS_ROWS[${k}].v=num16(this.value);MEAS_ROWS[${k}].ai=false;MEAS_ROWS[${k}].src='';measRenderRows()">
-      <input value="${esc(r.unit)}" maxlength="12" placeholder="単位" style="max-width:56px" onchange="MEAS_ROWS[${k}].unit=this.value">
-      <input type="number" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:64px" onchange="MEAS_ROWS[${k}].min=num16(this.value);measRenderRows()">
-      <input type="number" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:64px" onchange="MEAS_ROWS[${k}].max=num16(this.value);measRenderRows()">`}</div>
+      <input value="${esc(r.unit)}" maxlength="12" placeholder="単位" style="max-width:52px;padding-left:6px;padding-right:6px" onchange="MEAS_ROWS[${k}].unit=this.value">
+      <input type="number" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].min=num16(this.value);measRenderRows()">
+      <input type="number" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].max=num16(this.value);measRenderRows()">`}</div>
     <div class="row" style="gap:4px;margin-top:4px;align-items:center"><span class="pill ${st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':''}">${{ng:'管理値外',ok:'管理値内',nolim:'基準未設定',none:'未入力',na:'該当なし'}[st]}</span>
       ${measPrevHTML(r)}${r.ai?'<span class="pill warn">AI読取（要確認）</span>':r.src==='AI'?'<span class="pill plan">AI読取値（人が確認済み）</span>':''}
       ${r.photo?`<img src="${esc(safeSrc(ph(r.photo)))}" style="height:34px;border-radius:4px" onclick="viewPh('${r.photo}')"><button type="button" class="btn sec sm" onclick="MEAS_ROWS[${k}].photo='';measRenderRows()">写真を外す</button>`:`<label class="btn sec sm">📷 写真<input type="file" accept="image/*" onchange="measRowPhoto(this,${k})"></label>`}
