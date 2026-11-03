@@ -4226,16 +4226,20 @@ function saveHealth(id){
 
 /* ---------- QRコード（設備ID）：ラベル印刷・読み取り ---------- */
 const qrText=e=>'EQ:'+(e.code||e.id);
-function qrSvg(text,cell=3){try{const q=qrcode(0,'M');q.addData(text);q.make();return q.createSvgTag({cellSize:cell,margin:2,scalable:true})}catch(err){return '<span class="muted">QRを作れません</span>'}}
+const _qrMemo=new Map();
+function qrSvg(text,cell=3){const mk=cell+'|'+text;if(_qrMemo.has(mk))return _qrMemo.get(mk);let r;try{const q=qrcode(0,'M');q.addData(text);q.make();r=q.createSvgTag({cellSize:cell,margin:2,scalable:true})}catch(err){return '<span class="muted">QRを作れません</span>'}if(_qrMemo.size>1500)_qrMemo.clear();_qrMemo.set(mk,r);return r}
+const QR_SHOW=150;
+function qrPrint(){if(V.qrCut){V.qrAll=true;render()}setTimeout(()=>window.print(),V.qrCut?50:0)}
 function qrOne(id){const e=eqById(id);if(!e)return;
   openModal(`<h3>🔳 QRコード</h3><div style="text-align:center"><div style="width:200px;margin:0 auto">${qrSvg(qrText(e),6)}</div><div style="font-weight:700;margin-top:6px">${esc(e.code||'')}</div><div>${esc(e.name)}</div><div class="muted">${esc(locPath(e.locId))}</div><div class="muted" style="font-size:12px">内容：${esc(qrText(e))}</div></div>
   ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="closeModal(true);go('qr',{qrSel:['${id}']})">ラベル印刷へ</button>`)}`)}
 function vQr(){
   const E=(S.equipment||[]).filter(e=>e.status!=='廃止');const loc=V.qrLoc||'',sel=V.qrSel;
-  const list=E.filter(e=>(!loc||locDesc(loc).has(e.locId))&&(!sel||sel.includes(e.id)));
+  const all=E.filter(e=>(!loc||locDesc(loc).has(e.locId))&&(!sel||sel.includes(e.id)));
+  const cut=!V.qrAll&&all.length>QR_SHOW;V.qrCut=cut;const list=cut?all.slice(0,QR_SHOW):all;
   return `<div class="card noprint"><h2>🔳 QRラベル</h2><div class="muted" style="margin-bottom:6px">設備IDのQRコードを印刷して設備に貼ると、「QRを読む」で設備カルテを開けます。QRの内容は「EQ:設備ID」です（設備IDが空のときは内部ID）。</div>
-      <div class="grid2"><div><label class="f">場所で絞り込み</label><select onchange="V.qrLoc=this.value;V.qrSel=null;render()">${locOptions(loc)}</select></div><div><label class="f">枚数</label><div style="padding:8px 0">${list.length}枚</div></div></div>
-      <div class="row" style="margin-top:8px"><button class="btn grow" onclick="window.print()">🖨 印刷</button><button class="btn sec grow" onclick="qrScan()">📷 QRを読む</button>${sel?`<button class="btn sec sm" onclick="V.qrSel=null;render()">全件</button>`:''}</div></div>
+      <div class="grid2"><div><label class="f">場所で絞り込み</label><select onchange="V.qrLoc=this.value;V.qrSel=null;V.qrAll=false;render()">${locOptions(loc)}</select></div><div><label class="f">枚数</label><div style="padding:8px 0">${all.length}枚${cut?`（先頭${QR_SHOW}枚を表示）`:''}</div></div></div>
+      <div class="row" style="margin-top:8px"><button class="btn grow" onclick="qrPrint()">🖨 印刷${cut?`（全${all.length}枚）`:''}</button><button class="btn sec grow" onclick="qrScan()">📷 QRを読む</button>${sel?`<button class="btn sec sm" onclick="V.qrSel=null;render()">全件</button>`:''}</div></div>
     <div class="qrsheet">${list.map(e=>`<div class="qrl"><div class="qri">${qrSvg(qrText(e),3)}</div><div class="qrt"><b>${esc(e.code||'')}</b><div>${esc(e.name)}</div><small>${esc(locPath(e.locId)||e.place||'')}</small></div></div>`).join('')||emptyBox('設備がありません')}</div>`;
 }
 let QR_STREAM=null;
