@@ -8,6 +8,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  const modal=()=>p.evaluate(()=>document.querySelector('#mask').classList.contains('on')?document.querySelector('#modal').innerText:'');
  await p.evaluate(()=>{go('ai')});await p.waitForTimeout(300);
  if(await p.evaluate(()=>document.documentElement.scrollWidth)>392)bad.push('AI画面がはみ出す');
+ const ai=await p.evaluate(()=>{const l=document.querySelector('#app .mlist');return{top:l.getBoundingClientRect().top,free:document.querySelectorAll('#app .aibadge.free').length,need:document.querySelectorAll('#app .aibadge.need').length,det:!!document.querySelector('#app .al details')}});
+ if(ai.top>330)bad.push('AI画面：機能の一覧が下すぎる '+ai.top);if(ai.free!==2||ai.need!==6)bad.push('AI画面：AIなし/要キーの印が合わない '+ai.free+'/'+ai.need);if(!ai.det)bad.push('AI画面：「詳しく」が無い');
  await p.evaluate(()=>aiDraft('試験','テスト本文','使う',()=>{}));await p.waitForTimeout(200);
  if(!/使えませんが/.test(await modal()))bad.push('キー未設定の案内が出ない');await p.evaluate(()=>closeModal(true));
  await p.evaluate(()=>{sessionStorage.setItem(KEYSTORE,'dummy-not-a-key')});
