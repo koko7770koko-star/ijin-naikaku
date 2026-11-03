@@ -4138,11 +4138,20 @@ function v16PhotoRefs(D,add){
 /* 共通の小物 */
 const locById=id=>(S.locs||[]).find(l=>l.id===id);
 function locPath(id){const out=[];let l=locById(id),n=0;while(l&&n<10){out.unshift(l.name);l=locById(l.parent);n++}return out.join(' › ')}
+const LOC_RECENT=[];/* その起動のあいだに選んだ場所（選ぶ欄の先頭に出す。保存しない） */
+function locRemember(id){const i=LOC_RECENT.indexOf(id);if(i>=0)LOC_RECENT.splice(i,1);LOC_RECENT.unshift(id);if(LOC_RECENT.length>5)LOC_RECENT.length=5}
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.tagName==='SELECT'&&t.value&&(S.locs||[]).some(l=>l.id===t.value))locRemember(t.value)});
 function locOptions(cur,allowEmpty=true,exclude){
-  // 棟→階→室→盤 の順（階は B1F→1F→2F→10F）で並べ、「A棟 › 3F › 第1電気室」の形で出す（探しやすく、同じ名前の盤も見分けられる）
+  // 棟ごとの見出し（optgroup）の下に 棟→階→室→盤 の順（階は B1F→1F→2F→10F）で並べ、「A棟 › 3F › 第1電気室」の形で出す。
+  // その起動のあいだに選んだ場所は「最近使った場所」として先頭に出す（同じ値の選択肢が2回出るので、選択中の印は下の本体だけに付ける）
   const kids=p=>(S.locs||[]).filter(l=>l.parent===p).sort((a,b)=>(a.type==='階'&&b.type==='階'?floorKey(a.name)-floorKey(b.name):0)||a.name.localeCompare(b.name,'ja',{numeric:true}));
-  const out=[];const walk=(p,path)=>kids(p).forEach(l=>{if(l.id===exclude)return;const pa=[...path,l.name];out.push(`<option value="${l.id}" ${l.id===cur?'selected':''}>${esc(pa.join(' › '))}（${esc(l.type)}）</option>`);walk(l.id,pa)});
-  walk('',[]);return (allowEmpty?'<option value="">（指定しない）</option>':'')+out.join('');
+  const opt=(l,pa,sel)=>`<option value="${l.id}" ${sel&&l.id===cur?'selected':''}>${esc(pa.join(' › '))}（${esc(l.type)}）</option>`;
+  const pathOf=l=>{const pa=[];let x=l,n=0;while(x&&n++<20){pa.unshift(x.name);x=(S.locs||[]).find(y=>y.id===x.parent)}return pa};
+  const roots=kids(''),groups=[],walk=(p,path,out)=>kids(p).forEach(l=>{if(l.id===exclude)return;const pa=[...path,l.name];out.push(opt(l,pa,true));walk(l.id,pa,out)});
+  const single=roots.length<=1;
+  roots.forEach(r=>{if(r.id===exclude)return;const out=[opt(r,[r.name],true)];walk(r.id,[r.name],out);groups.push(single?out.join(''):`<optgroup label="${esc(r.name)}">${out.join('')}</optgroup>`)});
+  const rec=LOC_RECENT.map(id=>(S.locs||[]).find(l=>l.id===id)).filter(l=>l&&l.id!==exclude).slice(0,5);
+  return (allowEmpty?'<option value="">（指定しない）</option>':'')+(rec.length&&!single?`<optgroup label="最近使った場所">${rec.map(l=>opt(l,pathOf(l),false)).join('')}</optgroup>`:'')+groups.join('');
 }
 function locDesc(id){const ids=new Set([id]);let grow=true;while(grow){grow=false;(S.locs||[]).forEach(l=>{if(l.parent&&ids.has(l.parent)&&!ids.has(l.id)){ids.add(l.id);grow=true}})}return ids}
 const yen=v=>v===''||v==null?'－':Number(v).toLocaleString('ja-JP')+'円';
