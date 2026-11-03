@@ -13,7 +13,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  const r=await info();
  if(!r)bad.push('記録の無い月で出ない');else{
   if(!/この月の記録はありません/.test(r.t))bad.push('文言 '+r.t);
-  if(r.bs.length!==2||r.bs.some(x=>x[1]<44))bad.push('ボタン '+JSON.stringify(r.bs));
+  if(r.bs.length!==4||r.bs.some(x=>x[1]<44))bad.push('ボタン '+JSON.stringify(r.bs));
   if(r.sw>392)bad.push('はみ出す');}
  const before=await p.evaluate(()=>JSON.stringify([S.daily,S.tasks,S.issues,S.notes]));
  await p.click('.monthlyEmpty .btn:not(.sec)');await p.waitForTimeout(300);
