@@ -4000,6 +4000,8 @@ function exportEquipCsv(){
   download(`設備台帳_${TODAY}.csv`,csvBlob(rows));
 }
 /* ---------- 設備台帳 CSV の読み戻し（exportEquipCsv の列をそのまま読む。読む前に件数を見せて確認） ---------- */
+/* CSV の数の欄：全角の数字（１２．５）・全角マイナス・桁区切りのカンマ（1,200）を半角の数にそろえる（Excel で直した CSV 向け。画面の数値欄は type=number なので別） */
+const csvNum=v=>String(v==null?'':v).normalize('NFKC').replace(/[,\s]/g,'').replace(/[－ー−]/g,'-');
 function parseCsv(t){
   t=String(t||'').replace(/^﻿/,'');const rows=[];let r=[],c='',q=false;
   for(let i=0;i<t.length;i++){const ch=t[i];
@@ -4032,7 +4034,7 @@ function planEquipCsv(text){
       if(EQ_KINDS.includes(kind))o.kind=kind;
       if(IMPORTANCE.includes(imp)&&imp)o.importance=imp;
       if(EQ_STATUS.includes(st))o.status=st;
-      for(const [f,h] of [['life','耐用年数'],['renewYear','更新予定'],['renewCost','更新費用']]){const n=num16(v(r,h));if(n!=='')o[f]=n}
+      for(const [f,h] of [['life','耐用年数'],['renewYear','更新予定'],['renewCost','更新費用']]){const n=num16(csvNum(v(r,h)));if(n!=='')o[f]=n}
       if(Object.keys(spec).length)o.spec=spec;
       const lp=v(r,'階層');if(lp&&locMap.has(lp))o.locId=locMap.get(lp);
       const ex=code?byCode.get(normCode(code)):null;
@@ -4040,7 +4042,7 @@ function planEquipCsv(text){
     }else if(kb==='履歴'){
       const code=v(r,'設備ID'),date=v(r,'日付'),content=txt(v(r,'内容'),2000);
       if(!isDate(date)||!content){skip.push(`${ln}行目：履歴の日付か内容が正しくありません`);return}
-      const cost=v(r,'費用');if(cost!==''&&!(Number(cost)>=0)){skip.push(`${ln}行目：履歴の費用が正しくありません`);return}
+      const cost=csvNum(v(r,'費用'));if(cost!==''&&!(Number(cost)>=0)){skip.push(`${ln}行目：履歴の費用が正しくありません`);return}
       const kind=v(r,'種類');
       reps.push({code,name:v(r,'設備名称'),o:{date,kind:REPAIR_KINDS.includes(kind)?kind:'その他',content,vendor:txt(v(r,'業者・対応者'),60),cost:cost===''?'':Number(cost),photos:[]},ln});
     }else skip.push(`${ln}行目：区分が「設備」「履歴」ではありません`);
@@ -5673,7 +5675,7 @@ function planStockCsv(text){
     if(!name){skip.push(`${ln}行目：品名がありません`);continue}
     const key=code?'c:'+normCode(code):'n:'+norm(name);
     if(seen.has(key)){skip.push(`${ln}行目：「${name}」がファイル内で重複しています`);continue}seen.add(key);
-    const qty=v('在庫'),mn=v('最低在庫'),pr=v('単価');
+    const qty=csvNum(v('在庫')),mn=csvNum(v('最低在庫')),pr=csvNum(v('単価'));
     if((qty!==''&&!(Number(qty)>=0))||(mn!==''&&!(Number(mn)>=0))||(pr!==''&&!(Number(pr)>=0))){skip.push(`${ln}行目：在庫・最低在庫・単価に数でない値があります`);continue}
     const eqIds=v('使用設備').split('、').map(x=>x.trim()).filter(Boolean).map(n=>((S.equipment||[]).find(e=>e.name===n)||{}).id).filter(Boolean);
     const o={code,name,spec:txt(v('仕様'),200),maker:txt(v('メーカー'),60),place:txt(v('保管場所'),80),unit:txt(v('単位'),10)||'個',min:mn===''?'':Number(mn),price:pr===''?'':Number(pr),equipIds:eqIds};
