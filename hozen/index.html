@@ -864,10 +864,10 @@ html.night [style*="border:2px solid #c00000"]{border-color:var(--ng-line)!impor
       <div class="f"><label>開始月（12か月分の最初の月）</label><input type="month" id="sStart"></div>
       <div class="f"><label>勤務パターン</label><select id="sPat"><option>明け休み型</option><option>連続型</option></select>
         <span class="hint">明け休み型：A→明→休→B→明→休…（6人以上）／連続型：A→明→B→明→休…</span></div>
-      <div class="f"><label>夜勤1回の勤務時間(h)</label><input type="number" id="sNight" min="1" step="0.5"></div>
-      <div class="f"><label>日勤1回の勤務時間(h)</label><input type="number" id="sDay" min="1" step="0.5"></div>
-      <div class="f"><label>上限時間(h)：30日以下の期間</label><input type="number" id="sL30" min="1"></div>
-      <div class="f"><label>上限時間(h)：31日の期間</label><input type="number" id="sL31" min="1"></div>
+      <div class="f"><label>夜勤1回の勤務時間(h)</label><input type="number" inputmode="decimal" id="sNight" min="1" step="0.5"></div>
+      <div class="f"><label>日勤1回の勤務時間(h)</label><input type="number" inputmode="decimal" id="sDay" min="1" step="0.5"></div>
+      <div class="f"><label>上限時間(h)：30日以下の期間</label><input type="number" inputmode="numeric" id="sL30" min="1"></div>
+      <div class="f"><label>上限時間(h)：31日の期間</label><input type="number" inputmode="numeric" id="sL31" min="1"></div>
     </div>
   </div>
   <div class="card">
@@ -3578,7 +3578,7 @@ function showOcr(recs,inboxId){
       ${x.unsure?`<div class="unsure">⚠ AIの注記：${esc(txt(x.unsure,300))}</div>`:''}
       ${ck.miss.length?`<div class="al info" style="margin:6px 0">未記入（必須）：${esc(ck.miss.join('、'))}</div>`:''}
       ${Object.keys(ck.diff).length?`<div class="al warn" style="margin:6px 0">既存の記録と違う：${esc(Object.entries(ck.diff).map(([k,v])=>`${fieldName(k)} 既存「${v}」`).join('、'))}</div>`:''}
-      <div class="grid3">${numDefs().map(n=>`<div><label class="f">${esc(n.short||n.name)}(${esc(n.unit)})</label><input type="number" step="any" data-i="${i}" data-k="${n.id}" value="${esc(numOrBlank(x[n.id])??'')}" style="${ck.sus.has(n.id)?'background:var(--warn-bg);border-color:var(--warn-line)':''}${ck.diff[n.id]!=null?';outline:2px solid var(--warn-line)':''}">${ck.sus.has(n.id)?'<div class="hint" style="color:var(--warn)">誤読の可能性</div>':''}</div>`).join('')}</div>
+      <div class="grid3">${numDefs().map(n=>`<div><label class="f">${esc(n.short||n.name)}(${esc(n.unit)})</label><input type="number" inputmode="decimal" step="any" data-i="${i}" data-k="${n.id}" value="${esc(numOrBlank(x[n.id])??'')}" style="${ck.sus.has(n.id)?'background:var(--warn-bg);border-color:var(--warn-line)':''}${ck.diff[n.id]!=null?';outline:2px solid var(--warn-line)':''}">${ck.sus.has(n.id)?'<div class="hint" style="color:var(--warn)">誤読の可能性</div>':''}</div>`).join('')}</div>
       ${chkDefs().map(c=>`<div class="chk" style="padding:4px 0"><div class="l">${esc(c.name)}${ck.sus.has(c.id)?' <span style="color:var(--warn)">要確認</span>':''}</div>${sel(i,c.id,(x.c||{})[c.id],ck)}</div>`).join('')}
       <div class="grid2"><div><label class="f">点検者</label><input data-i="${i}" data-k="by" value="${esc(x.by||nightCrew(x.date))}"></div><div><label class="f">備考</label><input data-i="${i}" data-k="note" value="${esc(x.note||'')}"></div></div>
     </div>`}).join('')}
@@ -4772,8 +4772,8 @@ function editLoc(id,parent){
     <label class="f">名称 *</label><input id="lo_name" value="${esc(l.name)}" maxlength="60" placeholder="${LOC_EX[l.type]||'例：第1電気室'}">
     <label class="f">備考</label><input id="lo_note" value="${esc(l.note)}" maxlength="500">
     <details style="margin-top:8px"><summary class="muted">位置（配置図・将来の3D表示用・任意）</summary>
-      <div class="grid2"><div><label class="f">階</label><input id="lo_floor" value="${esc(l.pos.floor)}" maxlength="20" placeholder="例：B1F"></div><div><label class="f">高さ（m）</label><input id="lo_z" type="number" step="any" value="${esc(l.pos.z)}"></div></div>
-      <div class="grid2"><div><label class="f">X（m）</label><input id="lo_x" type="number" step="any" value="${esc(l.pos.x)}"></div><div><label class="f">Y（m）</label><input id="lo_y" type="number" step="any" value="${esc(l.pos.y)}"></div></div></details>
+      <div class="grid2"><div><label class="f">階</label><input id="lo_floor" value="${esc(l.pos.floor)}" maxlength="20" placeholder="例：B1F"></div><div><label class="f">高さ（m）</label><input id="lo_z" type="number" inputmode="decimal" step="any" value="${esc(l.pos.z)}"></div></div>
+      <div class="grid2"><div><label class="f">X（m）</label><input id="lo_x" type="number" inputmode="decimal" step="any" value="${esc(l.pos.x)}"></div><div><label class="f">Y（m）</label><input id="lo_y" type="number" inputmode="decimal" step="any" value="${esc(l.pos.y)}"></div></div></details>
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveLoc('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delLoc('${id}')">削除</button><button class="btn sec sm" onclick="closeModal(true);locAdd('${id}')">＋下位</button>`:'')}`);
 }
 function saveLoc(id){
@@ -5085,11 +5085,11 @@ function eqEditExtra(e){EQ_EDIT_ID=e.id||'';
     <div class="grp"><b>仕様</b><div id="e_spec">${specRows(fields,spec,e.kind)}</div>
       <div id="e_specx">${extra.map(k=>specFree(k,spec[k])).join('')}</div><button type="button" class="btn sec sm" onclick="$('#e_specx').insertAdjacentHTML('beforeend',specFree('',''))">＋ 仕様の項目を追加</button></div>
     <div class="grp"><b>稼働時間（MTBFの計算に使う）</b>
-      <div class="grid2"><div><label class="f">登録方法</label><select id="e_runMode">${opsV(['','meter','perday','cont'],(e.run||{}).mode||'',RUN_LABEL)}</select></div><div><label class="f">1日あたりの運転時間（h）</label><input id="e_perDay" type="number" min="0" max="24" step="any" value="${esc((e.run||{}).perDay??'')}"></div></div>
+      <div class="grid2"><div><label class="f">登録方法</label><select id="e_runMode">${opsV(['','meter','perday','cont'],(e.run||{}).mode||'',RUN_LABEL)}</select></div><div><label class="f">1日あたりの運転時間（h）</label><input id="e_perDay" type="number" inputmode="decimal" min="0" max="24" step="any" value="${esc((e.run||{}).perDay??'')}"></div></div>
       <label class="f">集計開始日（設備の更新・大規模修理の後に、故障統計を始め直す日）</label><input type="date" id="e_statsFrom" value="${esc(e.statsFrom||'')}">
       <div class="muted" style="font-size:12px">実測：設備カルテの「稼働時間計の記録」で読み値を登録します。推定の値で計算したMTBFには「推定」と表示します。未登録ならMTBFは計算しません。</div></div>
-    <div class="grp"><b>更新計画</b><div class="grid3"><div><label class="f">耐用年数（年）</label><input id="e_life" type="number" min="0" step="1" value="${esc(e.life??'')}" placeholder="施設の基準"></div>
-      <div><label class="f">更新予定（年度）</label><input id="e_renewYear" type="number" step="1" value="${esc(e.renewYear??'')}"></div><div><label class="f">更新費用（円）</label><input id="e_renewCost" type="number" step="1" value="${esc(e.renewCost??'')}"></div></div>
+    <div class="grp"><b>更新計画</b><div class="grid3"><div><label class="f">耐用年数（年）</label><input id="e_life" type="number" inputmode="numeric" min="0" step="1" value="${esc(e.life??'')}" placeholder="施設の基準"></div>
+      <div><label class="f">更新予定（年度）</label><input id="e_renewYear" type="number" inputmode="numeric" step="1" value="${esc(e.renewYear??'')}"></div><div><label class="f">更新費用（円）</label><input id="e_renewCost" type="number" inputmode="numeric" step="1" value="${esc(e.renewCost??'')}"></div></div>
       <div class="muted" style="font-size:12px">耐用年数は推測で入れず、施設の基準・メーカー資料の値を入れてください。空欄なら更新推奨の計算に使いません。</div></div>`;
 }
 const specRows=(fields,spec,kind)=>fields.map(f=>`<div class="row" style="flex-wrap:nowrap;margin:3px 0"><span class="muted" style="min-width:110px;font-size:13px">${esc(specLabel(kind,f))}</span><input data-sk="${esc(f)}" value="${esc(spec[f]||'')}" maxlength="100"></div>`).join('');
@@ -5316,7 +5316,7 @@ function editMeas(id,preset){
     <div class="grp"><b>測定値</b><div class="muted" style="font-size:12px">判定は各項目の管理値（ひな形・この記録の値）だけで行います。管理値が空欄の項目は判定しません。</div><div id="ms_rows"></div>
       <button type="button" class="btn sec sm" style="min-height:44px" onclick="measAddRow()">＋ 項目を追加</button></div>
     <div class="grp"><b>測定条件（判定の根拠として表示）</b>
-      <div class="grid3"><div><label class="f">気温（℃）</label><input id="ms_temp" type="number" step="any" value="${esc(m.cond.temp)}"></div><div><label class="f">湿度（%）</label><input id="ms_hum" type="number" step="any" value="${esc(m.cond.hum)}"></div><div><label class="f">天候</label><input id="ms_weather" value="${esc(m.cond.weather)}" maxlength="20"></div></div>
+      <div class="grid3"><div><label class="f">気温（℃）</label><input id="ms_temp" type="number" inputmode="decimal" step="any" value="${esc(m.cond.temp)}"></div><div><label class="f">湿度（%）</label><input id="ms_hum" type="number" inputmode="decimal" step="any" value="${esc(m.cond.hum)}"></div><div><label class="f">天候</label><input id="ms_weather" value="${esc(m.cond.weather)}" maxlength="20"></div></div>
       ${wxCfg().on?`<button type="button" class="btn sec sm" style="margin-top:6px" onclick="wxToMeas()">🌤 外気の気象データを入れる</button>`:''}<input type="hidden" id="ms_wxSrc" value="${esc(m.cond.wxSrc||'')}"><div id="ms_wxSrcView" class="meta">${m.cond.wxSrc?'気温・湿度・天候：'+esc(m.cond.wxSrc):''}</div>
       <label class="f">測定器</label><select id="ms_tool"><option value="">（台帳から選ばない）</option>${tools.map(t=>`<option value="${t.id}" ${t.id===m.cond.tool?'selected':''}>${esc(t.name)}${t.calDue?`（校正期限 ${slash(t.calDue)}${t.calDue<TODAY?'・期限切れ':''}）`:''}</option>`).join('')}</select>
       <input id="ms_toolName" value="${esc(m.cond.toolName)}" maxlength="80" placeholder="台帳にない測定器の名称・型式" style="margin-top:4px">
@@ -5376,8 +5376,8 @@ function measRenderRows(){
     <div class="row" style="flex-wrap:nowrap;gap:4px;margin-top:4px">${r.ck?`<select onchange="MEAS_ROWS[${k}].v=this.value;measRenderRows()">${opsV(['','○','×','－'],r.v||'')}</select>`:
       `<input type="number" step="any" inputmode="decimal" enterkeyhint="next" data-mv="1" onkeydown="measEnter(event)" oninput="measLive(this,${k})" value="${esc(r.v)}" placeholder="${esc(measPh(r))}" style="${r.ai?'background:var(--warn-bg)':st==='ng'?'border-color:var(--ng,#c0392b);background:#fdecea':''}" onchange="MEAS_ROWS[${k}].v=num16(this.value);MEAS_ROWS[${k}].ai=false;MEAS_ROWS[${k}].src='';measRenderRows()">
       <input value="${esc(r.unit)}" maxlength="12" placeholder="単位" style="max-width:52px;padding-left:6px;padding-right:6px" onchange="MEAS_ROWS[${k}].unit=this.value">
-      <input type="number" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].min=num16(this.value);measRenderRows()">
-      <input type="number" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].max=num16(this.value);measRenderRows()">`}</div>
+      <input type="number" inputmode="decimal" step="any" value="${esc(r.min)}" placeholder="下限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].min=num16(this.value);measRenderRows()">
+      <input type="number" inputmode="decimal" step="any" value="${esc(r.max)}" placeholder="上限" style="max-width:74px;padding-left:6px;padding-right:6px;font-size:14px" onchange="MEAS_ROWS[${k}].max=num16(this.value);measRenderRows()">`}</div>
     <div class="row" style="gap:4px;margin-top:4px;align-items:center"><span class="pill ${st==='ng'?'ng':st==='ok'?'ok':st==='nolim'?'warn':''}">${esc(judgeWord(r,st))}</span>
       ${measPrevHTML(r)}${r.ai?'<span class="pill warn">AI読取（要確認）</span>':r.src==='AI'?'<span class="pill plan">AI読取値（人が確認済み）</span>':''}
       ${r.photo?`<img src="${esc(safeSrc(ph(r.photo)))}" style="height:34px;border-radius:4px" onclick="viewPh('${r.photo}')"><button type="button" class="btn sec sm" onclick="MEAS_ROWS[${k}].photo='';measRenderRows()">写真を外す</button>`:`<label class="btn sec sm">📷 写真<input type="file" accept="image/*" onchange="measRowPhoto(this,${k})"></label>`}
@@ -5537,12 +5537,12 @@ function failStats(eqId,fromDate,toDate){
 /* ---------- 異常案件の追加項目（編集画面に差し込む） ---------- */
 function issueExtra(i){
   return `<div class="grp"><b>分類・期限</b>
-    <div class="grid3"><div><label class="f">緊急度</label><select id="is_urg">${opsV(URGENCY,i.urgency||'')}</select></div><div><label class="f">対応期限</label><input type="date" id="is_due" value="${esc(i.due||'')}"></div><div><label class="f">停止〜復旧の時間（h）</label><input type="number" step="any" min="0" id="is_downH" value="${esc(i.downH??'')}"></div></div>
+    <div class="grid3"><div><label class="f">緊急度</label><select id="is_urg">${opsV(URGENCY,i.urgency||'')}</select></div><div><label class="f">対応期限</label><input type="date" id="is_due" value="${esc(i.due||'')}"></div><div><label class="f">停止〜復旧の時間（h）</label><input type="number" inputmode="decimal" step="any" min="0" id="is_downH" value="${esc(i.downH??'')}"></div></div>
     <label class="f">区分</label><select id="is_icat">${opsV(['異常','故障','計画停止'],i.icat||(i.failure?'故障':'異常'))}</select>
     <div class="muted" style="font-size:12px">「故障」だけを故障件数・MTBF・MTTRに数えます。「計画停止」（点検・工事などで止めたもの）は故障に数えず、推定の稼働時間から停止時間を差し引きます。「異常」は数えません。</div>
     <label class="f">原因（分かっている範囲）</label><textarea id="is_cause" style="min-height:50px" maxlength="2000">${esc(i.cause||'')}</textarea>
     <label class="f">再発防止策</label><textarea id="is_prevent" style="min-height:50px" maxlength="2000">${esc(i.prevent||'')}</textarea>
-    <label class="f">費用（円）</label><input type="number" step="1" id="is_cost" value="${esc(i.cost??'')}"></div>`;
+    <label class="f">費用（円）</label><input type="number" inputmode="numeric" step="1" id="is_cost" value="${esc(i.cost??'')}"></div>`;
 }
 function issueReadExtra(){const g=k=>{const e=$('#is_'+k);return e?e.value.trim():''};
   return {urgency:URGENCY.includes(g('urg'))?g('urg'):'',due:isDate(g('due'))?g('due'):'',downH:num16(g('downH')),icat:['異常','故障','計画停止'].includes(g('icat'))?g('icat'):'異常',failure:g('icat')==='故障',cause:txt(g('cause'),2000),prevent:txt(g('prevent'),2000),cost:num16(g('cost'))}}
@@ -5811,7 +5811,7 @@ function editWork(id,preset){
       <label class="f">設備</label>${eqMulti(w.equipIds,'wk_eqs')}</div>
     <div class="grp"><b>人員・資格</b><div class="muted" style="font-size:12px">勤務表（シフト）と、登録した資格を照らし合わせて表示します。</div>
       <label class="f">担当者</label><div class="chkgrid" id="wk_staff">${[...new Set([...staff,...w.staff])].map(n=>{const o=crewDay(w.date),v=o&&o.all?o.all[n]:'';return `<label class="chkl" style="margin:2px 0"><input type="checkbox" value="${esc(n)}" ${w.staff.includes(n)?'checked':''}>${esc(n)}${v?`<small class="muted">（${esc(v)}）</small>`:''}${(S.quals[n]||[]).length?`<small class="muted"> ${esc(S.quals[n].join('・'))}</small>`:''}</label>`}).join('')||'<div class="muted">シフトのメンバーか設定の担当者を登録してください</div>'}</div>
-      <div class="grid2"><div><label class="f">必要人数</label><input type="number" min="0" step="1" id="wk_needN" value="${esc(w.needN||'')}"></div><div></div></div>
+      <div class="grid2"><div><label class="f">必要人数</label><input type="number" inputmode="numeric" min="0" step="1" id="wk_needN" value="${esc(w.needN||'')}"></div><div></div></div>
       <label class="f">必要な資格</label><div class="chkgrid" id="wk_quals">${[...new Set([...S.qualList,...w.needQuals])].map(q=>`<label class="chkl" style="margin:2px 0"><input type="checkbox" value="${esc(q)}" ${w.needQuals.includes(q)?'checked':''}>${esc(q)}</label>`).join('')}</div>
       <div class="grid2"><div><label class="f">協力会社</label><input id="wk_vendor" list="dl_wkv" value="${esc(w.vendor)}" maxlength="100">${namesList('dl_wkv',[...(S.works||[]).map(x=>x.vendor),...(S.equipment||[]).flatMap(e=>(e.repairs||[]).map(r=>r.vendor))])}</div><div><label class="f">協力会社の作業者</label><input id="wk_vendorStaff" list="dl_wkvs" value="${esc(w.vendorStaff)}" maxlength="200" placeholder="氏名（、区切り）">${namesList('dl_wkvs',(S.works||[]).map(x=>x.vendorStaff))}</div></div></div>
     <label class="chkl"><input type="checkbox" id="wk_imp" ${w.important?'checked':''}>重要作業（作業開始の前に責任者確認の記録を必須にする）<small class="muted">停電作業・重要度Aの設備は自動で重要作業になります</small></label>
@@ -5828,7 +5828,7 @@ function editWork(id,preset){
     <div class="grp"><b>作業前チェックリスト</b><div class="muted" style="font-size:12px">「必須」がすべて確認されるまで作業開始を記録できません。確認は現場で人が行ってください。</div><div id="wk_pre"></div></div>
     <div class="grp"><b>作業後チェックリスト</b><div class="muted" style="font-size:12px">「必須」がすべて確認されるまで作業完了を記録できません。</div><div id="wk_post"></div></div>
     <label class="f">作業結果</label><textarea id="wk_result" style="min-height:60px" maxlength="4000">${esc(w.result)}</textarea>
-    <div class="grid2"><div><label class="f">費用（円）</label><input type="number" id="wk_cost" value="${esc(w.cost)}"></div><div></div></div>
+    <div class="grid2"><div><label class="f">費用（円）</label><input type="number" inputmode="numeric" id="wk_cost" value="${esc(w.cost)}"></div><div></div></div>
     ${tpBox()}<div style="margin-top:8px">${fileBtn('📄 資料を添付','addTD','sec sm','application/pdf,image/*')}</div><div id="td">${docsList(TD,'rmTD')}</div>
     ${id&&isImportant(w)?`<div class="grp"><b>責任者確認（重要作業）</b>${w.resp?`<div class="meta">${new Date(w.resp.at).toLocaleString('ja-JP')}・${esc(w.resp.role)} ${esc(w.resp.by)}${w.resp.note?'：'+esc(w.resp.note):''}<span class="pill">${esc(w.resp.method)}</span></div>`:'<div class="muted">未記録（作業開始の前に必要です）</div>'}${['承認済み'].includes(w.status)?`<button type="button" class="btn sec sm" style="margin-top:4px" onclick="workResp('${id}')">責任者確認を記録</button>`:''}</div>`:''}
     ${id?`<div class="al info" style="font-size:12px">${AUTH_NOTE}</div>`:''}
@@ -6039,7 +6039,7 @@ function costsOf(fy){
   return r;
 }
 function editBudget(id,fy){const b=(S.budget||[]).find(x=>x.id===id)||{fy:fy||fyNow(),cat:BUDGET_CATS[0],name:'',amount:''};
-  openModal(`<h3>予算</h3><div class="grid2"><div><label class="f">年度</label><input id="bg_fy" type="number" value="${b.fy}"></div><div><label class="f">区分</label><select id="bg_cat">${opts(BUDGET_CATS,b.cat)}</select></div></div><label class="f">内訳</label><input id="bg_name" value="${esc(b.name)}" maxlength="80"><label class="f">金額（円）</label><input id="bg_amount" type="number" value="${esc(b.amount)}">
+  openModal(`<h3>予算</h3><div class="grid2"><div><label class="f">年度</label><input id="bg_fy" type="number" inputmode="numeric" value="${b.fy}"></div><div><label class="f">区分</label><select id="bg_cat">${opts(BUDGET_CATS,b.cat)}</select></div></div><label class="f">内訳</label><input id="bg_name" value="${esc(b.name)}" maxlength="80"><label class="f">金額（円）</label><input id="bg_amount" type="number" inputmode="numeric" value="${esc(b.amount)}">
   ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveBudget('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delBudget('${id}')">削除</button>`:'')}`)}
 function saveBudget(id){const o={fy:parseInt($('#bg_fy').value),cat:$('#bg_cat').value,name:txt($('#bg_name').value.trim(),80),amount:num16($('#bg_amount').value)};if(!Number.isInteger(o.fy)){toast('年度を入れてください');return}
   const b=(S.budget||[]).find(x=>x.id===id);if(b){logEdit('budget',id,'予算',`${b.cat} ${b.amount}`,`${o.cat} ${o.amount}`);Object.assign(b,o)}else S.budget.push({id:uid(),...o});V.bgFy=o.fy;save();closeModal(true);render()}
@@ -6052,7 +6052,7 @@ function editPart(id){
     <div class="grid2"><div><label class="f">品番・コード</label><input id="pt_code" value="${esc(p.code)}" maxlength="30"></div><div><label class="f">単位</label><input id="pt_unit" value="${esc(p.unit)}" maxlength="10"></div></div>
     <label class="f">品名 *</label><input id="pt_name" value="${esc(p.name)}" maxlength="80"><label class="f">仕様・型式</label><input id="pt_spec" value="${esc(p.spec)}" maxlength="200">
     <div class="grid2"><div><label class="f">メーカー</label><input id="pt_maker" value="${esc(p.maker)}" maxlength="60"></div><div><label class="f">保管場所</label><input id="pt_place" value="${esc(p.place)}" maxlength="80"></div></div>
-    <div class="grid3"><div><label class="f">${id?'在庫数（入出庫で変更）':'初期在庫'}</label><input id="pt_qty" type="number" step="any" value="${p.qty}" ${id?'disabled':''}></div><div><label class="f">最低在庫数</label><input id="pt_min" type="number" step="any" value="${esc(p.min)}"></div><div><label class="f">単価（円）</label><input id="pt_price" type="number" value="${esc(p.price)}"></div></div>
+    <div class="grid3"><div><label class="f">${id?'在庫数（入出庫で変更）':'初期在庫'}</label><input id="pt_qty" type="number" inputmode="decimal" step="any" value="${p.qty}" ${id?'disabled':''}></div><div><label class="f">最低在庫数</label><input id="pt_min" type="number" inputmode="decimal" step="any" value="${esc(p.min)}"></div><div><label class="f">単価（円）</label><input id="pt_price" type="number" inputmode="numeric" value="${esc(p.price)}"></div></div>
     <label class="f">使用する設備</label>${eqMulti(p.equipIds,'pt_eqs')}
     <label class="f">備考</label><input id="pt_note" value="${esc(p.note)}" maxlength="1000">
     ${id?`<div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="stockMove('${id}','入庫')">＋ 入庫</button><button class="btn sec sm grow" onclick="stockMove('${id}','出庫')">− 出庫</button><button class="btn sec sm grow" onclick="stockMove('${id}','棚卸')">棚卸</button></div>
@@ -6162,7 +6162,7 @@ function editTool(id){
     <label class="f">名称 *</label><input id="tl_name" value="${esc(t.name)}" maxlength="80" placeholder="例：絶縁抵抗計">
     <div class="grid2"><div><label class="f">メーカー</label><input id="tl_maker" value="${esc(t.maker)}" maxlength="60"></div><div><label class="f">型式</label><input id="tl_model" value="${esc(t.model)}" maxlength="60"></div></div>
     <div class="grid2"><div><label class="f">製造番号</label><input id="tl_serial" value="${esc(t.serial)}" maxlength="60"></div><div><label class="f">保管場所</label><input id="tl_place" value="${esc(t.place)}" maxlength="80"></div></div>
-    <div class="grid2"><div><label class="f">校正期限</label><input type="date" id="tl_calDue" value="${esc(t.calDue)}"></div><div><label class="f">校正周期（か月）</label><input type="number" id="tl_calCycleM" value="${esc(t.calCycleM)}"></div></div>
+    <div class="grid2"><div><label class="f">校正期限</label><input type="date" id="tl_calDue" value="${esc(t.calDue)}"></div><div><label class="f">校正周期（か月）</label><input type="number" inputmode="numeric" id="tl_calCycleM" value="${esc(t.calCycleM)}"></div></div>
     <label class="f">備考</label><input id="tl_note" value="${esc(t.note)}" maxlength="1000">
     ${id?`<div class="grp"><b>貸出</b>${loan?`<div>貸出中：${esc(loan.to)}（${slash(loan.out)}〜${loan.due?slash(loan.due):''}）</div><button class="btn sec sm" onclick="toolReturn('${id}')">返却を記録</button>`:`<button class="btn sec sm" onclick="toolLoan('${id}')">貸出を記録</button>`}
       ${t.loans.filter(l=>l.back).slice(-5).reverse().map(l=>`<div class="meta">${slash(l.out)}〜${slash(l.back)} ${esc(l.to)}</div>`).join('')}</div>
@@ -6380,7 +6380,7 @@ function wxSettingsCard(){
   return `<div class="card" id="wxSet"><h2>☀ 天気（屋外作業の目安）</h2>
     <label class="chkl"><input type="checkbox" ${c.on?'checked':''} onchange="wxSet('on',this.checked)">ホームに天気・屋外作業の目安を表示する</label>
     <label class="f">地点の名前</label><input value="${esc(c.label||'')}" maxlength="40" placeholder="例：本館" onchange="wxSet('label',this.value)">
-    <div class="grid2"><div><label class="f">緯度</label><input type="number" step="any" value="${esc(c.lat??'')}" onchange="wxSet('lat',this.value)"></div><div><label class="f">経度</label><input type="number" step="any" value="${esc(c.lng??'')}" onchange="wxSet('lng',this.value)"></div></div>
+    <div class="grid2"><div><label class="f">緯度</label><input type="number" inputmode="decimal" step="any" value="${esc(c.lat??'')}" onchange="wxSet('lat',this.value)"></div><div><label class="f">経度</label><input type="number" inputmode="decimal" step="any" value="${esc(c.lng??'')}" onchange="wxSet('lng',this.value)"></div></div>
     <button class="btn sec sm" style="margin-top:6px" onclick="wxHere()">📍 今いる場所を地点にする</button>
     <div class="muted sethelp" style="font-size:12px;margin-top:6px">地点の名前：ホームの天気の見出し／緯度・経度：この場所の天気を調べる位置／警報・注意報の県：選んだ県の気象庁の警報を出す（天気・警報が取れなくても他の機能は使えます）</div>
     <label class="f">警報・注意報の都道府県</label><select onchange="wxSet('pref',this.value)"><option value="">（表示しない）</option>${Object.keys(PREF_JMA).map(p=>`<option ${c.pref===p?'selected':''}>${p}</option>`).join('')}</select>
