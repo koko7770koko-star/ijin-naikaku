@@ -473,6 +473,11 @@ details.fold[open]>summary{margin-bottom:8px}
 /* 画面上の切り替えタブ：文字を折り返さず、入りきらないときは横にずらす（390px で「推奨・傾向」が2行に切れていた） */
 .seg.tabs:not(.istep){overflow-x:auto;-webkit-overflow-scrolling:touch}
 .seg.tabs:not(.istep) button{white-space:nowrap;flex:1 0 auto;padding:0 10px;min-height:44px}
+/* 設定・設備カルテの上のタブ：横にはみ出さず2列に折り返し、全部が見える */
+.seg.tabs.ptabs:not(.istep){display:grid;grid-template-columns:1fr 1fr;overflow:visible}
+.seg.tabs.ptabs:not(.istep) button{border:0;border-left:1px solid var(--field);border-top:1px solid var(--field)}
+.seg.tabs.ptabs:not(.istep) button:nth-child(odd){border-left:0}
+.seg.tabs.ptabs:not(.istep) button:nth-child(-n+2){border-top:0}
 .mtile{text-align:left}.mtile .mt,.mtile .md{text-align:left}
 
 </style>
