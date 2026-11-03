@@ -269,6 +269,20 @@ table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
   .rep table:not(.head):not(.stamp) th{word-break:keep-all;overflow-wrap:break-word}
 }
 
+.mprint{display:none}
+@media print{
+  .mprint{display:block!important}
+  .mprint h2{font-size:14pt;margin:0 0 2mm}
+  table.mpt{width:100%;table-layout:fixed;border-collapse:collapse;font-size:8.5pt}
+  table.mpt th{border:1px solid #888;padding:1mm;background:#eef2f6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table.mpt td{border:1px solid #888;vertical-align:top;height:30mm;padding:1mm;overflow:hidden}
+  table.mpt td.o{background:#f3f3f3;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table.mpt tr{break-inside:avoid;page-break-inside:avoid}
+  table.mpt .n{font-weight:700;font-size:9pt}
+  table.mpt .sun,table.mpt th.sun{color:#c00000}table.mpt .sat,table.mpt th.sat{color:#1f5f99}
+  table.mpt .t{overflow-wrap:anywhere;line-height:1.25;margin-top:.5mm}
+  table.mpt .wc{margin-top:1mm;font-size:7.5pt;color:#444}table.mpt .wc span{margin-right:2mm;white-space:nowrap}
+}
 @media print{
   body{background:#fff}
   header,nav,.noprint,.toast,.mask{display:none!important}
@@ -2141,10 +2155,30 @@ function toggleEnji(){_mkEnji=!_mkEnji;render()}
 function markCtx(e,id,i){if(e&&e.preventDefault)e.preventDefault();if(Date.now()-_mkTouchAt<1500||_mkLong)return false;cycleMark(id,i,true);return false}
 
 // カレンダー
+// カレンダーの印刷用（画面では出ない。A4縦に、週ごとの行・日ごとの欄で ◯予定／●実施済み を全件出す）
+function monthPrintHTML(y,m){
+  const st=S.settings,first=new Date(y,m-1,1),start=new Date(y,m-1,1-first.getDay());let rows='';
+  for(let w=0;w<6;w++){
+    const d0=new Date(start);d0.setDate(start.getDate()+w*7);if(w>=4&&d0.getMonth()!==m-1)break;
+    let tds='';
+    for(let k=0;k<7;k++){
+      const d=new Date(start);d.setDate(start.getDate()+w*7+k);const s=ymd(d),inM=d.getMonth()===m-1;
+      if(!inM){tds+='<td class="o"></td>';continue}
+      const ts=S.tasks.filter(t=>t.date===s).sort(byDate),o=crewDay(s);let crew='';
+      if(o&&st.showCrew!==false)crew+=o.A.map(n=>`<span>A:${esc(sn(n))}</span>`).join('')+o.B.map(n=>`<span>B:${esc(sn(n))}</span>`).join('');
+      if(o&&st.calDay)crew+=o.D.map(n=>`<span>日:${esc(sn(n))}</span>`).join('');
+      tds+=`<td><div class="n ${k===0?'sun':k===6?'sat':''}">${d.getDate()}</div>${ts.map(t=>`<div class="t">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${crew?`<div class="wc">${crew}</div>`:''}</td>`;
+    }
+    rows+=`<tr>${tds}</tr>`;
+  }
+  const mt=tasksOf(y,m);
+  return `<div class="card mprint"><h2>${y}年${m}月 点検予定表</h2><div class="muted">◯＝予定　●＝実施済み　（完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件）</div>
+    <table class="mpt"><thead><tr>${[...WD].map((w,i)=>`<th class="${i===0?'sun':i===6?'sat':''}">${w}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
 function vMonth(){
   const {y,m}=V,first=new Date(y,m-1,1),start=new Date(y,m-1,1-first.getDay()),st=S.settings;
   let h=mnav(`${y}年 ${m}月`,"shiftYM('y','m',-1)","shiftYM('y','m',1)");
-  h+=`<div class="card"><div class="row" style="margin-bottom:8px"><span class="muted grow">勤務者の表示</span>
+  h+=`<div class="card noprint"><div class="row" style="margin-bottom:8px"><span class="muted grow">勤務者の表示</span>
     <label class="chkl" style="margin:0"><input type="checkbox" ${st.showCrew!==false?'checked':''} onchange="S.settings.showCrew=this.checked;save();render()">夜勤</label>
     <label class="chkl" style="margin:0 0 0 8px"><input type="checkbox" ${st.calDay?'checked':''} onchange="S.settings.calDay=this.checked;save();render()">日勤</label></div>
     <div class="cal">${[...WD].map((w,i)=>`<div class="h ${i===0?'sun':i===6?'sat':''}">${w}</div>`).join('')}`;
@@ -2162,11 +2196,12 @@ function vMonth(){
       ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件 ${ts.filter(t=>t.status==='完了').length}/${ts.length}</div>`:''}${crew}</div>`;
   }
   h+=`</div><div class="tags" style="margin-top:10px">${st.showCrew!==false?'<span class="tag a" style="font-size:12px">A夜勤</span><span class="tag b" style="font-size:12px">B夜勤</span>':''}${st.calDay?'<span class="tag d" style="font-size:12px">日勤</span>':''}<span class="tag task" style="font-size:12px">点検・作業</span><span class="muted">青◯予定　緑●完了　灰＝延期　⚠＝衝突</span></div>
-    <div class="row" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div></div>`;
+    <div class="row" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div>
+    <button class="btn sm sec wide" style="margin-top:8px" onclick="window.print()">🖨 この月の予定表を印刷（A4 縦）</button></div>${monthPrintHTML(y,m)}`;
   const dayT=S.tasks.filter(t=>t.date===V.sel).sort(byDate);
-  h+=`<div class="card"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):'<div class="empty">予定はありません</div>'}</div>`;
+  h+=`<div class="card noprint"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):'<div class="empty">予定はありません</div>'}</div>`;
   const mt=tasksOf(y,m);
-  h+=`<div class="card"><div class="hd-row"><h2>${m}月の一覧</h2><span class="muted">完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件</span></div>${mt.length?mt.map(taskRow).join(''):'<div class="empty">この月の予定はまだありません</div>'}</div>`;
+  h+=`<div class="card noprint"><div class="hd-row"><h2>${m}月の一覧</h2><span class="muted">完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件</span></div>${mt.length?mt.map(taskRow).join(''):'<div class="empty">この月の予定はまだありません</div>'}</div>`;
   return h;
 }
 
