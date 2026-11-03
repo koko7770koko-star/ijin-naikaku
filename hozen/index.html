@@ -85,6 +85,8 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
 
 .al{padding:11px 12px;border-radius:var(--r-s);font-size:14px;margin:8px 0;border-left:4px solid;cursor:pointer;line-height:1.45}
+.alchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+.alchip{min-height:44px;min-width:44px;padding:0 12px;border:1px solid currentColor;border-radius:var(--r-s);background:#fff;color:inherit;font-size:14px;font-weight:700}
 .al.ng{background:var(--ng-bg);color:#8f1d17;border-color:var(--ng-line);font-weight:600}
 .al.warn{background:var(--warn-bg);color:#6b4d00;border-color:var(--warn-line)}
 .al.info{background:var(--info-bg);color:var(--info);border-color:var(--accent)}
@@ -1930,7 +1932,7 @@ function deadlineRow(x){
 const goDay=ds=>`go('month',{y:${pd(ds).getFullYear()},m:${pd(ds).getMonth()+1},sel:'${ds}'})`;
 let QN=0;
 function alerts(){
-  const A=[],add=(lv,t,on)=>A.push([lv,t,on]);
+  const A=[],add=(lv,t,on,chips)=>A.push([lv,t,on,chips]);
   const over=S.tasks.filter(t=>t.status==='予定'&&t.date<TODAY).sort(byDate);
   if(over.length)add('ng',`期限を過ぎた予定 ${over.length}件`,goDay(over[0].date));
   const ng=dailyIssues(TODAY).ng;if(ng.length)add('ng','今日の日常点検に異常：'+ng.join('、'),"go('day',{day:TODAY})");
@@ -1940,8 +1942,9 @@ function alerts(){
   if(!judge(TODAY))add('warn','今日の日常点検が未入力です',"go('day',{day:TODAY})");
   else if(!S.daily[TODAY].done)add('warn',`今日の日常点検が完了していません（${tst.st}）`,"go('day',{day:TODAY})");
   const miss7=[],part7=[];for(let i=1;i<=7;i++){const k=addD(TODAY,-i),st=dayState(k);if(st.st==='未実施')miss7.push(k);else if(st.cls==='part'||(S.daily[k]&&!S.daily[k].done&&hasRec(S.daily[k])))part7.push(k)}
-  if(miss7.length)add('ng',`日常点検の未実施 ${miss7.length}日（直近7日：${miss7.map(md).join('、')}）`,`go('day',{day:'${miss7[0]}'})`);
-  if(part7.length)add('warn',`日常点検が完了していない日 ${part7.length}日（${part7.map(md).join('、')}）`,`go('day',{day:'${part7[0]}'})`);
+  const dayChips=a=>({days:a.slice(0,3),more:Math.max(0,a.length-3)});
+  if(miss7.length)add('ng',`日常点検の未実施 ${miss7.length}日（直近7日：${miss7.map(md).join('、')}）`,`go('day',{day:'${miss7[0]}'})`,dayChips(miss7));
+  if(part7.length)add('warn',`日常点検が完了していない日 ${part7.length}日（${part7.map(md).join('、')}）`,`go('day',{day:'${part7[0]}'})`,dayChips(part7));
   tasksBetween(TODAY,addD(TODAY,14)).forEach(t=>{const c=conflicts(t);if(c.length)add('warn',`${md(t.date)} ${t.title}：${c.join('、')}`,`editTask('${t.id}')`)});
   const oi=openIssues();if(oi.length)add('warn',`対応中の異常 ${oi.length}件`,"scrollToId('issCard')");
   if(STORAGE_WARN)add('ng',STORAGE_WARN+'。バックアップを取り、不要な写真を整理してください','dataCheck()');
@@ -1967,7 +1970,7 @@ function vHome(){ // v16.4：上から「今すぐ対応すること → 今日�
   h+=`<div class="quick" style="margin:0 0 12px;grid-template-columns:repeat(4,1fr);gap:6px"><button class="btn sec" onclick="go('day',{day:TODAY})"><b>✅</b>今日の点検</button><button class="btn sec" onclick="go('year')"><b>◯●</b>印を付ける</button><button class="btn sec" onclick="go('diag',{dgTab:'meas'});setTimeout(()=>{const g=document.getElementById('genCard');if(g)g.scrollIntoView()},80)"><b>⚡</b>発電機</button><button class="btn sec" onclick="editIssue()"><b>🛠</b>異常を記録</button></div>`;
   // 1 今すぐ対応すること
   if(A.length){
-    const al=([c,t,on])=>`<div class="al ${c}" onclick="${on}">${esc(t)}</div>`,top=A.slice(0,3),rest=A.slice(3),ngN=A.filter(a=>a[0]==='ng').length;
+    const al=([c,t,on,ch])=>`<div class="al ${c}" onclick="${on}">${esc(t)}${ch?`<div class="alchips noprint">${ch.days.map(d=>`<button class="alchip" onclick="event.stopPropagation();go('day',{day:'${d}'})">${md(d)} を開く</button>`).join('')}${ch.more?`<span class="muted">ほか ${ch.more}日</span>`:''}</div>`:''}</div>`,top=A.slice(0,3),rest=A.slice(3),ngN=A.filter(a=>a[0]==='ng').length;
     h+=`<div class="card"><h2>🔔 お知らせ <span class="muted">${ngN?`要対応 ${ngN}件・`:''}全${A.length}件</span></h2>${top.map(al).join('')}${rest.length?(V.moreAl?rest.map(al).join('')+`<button class="linkbtn" onclick="V.moreAl=false;render()">閉じる</button>`:`<button class="linkbtn" onclick="V.moreAl=true;render()">ほか ${rest.length}件を表示</button>`):''}</div>`;
   }
   if(S.inbox.length)h+=`<div class="card" id="inboxCard"><h2>📥 読み取り結果（確認待ち）</h2>${S.inbox.map(x=>`<div class="item" onclick="openInbox('${x.id}')"><div class="dt">${md(x.at.slice(0,10))}</div><div class="bd"><div class="ti">${x.kind==='daily'?'日常点検 '+x.recs.length+'日分':'点検名・日時の読み取り'}</div><div class="meta">${x.kind==='daily'?'タップして確認・反映':esc(x.summary||'')}</div></div></div>`).join('')}</div>`;
