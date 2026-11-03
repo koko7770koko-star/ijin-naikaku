@@ -16,6 +16,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  await p.fill(inp,'200');
  s=await p.evaluate(()=>{const r=document.querySelector('#ms_rows .mrow:first-child');return{ng:r.classList.contains('ng'),pill:r.querySelector('.pill').textContent}});
  if(s.ng||s.pill!=='管理値内')bad.push('範囲内に戻らない '+JSON.stringify(s));
+ await p.fill(inp,'2000');if(await p.evaluate(()=>getComputedStyle(document.querySelector('#ms_rows .mbig')).display==='none'))bad.push('桁違い（前回200→2000）の印が出ない');
+ await p.fill(inp,'210');if(await p.evaluate(()=>getComputedStyle(document.querySelector('#ms_rows .mbig')).display!=='none'))bad.push('近い値なのに桁違いの印が出る');
  await p.fill(inp,'250');await p.fill('#ms_by','試験');await p.evaluate(()=>saveMeas(''));await p.waitForTimeout(200);
  const k=await p.evaluate(()=>{const m=S.meas.filter(x=>x.id!=='mP1').slice(-1)[0];return m&&Object.keys(m.rows[0]).sort().join()});
  if(!k||!/ck,max,min,name,photo,src,unit,v/.test(k))bad.push('保存の形が変わった '+k);
