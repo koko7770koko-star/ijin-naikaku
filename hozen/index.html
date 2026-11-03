@@ -4952,7 +4952,7 @@ function editMtpl(id){
   openModal(`<h3>測定のひな形</h3><div class="grid2"><div><label class="f">種類</label><select id="mt_type">${opts(MEAS_TYPES,t.type)}</select></div><div><label class="f">周期（か月）</label><input id="mt_cycle" type="number" inputmode="numeric" min="0" step="1" value="${esc(t.cycleM)}"></div></div>
     <div class="grp"><b>この管理値を使う条件</b><div class="muted" style="font-size:12px">同じ測定でも、設備の種別や測定条件（電圧レンジ・回路・温度など）ごとに別のひな形を作って管理値を分けられます。</div>
       <div class="grid2"><div><label class="f">対象の設備種別</label><select id="mt_kind">${opsV(['',...EQ_KINDS],t.kind||'',{'':'すべての種別'})}</select></div><div><label class="f">測定条件</label><input id="mt_cond" value="${esc(t.cond||'')}" maxlength="100" placeholder="例：高圧回路・1000Vレンジ"></div></div></div>
-    <label class="f">名称 *</label><input id="mt_name" value="${esc(t.name)}" maxlength="60"><div id="mt_rows" style="margin-top:8px"></div><button type="button" class="btn sec sm" onclick="MT_ROWS.push({name:'',unit:'',min:'',max:'',ck:false});mtRender()">＋ 項目</button>
+    <label class="f">名称 *</label><input id="mt_name" value="${esc(t.name)}" maxlength="60"><div id="mt_rows" style="margin-top:8px"></div><button type="button" class="btn sec sm" onclick="MT_ROWS.push({name:'',unit:'',min:'',max:'',ck:false});mtRender()">＋ 項目</button><div class="muted sethelp" style="font-size:12px;margin-top:6px">下限・上限：この範囲の外の測定値を管理値外（赤）として扱い、異常の登録を案内します。片方だけでも入れられます（例：絶縁抵抗は 下限 0.1 だけ）。単位は表示用です。空のままなら判定しません。保存しても過去の記録の管理値は変わりません。</div>
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveMtpl('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delMtpl('${id}')">削除</button>`:'')}`);mtRender();MODAL_SIG=modalSig();
 }
 function mtRender(){$('#mt_rows').innerHTML=MT_ROWS.map((r,k)=>`<div class="mtrow"><div class="row" style="flex-wrap:nowrap;gap:6px"><input value="${esc(r.name)}" placeholder="項目（例：電圧）" aria-label="項目名" onchange="MT_ROWS[${k}].name=this.value"><input value="${esc(r.unit)}" placeholder="単位" aria-label="単位" style="max-width:68px" onchange="MT_ROWS[${k}].unit=this.value"><button class="btn sec sm" aria-label="この項目を外す" style="min-width:44px;padding:8px" onclick="MT_ROWS.splice(${k},1);mtRender()">×</button></div>
@@ -5819,10 +5819,10 @@ function v16Alerts(add){
 /* ---------- 保全の設定 ---------- */
 function vMset(){
   const w=S.healthCfg;
-  return card('⚙ 保全の設定',`<div class="grp"><b>健全度の参考指標の重み</b><div class="muted" style="font-size:12px">0〜100。0にした要素は計算に使いません。</div>
+  return card('⚙ 保全の設定',`<div class="grp"><b>健全度の参考指標の重み</b><div class="muted" style="font-size:12px">0〜100。0にした要素は計算に使いません。大きいほど、その要素が設備の健全度の参考値に強く効きます（経年＝設置からの年数、測定値＝管理値外の測定、故障＝修理履歴の故障、未完了の異常＝対応中の件数）。例：経年を重視するなら 経年 50・ほかを 20 に。施設の基準で決めてください。</div>
       <div class="grid2">${[['age','経年'],['meas','測定値'],['fail','故障'],['issue','未完了の異常']].map(([k,l])=>`<div><label class="f">${l}</label><input type="number" inputmode="numeric" min="0" max="100" value="${w[k]}" onchange="setHealthW('${k}',this.value)"></div>`).join('')}</div></div>
-    <div class="grp"><b>作業前チェックリスト（新しい作業指示の初期値）</b><textarea style="min-height:120px" onchange="setChkDef('chkPre',this.value)">${esc(S.chkPre.join('\n'))}</textarea></div>
-    <div class="grp"><b>作業後チェックリスト（初期値）</b><textarea style="min-height:120px" onchange="setChkDef('chkPost',this.value)">${esc(S.chkPost.join('\n'))}</textarea></div>
+    <div class="grp"><b>作業前チェックリスト（新しい作業指示の初期値）</b><div class="muted" style="font-size:12px">1行に1つ。新しく作る作業指示に最初から入ります（作ってある作業指示は変わりません）。</div><textarea style="min-height:120px" onchange="setChkDef('chkPre',this.value)">${esc(S.chkPre.join('\n'))}</textarea></div>
+    <div class="grp"><b>作業後チェックリスト（初期値）</b><div class="muted" style="font-size:12px">1行に1つ。作業が終わったときの確認に使います。</div><textarea style="min-height:120px" onchange="setChkDef('chkPost',this.value)">${esc(S.chkPost.join('\n'))}</textarea></div>
     <div class="row"><button class="btn sec sm grow" onclick="go('mtpl')">📐 測定のひな形・管理値</button><button class="btn sec sm grow" onclick="go('staff')">🪪 人員・資格</button></div>`);
 }
 function setHealthW(k,v){const n=Number(v);if(!(n>=0&&n<=100)){toast('0〜100で入れてください');render();return}logEdit('settings','健全度','重み：'+k,S.healthCfg[k],n);S.healthCfg[k]=n;save();toast('保存しました')}
