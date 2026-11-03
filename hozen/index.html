@@ -176,6 +176,7 @@ table.yr .cat span{position:sticky;left:8px}
 .banrow{display:flex;gap:4px;align-items:center;margin:4px 0}.banrow .bn{flex:1 1 auto;min-width:0;font-weight:700;overflow-wrap:anywhere}
 .banrow .bi,.banrow .bm{flex:0 0 58px;width:58px}.banrow.flash{outline:3px solid #e0b000;outline-offset:1px;background:#fff6d6;transition:background .3s}
 .banrow.bh .bi{font-size:12px;line-height:1.2;text-align:center;color:var(--mut,#667)}
+.bm.mk-iss{background:#fde2e1;border-color:#d93025;color:#b3261e}.bm.mk-iss small{font-size:11px}
 .bm{height:44px;font-size:20px;font-weight:700;border:1px solid var(--bd,#cbd5e1);border-radius:10px;background:#fff;padding:0}.bm.bw{flex-basis:44px;width:44px;font-size:16px}
 table.yr td.mk{width:34px;height:44px;font-size:18px;font-weight:700;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .mk-o{background:var(--a-bg);color:var(--navy)}.mk-d{background:#c6efce;color:var(--ok)}.mk-e{background:var(--ng-bg);color:var(--ng)}
@@ -4645,7 +4646,17 @@ function banAll(rootId){const ym=V.banYm||TODAY.slice(0,7),bs=banBoards(rootId),
   bs.forEach(b=>{for(let k=0;k<3;k++)if(banVal(ym,b.id,k)!=='延')banSet(ym,b.id,k,'済')}); // 延期（延）の印は上書きしない
   save();render();
   undoBar(`${l?l.name:'この階'}の盤を全部 ● にしました（延期の印はそのまま）`,()=>{prev.forEach(([id,a])=>a.forEach((v,k)=>banSet(ym,id,k,v)))})}
-function banIssue(id){const b=locById(id);if(!b)return;editIssue(null,{title:'盤の異常：'+b.name,place:locPath(id)})}
+/* ⚠：どの項目の異常かを押すと、題（盤の名前と項目）・場所（A棟 › 3階 › 第1電気室 › 盤）・その盤の設備（1台だけのとき）が入った異常の記録が開く。保存の形は issues のまま */
+const banOpenIss=id=>{const pl=locPath(id);return (S.issues||[]).filter(i=>i.status!=='完了'&&i.place&&(i.place===pl||i.place.startsWith(pl+' ')))};
+function banIssue(id){const b=locById(id);if(!b)return;const op=banOpenIss(id);
+  openModal(`<h3>⚠ ${esc(b.name)} の異常を記録</h3><div class="muted" style="font-size:12px;margin-bottom:6px">${esc(locPath(id))}</div>
+    ${op.length?`<div class="al warn" style="margin-bottom:8px">この盤の対応中の異常 ${op.length}件：${op.slice(0,3).map(i=>`<a href="#" onclick="closeModal(true);editIssue('${i.id}');return false">${esc(i.title)}</a>`).join('、')}</div>`:''}
+    <div class="muted">どの項目の異常ですか？</div>
+    ${BAN_ITEMS.map((n,k)=>`<button class="btn sec wide" style="min-height:48px;margin-top:6px" onclick="closeModal(true);banIssueGo('${id}',${k})">${esc(n)}</button>`).join('')}
+    <button class="btn sec wide" style="min-height:48px;margin-top:6px" onclick="closeModal(true);banIssueGo('${id}',-1)">項目を選ばずに書く</button>
+    ${modalFoot('<button class="btn sec" onclick="closeModal(true)">やめる</button>')}`)}
+function banIssueGo(id,k){const b=locById(id);if(!b)return;const eq=(S.equipment||[]).filter(e=>e.locId===id&&e.status!=='廃止');
+  editIssue(null,{title:'盤の異常：'+b.name+(k>=0?'（'+BAN_ITEMS[k]+'）':''),place:locPath(id),...(eq.length===1?{equipId:eq[0].id}:{})})}
 function banMove(d){const ym=V.banYm||TODAY.slice(0,7);let y=+ym.slice(0,4),m=+ym.slice(5,7)+d;if(m<1){m=12;y--}if(m>12){m=1;y++}V.banYm=y+'-'+String(m).padStart(2,'0');render()}
 /* 盤の点検表の中で盤を直す：名前の変更と、同じ親の中の盤どうしの並べ替え（ord）。点検の印は触らない */
 function banRename(id,el){const l=locById(id);if(!l)return;const nm=txt(el.value,60).trim();
@@ -4665,7 +4676,7 @@ function vBan(){
   const tabs=`<div class="seg tabs" style="margin:8px 0;overflow-x:auto;white-space:nowrap">${B.map(b=>{const c=banCount(ym,banBoardsOf(b.id));return `<button class="${b.id===bid?'on':''}" onclick="V.banB='${b.id}';render()">${esc(b.name)}<small style="display:block;font-weight:400">${c.t?c.d+'/'+c.t:'－'}</small></button>`}).join('')}</div>`;
   const ed=!!V.banEdit;
   const row=(b,i,a)=>ed?`<div class="banrow" id="ban-${b.id}"><input class="grow" style="min-width:0;flex:1 1 auto;min-height:44px" value="${esc(b.name)}" maxlength="60" aria-label="${esc(b.name)}の名前" onchange="banRename('${b.id}',this)" onkeydown="if(event.key==='Enter')this.blur()"><button class="btn sec sm" style="min-width:44px;min-height:44px" aria-label="${esc(b.name)}を上へ" ${i===0?'disabled':''} onclick="banShift('${b.id}',-1)">↑</button><button class="btn sec sm" style="min-width:44px;min-height:44px" aria-label="${esc(b.name)}を下へ" ${i===a.length-1?'disabled':''} onclick="banShift('${b.id}',1)">↓</button></div>`
-    :`<div class="banrow" id="ban-${b.id}"><div class="bn">${esc(b.name)}</div>${[0,1,2].map(k=>{const v=banVal(ym,b.id,k);return `<button class="bm ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''}" aria-label="${esc(b.name)} ${esc(BAN_ITEMS[k])}" onclick="banTap('${b.id}',${k})">${banShow(v)||'&nbsp;'}</button>`}).join('')}<button class="bm bw" aria-label="${esc(b.name)}の異常を記録" onclick="banIssue('${b.id}')">⚠</button></div>`;
+    :`<div class="banrow" id="ban-${b.id}"><div class="bn">${esc(b.name)}</div>${[0,1,2].map(k=>{const v=banVal(ym,b.id,k);return `<button class="bm ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''}" aria-label="${esc(b.name)} ${esc(BAN_ITEMS[k])}" onclick="banTap('${b.id}',${k})">${banShow(v)||'&nbsp;'}</button>`}).join('')}${(()=>{const n=banOpenIss(b.id).length;return `<button class="bm bw${n?' mk-iss':''}" aria-label="${esc(b.name)}の異常を記録${n?'（対応中 '+n+'件）':''}" onclick="banIssue('${b.id}')">⚠${n>1?`<small>${n}</small>`:''}</button>`})()}</div>`;
   const hdr=ed?'':`<div class="banrow bh"><div class="bn"></div>${BAN_ITEMS.map(n=>`<div class="bi">${esc(n)}</div>`).join('')}<div class="bi"></div></div>`;
   const cnt=bs=>{const c=banCount(ym,bs);return c.t?c.d+'/'+c.t+'（'+bs.filter(x=>banDone(ym,x)).length+'/'+bs.length+'面）':'盤なし'};
   const room=(r,bs,top)=>`<div class="banroom" data-room="${r.id}" style="${top?'':'border-top:1px solid var(--bd,#dde3ea);margin-top:10px;padding-top:8px'}"><div class="hd-row" style="flex-wrap:wrap;gap:4px"><h3 style="margin:0;font-size:16px;min-width:0;overflow-wrap:anywhere">🔌 ${esc(r.name)} <span class="muted" style="font-weight:400;font-size:13px">${cnt(bs)}</span></h3>${bs.length&&!ed?`<button class="btn sec sm" style="min-height:44px;white-space:nowrap" onclick="banAllAsk('${r.id}')">この電気室を全部 ●</button>`:''}</div>
