@@ -32,5 +32,12 @@ const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
  await p.evaluate(()=>editIssue('zz1'));await p.waitForTimeout(400);
  if(await p.evaluate(()=>!!document.querySelector('#is_quick')))bad.push('編集で早見が出ている');
  if(!await p.evaluate(()=>!!document.querySelector('#tp')))bad.push('編集に写真欄が無い');
+ // 完了にするとき：確認者に自分の名前・完了日に今日が先に入る。「確かめた」のチェックは自動では付かない（人が付ける）。保存はチェックが無いと通らない
+ await p.evaluate(()=>{S.settings.operator='確認担当';closeModal(true);editIssue('zz1')});await p.waitForTimeout(400);
+ await p.click('#is_steps button:has-text("完了")');await p.waitForTimeout(500);
+ const dn=await p.evaluate(()=>({by:$('#is_by').value,cl:$('#is_closed').value,chk:$('#is_chk').checked,shown:getComputedStyle($('#is_done')).display!=='none',sw:document.documentElement.scrollWidth}));
+ if(!dn.shown)bad.push('完了の確認欄が出ない');if(dn.by!=='確認担当')bad.push('確認者に自分の名前が入らない：'+dn.by);if(!dn.cl)bad.push('完了日が空');if(dn.chk)bad.push('確かめたチェックが勝手に付いている');if(dn.sw>392)bad.push('はみ出す');
+ await p.evaluate(()=>saveIssue('zz1'));await p.waitForTimeout(300);
+ if(await p.evaluate(()=>S.issues.find(x=>x.id==='zz1').status)==='完了')bad.push('確認のチェックが無いのに完了で保存できた');
  console.log('新規登録の手数（＋・緊急度・場所・保存。内容は自動で入力待ち）:',taps);
  console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0);})();
