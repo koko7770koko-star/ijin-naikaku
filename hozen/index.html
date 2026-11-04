@@ -3376,7 +3376,7 @@ function eqSummary(e,L){
     <tr><th style="width:96px">次の点検</th><td>${nxT}</td></tr>
     <tr><th>最後の点検</th><td>${done?slash(done):'<span class="muted">記録なし</span>'}</td></tr>
     <tr><th>未完了の異常</th><td>${open.length?`<span class="pill ng">${open.length}件</span> ${esc(open[0].title)}${open.length>1?' ほか':''}`:'<span class="pill ok">なし</span>'}</td></tr>${(()=>{const f=eqFuelLatest(e);return f&&f.f?`<tr><th>燃料の時間</th><td>約${f.f.h<10?Math.round(f.f.h*10)/10:Math.round(f.f.h)}時間 <span class="muted">（${md(f.date)} 残量 ${esc(f.v)}${esc(f.unit)}）</span></td></tr>`:''})()}</table></div>
-    <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px"><button class="btn grow" id="eqRecMeas" style="min-height:44px" onclick="${e.kind==='発電機'?`genStart('${e.id}')`:`editMeas(null,{equipId:'${e.id}'})`}">${e.kind==='発電機'?'⚡ 月次点検の数字':'📏 測定を記録'}</button><button class="btn sec grow" style="min-height:44px" onclick="editIssue(null,{equipId:'${e.id}',place:${esc(JSON.stringify(e.place||''))}})">⚠ 異常を記録</button></div></div>`;
+    <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px"><button class="btn grow noprint" id="eqRecMeas" style="min-height:44px" onclick="${e.kind==='発電機'?`genStart('${e.id}')`:`editMeas(null,{equipId:'${e.id}'})`}">${e.kind==='発電機'?'⚡ 月次点検の数字':'📏 測定を記録'}</button><button class="btn sec grow noprint" style="min-height:44px" onclick="editIssue(null,{equipId:'${e.id}',place:${esc(JSON.stringify(e.place||''))}})">⚠ 異常を記録</button></div></div>`;
 }
 /* 最新の燃料残量の記録と目安（無ければ null） */
 function eqFuelLatest(e){if(!e||!specNum(e,['燃料消費量（L/h）','燃料消費量']))return null;
@@ -3391,7 +3391,7 @@ function vEquipDetail(){
   const e=eqById(V.eq);if(!e)return '<div class="empty">設備が見つかりません</div>';
   const L=eqLinks(e),f=(l,v)=>v?`<tr><th style="width:96px">${l}</th><td>${esc(v)}</td></tr>`:'';
   let h=eqSummary(e,L);
-  h+=`<div class="card"><div class="hd-row"><h2>${esc(e.code?e.code+'　':'')}${esc(e.name)}</h2><span><button class="btn sec sm" onclick="editEquip('','${e.id}')">複製</button> <button class="btn sec sm" onclick="editEquip('${e.id}')">編集</button></span></div>
+  h+=`<div class="card"><div class="hd-row"><h2>${esc(e.code?e.code+'　':'')}${esc(e.name)}</h2><span><button class="btn sec sm noprint" onclick="editEquip('','${e.id}')">複製</button> <button class="btn sec sm noprint" onclick="editEquip('${e.id}')">編集</button></span></div>
     <div class="rep"><table>${f('設備ID',e.code)}${f('設置場所',e.place)}${f('メーカー',e.maker)}${f('型式',e.model)}${f('製造番号',e.serial)}${f('設置年月',e.installed?e.installed.replace('-','年')+'月':'')}${f('点検周期',e.cycle)}${f('備考',e.note)}</table></div>
     ${thumbsFold(e.photos,'eqPhAll_'+e.id)}${docsList(e.docs)}</div>`;
   h+=eqLibCard(e);
@@ -5363,9 +5363,9 @@ function eqKarte(e){
       <tr><th>種別・重要度</th><td>${esc(e.kind||'未設定')}　${e.importance?`<span class="pill ${e.importance==='A'?'ng':e.importance==='B'?'warn':''}">重要度${esc(e.importance)}</span>`:'<span class="muted">重要度 未設定</span>'}　<span class="pill ${e.status==='稼働'?'ok':'warn'}">${esc(e.status||'稼働')}</span></td></tr>
       ${sp.map(([k,v])=>`<tr><th>${esc(specShowLabel(e.kind,k,v))}</th><td>${esc(v)}</td></tr>`).join('')}
     </table></div>
-    <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn sec sm grow" style="white-space:nowrap" onclick="qrOne('${e.id}')">🔳 QRコード</button><button class="btn sec sm grow" style="white-space:nowrap" onclick="editMeas(null,{equipId:'${e.id}'})">＋ 測定記録</button><button class="btn sec sm grow" style="white-space:nowrap" onclick="editWork(null,{equipIds:['${e.id}']})">＋ 作業指示</button></div></div>`;
+    <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn sec sm grow noprint" style="white-space:nowrap" onclick="qrOne('${e.id}')">🔳 QRコード</button><button class="btn sec sm grow noprint" style="white-space:nowrap" onclick="editMeas(null,{equipId:'${e.id}'})">＋ 測定記録</button><button class="btn sec sm grow noprint" style="white-space:nowrap" onclick="editWork(null,{equipIds:['${e.id}']})">＋ 作業指示</button></div></div>`;
   // 健全度
-  h+=`<div class="card"><div class="hd-row"><h2>💯 健全度</h2><button class="btn sm" onclick="rateHealth('${e.id}')">評価を記録</button></div>
+  h+=`<div class="card"><div class="hd-row"><h2>💯 健全度</h2><button class="btn sm noprint" onclick="rateHealth('${e.id}')">評価を記録</button></div>
     <div class="row" style="align-items:flex-start">
       <div class="grow"><div class="muted">人による評価</div>${last?`<div style="font-size:22px;font-weight:700">${'★'.repeat(last.score)}${'☆'.repeat(5-last.score)}</div><div class="meta">${slash(last.date)}・${esc(last.by)}${last.note?'<br>'+esc(last.note):''}</div>`:'<div class="muted">未評価</div>'}</div>
       <div class="grow"><div class="muted">参考指標（自動計算・判定ではありません）</div>${H.score==null?'<div class="muted">計算に使える情報がありません</div>':`<div style="font-size:22px;font-weight:700;color:${H.score<50?'var(--ng)':H.score<75?'var(--warn)':'var(--ok)'}">${H.score}<small>点</small></div>`}</div></div>
