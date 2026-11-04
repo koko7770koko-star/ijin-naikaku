@@ -348,6 +348,8 @@ table.yr th .yrmh{all:unset;display:block;box-sizing:border-box;min-height:44px;
   .ponly{display:block!important;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11pt}
   /* ホームを朝礼で配る：ボタンは紙に出さず、数字・案内の文字だけ残す */
   body[data-view=home] #app button,body[data-view=home] #app input,body[data-view=home] #app select{display:none!important}
+  /* 診断：表は A4 の幅に収め、棒グラフはページの境で割らない */
+  #app .tblwrap{overflow:visible!important}#app .tblwrap .tbl{width:100%}#app .tblwrap .tbl td,#app .tblwrap .tbl th{white-space:normal;overflow-wrap:anywhere}#app .bars{break-inside:avoid;page-break-inside:avoid}
   main{padding:0;max-width:none}
   /* 記録が0件の画面：案内ボタン・見出しの「＋ 追加」は紙に出さない（文字の案内だけ残す） */
   .empty button,.empty .btn,.hd-row>button,.hd-row>.btn{display:none!important}
@@ -5893,7 +5895,7 @@ function vDiag(){
     const D=numDefs().filter(n=>!n.equip).map(n=>{const pts=Object.keys(S.daily).sort().filter(k=>S.daily[k][n.id]!=null).slice(-30).map(k=>[k,Number(S.daily[k][n.id])]);const c=trendCross(pts,n.min,n.max);return c&&c.days<=180?{lv:c.days<=30?'ng':'warn',text:`日常点検「${n.name}」：直近${c.n}件の直線近似では約${c.days}日後に${c.which}に達する見込み`}:null}).filter(Boolean);
     h+=card('🔎 点検の推奨・異常傾向',`<div class="muted" style="margin-bottom:6px">人が設定した管理値・周期と、記録の直線近似から自動で抽出しています。実施の判断は人が行ってください。</div>`
       +([...L,...D].length?[...L.map(r=>`<div class="al ${r.lv}" onclick="go('equipDetail',{eq:'${r.e.id}'})"><b>${esc(eqLabel(r.e))}</b>：${esc(r.text)}</div>`),...D.map(r=>`<div class="al ${r.lv}">${esc(r.text)}</div>`)].join(''):emptyBox('推奨事項はありません')));
-    h+=`<button class="btn sec wide" onclick="aiCandidates()">🤖 AIに異常候補を抽出させる（下書き）</button>`;
+    h+=`<button class="btn sec wide noprint" onclick="aiCandidates()">🤖 AIに異常候補を抽出させる（下書き）</button>`;
   }else if(t==='fail'){
     const y1=addD(TODAY,-365),F=S.issues.filter(i=>i.failure);
     const months=[...Array(12)].map((_,k)=>addM(TODAY.slice(0,7)+'-01',k-11).slice(0,7));
@@ -5903,7 +5905,7 @@ function vDiag(){
     h+=card('📉 故障件数（月別・直近12か月）',`<div class="bars">${months.map((m,k)=>`<div class="bar"><div class="bv" style="height:${cnt[k]/mx*80}px"></div><small>${+m.slice(5)}月</small><b>${cnt[k]||''}</b></div>`).join('')}</div>
       <div class="meta">直近12か月：故障 ${tot.n}件・停止〜復旧 合計 ${tot.down12}時間・MTTR ${esc(tot.mttrText)}</div>
       <div class="muted" style="font-size:12px">異常案件で「設備の故障として数える」にチェックしたものを集計しています。</div>`);
-    h+=card('🏭 設備別',rows.length?`<div class="tblwrap"><table class="tbl"><tr><th>設備</th><th>12か月</th><th>停止h</th><th>未入力</th><th>MTBF</th><th>MTTR</th></tr>${rows.map(({e,F})=>`<tr onclick="go('equipDetail',{eq:'${e.id}'})"><td>${esc(eqLabel(e))}</td><td>${F.n12}</td><td>${F.down12}</td><td>${F.noDown||''}</td><td>${F.mtbf!=null?F.mtbf+'h'+(F.runKind==='推定'?'（推定）':''):'<span class="muted">算出なし</span>'}</td><td>${F.mttr!=null?F.mttr+'h'+(F.mttrNote?'（参考）':''):'<span class="muted">－</span>'}</td></tr>`).join('')}</table></div><div class="muted" style="font-size:12px">${esc(MTBF_DEF)}${esc(MTTR_DEF)}「算出なし」は、稼働時間が未登録・故障2件未満・復旧時間の未入力など、データが足りない場合です（設備カルテで理由を表示）。「未入力」は停止〜復旧の時間が入っていない故障の件数です。</div><button class="btn sec sm" style="margin-top:6px" onclick="exportFailCsv()">CSV（画面と同じ計算）</button>`:emptyBox('故障の記録はありません'));
+    h+=card('🏭 設備別',rows.length?`<div class="tblwrap"><table class="tbl"><tr><th>設備</th><th>12か月</th><th>停止h</th><th>未入力</th><th>MTBF</th><th>MTTR</th></tr>${rows.map(({e,F})=>`<tr onclick="go('equipDetail',{eq:'${e.id}'})"><td>${esc(eqLabel(e))}</td><td>${F.n12}</td><td>${F.down12}</td><td>${F.noDown||''}</td><td>${F.mtbf!=null?F.mtbf+'h'+(F.runKind==='推定'?'（推定）':''):'<span class="muted">算出なし</span>'}</td><td>${F.mttr!=null?F.mttr+'h'+(F.mttrNote?'（参考）':''):'<span class="muted">－</span>'}</td></tr>`).join('')}</table></div><div class="muted" style="font-size:12px">${esc(MTBF_DEF)}${esc(MTTR_DEF)}「算出なし」は、稼働時間が未登録・故障2件未満・復旧時間の未入力など、データが足りない場合です（設備カルテで理由を表示）。「未入力」は停止〜復旧の時間が入っていない故障の件数です。</div><button class="btn sec sm noprint" style="margin-top:6px" onclick="exportFailCsv()">CSV（画面と同じ計算）</button>`:emptyBox('故障の記録はありません'));
   }else{
     const ty=V.msType||'',eq=V.measEq||'';
     const M=(S.meas||[]).filter(m=>(!ty||m.type===ty)&&(!eq||m.equipId===eq)).sort((a,b)=>b.date.localeCompare(a.date));
