@@ -1,4 +1,4 @@
-// 夜勤シフト表の上のタブ（シフト表・予定変更・メンバー・提出用・設定）：文字「大」「特大」・360px と標準 390px で、文字が切れない（はみ出さない）・押せる大きさ（hz-xl-review-6）。
+// 夜勤シフト表の上のタブ（シフト表・予定変更・メンバー・提出用・設定）：文字「大」「特大」・360px と標準 390px で、文字が切れない（はみ出さない）・高さ 44px 以上（hz-xl-review-6・hz-ux-shift-tab44）。
 // usage: node hozen/tools/shifttabsxlcheck.js
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');
 (async()=>{const b=await chromium.launch();const errs=[];
@@ -14,7 +14,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
    for(const x of L){const t=x.textContent.trim();const bx=x.getBoundingClientRect();
     if(x.scrollWidth>x.clientWidth+1)out.push('「'+t+'」の文字が切れる（'+x.scrollWidth+'>'+x.clientWidth+'）');
     if(bx.right>innerWidth+0.5||bx.left<-0.5)out.push('「'+t+'」が画面の外へ');
-    if(document.documentElement.dataset.fs&&bx.height<44)out.push('「'+t+'」の高さ '+Math.round(bx.height)+'px（44 未満）')}
+    if(bx.height<44)out.push('「'+t+'」の高さ '+Math.round(bx.height)+'px（44 未満）')}
    return {n:L.length,out}});
   if(r.n!==5)errs.push(tag+'：タブが '+r.n+' 個（5 のはず）');
   for(const x of r.out)errs.push(tag+'：'+x);
