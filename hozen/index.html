@@ -94,6 +94,8 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .badge{display:inline-block;padding:4px 12px;border-radius:12px;font-weight:700;font-size:14px;background:#eee;color:var(--mut)}
 .badge.ok{background:var(--ok-bg);color:var(--ok)}
 .badge.ng{background:var(--ng);color:#fff}
+/* 印刷：「背景のグラフィック」が切でも読めるよう、赤い印は文字を赤・枠つきにする（hz-print-nobg） */
+@media print{.badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}.badge.ng{background:#fff;color:#c00000;border:1px solid #c00000}}
 .badge.warn{background:var(--warn-bg);color:var(--warn)}
 
 .tag{display:inline-block;padding:3px 10px;border-radius:8px;font-size:14px;font-weight:600}
