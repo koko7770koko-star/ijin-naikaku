@@ -4615,11 +4615,12 @@ const BUDGET_CATS=['修繕費','点検委託費','更新工事費','部品・消
 const DWG_KINDS=['単線結線図','設備配置図','系統図','その他'];
 const DEF_HEALTH={age:30,meas:25,fail:25,issue:20};
 
-const V16_KEYS=['stds','locs','meas','mtpl','plans','works','parts','moves','tools','budget','drawings','library','quals','qualList','healthCfg','chkPre','chkPost','banChk'];
+const V16_KEYS=['stds','locs','meas','mtpl','plans','works','parts','moves','tools','budget','drawings','library','quals','qualExp','qualList','healthCfg','chkPre','chkPost','banChk'];
 function v16Fill(d){
   for(const k of ['stds','locs','meas','plans','works','parts','moves','tools','budget','drawings','library'])if(!Array.isArray(d[k]))d[k]=[];
   if(!Array.isArray(d.mtpl))d.mtpl=clone(DEF_MTPL);
   if(!isObj(d.quals))d.quals={};
+  if(!isObj(d.qualExp))d.qualExp={}; // 資格の有効期限 {名前:{資格名:'YYYY-MM-DD'}}（2026-11 に足した。古い記録は空で補う）
   if(!isObj(d.banChk))d.banChk={};
   if(!isObj(d.banAt))d.banAt={}; // ● を付けた日（2026-11 に足した。古い記録は空で補う）
   if(!Array.isArray(d.qualList))d.qualList=[...DEF_QUALS];
@@ -4709,6 +4710,7 @@ function validateV16(o,log){
   o.library=uniq(o.library,'技術資料',d=>{if(!txt(d.title).trim())return false;Object.assign(d,{title:txt(d.title,100),tags:txt(d.tags,200),text:txt(d.text,30000),file:RE_ID.test(d.file||'')?d.file:'',type:txt(d.type,40),equipIds:ids16(d.equipIds)})});
   // 資格
   const q={};if(isObj(o.quals))for(const [k,v] of Object.entries(o.quals).slice(0,200))if(txt(k).trim())q[txt(k,60)]=strs(v,60,30);o.quals=q;
+  const qe={};if(isObj(o.qualExp))for(const [k,v] of Object.entries(o.qualExp).slice(0,200))if(txt(k).trim()&&isObj(v)){const m={};for(const [qn,dt] of Object.entries(v).slice(0,30))if(txt(qn).trim()&&isDate(dt))m[txt(qn,60)]=dt;if(Object.keys(m).length)qe[txt(k,60)]=m}o.qualExp=qe;
   if(o.qualList!==undefined)o.qualList=strs(o.qualList,60,100);
   if(o.healthCfg!==undefined){const h=isObj(o.healthCfg)?o.healthCfg:{};o.healthCfg={};for(const k in DEF_HEALTH){const v=Number(h[k]);o.healthCfg[k]=Number.isFinite(v)&&v>=0&&v<=100?v:DEF_HEALTH[k]}}
   for(const k of ['chkPre','chkPost'])if(o[k]!==undefined)o[k]=strs(o[k],200,40);
@@ -6295,24 +6297,32 @@ function staffMonthSum(L){const n=f=>L.filter(x=>f(x.v)).length,a=n(v=>/夜勤/.
 function staffMonthHTML(name){if(!hasShift())return '';const L=staffMonth(name),m=+TODAY.slice(5,7);
   return `<div class="stmon" style="margin-top:12px"><b>📅 ${m}月の勤務（シフト表）</b>${L.length?`<div class="muted" style="margin:2px 0 6px">${esc(staffMonthSum(L))}</div><div class="tags">${L.map(x=>`<span class="tag ${/A日/.test(x.v)?'a':/B日/.test(x.v)?'b':x.v==='日勤'?'d':'off'}${x.d===TODAY?' today':''}">${+x.d.slice(8)}日 ${esc(x.v==='A日夜勤'?'A夜勤':x.v==='B日夜勤'?'B夜勤':x.v)}</span>`).join('')}</div>`:'<div class="muted">今月の勤務はシフト表にありません（シフト表のメンバーでない人は出ません）</div>'}
   ${V.view==='shift'?'':`<button class="btn sec sm" style="min-height:44px;margin-top:8px" onclick="closeModal();if(!$('#mask').classList.contains('on'))go('shift')">シフト表を開く ›</button>`}</div>`}
+/* 資格の有効期限：60 日以内・過ぎた物を返す（期限の無い資格は数えない） */
+function qualExpOf(name,q){const m=(S.qualExp||{})[name];return m&&isDate(m[q])?m[q]:''}
+function qualExpWarn(name){return (S.quals[name]||[]).map(q=>({q,d:qualExpOf(name,q)})).filter(x=>x.d&&diffD(x.d,TODAY)<=60).map(x=>({...x,left:diffD(x.d,TODAY)})).sort((a,b)=>a.left-b.left)}
+function qualExpPill(name){const W=qualExpWarn(name);if(!W.length)return '';const x=W[0];return ` <span class="pill ${x.left<0?'ng':'warn'}" title="${esc(W.map(w=>w.q+' '+slash(w.d)).join('、'))}">⚠ ${esc(x.q)} ${x.left<0?'期限切れ':'あと'+x.left+'日'}${W.length>1?` ほか${W.length-1}`:''}</span>`}
 function vStaff(){
   const names=[...new Set([...staffAll(),...Object.keys(S.quals)])];
   return qualNeedHTML()+card('🪪 人員・資格',`<div class="muted" style="margin-bottom:8px">シフトのメンバーと設定の担当者が表示されます。資格を登録すると、作業指示で必要な資格・人数を照合します。</div>`
-    +(names.length?names.map(n=>`<div class="item" onclick="editQual(${esc(JSON.stringify(n))})"><div class="bd"><div class="ti">${esc(n)}</div><div class="meta">${(S.quals[n]||[]).map(esc).join('・')||'<b class="qadd" style="color:var(--accent)">資格を登録 ›</b>'}</div>${(()=>{const t=hasShift()?staffMonthSum(staffMonth(n)):'';return t?`<div class="meta stsum">今月：${esc(t)}</div>`:''})()}</div><span class="ar">›</span></div>`).join(''):emptyBox('メンバーがいません')),`<button class="btn sec sm noprint" onclick="exportStaffCsv()">CSV</button> <button class="btn sec sm" onclick="editQualList()">資格の種類</button>`)
+    +(names.length?names.map(n=>`<div class="item" onclick="editQual(${esc(JSON.stringify(n))})"><div class="bd"><div class="ti">${esc(n)}${qualExpPill(n)}</div><div class="meta">${(S.quals[n]||[]).map(q=>esc(q)+(qualExpOf(n,q)?`<small class="muted">（〜${slash(qualExpOf(n,q))}）</small>`:'')).join('・')||'<b class="qadd" style="color:var(--accent)">資格を登録 ›</b>'}</div>${(()=>{const t=hasShift()?staffMonthSum(staffMonth(n)):'';return t?`<div class="meta stsum">今月：${esc(t)}</div>`:''})()}</div><span class="ar">›</span></div>`).join(''):emptyBox('メンバーがいません')),`<button class="btn sec sm noprint" onclick="exportStaffCsv()">CSV</button> <button class="btn sec sm" onclick="editQualList()">資格の種類</button>`)
     +card('📅 今後14日の作業と勤務',[...Array(14)].map((_,k)=>{const d=addD(TODAY,k),W=(S.works||[]).filter(w=>w.date<=d&&(w.endDate||w.date)>=d&&!['中止','完了'].includes(w.status));if(!W.length)return '';const o=crewDay(d);
       return `<div class="grp"><b>${md(d)}（${WD[pd(d).getDay()]}）</b>${o?crewRow(o,'勤務'):''}${W.map(workRow).join('')}</div>`}).join('')||emptyBox('予定されている作業はありません'));
 }
 /* 人員・資格の CSV 書き出し（読み込みは無い。1 資格 1 行、資格が無い人は資格名を空にして 1 行） */
 function exportStaffCsv(){const names=[...new Set([...staffAll(),...Object.keys(S.quals||{})])];
   if(!names.length){toast('書き出す人員がいません');return}
-  const rows=[];names.forEach(n=>{const q=(S.quals&&S.quals[n])||[];if(q.length)q.forEach(x=>rows.push([n,x]));else rows.push([n,''])});
-  download(`人員資格_${TODAY}.csv`,csvBlob([['名前','資格名'],...rows]))}
+  const rows=[];names.forEach(n=>{const q=(S.quals&&S.quals[n])||[];if(q.length)q.forEach(x=>rows.push([n,x,qualExpOf(n,x)]));else rows.push([n,'',''])});
+  download(`人員資格_${TODAY}.csv`,csvBlob([['名前','資格名','有効期限'],...rows]))}
 function editQual(name){
   const has=S.quals[name]||[];
-  openModal(`<h3>資格：${esc(name)}</h3><div class="chkgrid" id="ql">${[...new Set([...S.qualList,...has])].map(q=>`<label class="chkl"><input type="checkbox" value="${esc(q)}" ${has.includes(q)?'checked':''}>${esc(q)}</label>`).join('')}</div>${staffMonthHTML(name)}
+  openModal(`<h3>資格：${esc(name)}</h3><div class="chkgrid" id="ql">${[...new Set([...S.qualList,...has])].map(q=>`<label class="chkl"><input type="checkbox" value="${esc(q)}" onchange="qlToggle(this)" ${has.includes(q)?'checked':''}>${esc(q)}</label>`).join('')}</div>
+    <div class="grp" id="qlexp"><b>有効期限（任意）</b><div class="muted" style="font-size:12px">期限のある資格だけ入れてください。60 日を切ると人員の一覧に ⚠ が出ます。</div>${[...new Set([...S.qualList,...has])].map((q,i)=>`<div class="row qlx" data-q="${esc(q)}" style="flex-wrap:nowrap;gap:6px;margin-top:4px;align-items:center;${has.includes(q)?'':'display:none'}"><span class="grow" style="min-width:0;overflow-wrap:anywhere;font-size:13px">${esc(q)}</span><input type="date" aria-label="${esc(q)}の有効期限" value="${esc(qualExpOf(name,q))}" style="width:auto;flex:none"></div>`).join('')}</div>${staffMonthHTML(name)}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveQual(${esc(JSON.stringify(name))})">保存</button>`)}`);
 }
-function saveQual(name){const v=[...document.querySelectorAll('#ql input:checked')].map(i=>txt(i.value,60));logEdit('staff',name,'資格',(S.quals[name]||[]).join('・'),v.join('・'));if(v.length)S.quals[name]=v;else delete S.quals[name];save();closeModal(true);render();toast('保存しました')}
+function qlToggle(cb){document.querySelectorAll('#qlexp .qlx').forEach(r=>{if(r.dataset.q===cb.value)r.style.display=cb.checked?'':'none'})}
+function saveQual(name){const v=[...document.querySelectorAll('#ql input:checked')].map(i=>txt(i.value,60));logEdit('staff',name,'資格',(S.quals[name]||[]).join('・'),v.join('・'));if(v.length)S.quals[name]=v;else delete S.quals[name];
+  const ex={};document.querySelectorAll('#qlexp .qlx').forEach(r=>{const q=r.dataset.q,d=r.querySelector('input').value;if(v.includes(q)&&isDate(d))ex[q]=d});
+  if(!isObj(S.qualExp))S.qualExp={};const old=JSON.stringify(S.qualExp[name]||{});if(Object.keys(ex).length)S.qualExp[name]=ex;else delete S.qualExp[name];if(old!==JSON.stringify(ex))logEdit('staff',name,'資格の有効期限',old,JSON.stringify(ex));save();closeModal(true);render();toast('保存しました')}
 function editQualList(){openModal(`<h3>資格の種類</h3><div class="muted">1行に1つ</div><textarea id="qlist" style="min-height:200px">${esc(S.qualList.join('\n'))}</textarea>${modalFoot('<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="S.qualList=strs($(\'#qlist\').value.split(\'\\n\').map(s=>s.trim()),60,100);save();closeModal(true);render()">保存</button>')}`)}
 
 /* ---------- 予備品・在庫 ---------- */

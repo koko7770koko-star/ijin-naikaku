@@ -25,6 +25,9 @@ const CASES=[
    banChk:{'2026-11':{lp:['済'],lq:'abc',lz:null}}})},
   keep:o=>JSON.stringify(o).includes(MARK)&&(o.locs||[]).some(l=>l.id==='lp'&&l.name==='動力盤-1')&&(o.equipment||[]).some(e=>e.id==='e1'),
   extra:true},
+ // 2026-11-05 に足した資格の有効期限（qualExp）：無い記録・壊れた値でも開け、quals が消えない（hz-staff-qual-exp）
+ {name:'qualExp の無い記録',ls:{[KEY]:JSON.stringify({settings:{name:MARK},quals:{'職員A':['第三種電気主任技術者']}})},keep:o=>o.quals&&(o.quals['職員A']||[]).includes('第三種電気主任技術者')},
+ {name:'qualExp が壊れた記録（文字列・日付でない値）',ls:{[KEY]:JSON.stringify({settings:{name:MARK},quals:{'職員A':['第三種電気主任技術者']},qualExp:{'職員A':{'第三種電気主任技術者':'x'},'職員B':'abc'}})},keep:o=>o.quals&&(o.quals['職員A']||[]).includes('第三種電気主任技術者')},
 ];
 (async()=>{const b=await chromium.launch();const bad=[];
  for(const c of CASES){
