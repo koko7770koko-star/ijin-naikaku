@@ -6824,9 +6824,9 @@ function wxLine(){
 const dwgById=id=>(S.drawings||[]).find(d=>d.id===id);
 /* ---------- 図面（単線結線図・配置図）：版管理・設備IDの印 ---------- */
 let DW_ST=0;function dwgSearch(el){clearTimeout(DW_ST);DW_ST=setTimeout(()=>{V.dwgQ=el.value;render();const n=document.getElementById('dwgQ');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}},350)}
-function dwgHay(d){return `${d.name} ${d.kind} ${d.locId?locPath(d.locId):''} ${(d.vers||[]).map(v=>v.ver).join(' ')}`.toLowerCase()}
+function dwgHay(d){return sFold(`${d.name} ${d.kind} ${d.locId?locPath(d.locId):''} ${(d.vers||[]).map(v=>v.ver).join(' ')}`)}
 function vDwgList(){
-  const D0=(S.drawings||[]),q=(V.dwgQ||'').trim().toLowerCase(),ws=q.split(/[\s　]+/).filter(Boolean),D=ws.length?D0.filter(d=>ws.every(w=>dwgHay(d).includes(w))):D0;
+  const D0=(S.drawings||[]),q=sFold((V.dwgQ||'').trim()),ws=q.split(/[\s　]+/).filter(Boolean),D=ws.length?D0.filter(d=>ws.every(w=>dwgHay(d).includes(w))):D0;
   return card(`🗺 図面 <span class="muted">${ws.length?D.length+' / ':''}${D0.length}件</span>`,`<div class="muted" style="margin-bottom:6px">単線結線図・配置図などを画像（写真・スキャン）やPDFで登録します。画像の図面には設備の印を置けます。新しい版を追加しても古い版は残ります。</div>`
     +(D0.length>=6||ws.length?`<input id="dwgQ" type="search" enterkeyhint="search" placeholder="名称・種類・場所で探す" value="${esc(V.dwgQ||'')}" oninput="dwgSearch(this)" style="margin-bottom:8px">`:'')
     +(ws.length&&!D.length?'<div class="empty">見つかりません。言葉を短くしてみてください<div style="margin-top:8px"><button id="dwgQClr" class="btn sec sm" style="min-height:44px" onclick="V.dwgQ=\'\';render()">条件を外す</button></div></div>':'')
@@ -6912,12 +6912,14 @@ function vLib(){
       <div style="margin-top:10px">${(V.libSort==='new'?L.slice().reverse():L.slice().sort((a,b)=>String(a.title).localeCompare(String(b.title),'ja'))).map(d=>`<div class="item" onclick="editLib('${d.id}')"><div class="bd"><div class="ti">${esc(d.title)}</div><div class="meta">${d.tags?`<span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(d.tags)}</span>`:''}${[d.file?'📎添付あり':'',d.text?`本文 ${d.text.length}字`:'',d.equipIds.length?d.equipIds.map(equipName).map(esc).join('、'):''].filter(Boolean).join('・')}</div></div></div>`).join('')||emptyGuide('技術資料はまだありません。取扱説明書や点検要領の要点を登録すると、あとから言葉で探せます。','資料を登録','editLib()')}</div>`,
     `<button class="btn sm noprint" onclick="editLib()">＋ 資料</button>`);
 }
+/* 全角/半角・カタカナ/ひらがなを無視して比べる。NFKC で長さが変わっても、元の文字の位置に戻せるよう1文字（濁点つき半角は2文字）ずつ折る（hz-search-fold-dwglib） */
+function foldMap(t){t=String(t==null?'':t);let f='';const st=[],en=[];for(let i=0;i<t.length;){let j=i+1;if(/[\uFF9E\uFF9F]/.test(t[j]||''))j++;const g=sFold(t.slice(i,j));for(let k=0;k<g.length;k++){f+=g[k];st.push(i);en.push(j)}i=j}return {f,st,en}}
 function libSearch(q){
   const words=q.split(/[\s　]+/).filter(Boolean),out=[];
-  const lw=words.map(w=>w.toLowerCase());
-  (S.library||[]).forEach(d=>{const hay=`${d.title}\n${d.tags}\n${d.text}`.toLowerCase();if(!lw.every(w=>hay.includes(w)))return;
-    const w=words[0],i=d.text.toLowerCase().indexOf(lw[0]);
-    if(i>=0)out.push({d,before:d.text.slice(Math.max(0,i-60),i),mid:d.text.substr(i,w.length),after:d.text.slice(i+w.length,i+w.length+100),pos:i,ctx:d.text.slice(Math.max(0,i-300),i+500)});
+  const lw=words.map(sFold);
+  (S.library||[]).forEach(d=>{const hay=sFold(`${d.title}\n${d.tags}\n${d.text}`);if(!lw.every(w=>hay.includes(w)))return;
+    const fm=foldMap(d.text),k=fm.f.indexOf(lw[0]);
+    if(k>=0&&lw[0]){const i=fm.st[k],e=fm.en[k+lw[0].length-1];out.push({d,before:d.text.slice(Math.max(0,i-60),i),mid:d.text.slice(i,e),after:d.text.slice(e,e+100),pos:i,ctx:d.text.slice(Math.max(0,i-300),i+500)})}
     else out.push({d,before:'',mid:'',after:(d.title+' '+d.tags).slice(0,100),pos:-1,ctx:d.text.slice(0,600)})});
   return out;
 }
