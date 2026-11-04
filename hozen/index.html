@@ -176,6 +176,8 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .cal .wc .w{font-size:10px;font-weight:600;line-height:1.3;border-radius:3px;padding:0 2px;margin:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal .w,.cal .t{font-size:11px;font-weight:600;line-height:1.35;border-radius:4px;padding:1px 2px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal .w{text-align:center}
+/* 保全の設定の下の2つのボタン：言葉の途中（「ひ/な形」「資/格」）で割れないよう、入らなければ1つずつの行に（hz-xl-review-4） */
+.msetlinks{flex-wrap:wrap}.msetlinks>.btn{flex:1 1 auto;white-space:nowrap}
 /* 文字「大」「特大」：マスが狭く勤務者の名前が「職…」に切れるので、切らずに折り返す（hz-cal-crew-xl） */
 html[data-fs=l] .cal .wc .w,html[data-fs=xl] .cal .wc .w{white-space:normal;word-break:break-all;overflow:visible;text-overflow:clip;line-height:1.15;padding:0 1px;text-align:center}
 .cal .w.a{background:var(--a-bg);color:var(--a)}.cal .w.b{background:var(--b-bg);color:var(--b)}.cal .w.d{color:var(--d)}.cal .w.ng{background:var(--ng-bg);color:var(--ng)}
@@ -7048,7 +7050,7 @@ function vMset(){
       <div class="grid2">${[['age','経年'],['meas','測定値'],['fail','故障'],['issue','未完了の異常']].map(([k,l])=>`<div><label class="f">${l}</label><input class="noprint" type="number" inputmode="numeric" min="0" max="100" value="${w[k]}" onchange="setHealthW('${k}',this.value)"><div class="ponly">${w[k]}</div></div>`).join('')}</div></div>
     <div class="grp"><b>作業前チェックリスト（新しい作業指示の初期値）</b><div class="muted" style="font-size:12px">1行に1つ。新しく作る作業指示に最初から入ります（作ってある作業指示は変わりません）。</div><textarea class="noprint" style="min-height:120px" onchange="setChkDef('chkPre',this.value)">${esc(S.chkPre.join('\n'))}</textarea><div class="ponly">${esc(S.chkPre.join('\n'))}</div></div>
     <div class="grp"><b>作業後チェックリスト（初期値）</b><div class="muted" style="font-size:12px">1行に1つ。作業が終わったときの確認に使います。</div><textarea class="noprint" style="min-height:120px" onchange="setChkDef('chkPost',this.value)">${esc(S.chkPost.join('\n'))}</textarea><div class="ponly">${esc(S.chkPost.join('\n'))}</div></div>
-    <div class="row noprint"><button class="btn sec sm grow" onclick="go('mtpl')">📐 測定のひな形・管理値</button><button class="btn sec sm grow" onclick="go('staff')">🪪 人員・資格</button></div>`);
+    <div class="row noprint msetlinks"><button class="btn sec sm grow" onclick="go('mtpl')">📐 測定のひな形・管理値</button><button class="btn sec sm grow" onclick="go('staff')">🪪 人員・資格</button></div>`);
 }
 function setHealthW(k,v){const n=Number(v);if(!(n>=0&&n<=100)){toast('0〜100で入れてください');render();return}logEdit('settings','健全度','重み：'+k,S.healthCfg[k],n);S.healthCfg[k]=n;save();toast('保存しました')}
 function setChkDef(k,v){S[k]=strs(v.split('\n').map(s=>s.trim()),200,40);save();toast('保存しました（既存の作業指示は変わりません）')}
