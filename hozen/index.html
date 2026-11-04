@@ -4787,28 +4787,32 @@ function locNewOrd(p){const s=locKids(p).filter(l=>Number.isFinite(l.ord));retur
 function locMk(type,name,parent,floor){const l={id:uid(),type,parent:parent||'',name:txt(name,60).trim(),note:'',pos:{floor:txt(floor||'',20),x:'',y:'',z:''}},o=locNewOrd(parent);if(o!==undefined)l.ord=o;return l}
 const locFac1=()=>{const f=(S.locs||[]).filter(l=>l.type==='施設');return f.length===1&&!f[0].parent?f[0]:null};
 function locCountTxt(id){const c={};locKids(id).forEach(k=>{const t=LOC_SHOW(k.type);c[t]=(c[t]||0)+1});return Object.entries(c).map(([t,n])=>t+' '+n).join('・')}
+/* 場所の印刷：たたんだ所も紙には全部出す（印刷の間だけ開いて描き直す。V の開閉は変えない） */
+let PRINT_LOCS=false;
+window.addEventListener('beforeprint',()=>{if(V.view==='locs'){PRINT_LOCS=true;render()}});
+window.addEventListener('afterprint',()=>{if(PRINT_LOCS){PRINT_LOCS=false;render()}});
 function vLocs(){
   const L=S.locs||[],E=S.equipment||[],sortM=!!V.locSortM;
   const eqAt=id=>E.filter(e=>e.locId===id),manyLocs=L.length>40,fac=locFac1(),top=fac?fac.id:'';
-  const seenN=new Set(),node=(l,d,sib,i)=>{if(seenN.has(l.id))return '';seenN.add(l.id);const ch=locKids(l.id),eq=eqAt(l.id),all=E.filter(e=>locDesc(l.id).has(e.locId)).length,open=V['lo_'+l.id]!==undefined?V['lo_'+l.id]!==false:(manyLocs?LOC_TYPES.indexOf(l.type)<LOC_TYPES.indexOf('建屋'):true); // 場所が多い（40件超）ときは、最初は棟までを出して階より下はたたむ。押した後はその状態を覚える
+  const seenN=new Set(),node=(l,d,sib,i)=>{if(seenN.has(l.id))return '';seenN.add(l.id);const ch=locKids(l.id),eq=eqAt(l.id),all=E.filter(e=>locDesc(l.id).has(e.locId)).length,open=PRINT_LOCS?true:V['lo_'+l.id]!==undefined?V['lo_'+l.id]!==false:(manyLocs?LOC_TYPES.indexOf(l.type)<LOC_TYPES.indexOf('建屋'):true); // 場所が多い（40件超）ときは、最初は棟までを出して階より下はたたむ。押した後はその状態を覚える
     const cc=locCountTxt(l.id),nx=LOC_CHILD[l.type];
     const btns=sortM?`<button class="btn sec sm" style="min-width:44px" aria-label="${esc(l.name)}を上へ" ${i===0?'disabled':''} onclick="locShift('${l.id}',-1)">↑</button><button class="btn sec sm" style="min-width:44px" aria-label="${esc(l.name)}を下へ" ${i===sib-1?'disabled':''} onclick="locShift('${l.id}',1)">↓</button>`
       :`${nx?`<button class="btn sec sm" style="white-space:nowrap" onclick="locAdd('${l.id}')" aria-label="${esc(l.name)}に${LOC_SHOW(nx)}を足す">＋${LOC_SHOW(nx)}</button>`:''}<button class="btn sec sm" style="min-width:44px" onclick="locMenu('${l.id}')" aria-label="${esc(l.name)}の操作">⋯</button>`;
     return `<div class="locn" data-loc="${l.id}" style="margin-left:${Math.min(d,4)*8}px"><div class="item"><div class="dt" style="min-width:0"><span class="pill">${esc(LOC_SHOW(l.type))}</span></div>
       <div class="bd" style="min-width:0" onclick="V['lo_${l.id}']=${!open};render()"><div class="ti" style="overflow-wrap:anywhere">${ch.length||eq.length?(open?'▾ ':'▸ '):''}${esc(l.name)}</div><div class="meta">${cc?esc(cc)+'・':''}<span style="white-space:nowrap">設備 ${all}台</span>${l.note?'・'+esc(l.note):''}</div></div>
-      <div class="row" style="flex-wrap:nowrap;gap:4px;margin:0">${btns}</div></div>
-      ${!sortM&&locFixKids(l).length?`<div class="row locfix" style="margin:2px 0 4px ${Math.min(d,4)*8+12}px;align-items:center;flex-wrap:nowrap"><span class="muted grow" style="font-size:12px;min-width:0">${l.type==='階'?`電気室を通さず盤が ${locFixKids(l).length}面あります`:`階を通さず ${esc(locCountTxt2(locFixKids(l)))} があります`}</span><button class="btn sec sm" style="min-height:44px;white-space:nowrap" onclick="locFix('${l.id}')">${l.type==='階'?'電気室を足して移す':'階を足して移す'}</button></div>`:''}
+      <div class="row noprint" style="flex-wrap:nowrap;gap:4px;margin:0">${btns}</div></div>
+      ${!sortM&&locFixKids(l).length?`<div class="row locfix noprint" style="margin:2px 0 4px ${Math.min(d,4)*8+12}px;align-items:center;flex-wrap:nowrap"><span class="muted grow" style="font-size:12px;min-width:0">${l.type==='階'?`電気室を通さず盤が ${locFixKids(l).length}面あります`:`階を通さず ${esc(locCountTxt2(locFixKids(l)))} があります`}</span><button class="btn sec sm" style="min-height:44px;white-space:nowrap" onclick="locFix('${l.id}')">${l.type==='階'?'電気室を足して移す':'階を足して移す'}</button></div>`:''}
       ${open?eq.map(e=>`<div class="item" style="margin-left:${d*8+14}px" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">🏭 ${esc(e.name)}</div><div class="meta">${esc([e.kind,e.importance?'重要度'+e.importance:'',e.status!=='稼働'?e.status:''].filter(Boolean).join('・'))}</div></div></div>`).join('')+ch.map((c,j)=>node(c,d+1,ch.length,j)).join(''):''}</div>`};
   const none=E.filter(e=>!e.locId),roots=locKids(top),addTop=fac?'建屋':(roots.some(r=>r.type==='施設')?'施設':'建屋');
   const tree=roots.map((l,i)=>node(l,0,roots.length,i)).join('');
-  return card('🏢 設備の場所',`<div class="muted" style="margin-bottom:8px">棟 → 階 → 電気室 → 盤 の順に、名前を自分で登録します。各行の「＋」で下の段を足し、「⋯」で名前の変更・並べ替え・移す・消すができます。</div>
-      ${fac?`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><span class="grow muted" style="min-width:0;overflow-wrap:anywhere">施設：<b>${esc(fac.name)}</b></span><button class="btn sec sm" style="min-width:44px" onclick="locMenu('${fac.id}')" aria-label="施設の操作">⋯</button></div>`:''}
-      ${L.length?`${L.some(l=>L.some(c=>c.parent===l.id))?`<div class="row" style="margin-bottom:6px"><button class="btn sec sm grow" onclick="locFold(false)">▸ ぜんぶ たたむ</button><button class="btn sec sm grow" onclick="locFold(true)">▾ ぜんぶ ひらく</button></div>`:''}<div class="row" style="margin-bottom:6px"><button class="btn ${sortM?'':'sec'} sm grow" style="min-height:44px" onclick="V.locSortM=${!sortM};render()">${sortM?'✓ 並べ替えを終える':'↕ 並べ替え'}</button></div>
-        <div class="muted" style="font-size:12px;margin-bottom:6px">${sortM?'↑↓ で同じ段の中の順番を変えます。':'名前を押すと、下の段を たたんだり ひらいたり できます。'}</div>`:''}
+  return card('🏢 設備の場所',`<div class="muted noprint" style="margin-bottom:8px">棟 → 階 → 電気室 → 盤 の順に、名前を自分で登録します。各行の「＋」で下の段を足し、「⋯」で名前の変更・並べ替え・移す・消すができます。</div>
+      ${fac?`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><span class="grow muted" style="min-width:0;overflow-wrap:anywhere">施設：<b>${esc(fac.name)}</b></span><button class="btn sec sm noprint" style="min-width:44px" onclick="locMenu('${fac.id}')" aria-label="施設の操作">⋯</button></div>`:''}
+      ${L.length?`${L.some(l=>L.some(c=>c.parent===l.id))?`<div class="row noprint" style="margin-bottom:6px"><button class="btn sec sm grow" onclick="locFold(false)">▸ ぜんぶ たたむ</button><button class="btn sec sm grow" onclick="locFold(true)">▾ ぜんぶ ひらく</button></div>`:''}<div class="row noprint" style="margin-bottom:6px"><button class="btn ${sortM?'':'sec'} sm grow" style="min-height:44px" onclick="V.locSortM=${!sortM};render()">${sortM?'✓ 並べ替えを終える':'↕ 並べ替え'}</button></div>
+        <div class="muted noprint" style="font-size:12px;margin-bottom:6px">${sortM?'↑↓ で同じ段の中の順番を変えます。':'名前を押すと、下の段を たたんだり ひらいたり できます。'}</div>`:''}
       ${tree||emptyGuide('まだ場所が登録されていません。まず棟を足してください（名前は自分で決めます）。','棟を足す',"locAdd('"+top+"','建屋')")}
-      <div class="row" style="margin-top:10px"><button class="btn sm grow" style="min-height:44px" onclick="locAdd('${top}','${addTop}')">＋ ${LOC_SHOW(addTop)}を足す</button><button class="btn sec sm grow" style="min-height:44px" onclick="bldgWizard()">🏗 棟と階をまとめて足す</button></div>
-      <div class="row" style="margin-top:6px"><button class="btn sec sm grow" onclick="suggestLocs()">設置場所の文字から階層を提案</button><button class="btn sec sm grow" onclick="go('qr')">🔳 QRラベル</button></div>`,
-      `<button class="btn sm" onclick="editLoc()">詳しく追加</button>`)
+      <div class="row noprint" style="margin-top:10px"><button class="btn sm grow" style="min-height:44px" onclick="locAdd('${top}','${addTop}')">＋ ${LOC_SHOW(addTop)}を足す</button><button class="btn sec sm grow" style="min-height:44px" onclick="bldgWizard()">🏗 棟と階をまとめて足す</button></div>
+      <div class="row noprint" style="margin-top:6px"><button class="btn sec sm grow" onclick="suggestLocs()">設置場所の文字から階層を提案</button><button class="btn sec sm grow" onclick="go('qr')">🔳 QRラベル</button></div>`,
+      `<button class="btn sm noprint" onclick="editLoc()">詳しく追加</button>`)
     +(none.length?card(`場所が未設定の設備 <span class="muted">${none.length}台</span>`,none.map(e=>`<div class="item" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${esc(e.place||'')}</div></div></div>`).join('')):'');
 }
 /* 古い形から直す手伝い（押したときだけ。勝手には変えない）：階の下に直接ある盤 → 電気室を足して移す。棟の下に直接ある電気室・盤 → 階を足して移す。
