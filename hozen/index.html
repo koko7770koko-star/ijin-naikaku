@@ -7045,7 +7045,7 @@ function v16Menu(){
   const ITS=[];
   const it=(on,ic,t,d)=>{const h=`<div class="mtile" onclick="${on}" data-q="${esc(t+' '+d)}"><span class="ic">${ic}</span><span class="mt">${t}</span><span class="md">${MENU_SHORT[d]||d}</span></div>`;ITS.push({on,h});return h};
   const g=(title,items)=>`<div class="mgrp">${title}</div><div class="mtgrid">${items.join('')}</div>`;
-  const srch=`<input class="msearch" placeholder="🔍 機能を探す（例：校正）" oninput="menuFilter(this.value)">`;
+  const srch=`<input class="msearch" placeholder="🔍 機能を探す（例：校正）" oninput="menuFilter(this.value)"><input class="msearch" id="mallQ" style="min-height:44px" placeholder="🔎 まとめて探す（設備・不具合・工事・資料・図面）" oninput="menuAll(this.value)"><div id="mall"></div>`;
   const body=g('✅ 毎日の点検・予定',[it("go('day',{day:TODAY})",'✅','日常点検','入力・判定・写真読み取り'),it("go('month')",'🗓','カレンダー','予定・点検・勤務者'),it("go('year')",'📅','年間計画・期限','点検項目・周期・法定/社内'),it("go('hist')",'📈','点検履歴・グラフ','検索・トレンド・CSV'),it("go('dailyRep',{day:TODAY})",'🗒','日報','A4印刷'),it("go('home')",'🏠','ホーム','お知らせ・今日・全体の状況')])
    +g('🏭 設備',[it("go('equip')",'🏭','設備台帳','設備カルテ・仕様・修理履歴'),it("go('ban')",'⚡','盤の点検','棟→階→電気室→盤 を ◯/● で'),it("go('locs')",'🏢','設備の場所','棟→階→電気室→盤 を登録'),it("go('qr')",'🔳','QRラベル','印刷・読み取り'),it("go('dwgs')",'🗺','図面','単線結線図・配置図・版管理'),it("go('lib')",'📚','技術資料','登録・検索・根拠表示')])
    +g('🩺 保全・診断',[it("go('issues')",'🛠','異常・修理','緊急度・期限・原因・承認'),it("go('diag',{dgTab:'meas'})",'📏','測定記録','絶縁・接地・継電器・蓄電池'),it("go('diag',{dgTab:'meas'});setTimeout(()=>{const g=document.getElementById('genCard');if(g)g.scrollIntoView()},80)",'⚡','非常用発電機','棟・階ごとに今月の点検'),it("go('diag',{dgTab:'health'})",'💯','健全度','人の評価と参考指標'),it("go('diag',{dgTab:'rec'})",'🔎','推奨・異常傾向','管理値外・周期超過・傾向'),it("go('diag',{dgTab:'fail'})",'📉','故障分析','件数・MTBF・MTTR・CSV'),it("go('plan',{plTab:'legal'})",'⚖','点検期限（法定・社内）','期限の一覧'),it("go('plan',{plTab:'renew'})",'🏗','更新計画','10年の更新・改修'),it("go('plan',{plTab:'measdue'})",'⏱','測定の周期','次回期限')])
@@ -7058,6 +7058,16 @@ function v16Menu(){
   const rec=[];for(const v of NAV_RECENT){const t=ITS.find(x=>x.on.startsWith(`go('${v}'`));if(t&&!rec.includes(t))rec.push(t);if(rec.length>=4)break}
   return srch+(rec.length?`<div class="mgrp" id="mrecent">🕘 最近開いた画面</div><div class="mtgrid">${rec.map(x=>x.h).join('')}</div>`:'')+body;
 }
+/* メニューの「まとめて探す」：設備・不具合・工事・技術資料・図面を種類ごとに最大5件。記録は作らない・保存の形は変えない（hz-menu-search） */
+function menuAll(q){const box=document.getElementById('mall');if(!box)return;q=String(q||'').trim();if(!q){box.innerHTML='';return}
+  const ws=sFold(q).split(/[\s　]+/).filter(Boolean),m=a=>{const h=sFold(a.join(' '));return ws.every(w=>h.includes(w))};
+  const G=[['🏭 設備',(S.equipment||[]).filter(e=>m([e.code,e.name,e.place,e.maker,e.model,e.serial,e.kind,e.locId?locPath(e.locId):''])).map(e=>[eqLabel(e),`go('equipDetail',{eq:'${e.id}',eqTab:'ov'})`])],
+   ['⚠ 不具合',(S.issues||[]).filter(i=>m([i.title,i.detail,i.action,i.cause,i.place,i.equipId?equipName(i.equipId):''])).map(i=>[i.title,`editIssue('${i.id}')`])],
+   ['🧰 工事・作業',(S.works||[]).filter(w=>m([w.no,w.title,w.place,w.vendor,w.content,(w.staff||[]).join(' ')])).map(w=>[w.title,`editWork('${w.id}')`])],
+   ['📚 技術資料',(S.library||[]).filter(d=>m([d.title,d.tags,d.text])).map(d=>[d.title,`editLib('${d.id}')`])],
+   ['🗺 図面',(S.drawings||[]).filter(d=>m([d.name,d.kind,d.locId?locPath(d.locId):''])).map(d=>[d.name,`go('dwg',{dwg:'${d.id}'})`])]];
+  const h=G.filter(g=>g[1].length).map(g=>`<div class="mgrp">${g[0]} <span class="muted">${g[1].length}件</span></div>`+g[1].slice(0,5).map(x=>`<div class="item" style="min-height:44px" onclick="${x[1]}"><div class="bd"><div class="ti">${esc(x[0]||'(名前なし)')}</div></div></div>`).join('')).join('');
+  box.innerHTML=h||'<div class="muted" style="margin:8px 0">見つかりません</div>'}
 function menuFilter(q){q=String(q||'').trim();let n=0;document.querySelectorAll('.mtile').forEach(t=>{const ok=!q||t.dataset.q.includes(q);t.style.display=ok?'':'none';if(ok)n++});
   document.querySelectorAll('.mtgrid').forEach(g=>{const any=[...g.children].some(c=>c.style.display!=='none');g.style.display=any?'':'none';g.previousElementSibling.style.display=any?'':'none'});const e=$('#mnone');if(e)e.style.display=n?'none':'';const rc=$('#mrecent');if(rc){rc.style.display=q?'none':'';rc.nextElementSibling.style.display=q?'none':''}}
 /* ---------- 画面の登録 ---------- */
