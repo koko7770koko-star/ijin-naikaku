@@ -402,6 +402,9 @@ details summary{cursor:pointer;padding:4px 0}
 #shiftApp .tabs{display:flex;gap:6px;background:var(--bg);padding:10px 14px 8px}
 #shiftApp .tabs button{flex:1;min-width:0;padding:10px 2px;border:1px solid var(--field);background:#fff;color:var(--sub);border-radius:var(--r-s);font-weight:700;font-size:13px;white-space:nowrap}
 #shiftApp .tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+/* 文字「大」「特大」：5つのタブが1行に入らず「シフト表」などの文字が切れるので、2行に折り返す（hz-xl-review-6） */
+html[data-fs=l] #shiftApp .tabs,html[data-fs=xl] #shiftApp .tabs{flex-wrap:wrap}
+html[data-fs=l] #shiftApp .tabs button,html[data-fs=xl] #shiftApp .tabs button{flex:1 1 30%;min-height:44px;padding:8px 4px}
 #shiftApp .page{display:none;padding:4px 14px 100px;max-width:1400px;margin:0 auto}
 #shiftApp .page.on{display:block}
 #shiftApp .card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
