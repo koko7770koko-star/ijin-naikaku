@@ -415,6 +415,7 @@ details summary{cursor:pointer;padding:4px 0}
 #shiftApp table.sh thead th{position:sticky;top:0;z-index:3;background:#f2f2f2;border-bottom:1px solid #000}
 #shiftApp table.sh thead tr:nth-child(2) th{top:27px}
 #shiftApp table.sh thead button.qn{all:unset;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;display:block;width:100%;line-height:18px}#shiftApp table.sh thead button.qn:focus-visible{outline:2px solid #e0b000}
+#shiftApp table.sh thead button.qn .qw{color:#c0392b;font-size:11px;line-height:1;margin-left:2px}
 @media print{#shiftApp table.sh thead button.qn{text-decoration:none}}
 #shiftApp table.sh .dc{position:sticky;left:0;z-index:2;background:#fff;text-align:left;border-right:1px solid #000;min-width:62px}
 #shiftApp table.sh thead .dc{z-index:4;background:#f2f2f2}
@@ -1140,7 +1141,8 @@ function renderShift(){
   {const el=$('shPer');if(el){const ns=M.map((m,i)=>m.type==='日勤'?-1:a.per[i].nights),mx=Math.max(0,...ns),mn=Math.min(...ns.filter(x=>x>=0),mx);
     el.innerHTML=M.map((m,i)=>{const p=a.per[i],rest=p.cnt['公休']+p.cnt['有給']+p.cnt['希望休'];const hi=m.type!=='日勤'&&mx-mn>=2&&p.nights===mx;
       return '<div class="pc'+(hi?' hi':'')+'" title="'+esc(m.name)+'"><b>'+esc(m.name)+(hi?'（多め）':'')+'</b><span>夜 '+p.nights+'・日 '+p.cnt['日勤']+'・休 '+rest+'</span></div>';}).join('');}}
-  let h='<thead><tr><th class="dc">日付</th><th>曜</th>'+M.map(m=>'<th>'+(typeof window.editQual==='function'?'<button type="button" class="qn" data-qn="'+esc(m.name)+'" aria-label="'+esc(m.name)+'の資格と今月の勤務">'+esc(m.name)+'</button>':esc(m.name))+'</th>').join('')+'<th>A</th><th>B</th><th>欠員・重複</th><th>備考（自動）</th><th>代わりの候補（自動）</th></tr>';
+  const qwMark=n=>{try{const W=typeof window.qualExpWarn==='function'?window.qualExpWarn(n):[];return W.length?'<span class="qw noprint" title="'+esc(W.map(w=>w.q+'：'+(w.left<0?'期限切れ':'あと'+w.left+'日')+'（〜'+w.d+'）').join('、'))+'">⚠</span>':''}catch(e){return ''}};
+  let h='<thead><tr><th class="dc">日付</th><th>曜</th>'+M.map(m=>'<th>'+(typeof window.editQual==='function'?'<button type="button" class="qn" data-qn="'+esc(m.name)+'" aria-label="'+esc(m.name)+'の資格と今月の勤務">'+esc(m.name)+qwMark(m.name)+'</button>':esc(m.name))+'</th>').join('')+'<th>A</th><th>B</th><th>欠員・重複</th><th>備考（自動）</th><th>代わりの候補（自動）</th></tr>';
   h+='<tr><th class="dc">区分</th><th></th>'+M.map(m=>'<th class="'+(m.type==='日勤'?'dayk':'')+'" style="font-weight:400;font-size:11px">'+(m.type==='日勤'?'日勤':'夜勤')+'</th>').join('')+'<th></th><th></th><th></th><th></th><th></th></tr></thead><tbody>';
   a.rows.forEach(r=>{
     const t=ymd(r.d);
