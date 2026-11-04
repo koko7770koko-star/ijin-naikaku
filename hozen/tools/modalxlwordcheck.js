@@ -1,4 +1,4 @@
-// 文字「大」「特大」・360px：作業指示書の窓（editWork）の担当者・資格・作業前後チェックの札と、不具合の窓（editIssue）の状態ボタンが、漢字・かなの間（「職/員」「必/須」「対応/中」）で割れない・窓からはみ出さない。標準 390px は「必須」の札と状態ボタンだけ見る（標準の2列の資格名の折り返しは対象外）。
+// 文字「大」「特大」・360px：作業指示書の窓（editWork）の担当者・資格・作業前後チェックの札と、不具合の窓（editIssue）の状態ボタンが、漢字・かなの間（「職/員」「必/須」「対応/中」）で割れない・窓からはみ出さない。標準 390px は「必須」の札・状態ボタン・必要資格（#wk_quals）を見る（担当者の2列は対象外）。
 // usage: node hozen/tools/modalxlwordcheck.js
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');
 (async()=>{const b=await chromium.launch();const errs=[];
@@ -15,7 +15,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
    document.querySelectorAll(sel).forEach(x=>{n++;const bx=x.getBoundingClientRect();if(bx.width&&bx.right>m.right+1)out.push('「'+x.textContent.trim().slice(0,16)+'」が窓からはみ出す');
     const tw=document.createTreeWalker(x,NodeFilter.SHOW_TEXT);let t,prev=null,pt=null;
     while(t=tw.nextNode()){if(t.parentElement.closest('small'))continue;const s=t.textContent;for(let i=0;i<s.length;i++){const rg=document.createRange();rg.setStart(t,i);rg.setEnd(t,i+1);const q=[...rg.getClientRects()].find(q=>q.width>0);if(!q)continue;const top=Math.round(q.top);
-     if(pt!==null&&Math.abs(top-pt)>3&&CJK.test(prev)&&CJK.test(s[i])&&(t.parentElement.closest('.pill')||x.tagName==='BUTTON'||(document.documentElement.dataset.fs&&(/^職員\d/.test(x.textContent.trim())||x.closest('#wk_quals')))))out.push('「'+x.textContent.trim().slice(0,16)+'」が「'+prev+'/'+s[i]+'」で割れる');prev=s[i];pt=top}}});
+     if(pt!==null&&Math.abs(top-pt)>3&&CJK.test(prev)&&CJK.test(s[i])&&(t.parentElement.closest('.pill')||x.tagName==='BUTTON'||x.closest('#wk_quals')||(document.documentElement.dataset.fs&&/^職員\d/.test(x.textContent.trim()))))out.push('「'+x.textContent.trim().slice(0,16)+'」が「'+prev+'/'+s[i]+'」で割れる');prev=s[i];pt=top}}});
    return {n,out:[...new Set(out)]}},sel);
   if(r.n<3)errs.push(tag+' '+open+'：対象が見つからない（'+r.n+'）');
   for(const x of r.out)errs.push(tag+' '+open+'：'+x)}

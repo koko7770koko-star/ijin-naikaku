@@ -537,6 +537,8 @@ details summary{cursor:pointer;padding:4px 0}
 .chkgrid .chkl{font-size:13px;min-width:0;overflow-wrap:anywhere}
 /* 文字「大」「特大」：チェックの札（担当者・資格・作業前後チェック）と不具合の状態ボタンが「職/員」「必/須」「対応/中」と割れないように（hz-xl-modal-work） */
 .chkl>.pill{flex:none;white-space:nowrap}
+/* 作業指示書の必要資格は名前が長いので、どの大きさでも1列に（hz-chk-quals-std） */
+#wk_quals.chkgrid{grid-template-columns:1fr}#wk_quals .chkl{overflow-wrap:normal;word-break:keep-all}
 html[data-fs=l] .chkgrid,html[data-fs=xl] .chkgrid{grid-template-columns:1fr}
 html[data-fs=l] .chkgrid .chkl,html[data-fs=xl] .chkgrid .chkl{overflow-wrap:normal;word-break:keep-all}
 html[data-fs=l] .seg.istep,html[data-fs=xl] .seg.istep{flex-wrap:wrap}
