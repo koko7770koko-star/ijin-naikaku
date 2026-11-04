@@ -156,7 +156,7 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .aibadge.free{background:#e3f4e8;color:#1d6b35}
 .aibadge.need{background:#eef1f5;color:#5a6675}
 .aibadge.off{background:#fdecea;color:#a02020}
-.mitem .ar{margin-left:auto;color:#a0aab5;font-size:20px}
+.mitem .ar{margin-left:auto;color:var(--mut);font-size:20px}
 
 /* ---------- カレンダー ---------- */
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
@@ -789,6 +789,8 @@ html.night [style*="border:2px solid #c00000"]{border-color:var(--ng-line)!impor
 /* NIGHT-GEN-END */
 /* 夜間のシフト表：#shiftApp は --sub を #555 に置き直しているので、夜間は明るい灰に戻す（タブ・回数の行・ラベルの文字。hz-shift-night） */
 @media screen{html.night #shiftApp{--sub:#c8d1db}}
+/* 夜間のシフト表の土日・祝日の行：赤い文字を明るく背景を暗く（比 3.8→4.5 以上。今日の行は別の色のまま。hz-night-weekend） */
+@media screen{html.night #shiftApp table.sh tr.hol td.dc,html.night #shiftApp table.sh tr.hol td.wd{color:#f5a5a5;background:#3a3320}}
 </style>
 <style id="pageStyle">@page{size:A4 portrait;margin:10mm}</style>
 </head>
