@@ -6260,7 +6260,7 @@ function workListHTML(L,f){
   return h||emptyBox('該当する作業はありません');
 }
 function vWorks(){
-  const f=V.wkF||'open',wq=(V.wkQ||'').trim(),L=(S.works||[]).filter(w=>(f==='all'||(f==='open'?!['完了','中止'].includes(w.status):w.status===f))&&(!wq||[w.no,w.title,w.place,w.vendor,w.content,(w.staff||[]).join(' '),(w.equipIds||[]).map(equipName).join(' ')].join(' ').includes(wq))).sort((a,b)=>f==='open'?a.date.localeCompare(b.date):b.date.localeCompare(a.date));
+  const f=V.wkF||'open',wq=(V.wkQ||'').trim(),L=(S.works||[]).filter(w=>(f==='all'||(f==='open'?!['完了','中止'].includes(w.status):w.status===f))&&(!wq||sFold([w.no,w.title,w.place,w.vendor,w.content,(w.staff||[]).join(' '),(w.equipIds||[]).map(equipName).join(' ')].join(' ')).includes(sFold(wq)))).sort((a,b)=>f==='open'?a.date.localeCompare(b.date):b.date.localeCompare(a.date));
   const cnt=s=>(S.works||[]).filter(w=>w.status===s).length;
   return `<div class="row noprint" style="margin-bottom:8px"><select onchange="V.wkF=this.value;render()" class="grow"><option value="open" ${f==='open'?'selected':''}>未完了（予定順）</option>${WORK_STAT.map(s=>`<option ${f===s?'selected':''}>${s}</option>`).join('')}<option value="all" ${f==='all'?'selected':''}>すべて</option></select><button class="btn sm" onclick="editWork()">＋ 作業指示</button></div>
     <input id="wkQ" class="noprint" type="search" enterkeyhint="search" placeholder="件名・番号・設備・担当・協力会社で探す" value="${esc(V.wkQ||'')}" oninput="wkSearch(this)" style="margin-bottom:8px">
