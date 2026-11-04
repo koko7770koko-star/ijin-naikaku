@@ -2825,9 +2825,9 @@ function saveIssue(id){
 }
 function delIssue(id){
   if(!confirm('この案件を削除しますか？'))return;
-  const i=S.issues.find(x=>x.id===id);
+  const ix=S.issues.findIndex(x=>x.id===id),i=S.issues[ix];if(!i)return;
   S.issues=S.issues.filter(x=>x.id!==id);save();closeModal(true);render();
-  undoBar(`異常案件「${i.title}」を削除しました`,()=>S.issues.push(i));
+  undoBar(`異常案件「${i.title}」を削除しました`,()=>{if(!S.issues.some(x=>x.id===i.id))S.issues.splice(Math.min(ix,S.issues.length),0,i)}); // 写真の実体は消していない（delPhoto）。履歴・設備・写真の id は i の中にあるので元の位置にそのまま戻す
 }
 
 /* ---------- 7 日常点検の入力 ---------- */
