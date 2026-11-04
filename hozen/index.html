@@ -341,9 +341,11 @@ table.yr th .yrmh{all:unset;display:block;box-sizing:border-box;min-height:44px;
   table.bdt tr{break-inside:avoid;page-break-inside:avoid}
   table.bdt tr.rbh{break-after:avoid;page-break-after:avoid}
 }
+.ponly{display:none}
 @media print{
   body{background:#fff}
   header,nav,.noprint,.toast,.mask{display:none!important}
+  .ponly{display:block!important;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11pt}
   main{padding:0;max-width:none}
   .card{box-shadow:none;padding:0;margin:0}
   .rep{font-size:10.5pt}
@@ -6994,10 +6996,10 @@ function v16Alerts(add){
 function vMset(){
   const w=S.healthCfg;
   return card('⚙ 保全の設定',`<div class="grp"><b>健全度の参考指標の重み</b><div class="muted" style="font-size:12px">0〜100。0にした要素は計算に使いません。大きいほど、その要素が設備の健全度の参考値に強く効きます（経年＝設置からの年数、測定値＝管理値外の測定、故障＝修理履歴の故障、未完了の異常＝対応中の件数）。例：経年を重視するなら 経年 50・ほかを 20 に。施設の基準で決めてください。</div>
-      <div class="grid2">${[['age','経年'],['meas','測定値'],['fail','故障'],['issue','未完了の異常']].map(([k,l])=>`<div><label class="f">${l}</label><input type="number" inputmode="numeric" min="0" max="100" value="${w[k]}" onchange="setHealthW('${k}',this.value)"></div>`).join('')}</div></div>
-    <div class="grp"><b>作業前チェックリスト（新しい作業指示の初期値）</b><div class="muted" style="font-size:12px">1行に1つ。新しく作る作業指示に最初から入ります（作ってある作業指示は変わりません）。</div><textarea style="min-height:120px" onchange="setChkDef('chkPre',this.value)">${esc(S.chkPre.join('\n'))}</textarea></div>
-    <div class="grp"><b>作業後チェックリスト（初期値）</b><div class="muted" style="font-size:12px">1行に1つ。作業が終わったときの確認に使います。</div><textarea style="min-height:120px" onchange="setChkDef('chkPost',this.value)">${esc(S.chkPost.join('\n'))}</textarea></div>
-    <div class="row"><button class="btn sec sm grow" onclick="go('mtpl')">📐 測定のひな形・管理値</button><button class="btn sec sm grow" onclick="go('staff')">🪪 人員・資格</button></div>`);
+      <div class="grid2">${[['age','経年'],['meas','測定値'],['fail','故障'],['issue','未完了の異常']].map(([k,l])=>`<div><label class="f">${l}</label><input class="noprint" type="number" inputmode="numeric" min="0" max="100" value="${w[k]}" onchange="setHealthW('${k}',this.value)"><div class="ponly">${w[k]}</div></div>`).join('')}</div></div>
+    <div class="grp"><b>作業前チェックリスト（新しい作業指示の初期値）</b><div class="muted" style="font-size:12px">1行に1つ。新しく作る作業指示に最初から入ります（作ってある作業指示は変わりません）。</div><textarea class="noprint" style="min-height:120px" onchange="setChkDef('chkPre',this.value)">${esc(S.chkPre.join('\n'))}</textarea><div class="ponly">${esc(S.chkPre.join('\n'))}</div></div>
+    <div class="grp"><b>作業後チェックリスト（初期値）</b><div class="muted" style="font-size:12px">1行に1つ。作業が終わったときの確認に使います。</div><textarea class="noprint" style="min-height:120px" onchange="setChkDef('chkPost',this.value)">${esc(S.chkPost.join('\n'))}</textarea><div class="ponly">${esc(S.chkPost.join('\n'))}</div></div>
+    <div class="row noprint"><button class="btn sec sm grow" onclick="go('mtpl')">📐 測定のひな形・管理値</button><button class="btn sec sm grow" onclick="go('staff')">🪪 人員・資格</button></div>`);
 }
 function setHealthW(k,v){const n=Number(v);if(!(n>=0&&n<=100)){toast('0〜100で入れてください');render();return}logEdit('settings','健全度','重み：'+k,S.healthCfg[k],n);S.healthCfg[k]=n;save();toast('保存しました')}
 function setChkDef(k,v){S[k]=strs(v.split('\n').map(s=>s.trim()),200,40);save();toast('保存しました（既存の作業指示は変わりません）')}
