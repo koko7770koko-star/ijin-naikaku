@@ -1604,7 +1604,13 @@ function mdraftBind(key,ids){
     bar.innerHTML=`書きかけの入力が残っています${t?'（'+esc(t)+'）':''}<div class="row" style="margin-top:6px;gap:8px"><button type="button" class="btn sm" style="min-height:44px" onclick="mdraftApply()">戻す</button><button type="button" class="btn sec sm" style="min-height:44px" onclick="mdraftDrop()">捨てる</button></div>`;
     if(h)h.after(bar);else m.prepend(bar)}
 }
-function openModal(h){MD.key='';$('#modal').innerHTML=h;$('#mask').classList.add('on');MODAL_SIG=modalSig();if(MD_NEXT){const n=MD_NEXT;MD_NEXT=null;mdraftBind(n.key,n.ids)}}
+// 窓の見出し（label）と次の入力欄を結ぶ：押すと欄に入れ、読み上げで欄の名前が出る。既にある id・for は変えない
+function modalLabelLink(only){let n=0;document.querySelectorAll('#modal label').forEach(l=>{if(l.querySelector('input,select,textarea'))return;if(l.htmlFor&&!(only&&!document.getElementById(l.htmlFor)))return;if(only&&l.htmlFor)l.removeAttribute('for');
+  let el=l.nextElementSibling;if(!el&&l.parentElement&&l.parentElement.tagName==='DIV')el=l.parentElement.nextElementSibling;
+  const c=el&&(/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)?el:(el.querySelector&&el.querySelector('input:not([type=hidden]),select,textarea')));
+  if(!c||(c.tagName==='INPUT'&&/^(hidden|checkbox|radio)$/.test(c.type)))return;
+  if(!c.id)c.id='mlk_'+(++n)+'_'+Date.now().toString(36);l.htmlFor=c.id})}
+function openModal(h){MD.key='';$('#modal').innerHTML=h;modalLabelLink();$('#mask').classList.add('on');MODAL_SIG=modalSig();if(MD_NEXT){const n=MD_NEXT;MD_NEXT=null;mdraftBind(n.key,n.ids)}}
 function closeModal(force){
   if(force!==true&&$('#mask').classList.contains('on')&&MODAL_SIG!==null&&modalSig()!==MODAL_SIG&&!confirm('入力中の内容を保存せずに閉じますか？'))return false;
   const bk=MTPL_BACK;MTPL_BACK=null;
@@ -2795,7 +2801,7 @@ function editIssue(id,preset){
     ${(i.log||[]).length?`<details style="margin-top:10px"><summary class="muted">状態の履歴（${i.log.length}件）</summary>${i.log.slice().reverse().map(l=>`<div class="meta" style="padding:3px 0;border-bottom:1px solid #eef1f4">${esc(l.at?new Date(l.at).toLocaleString('ja-JP'):'')}${l.by?'・'+esc(l.by):''}：${esc(l.from||'－')} → <b>${esc(l.to)}</b>${l.note?'（'+esc(l.note)+'）':''}</div>`).join('')}</details>`:''}
     ${id?editLogHTML('issue',id):''}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveIssue('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delIssue('${id}')">削除</button>`:'')}`);
-    const sel=$('#modal .grid2 select');if(sel)sel.id='is_equip';
+    const sel=$('#modal .grid2 select');if(sel){sel.id='is_equip';modalLabelLink(sel)}
     const pl=$('#is_place');if(pl&&sel){pl.insertAdjacentHTML('afterend','<div id="is_recur" class="muted" style="font-size:13px;margin-top:4px"></div>');ISS_CUR=id||'';sel.addEventListener('change',issueRecurHint);issueRecurHint()}
     const us=$('#is_urg');if(us)us.addEventListener('change',()=>setIssueUrg(us.value,true));
     if(!id){const t=$('#is_title');if(t&&!t.value)try{t.focus()}catch(e){}}});
