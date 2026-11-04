@@ -4510,6 +4510,15 @@ function applyFScale(){const f=FSCALES.find(x=>x[0]===((S&&S.settings&&S.setting
 function applyNight(){document.documentElement.classList.toggle('night',!!(S&&S.settings&&S.settings.night==='on'))}
 function setNight(v){S.settings.night=v==='on'?'on':'';save();applyNight();render();toast(v==='on'?'夜間（暗い画面）にしました':'標準の明るさに戻しました')}
 function setFScale(v){if(!FSCALES.some(x=>x[0]===v))return;S.settings.fscale=v;save();applyFScale();render();toast('文字の大きさを変えました')}
+// 設定・測定のひな形を印刷するとき：入力欄・ボタンは紙に出さず、値を文字（.ponly）で出す（画面では今までどおり。保存の形は変えない）
+function printMirror(root){
+  const txt=e=>e.tagName==='SELECT'?[...e.selectedOptions].map(o=>o.textContent).join(' '):e.type==='checkbox'||e.type==='radio'?(e.checked?'☑':'☐'):e.type==='password'?(e.value?'（設定済み）':''):e.value;
+  const mk=(e,t)=>{const d=document.createElement('div');d.className='ponly';d.textContent=t;e.insertAdjacentElement('afterend',d);return d};
+  root.querySelectorAll('.seg:not(.noprint)').forEach(g=>{const on=g.querySelector('button.on');g.classList.add('noprint');mk(g,on?on.textContent.trim():'')});
+  root.querySelectorAll('input,textarea,select').forEach(e=>{if(e.closest('.noprint')||e.type==='hidden'||e.type==='file'||e.type==='button'||e.type==='submit')return;e.classList.add('noprint');mk(e,txt(e)).dataset.mirror='1'});
+  root.querySelectorAll('button').forEach(b=>{if(!b.closest('.noprint'))b.classList.add('noprint')});
+}
+if(typeof document!=='undefined')document.addEventListener('change',e=>{const t=e.target,m=t&&t.nextElementSibling;if(m&&m.dataset&&m.dataset.mirror&&t.classList.contains('noprint'))m.textContent=t.tagName==='SELECT'?[...t.selectedOptions].map(o=>o.textContent).join(' '):t.type==='checkbox'?(t.checked?'☑':'☐'):t.type==='password'?(t.value?'（設定済み）':''):t.value},true);
 function render(){
   applyFScale();applyNight();
   CREW={};DL_CACHE=null;AL_CACHE=null;
@@ -4526,6 +4535,7 @@ function render(){
   PH_NEED=[];
   const _yw=V.view==='year'&&_yrFy===V.fy&&$('.tbw'),_yl=_yw?_yw.scrollLeft:-1;
   $('#app').innerHTML=VIEWS[V.view]();
+  if(V.view==='set'||V.view==='mtpl')printMirror($('#app'));
   updateNavBadge(true);
   if(V.view==='day')restoreDraft();
   if(V.view==='year'){const w=$('.tbw');if(w){if(_yl>=0)w.scrollLeft=_yl;else yearToNow();_yrFy=V.fy}}else _yrFy=null
