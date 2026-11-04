@@ -1,0 +1,23 @@
+// メニューの「まとめて探す」：設備・不具合・工事・技術資料・図面を種類ごとに最大5件。押すとその画面へ。0件は「見つかりません」。390px・44px・はみ出さない・記録は変わらない。
+const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
+(async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
+ p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
+ await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
+ await p.evaluate(()=>{S.equipment=Array.from({length:7},(_,i)=>({...(S.equipment[0]||{}),id:'qe'+i,code:'T-'+i,name:'トランス'+i,kind:'変圧器',status:'稼働'}));
+  S.library=[{id:'ql1',title:'ﾄﾗﾝｽ 取扱説明',tags:'',text:'本文',file:'',type:'',equipIds:[]}];
+  S.drawings=[{id:'qd1',name:'トランス配置図',kind:'配置図',locId:'',vers:[],pins:[]}];
+  S.issues=[{...(S.issues[0]||{}),id:'qi1',title:'トランスの異音',detail:'',status:'未対応',urgency:'中',equipId:'qe0'}];
+  S.works=[{...(S.works[0]||{}),id:'qw1',title:'トランス更新工事',status:'起案',date:TODAY,staff:[],needQuals:[],outage:{on:false}}];
+  go('menu')});await p.waitForTimeout(400);
+ const before=await p.evaluate(()=>JSON.stringify([S.equipment,S.library,S.drawings,S.issues,S.works]));
+ const inp=await p.evaluate(()=>{const e=document.querySelector('#mallQ');return e?e.getBoundingClientRect().height:0});if(inp<44)bad.push('まとめて探す欄が無い／小さい '+inp);
+ await p.fill('#mallQ','とらんす');await p.waitForTimeout(200);
+ const r=await p.evaluate(()=>({items:document.querySelectorAll('#mall .item').length,grp:[...document.querySelectorAll('#mall .mgrp')].map(e=>e.textContent.replace(/\s+/g,' ')),sw:document.documentElement.scrollWidth,hs:[...document.querySelectorAll('#mall .item')].map(e=>e.getBoundingClientRect().height)}));
+ if(r.grp.length!==5)bad.push('5種類出ない '+JSON.stringify(r.grp));if(r.items!==5+1+1+1+1)bad.push('件数が違う '+r.items+'（設備は最大5件＋ほか4種類1件ずつ＝9）');
+ if(!r.grp[0]||!/7件/.test(r.grp[0]))bad.push('設備の件数が7件と出ない '+r.grp[0]);if(r.sw>392)bad.push('はみ出す '+r.sw);if(r.hs.some(h=>h<44))bad.push('項目が小さい');
+ await p.fill('#mallQ','ありえない');await p.waitForTimeout(150);if(!/見つかりません/.test(await p.evaluate(()=>document.querySelector('#mall').textContent)))bad.push('0件の表示が無い');
+ await p.fill('#mallQ','異音');await p.waitForTimeout(150);await p.click('#mall .item');await p.waitForTimeout(300);if(!await p.evaluate(()=>!!document.querySelector('.modal,#modal,[id*=modal]')&&document.body.textContent.includes('トランスの異音')))bad.push('不具合が開かない');
+ await p.evaluate(()=>{try{closeModal(true)}catch(e){}go('menu')});await p.waitForTimeout(300);await p.fill('#mallQ','配置図');await p.click('#mall .item');await p.waitForTimeout(300);const v=await p.evaluate(()=>V.view);if(v!=='dwg')bad.push('図面が開かない '+v);
+ const after=await p.evaluate(()=>JSON.stringify([S.equipment,S.library,S.drawings,S.issues,S.works]));if(before!==after)bad.push('探しただけで記録が変わった');
+ console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
