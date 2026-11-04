@@ -610,6 +610,11 @@ details.fold[open]>summary{margin-bottom:8px}
 .seg.tabs.ptabs:not(.istep) button{border:0;border-left:1px solid var(--field);border-top:1px solid var(--field)}
 .seg.tabs.ptabs:not(.istep) button:nth-child(odd){border-left:0}
 .seg.tabs.ptabs:not(.istep) button:nth-child(-n+2){border-top:0}
+/* 文字「特大」・幅 360px でも、設定のタブと AI の一覧が横にはみ出さない（長い名前は2行に） */
+.seg.tabs.ptabs:not(.istep){grid-template-columns:repeat(2,minmax(0,1fr))}
+.seg.tabs.ptabs:not(.istep) button{white-space:normal;min-width:0;line-height:1.2;padding:4px 6px}
+.mitem>div{min-width:0;flex:1 1 auto}
+.mitem .aibadge{white-space:normal;max-width:100%}
 .mtile{text-align:left}.mtile .mt,.mtile .md{text-align:left}
 
 /* NIGHT-GEN-START */
