@@ -1541,6 +1541,8 @@ const fyOf=(y,m)=>m>=4?y:y-1;
 const idxOf=m=>(m+8)%12;
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const norm=x=>String(x||'').replace(/[\s　・（）()]/g,'');
+// 検索の比べ方：全角/半角・大文字/小文字・カタカナ/ひらがなの違いを無視（保存する値は変えない）
+const sFold=x=>String(x==null?'':x).normalize('NFKC').toLowerCase().replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60));
 const sn=n=>String(n).trim().split(/[ 　]+/)[0];
 const now=new Date(), TODAY=ymd(now), TOMORROW=addD(TODAY,1);
 const lastDayOf=(y,m)=>new Date(y,m,0).getDate();
@@ -3183,7 +3185,7 @@ function histRows(){
       if(!isNum&&!(r.c||{})[item])return false;
       if(onlyNg){if(isNum?!outOfRange(numDef(item),r[item]):(r.c||{})[item]!=='×')return false}}
     else if(onlyNg&&!I.ng.length)return false;
-    if(kw&&![r.note,r.by].join(' ').includes(kw))return false;
+    if(kw&&!sFold([r.note,r.by].join(' ')).includes(sFold(kw)))return false;
     return true;
   });
 }
@@ -3340,7 +3342,7 @@ function eqLinks(e){
   return {items,tasks,nums,checks,issues};
 }
 function vEquip(){
-  const q=(V.eqQ||'').trim(),E=(S.equipment||[]).filter(e=>(!q||[e.code,e.name,e.place,e.maker,e.model,e.serial,e.kind,locPath(e.locId)].join(' ').includes(q))&&(!V.eqKind||e.kind===V.eqKind)&&(!V.eqImp||e.importance===V.eqImp)&&(!V.eqLoc||locDesc(V.eqLoc).has(e.locId))&&(V.eqAll||e.status!=='廃止'))
+  const q=(V.eqQ||'').trim(),E=(S.equipment||[]).filter(e=>(!q||sFold([e.code,e.name,e.place,e.maker,e.model,e.serial,e.kind,locPath(e.locId)].join(' ')).includes(sFold(q)))&&(!V.eqKind||e.kind===V.eqKind)&&(!V.eqImp||e.importance===V.eqImp)&&(!V.eqLoc||locDesc(V.eqLoc).has(e.locId))&&(V.eqAll||e.status!=='廃止'))
     .sort((a,b)=>(a.code||'').localeCompare(b.code||'',undefined,{numeric:true})||a.name.localeCompare(b.name));
   const sortK=V.eqSort||'code',DLM={},OPN={},LD={};
   if(sortK!=='code'&&sortK!=='name'){deadlines().filter(x=>x.it.equipId&&x.left!=null).forEach(x=>{if(DLM[x.it.equipId]==null||x.left<DLM[x.it.equipId])DLM[x.it.equipId]=x.left});E.forEach(e=>OPN[e.id]=eqLinks(e).issues.filter(i=>i.status!=='完了').length)}
@@ -6273,7 +6275,7 @@ let IS_ST=0;function isSearch(el){clearTimeout(IS_ST);IS_ST=setTimeout(()=>{V.is
 function vIssues(){
   const f=V.isF||'open',q=(V.isQ||'').trim(),BL=(S.locs||[]).filter(l=>l.type==='建屋').sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true})),bSel=BL.find(x=>x.id===V.isB),bIds=bSel?locDesc(bSel.id):null;
   const inB=i=>{if(!bSel)return true;const e=i.equipId&&(S.equipment||[]).find(x=>x.id===i.equipId);return !!(e&&e.locId&&bIds.has(e.locId))||String(i.place||'').includes(bSel.name)};
-  const L=S.issues.filter(i=>inB(i)&&(f==='all'||(f==='open'?i.status!=='完了':f==='fail'?i.failure:f==='over'?i.status!=='完了'&&i.due&&i.due<TODAY:i.urgency===f))&&(!q||[i.title,i.detail,i.action,i.cause,i.place,equipName(i.equipId)].join(' ').includes(q)))
+  const L=S.issues.filter(i=>inB(i)&&(f==='all'||(f==='open'?i.status!=='完了':f==='fail'?i.failure:f==='over'?i.status!=='完了'&&i.due&&i.due<TODAY:i.urgency===f))&&(!q||sFold([i.title,i.detail,i.action,i.cause,i.place,equipName(i.equipId)].join(' ')).includes(sFold(q))))
     .sort((a,b)=>((a.status==='完了')-(b.status==='完了'))||(URGENCY.indexOf(a.urgency||'低')-URGENCY.indexOf(b.urgency||'低'))||b.date.localeCompare(a.date));
   const over=S.issues.filter(i=>i.status!=='完了'&&i.due&&i.due<TODAY).length;
   return `<div class="tiles noprint">${[['open','未完了',S.issues.filter(i=>i.status!=='完了').length],['緊急','緊急',S.issues.filter(i=>i.status!=='完了'&&i.urgency==='緊急').length],['over','期限超過',over],['fail','故障（全期間）',S.issues.filter(i=>i.failure).length]]
@@ -6351,7 +6353,7 @@ let PT_ST=0;function ptSearch(el){clearTimeout(PT_ST);PT_ST=setTimeout(()=>{V.pt
 function vStock(){
   const t=V.stTab||'parts';
   let h=tabs16('stTab',[['parts','予備品'],['tools','工具・測定器'],['budget','予算・費用']]);
-  if(t==='parts'){const q=(V.ptQ||'').trim(),P0=(S.parts||[]).filter(p=>!q||[p.name,p.code,p.spec,p.maker,p.place].join(' ').includes(q)),onlyLow=!!V.ptLow,P=P0.filter(p=>!onlyLow||(p.min!==''&&p.qty<=p.min)).map((p,k)=>[p,k]).sort((a,b)=>((b[0].min!==''&&b[0].qty<=b[0].min)-(a[0].min!==''&&a[0].qty<=a[0].min))||a[1]-b[1]).map(x=>x[0]),low=P.filter(p=>p.min!==''&&p.qty<=p.min);
+  if(t==='parts'){const q=(V.ptQ||'').trim(),P0=(S.parts||[]).filter(p=>!q||sFold([p.name,p.code,p.spec,p.maker,p.place].join(' ')).includes(sFold(q))),onlyLow=!!V.ptLow,P=P0.filter(p=>!onlyLow||(p.min!==''&&p.qty<=p.min)).map((p,k)=>[p,k]).sort((a,b)=>((b[0].min!==''&&b[0].qty<=b[0].min)-(a[0].min!==''&&a[0].qty<=a[0].min))||a[1]-b[1]).map(x=>x[0]),low=P.filter(p=>p.min!==''&&p.qty<=p.min);
     h+=`<input id="ptQ" class="noprint" type="search" enterkeyhint="search" placeholder="品名・型番・保管場所で検索" value="${esc(q)}" oninput="ptSearch(this)" style="margin-bottom:8px"><div class="row noprint" style="margin-bottom:8px"><label class="btn sec sm" style="min-height:44px">📥 CSVを読み込む<input type="file" accept=".csv,text/csv" onchange="importStockCsv(this)"></label><span class="muted" style="font-size:12px">「CSV」で書き出した予備品のファイル</span></div>`;
     if(low.length)h+=`<div class="al ng">在庫不足 ${low.length}品目：${low.slice(0,3).map(p=>esc(p.name)).join('、')}${low.length>3?` ほか${low.length-3}品目（下の一覧の上に並んでいます）`:''}</div>`;
     if(low.length||onlyLow)h+=`<div class="row noprint" style="margin-bottom:8px"><button class="btn sec sm" style="min-height:44px" onclick="V.ptLow=${onlyLow?0:1};render()">${onlyLow?'すべての予備品を見る':'少ない物だけ見る（'+low.length+'品目）'}</button></div>`;
