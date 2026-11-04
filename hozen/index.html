@@ -41,6 +41,8 @@ main{padding:14px 14px 96px;max-width:900px;margin:0 auto}
 nav{position:fixed;bottom:0;left:0;right:0;z-index:20;background:#fff;border-top:1px solid var(--line);box-shadow:0 -2px 8px rgba(0,0,0,.06);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;position:relative;border:0;background:none;padding:8px 0 10px;font-size:12px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px}
 nav button b{font-size:22px;font-weight:400;line-height:1}
+html[data-fs=xl] nav button{font-size:10px;letter-spacing:-.03em;white-space:nowrap}
+html[data-fs=l] nav button{font-size:11px;white-space:nowrap}
 nav button.on{color:var(--accent);font-weight:700}
 nav button b[data-n]:not([data-n=""])::after{content:attr(data-n);position:absolute;top:3px;left:50%;margin-left:6px;background:var(--ng);color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:0 5px;line-height:16px}
 /* 横向き（高さが低いとき）：見出しと下のナビを低くして、入力欄が隠れないように */
@@ -4513,7 +4515,7 @@ let AL_CACHE=null;
 /* 文字の大きさ（設定の fscale：''=標準・'l'=大・'xl'=特大）。画面全体の拡大で効かせる。印刷には効かせない */
 const FSCALES=[['','標準',1],['l','大',1.125],['xl','特大',1.25]];
 const FSCALE_OFF=['dailyRep','report','printDoc','workSheet'];/* 印刷の見本の画面（表が幅いっぱい）は大きくしない */
-function applyFScale(){const f=FSCALES.find(x=>x[0]===((S&&S.settings&&S.settings.fscale)||''))||FSCALES[0];document.documentElement.style.zoom=f[2]===1||FSCALE_OFF.includes(V.view)?'':String(f[2])}
+function applyFScale(){const f=FSCALES.find(x=>x[0]===((S&&S.settings&&S.settings.fscale)||''))||FSCALES[0];document.documentElement.style.zoom=f[2]===1||FSCALE_OFF.includes(V.view)?'':String(f[2]);document.documentElement.dataset.fs=f[0]}
 /* 夜間（設定の night：''=標準・'on'=暗い画面）。html に night の印を付けるだけ。保存は設定の1項目 */
 function applyNight(){document.documentElement.classList.toggle('night',!!(S&&S.settings&&S.settings.night==='on'))}
 function setNight(v){S.settings.night=v==='on'?'on':'';save();applyNight();render();toast(v==='on'?'夜間（暗い画面）にしました':'標準の明るさに戻しました')}
