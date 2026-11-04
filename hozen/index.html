@@ -4554,6 +4554,19 @@ function printMirror(root){
   root.querySelectorAll('button').forEach(b=>{if(!b.closest('.noprint'))b.classList.add('noprint')});
 }
 if(typeof document!=='undefined')document.addEventListener('change',e=>{const t=e.target,m=t&&t.nextElementSibling;if(m&&m.dataset&&m.dataset.mirror&&t.classList.contains('noprint'))m.textContent=t.tagName==='SELECT'?[...t.selectedOptions].map(o=>o.textContent).join(' '):t.type==='checkbox'?(t.checked?'☑':'☐'):t.type==='password'?(t.value?'（設定済み）':''):t.value},true);
+// 画面の入力欄に読み上げ用の名前（aria-label）を足す。見た目・保存の形は変えない。すでに名前のある欄は触らない。
+const FIELD_NAMES=[[/V\.hItem/,'項目（設備）で絞り込み'],[/V\.hKw/,'キーワード（備考・点検者）'],[/V\.day=/,'日付'],[/V\.wkF/,'状態で絞り込み'],[/V\.isF/,'状態で絞り込み'],[/V\.wsFrom/,'表示の開始日'],[/V\.qrLoc/,'場所で絞り込み'],[/setHealthW\('age'/,'経年の重み（％）'],[/setHealthW\('meas'/,'測定値の重み（％）'],[/setHealthW\('fail'/,'故障の重み（％）'],[/setHealthW\('issue'/,'未完了の異常の重み（％）'],[/setChkDef\('chkPre'/,'作業前チェックリスト'],[/setChkDef\('chkPost'/,'作業後チェックリスト'],[/setDnote/,'特記事項（日報に印刷）'],[/logEdit\('report'/,'所見・特記事項（この月）'],[/setText\('by'/,'点検者'],[/setText\('note'/,'備考（× の内容・処置）']];
+function nameFields(root){
+  if(!root)return;
+  root.querySelectorAll('input,select,textarea').forEach(e=>{
+    if(/^(hidden|button|submit|reset|file)$/.test(e.type)||(e.labels&&e.labels.length)||e.getAttribute('aria-label')||e.getAttribute('aria-labelledby')||e.title)return;
+    const oc=e.getAttribute('onchange')||'';let n='';
+    for(const [re,t] of FIELD_NAMES)if(re.test(oc)){n=t;break}
+    if(!n&&e.id&&/^n_/.test(e.id)){const pv=e.previousElementSibling;if(pv)n=pv.textContent.replace(/[*＊]/g,'').trim().slice(0,30)}
+    if(!n&&e.placeholder)n=e.placeholder.replace(/^[^぀-ヿ一-鿿A-Za-z0-9]+/,'').trim();
+    if(!n){const pv=e.previousElementSibling;if(pv&&(pv.tagName==='LABEL'||pv.classList.contains('f')))n=pv.textContent.trim().slice(0,30)}
+    if(n)e.setAttribute('aria-label',n)})
+}
 function render(){
   applyFScale();applyNight();
   CREW={};DL_CACHE=null;AL_CACHE=null;
@@ -4571,6 +4584,7 @@ function render(){
   const _yw=V.view==='year'&&_yrFy===V.fy&&$('.tbw'),_yl=_yw?_yw.scrollLeft:-1;
   $('#app').innerHTML=VIEWS[V.view]();document.body.dataset.view=V.view;
   if(V.view==='set'||V.view==='mtpl')printMirror($('#app'));
+  nameFields($('#app'));
   updateNavBadge(true);
   if(V.view==='day')restoreDraft();
   if(V.view==='year'){const w=$('.tbw');if(w){if(_yl>=0)w.scrollLeft=_yl;else yearToNow();_yrFy=V.fy}}else _yrFy=null
