@@ -176,6 +176,8 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .cal .wc .w{font-size:10px;font-weight:600;line-height:1.3;border-radius:3px;padding:0 2px;margin:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal .w,.cal .t{font-size:11px;font-weight:600;line-height:1.35;border-radius:4px;padding:1px 2px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal .w{text-align:center}
+/* 文字「大」「特大」：マスが狭く勤務者の名前が「職…」に切れるので、切らずに折り返す（hz-cal-crew-xl） */
+html[data-fs=l] .cal .wc .w,html[data-fs=xl] .cal .wc .w{white-space:normal;word-break:break-all;overflow:visible;text-overflow:clip;line-height:1.15;padding:0 1px;text-align:center}
 .cal .w.a{background:var(--a-bg);color:var(--a)}.cal .w.b{background:var(--b-bg);color:var(--b)}.cal .w.d{color:var(--d)}.cal .w.ng{background:var(--ng-bg);color:var(--ng)}
 .cal .t{background:#e9eff6;color:#1f3b57;padding:1px 3px}
 .cal .t.ex{background:#eceff1;color:#607080;text-decoration:line-through}
