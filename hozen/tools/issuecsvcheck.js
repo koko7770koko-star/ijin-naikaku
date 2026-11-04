@@ -5,7 +5,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
  await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app').children.length>0,null,{timeout:15000});
- const before=await p.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{x:'',y:'',z:'',floor:''}});
+ /* 日付の無い i5 は読み込みでは外される形。確認の間に画面の描き直し（タイマー等）が走ると home などが落ちるので、描き直しを止めてから入れる（hz-flaky-issuecsv） */
+ const before=await p.evaluate(()=>{window.render=()=>{};const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{x:'',y:'',z:'',floor:''}});
   S.locs=[mk('b','A棟','建屋',''),mk('f','1階','階','b'),mk('r','第1電気室','電気室','f'),mk('x','動力盤-1','盤','r'),mk('fb','2階','階','b'),mk('y','分電盤-2','盤','fb')];
   S.equipment=[{id:'e1',code:'E-1',name:'変圧器',status:'稼働',locId:'r',spec:{}}];
   S.issues=[{id:'i1',date:'2026-11-01',title:'盤の異常：動力盤-1（端子および碍子）',place:'A棟 › 1階 › 第1電気室 › 動力盤-1',status:'発見',equipId:'',detail:'',action:'',photos:[]},
