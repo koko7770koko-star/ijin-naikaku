@@ -6587,10 +6587,13 @@ function delTool(id){const i=S.tools.findIndex(x=>x.id===id),t=S.tools[i];S.tool
 /* ---------- 作業標準（停電・検電・接地・復電などの手順は、施設で承認された標準に基づいて管理） ---------- */
 const stdById=id=>(S.stds||[]).find(t=>t.id===id);
 const stdOk=t=>!!(t&&t.approvedBy&&t.approvedDate);
+/* 作業標準の検索：打つと 350ms 後に絞る（工事・図面と同じ）。日本語の変換中は描画しない（hz-stds-live-search） */
+let STD_ST=0,STD_IME=0;function stdSearch(el,now){clearTimeout(STD_ST);if(STD_IME&&!now)return;const f=()=>{V.stdQ=el.value;render();const n=document.getElementById('std_q');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}};if(now)f();else STD_ST=setTimeout(()=>{if(!STD_IME)f()},350)}
+document.addEventListener('compositionstart',e=>{if(e.target&&e.target.id==='std_q')STD_IME=1},true);document.addEventListener('compositionend',e=>{if(e.target&&e.target.id==='std_q'){STD_IME=0;stdSearch(e.target)}},true);
 function vStds(){
   const all=S.stds||[],sq=sFold((V.stdQ||'').trim()),L=sq?all.filter(t=>sFold([t.name,t.docNo,(t.kinds||[]).join(' ')].join(' ')).includes(sq)):all;
   return card(`📘 作業標準 <span class="muted">${sq?L.length+'/':''}${all.length}件</span>`,`<div class="al info">停電作業・検電・接地・復電確認などの手順とチェック項目は、<b>施設で承認された作業標準</b>の内容を登録して使ってください。アプリは手順の妥当性や安全の成立を判断しません。承認者の記録は名前の入力のみで、本人認証ではありません。</div>`
-    +(all.length>0?`<div class="row" style="flex-wrap:nowrap;margin:8px 0"><input id="std_q" placeholder="名称・文書番号・作業の種別で探す" value="${esc(V.stdQ||'')}" onkeydown="if(event.key==='Enter'){V.stdQ=this.value;render()}"><button class="btn sm" onclick="V.stdQ=$('#std_q').value;render()">探す</button>${sq?`<button class="btn sec sm" onclick="V.stdQ='';render()">クリア</button>`:''}</div>`:'')
+    +(all.length>0?`<div class="row" style="flex-wrap:nowrap;margin:8px 0"><input id="std_q" placeholder="名称・文書番号・作業の種別で探す" value="${esc(V.stdQ||'')}" oninput="stdSearch(this)" onkeydown="if(event.key==='Enter'&&!event.isComposing){stdSearch(this,1)}"><button class="btn sm" onclick="clearTimeout(STD_ST);V.stdQ=$('#std_q').value;render()">探す</button>${sq?`<button class="btn sec sm" onclick="V.stdQ='';render()">クリア</button>`:''}</div>`:'')
     +(L.map(t=>`<div class="item ${stdOk(t)?'':'ng'}" onclick="editStd('${t.id}')"><div class="bd"><div class="ti">${esc(t.name)}${t.ver?` <span class="muted">版${esc(t.ver)}</span>`:''}</div><div class="meta">${esc(t.docNo||'')}${t.kinds.length?'・'+esc(t.kinds.join('・')):''}・作業前${t.pre.length}項目（必須${t.pre.filter(c=>c.req).length}）・作業後${t.post.length}項目</div>
       <span class="pill ${stdOk(t)?'ok':'warn'}">${stdOk(t)?`承認済み ${slash(t.approvedDate)} ${esc(t.approvedBy)}`:'未承認（作業に使えません）'}</span></div></div>`).join('')||emptyBox(sq?'「'+esc(V.stdQ||'')+'」の作業標準はありません。言葉を短く、または別の言い方で探してください':'まだありません')),`<button class="btn sm" onclick="editStd()">＋ 作業標準</button>`);
 }
