@@ -607,6 +607,7 @@ details.fold[open]>summary{margin-bottom:8px}
 /* 画面上の切り替えタブ：文字を折り返さず、入りきらないときは横にずらす（390px で「推奨・傾向」が2行に切れていた） */
 .seg.tabs:not(.istep){overflow-x:auto;-webkit-overflow-scrolling:touch}
 .seg.tabs:not(.istep) button{white-space:nowrap;flex:1 0 auto;padding:0 10px;min-height:44px}
+.seg.nightseg:not(.istep) button{flex:1 1 0;white-space:nowrap;padding:0 6px}
 /* 設定・設備カルテの上のタブ：横にはみ出さず2列に折り返し、全部が見える */
 .seg.tabs.ptabs:not(.istep){display:grid;grid-template-columns:1fr 1fr;overflow:visible}
 .seg.tabs.ptabs:not(.istep) button{border:0;border-left:1px solid var(--field);border-top:1px solid var(--field)}
@@ -4067,7 +4068,7 @@ function vSet(){
   const list=(k,l,hp)=>`<label class="f">${l}（1行に1つ）</label><textarea style="min-height:80px" onchange="setList('${k}',this.value)">${esc(st[k].join('\n'))}</textarea>${hp?`<div class="muted sethelp" style="font-size:12px;margin-top:2px">${hp}</div>`:''}`;
   const lim=(k,l)=>`<div><label class="f">${l}</label><input type="number" step="any" inputmode="decimal" value="${esc(L[k])}" onchange="setLim('${k}',this)"></div>`;
   return `<div class="card"><h2>画面の明るさ</h2><div class="muted sethelp" style="font-size:12px;margin-bottom:6px">暗い電気室・夜間の見回りでまぶしいときは「夜間」にします（印刷は今までどおり白地です）。</div>
-    <div class="seg" role="group" aria-label="画面の明るさ"><button type="button" class="${st.night==='on'?'':'on'}" style="min-height:48px" onclick="setNight('')">標準</button><button type="button" class="${st.night==='on'?'on':''}" style="min-height:48px" onclick="setNight('on')">🌙 夜間（暗い）</button></div></div>
+    <div class="seg tabs nightseg" role="group" aria-label="画面の明るさ"><button type="button" class="${st.night==='on'?'':'on'}" style="min-height:48px" onclick="setNight('')">標準</button><button type="button" class="${st.night==='on'?'on':''}" style="min-height:48px" onclick="setNight('on')">🌙 夜間</button></div></div>
   <div class="card"><h2>文字の大きさ</h2><div class="muted sethelp" style="font-size:12px;margin-bottom:6px">画面の文字と部品を大きくします（印刷の大きさは変わりません）。</div>
     <div class="seg" role="group" aria-label="文字の大きさ">${FSCALES.map(([v,l])=>`<button type="button" class="${(st.fscale||'')===v?'on':''}" style="min-height:48px" onclick="setFScale('${v}')">${l}</button>`).join('')}</div></div>
   <div class="card"><h2>基本情報（報告書に表示）</h2>${field('name','施設名','例：○○総合病院','報告書・印刷物の見出しに出ます')}${field('facType','施設の種類（AIへの指示に使います）','例：病院、工場、事務所ビル','AIに質問するときの前提になります')}${field('dept','担当部署','例：施設管理課 電気係','報告書の担当部署の欄に出ます')}${field('reporter','報告者','氏名','報告書の「報告者」欄に出ます')}${field('to','提出先','例：施設管理課長','報告書の「提出先」欄に出ます')}${field('operator','この端末を使う人（修正履歴に残る名前）','氏名','記録を直したとき「誰が直したか」に使います')}</div>
