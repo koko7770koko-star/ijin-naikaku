@@ -178,8 +178,8 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .cal .w{text-align:center}
 /* 保全の設定の下の2つのボタン：言葉の途中（「ひ/な形」「資/格」）で割れないよう、入らなければ1つずつの行に（hz-xl-review-4） */
 .msetlinks{flex-wrap:wrap}.msetlinks>.btn{flex:1 1 auto;white-space:nowrap}
-/* 設定の CSV のボタン：「異常案/件」「設備台/帳」のように言葉の途中で割れないよう、言葉の切れ目（：・（）でだけ折り返し、入らなければ次の行へ */
-.row.csvrow>button.btn.grow{flex:1 1 auto;word-break:keep-all;overflow-wrap:break-word}
+/* 設定の CSV・設備の場所の下のボタン（kwrow）：「異常案/件」「設備台/帳」のように言葉の途中で割れないよう、言葉の切れ目（：・（）でだけ折り返し、入らなければ次の行へ */
+.row.csvrow>button.btn.grow,.row.kwrow>button.btn.grow{flex:1 1 auto;word-break:keep-all;overflow-wrap:break-word}
 /* 文字「大」「特大」：マスが狭く勤務者の名前が「職…」に切れるので、切らずに折り返す（hz-cal-crew-xl） */
 html[data-fs=l] .cal .wc .w,html[data-fs=xl] .cal .wc .w{white-space:normal;word-break:break-all;overflow:visible;text-overflow:clip;line-height:1.15;padding:0 1px;text-align:center}
 .cal .w.a{background:var(--a-bg);color:var(--a)}.cal .w.b{background:var(--b-bg);color:var(--b)}.cal .w.d{color:var(--d)}.cal .w.ng{background:var(--ng-bg);color:var(--ng)}
@@ -4857,8 +4857,8 @@ function vLocs(){
       ${L.length?`${L.some(l=>L.some(c=>c.parent===l.id))?`<div class="row noprint" style="margin-bottom:6px"><button class="btn sec sm grow" onclick="locFold(false)">▸ ぜんぶ たたむ</button><button class="btn sec sm grow" onclick="locFold(true)">▾ ぜんぶ ひらく</button></div>`:''}<div class="row noprint" style="margin-bottom:6px"><button class="btn ${sortM?'':'sec'} sm grow" style="min-height:44px" onclick="V.locSortM=${!sortM};render()">${sortM?'✓ 並べ替えを終える':'↕ 並べ替え'}</button></div>
         <div class="muted noprint" style="font-size:12px;margin-bottom:6px">${sortM?'↑↓ で同じ段の中の順番を変えます。':'名前を押すと、下の段を たたんだり ひらいたり できます。'}</div>`:''}
       ${tree||emptyGuide('まだ場所が登録されていません。まず棟を足してください（名前は自分で決めます）。','棟を足す',"locAdd('"+top+"','建屋')")}
-      <div class="row noprint" style="margin-top:10px"><button class="btn sm grow" style="min-height:44px" onclick="locAdd('${top}','${addTop}')">＋ ${LOC_SHOW(addTop)}を足す</button><button class="btn sec sm grow" style="min-height:44px" onclick="bldgWizard()">🏗 棟と階をまとめて足す</button></div>
-      <div class="row noprint" style="margin-top:6px"><button class="btn sec sm grow" onclick="suggestLocs()">設置場所の文字から階層を提案</button><button class="btn sec sm grow" onclick="go('qr')">🔳 QRラベル</button></div>`,
+      <div class="row noprint kwrow" style="margin-top:10px"><button class="btn sm grow" style="min-height:44px" onclick="locAdd('${top}','${addTop}')">＋ ${LOC_SHOW(addTop)}を足す</button><button class="btn sec sm grow" style="min-height:44px" onclick="bldgWizard()">🏗 棟と階をまとめて足す</button></div>
+      <div class="row noprint kwrow" style="margin-top:6px"><button class="btn sec sm grow" onclick="suggestLocs()">設置場所の文字から階層を提案</button><button class="btn sec sm grow" onclick="go('qr')">🔳 QRラベル</button></div>`,
       `<button class="btn sm noprint" onclick="editLoc()">詳しく追加</button>`)
     +(none.length?card(`場所が未設定の設備 <span class="muted">${none.length}台</span>`,none.map(e=>`<div class="item" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${esc(e.place||'')}</div></div></div>`).join('')):'');
 }
