@@ -345,6 +345,8 @@ table.yr th .yrmh{all:unset;display:block;box-sizing:border-box;min-height:44px;
   body{background:#fff}
   header,nav,.noprint,.toast,.mask{display:none!important}
   main{padding:0;max-width:none}
+  /* 記録が0件の画面：案内ボタン・見出しの「＋ 追加」は紙に出さない（文字の案内だけ残す） */
+  .empty button,.empty .btn,.hd-row>button,.hd-row>.btn{display:none!important}
   .card{box-shadow:none;padding:0;margin:0}
   .rep{font-size:10.5pt}
   .rep .sec,.rep th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -5145,7 +5147,7 @@ function vBan(){
   const head=`<div class="card"><div class="hd-row"><button class="btn sec sm" aria-label="前の月" style="min-width:44px;min-height:44px" onclick="banMove(-1)">‹</button><h2 style="margin:0;text-align:center;flex:1">⚡ 盤の点検 ${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><button class="btn sec sm" aria-label="次の月" style="min-width:44px;min-height:44px" onclick="banMove(1)">›</button></div>
     ${ym!==TODAY.slice(0,7)?`<div class="al warn banpast" style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b class="grow">📅 ${ym.slice(0,4)}年${+ym.slice(5,7)}月（今月ではありません）${banFuture(ym)?'：◯（予定）だけ付けられます':''}</b><button class="btn sm" style="min-height:44px" onclick="V.banYm=TODAY.slice(0,7);render()">今月へ</button></div>`:''}
     <div class="muted" style="margin-top:6px">押すと 空 → ◯（予定）→ ●（実施済み）→ 空。異常があれば ⚠ でその場で記録できます。</div></div>`;
-  if(!B.length)return head+card('盤がまだありません',`<div class="muted" style="margin-bottom:8px">「設備の場所」で 棟 → 階 → 電気室 → 盤 を登録すると、ここに盤が並びます（名前は自分で決めます）。</div><button class="btn wide" style="min-height:44px" onclick="go('locs')">🏢 場所を登録する</button><button class="btn sec wide" style="margin-top:6px;min-height:44px" onclick="bldgWizard()">🏗 棟と階をまとめて足す</button>`);
+  if(!B.length)return head+card('盤がまだありません',`<div class="muted" style="margin-bottom:8px">「設備の場所」で 棟 → 階 → 電気室 → 盤 を登録すると、ここに盤が並びます（名前は自分で決めます）。</div><button class="btn wide noprint" style="min-height:44px" onclick="go('locs')">🏢 場所を登録する</button><button class="btn sec wide noprint" style="margin-top:6px;min-height:44px" onclick="bldgWizard()">🏗 棟と階をまとめて足す</button>`);
   const bid=B.some(x=>x.id===V.banB)?V.banB:B[0].id,bl=B.find(x=>x.id===bid),carry=ym===TODAY.slice(0,7)?banCarry(ym):[],plan=banPlanSrc(ym);
   const allB=banBoardsOf(bid),tot=banCount(ym,allB),secs=banSections(bid),bpath=bid===BAN_NOB?'':locPath(bid);
   const tabs=`<div class="seg tabs" style="margin:8px 0;overflow-x:auto;white-space:nowrap">${B.map(b=>{const c=banCount(ym,banBoardsOf(b.id));return `<button class="${b.id===bid?'on':''}" onclick="V.banB='${b.id}';render()">${esc(b.name)}<small style="display:block;font-weight:400">${c.t?c.d+'/'+c.t:'－'}</small></button>`}).join('')}</div>`;
@@ -5956,7 +5958,7 @@ function exportMeasCsv(){download(`測定記録_${TODAY}.csv`,csvBlob([['測定�
 /* 測定のひな形（管理値は人が設定） */
 function vMtpl(){
   return card('📐 測定のひな形と管理値',`<div class="muted" style="margin-bottom:8px">管理値（下限・上限）と周期は、法令・保安規程・メーカー資料など施設の基準に従って人が入れてください。空欄の項目は判定しません。</div>`
-    +((S.mtpl||[]).some(t=>t.id==='mt_gen')?'':`<button class="btn sec wide" style="margin-bottom:8px" onclick="addGenTpl()">⚡ 非常用発電機の月次点検ひな形を足す（管理値は空のまま）</button>`)+(S.mtpl||[]).map(t=>`<div class="item" onclick="editMtpl('${t.id}')"><div class="bd"><div class="ti">${esc(t.type)}：${esc(t.name)}${tplCondText(t)?` <span class="pill plan">${esc(tplCondText(t))}</span>`:''}</div><div class="meta">${t.rows.map(r=>`${esc(r.name)}（${esc(limText(r))}）`).join('・')}${t.cycleM?`・周期 ${t.cycleM}か月`:'・周期 未設定'}</div></div></div>`).join(''),`<button class="btn sm" style="min-height:40px" onclick="editMtpl()">＋ 追加</button>`);
+    +((S.mtpl||[]).some(t=>t.id==='mt_gen')?'':`<button class="btn sec wide noprint" style="margin-bottom:8px" onclick="addGenTpl()">⚡ 非常用発電機の月次点検ひな形を足す（管理値は空のまま）</button>`)+(S.mtpl||[]).map(t=>`<div class="item" onclick="editMtpl('${t.id}')"><div class="bd"><div class="ti">${esc(t.type)}：${esc(t.name)}${tplCondText(t)?` <span class="pill plan">${esc(tplCondText(t))}</span>`:''}</div><div class="meta">${t.rows.map(r=>`${esc(r.name)}（${esc(limText(r))}）`).join('・')}${t.cycleM?`・周期 ${t.cycleM}か月`:'・周期 未設定'}</div></div></div>`).join(''),`<button class="btn sm" style="min-height:40px" onclick="editMtpl()">＋ 追加</button>`);
 }
 function addGenTpl(){if(!Array.isArray(S.mtpl))S.mtpl=[];if(S.mtpl.some(t=>t.id==='mt_gen')){toast('すでにあります');return}S.mtpl.push(clone(GEN_TPL));save();render();toast('発電機のひな形を足しました。管理値は施設の基準で入れてください')}
 let MT_ROWS=[];
