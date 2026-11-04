@@ -820,7 +820,7 @@ html.night [style*="border:2px solid #c00000"]{border-color:var(--ng-line)!impor
     <span class="sp"></span>
     <button type="button" onclick="saveFile()">保存</button>
     <button type="button" onclick="document.getElementById('fileIn').click()">開く</button>
-    <button type="button" onclick="document.getElementById('dlgHelp').showModal()">？</button>
+    <button type="button" aria-label="使い方" title="使い方" onclick="document.getElementById('dlgHelp').showModal()">？</button>
     <input type="file" id="fileIn" accept=".json,application/json" hidden>
   </div>
   <div class="tabs" id="tabs">
@@ -835,9 +835,9 @@ html.night [style*="border:2px solid #c00000"]{border-color:var(--ng-line)!impor
 <!-- ===== シフト表 ===== -->
 <section class="page on" id="pg-shift">
   <div class="monthbar">
-    <button type="button" class="btn" onclick="moveMonth(-1)">◀</button>
+    <button type="button" class="btn" aria-label="前の月" title="前の月" onclick="moveMonth(-1)">◀</button>
     <select id="monthSel"></select>
-    <button type="button" class="btn" onclick="moveMonth(1)">▶</button>
+    <button type="button" class="btn" aria-label="次の月" title="次の月" onclick="moveMonth(1)">▶</button>
     <button type="button" class="btn sec" id="shTodayBtn" style="min-height:44px" onclick="SHIFT.toToday(false)">今日へ</button>
     <span class="period" id="periodTxt"></span>
   </div>
