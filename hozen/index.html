@@ -254,7 +254,7 @@ table.yr th .yrmh{all:unset;display:block;box-sizing:border-box;min-height:44px;
 #undobar.on{display:flex}
 #undobar span{flex:1}
 #undobar button{border:0;background:none;color:#8fd1ff;font-weight:700;font-size:15px;padding:6px 8px;min-height:44px}
-@media print{#sysbar,#undobar{display:none!important}html{zoom:1!important}#app .item{break-inside:avoid;page-break-inside:avoid}#app .grp>b{break-after:avoid;page-break-after:avoid}}
+@media print{#sysbar,#undobar{display:none!important}html{zoom:1!important}#app .item{break-inside:avoid;page-break-inside:avoid;margin-left:0;margin-right:0}#app .grp>b{break-after:avoid;page-break-after:avoid}}
 
 /* ---------- モーダル・通知 ---------- */
 .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:none;align-items:flex-end;justify-content:center}
@@ -6242,11 +6242,11 @@ function workListHTML(L,f){
 function vWorks(){
   const f=V.wkF||'open',wq=(V.wkQ||'').trim(),L=(S.works||[]).filter(w=>(f==='all'||(f==='open'?!['完了','中止'].includes(w.status):w.status===f))&&(!wq||[w.no,w.title,w.place,w.vendor,w.content,(w.staff||[]).join(' '),(w.equipIds||[]).map(equipName).join(' ')].join(' ').includes(wq))).sort((a,b)=>f==='open'?a.date.localeCompare(b.date):b.date.localeCompare(a.date));
   const cnt=s=>(S.works||[]).filter(w=>w.status===s).length;
-  return `<div class="row" style="margin-bottom:8px"><select onchange="V.wkF=this.value;render()" class="grow"><option value="open" ${f==='open'?'selected':''}>未完了（予定順）</option>${WORK_STAT.map(s=>`<option ${f===s?'selected':''}>${s}</option>`).join('')}<option value="all" ${f==='all'?'selected':''}>すべて</option></select><button class="btn sm" onclick="editWork()">＋ 作業指示</button></div>
-    <input id="wkQ" type="search" enterkeyhint="search" placeholder="件名・番号・設備・担当・協力会社で探す" value="${esc(V.wkQ||'')}" oninput="wkSearch(this)" style="margin-bottom:8px">
-    <div class="tiles wkt">${['承認待ち','承認済み','実施中','保留'].map(s=>`<div class="tile ${s==='承認待ち'&&cnt(s)?'warn':''} ${f===s?'on':''}" role="button" onclick="V.wkF='${s}';render()"><span class="tl">${s}</span> <span class="tv">${cnt(s)}</span></div>`).join('')}</div>`
-    +card(`🧰 作業指示 <span class="muted">${L.length}件</span>`,workListHTML(L,f)+(L.length>(V.wkMore||100)?`<button class="btn sec wide" onclick="V.wkMore=(V.wkMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.wkMore||100)}件）</button>`:''),`<button class="btn sec sm" onclick="exportWorksCsv()">CSV</button>`)
-    +card('📋 作業表（14日間・印刷用）',`<button class="btn sec sm" onclick="go('workSheet')">作業表を開く</button>`);
+  return `<div class="row noprint" style="margin-bottom:8px"><select onchange="V.wkF=this.value;render()" class="grow"><option value="open" ${f==='open'?'selected':''}>未完了（予定順）</option>${WORK_STAT.map(s=>`<option ${f===s?'selected':''}>${s}</option>`).join('')}<option value="all" ${f==='all'?'selected':''}>すべて</option></select><button class="btn sm" onclick="editWork()">＋ 作業指示</button></div>
+    <input id="wkQ" class="noprint" type="search" enterkeyhint="search" placeholder="件名・番号・設備・担当・協力会社で探す" value="${esc(V.wkQ||'')}" oninput="wkSearch(this)" style="margin-bottom:8px">
+    <div class="tiles wkt noprint">${['承認待ち','承認済み','実施中','保留'].map(s=>`<div class="tile ${s==='承認待ち'&&cnt(s)?'warn':''} ${f===s?'on':''}" role="button" onclick="V.wkF='${s}';render()"><span class="tl">${s}</span> <span class="tv">${cnt(s)}</span></div>`).join('')}</div>`
+    +card(`🧰 作業指示 <span class="muted">${L.length}件</span>`,workListHTML(L,f)+(L.length>(V.wkMore||100)?`<button class="btn sec wide noprint" onclick="V.wkMore=(V.wkMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.wkMore||100)}件）</button>`:''),`<button class="btn sec sm noprint" onclick="exportWorksCsv()">CSV</button>`)
+    +`<div class="noprint">${card('📋 作業表（14日間・印刷用）',`<button class="btn sec sm" onclick="go('workSheet')">作業表を開く</button>`)}</div>`;
 }
 function vWorkSheet(){
   const from=V.wsFrom||TODAY,to=addD(from,13),L=(S.works||[]).filter(w=>w.date<=to&&(w.endDate||w.date)>=from&&w.status!=='中止').sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
