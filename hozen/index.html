@@ -6296,10 +6296,15 @@ function staffMonthHTML(name){if(!hasShift())return '';const L=staffMonth(name),
 function vStaff(){
   const names=[...new Set([...staffAll(),...Object.keys(S.quals)])];
   return qualNeedHTML()+card('🪪 人員・資格',`<div class="muted" style="margin-bottom:8px">シフトのメンバーと設定の担当者が表示されます。資格を登録すると、作業指示で必要な資格・人数を照合します。</div>`
-    +(names.length?names.map(n=>`<div class="item" onclick="editQual(${esc(JSON.stringify(n))})"><div class="bd"><div class="ti">${esc(n)}</div><div class="meta">${(S.quals[n]||[]).map(esc).join('・')||'<b class="qadd" style="color:var(--accent)">資格を登録 ›</b>'}</div>${(()=>{const t=hasShift()?staffMonthSum(staffMonth(n)):'';return t?`<div class="meta stsum">今月：${esc(t)}</div>`:''})()}</div><span class="ar">›</span></div>`).join(''):emptyBox('メンバーがいません')),`<button class="btn sec sm" onclick="editQualList()">資格の種類</button>`)
+    +(names.length?names.map(n=>`<div class="item" onclick="editQual(${esc(JSON.stringify(n))})"><div class="bd"><div class="ti">${esc(n)}</div><div class="meta">${(S.quals[n]||[]).map(esc).join('・')||'<b class="qadd" style="color:var(--accent)">資格を登録 ›</b>'}</div>${(()=>{const t=hasShift()?staffMonthSum(staffMonth(n)):'';return t?`<div class="meta stsum">今月：${esc(t)}</div>`:''})()}</div><span class="ar">›</span></div>`).join(''):emptyBox('メンバーがいません')),`<button class="btn sec sm noprint" onclick="exportStaffCsv()">CSV</button> <button class="btn sec sm" onclick="editQualList()">資格の種類</button>`)
     +card('📅 今後14日の作業と勤務',[...Array(14)].map((_,k)=>{const d=addD(TODAY,k),W=(S.works||[]).filter(w=>w.date<=d&&(w.endDate||w.date)>=d&&!['中止','完了'].includes(w.status));if(!W.length)return '';const o=crewDay(d);
       return `<div class="grp"><b>${md(d)}（${WD[pd(d).getDay()]}）</b>${o?crewRow(o,'勤務'):''}${W.map(workRow).join('')}</div>`}).join('')||emptyBox('予定されている作業はありません'));
 }
+/* 人員・資格の CSV 書き出し（読み込みは無い。1 資格 1 行、資格が無い人は資格名を空にして 1 行） */
+function exportStaffCsv(){const names=[...new Set([...staffAll(),...Object.keys(S.quals||{})])];
+  if(!names.length){toast('書き出す人員がいません');return}
+  const rows=[];names.forEach(n=>{const q=(S.quals&&S.quals[n])||[];if(q.length)q.forEach(x=>rows.push([n,x]));else rows.push([n,''])});
+  download(`人員資格_${TODAY}.csv`,csvBlob([['名前','資格名'],...rows]))}
 function editQual(name){
   const has=S.quals[name]||[];
   openModal(`<h3>資格：${esc(name)}</h3><div class="chkgrid" id="ql">${[...new Set([...S.qualList,...has])].map(q=>`<label class="chkl"><input type="checkbox" value="${esc(q)}" ${has.includes(q)?'checked':''}>${esc(q)}</label>`).join('')}</div>${staffMonthHTML(name)}
