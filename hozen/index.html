@@ -346,6 +346,8 @@ table.yr th .yrmh{all:unset;display:block;box-sizing:border-box;min-height:44px;
   body{background:#fff}
   header,nav,.noprint,.toast,.mask{display:none!important}
   .ponly{display:block!important;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11pt}
+  /* ホームを朝礼で配る：ボタンは紙に出さず、数字・案内の文字だけ残す */
+  body[data-view=home] #app button,body[data-view=home] #app input,body[data-view=home] #app select{display:none!important}
   main{padding:0;max-width:none}
   /* 記録が0件の画面：案内ボタン・見出しの「＋ 追加」は紙に出さない（文字の案内だけ残す） */
   .empty button,.empty .btn,.hd-row>button,.hd-row>.btn{display:none!important}
@@ -4525,7 +4527,7 @@ function render(){
   $('#hback').style.display=SUB_VIEWS.includes(V.view)?'inline':'none';$('#hback').onclick=()=>goBack(V.view==='equipDetail'&&NAV_STACK[NAV_STACK.length-2]==='dwg'?'dwg':(BACK[V.view]||'menu')); // 図面の印から来た設備カルテは、‹ で図面へ戻る
   PH_NEED=[];
   const _yw=V.view==='year'&&_yrFy===V.fy&&$('.tbw'),_yl=_yw?_yw.scrollLeft:-1;
-  $('#app').innerHTML=VIEWS[V.view]();
+  $('#app').innerHTML=VIEWS[V.view]();document.body.dataset.view=V.view;
   updateNavBadge(true);
   if(V.view==='day')restoreDraft();
   if(V.view==='year'){const w=$('.tbw');if(w){if(_yl>=0)w.scrollLeft=_yl;else yearToNow();_yrFy=V.fy}}else _yrFy=null
