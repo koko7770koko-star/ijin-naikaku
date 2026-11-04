@@ -782,6 +782,8 @@ html.night [style*="color:#c00000"],html.night [style*="color:#c00;"],html.night
 html.night [style*="border:2px solid #c00000"]{border-color:var(--ng-line)!important}
 }
 /* NIGHT-GEN-END */
+/* 夜間のシフト表：#shiftApp は --sub を #555 に置き直しているので、夜間は明るい灰に戻す（タブ・回数の行・ラベルの文字。hz-shift-night） */
+@media screen{html.night #shiftApp{--sub:#c8d1db}}
 </style>
 <style id="pageStyle">@page{size:A4 portrait;margin:10mm}</style>
 </head>
