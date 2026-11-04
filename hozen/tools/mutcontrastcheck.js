@@ -1,4 +1,4 @@
-// 標準（昼）の明るさで、補足の灰色の文字（--mut の色）と month の「今日」(.tdl) の比が 4.5 以上か。全 VIEWS ＋ shift、360px・特大と 390px・標準。
+// 標準（昼）の明るさで、補足の灰色の文字（--mut の色）と month の「今日」(.tdl)・凡例（.lgd .lg）・延期・中止の予定（.cal .t.ex）の比が 4.5 以上か。全 VIEWS ＋ shift、360px・特大と 390px・標準。
 // usage: node hozen/tools/mutcontrastcheck.js [--list]
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');
 (async()=>{const b=await chromium.launch();const errs=[],bad=new Map();let n=0;
@@ -20,7 +20,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
    document.querySelectorAll('body *').forEach(e=>{if(!e.offsetParent&&getComputedStyle(e).position!=='fixed')return;
     const own=[...e.childNodes].some(t=>t.nodeType===3&&t.textContent.trim());if(!own)return;
     const cs=getComputedStyle(e);if(cs.visibility==='hidden'||+cs.opacity<.99)return;
-    if(!(cs.color===mut||e.classList.contains('tdl')))return;
+    if(!(cs.color===mut||e.matches('.tdl,.lgd .lg,.cal .t.ex')))return;
     const r=e.getBoundingClientRect();if(!r.width||!r.height)return;
     const g=bgOf(e),l1=lum(rgb(cs.color)),l2=lum(g);const ratio=(Math.max(l1,l2)+.05)/(Math.min(l1,l2)+.05);
     out.push([(e.className&&e.className.baseVal===undefined?e.className:e.tagName)+'',(e.textContent||'').trim().slice(0,10),+ratio.toFixed(2),'rgb('+g.join(',')+')'])});
