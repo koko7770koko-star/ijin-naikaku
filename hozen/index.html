@@ -7031,6 +7031,7 @@ function v16Alerts(add){
   const wait=(S.works||[]).filter(w=>w.status==='承認待ち').length;if(wait)add('warn',`承認待ちの作業 ${wait}件`,"go('works',{wkF:'承認待ち'})");
   (S.works||[]).filter(w=>['承認済み','承認待ち','起案','実施中','保留'].includes(w.status)&&(w.endDate||w.date)<TODAY).forEach(w=>add('warn',`予定日を過ぎた作業（${w.status}）：${w.title}`,`editWork('${w.id}')`));
   const low=(S.parts||[]).filter(p=>p.min!==''&&p.qty<=p.min);if(low.length)add('warn',`在庫不足 ${low.length}品目：${low.slice(0,3).map(p=>p.name).join('、')}`,"go('stock',{stTab:'parts',ptLow:1,ptQ:''})");
+  {const qn=[...new Set([...staffAll(),...Object.keys(S.quals||{})])].map(n=>qualExpWarn(n)),qc=qn.filter(w=>w.length).length;if(qc)add(qn.some(w=>w.some(x=>x.left<0))?'ng':'warn',`資格の期限 ${qc}人（60日以内・切れ）`,"go('staff')")}
   (S.tools||[]).forEach(t=>{if(t.calDue&&t.calDue<TODAY)add('ng',`測定器「${t.name}」の校正期限切れ（${slash(t.calDue)}）`,"go('stock',{stTab:'tools'})");else if(t.calDue&&diffD(t.calDue,TODAY)<=30)add('warn',`測定器「${t.name}」の校正期限まであと${diffD(t.calDue,TODAY)}日`,"go('stock',{stTab:'tools'})");
     const l=t.loans.find(x=>!x.back&&x.due&&x.due<TODAY);if(l)add('warn',`「${t.name}」の返却予定日を過ぎています（${l.to}）`,"go('stock',{stTab:'tools'})")});
   (S.equipment||[]).filter(e=>e.status!=='廃止').forEach(e=>recommendFor(e.id).filter(r=>r.lv==='ng'&&!r.text.startsWith('異常「')).slice(0,2).forEach(r=>add('warn',`${eqLabel(e)}：${r.text}`,`go('equipDetail',{eq:'${e.id}'})`)));
