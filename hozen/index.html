@@ -3332,7 +3332,7 @@ function delDef(kind,id){
 
 /* 設備（第4段階の設備台帳）との関連付け */
 const equipName=id=>((S.equipment||[]).find(e=>e.id===id)||{}).name||'';
-function equipPickFilter(inp){const sel=inp.nextElementSibling;if(!sel||sel.tagName!=='SELECT')return;const q=norm(inp.value||''),cur=sel.value;sel.innerHTML='<option value="">（設備を指定しない）</option>'+(S.equipment||[]).filter(e=>e.id===cur||!q||norm((e.code||'')+' '+e.name+' '+(e.place||'')).includes(q)).map(e=>`<option value="${e.id}" ${e.id===cur?'selected':''}>${esc(e.code?e.code+' ':'')}${esc(e.name)}</option>`).join('');sel.value=cur}
+function equipPickFilter(inp){const sel=inp.nextElementSibling;if(!sel||sel.tagName!=='SELECT')return;const q=sFold(norm(inp.value||'')),cur=sel.value;sel.innerHTML='<option value="">（設備を指定しない）</option>'+(S.equipment||[]).filter(e=>e.id===cur||!q||sFold(norm((e.code||'')+' '+e.name+' '+(e.place||''))).includes(q)).map(e=>`<option value="${e.id}" ${e.id===cur?'selected':''}>${esc(e.code?e.code+' ':'')}${esc(e.name)}</option>`).join('');sel.value=cur}
 function equipSelect(cur,on){const E=S.equipment||[];return (E.length>30?`<input type="search" class="eqfind" aria-label="設備を名前で探す" placeholder="設備を探す（名前・番号の一部）" oninput="equipPickFilter(this)" style="margin-bottom:4px">`:'')+`<select onchange="${on}"><option value="">（設備を指定しない）</option>${E.map(e=>`<option value="${e.id}" ${e.id===cur?'selected':''}>${esc(e.code?e.code+' ':'')}${esc(e.name)}</option>`).join('')}</select>`}
 
 /* ---------- 7d 設備台帳 ---------- */
@@ -4853,7 +4853,7 @@ function locEquip(id){const l=locById(id);if(!l)return;const E=(S.equipment||[])
   if(!E.length){openModal(`<h3>🏭 ${esc(locPath(id))} の設備</h3><div class="muted">設備台帳にまだ設備がありません。ここに置く設備を登録できます。</div>${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="closeModal(true);V.eqNewLoc='${id}';editEquip()">＋ ここに設備を登録</button>`)}`);return}
   E.sort((a,b)=>(b.locId===id)-(a.locId===id)||(!a.locId?-1:0)-(!b.locId?-1:0)||String(a.code||a.name).localeCompare(String(b.code||b.name),'ja',{numeric:true}));
   openModal(`<h3>🏭 ${esc(locPath(id))} の設備</h3><div class="muted" style="font-size:12px">チェックを入れた設備をここに結びつけます。外すと「場所未設定」になります（設備は消えません）。</div>
-    ${E.length>8?`<input id="le_q" type="search" placeholder="名前・番号で探す" style="margin-top:6px" oninput="const q=norm(this.value).toLowerCase();document.querySelectorAll('#le_list label').forEach(x=>x.style.display=!q||norm(x.textContent).toLowerCase().includes(q)?'':'none')">`:''}
+    ${E.length>8?`<input id="le_q" type="search" placeholder="名前・番号で探す" style="margin-top:6px" oninput="const q=sFold(norm(this.value));document.querySelectorAll('#le_list label').forEach(x=>x.style.display=!q||sFold(norm(x.textContent)).includes(q)?'':'none')">`:''}
     <div id="le_list" style="margin-top:6px;max-height:50vh;overflow-y:auto">${E.map(e=>`<label class="chkl" style="margin:2px 0;display:flex;gap:6px;align-items:flex-start;min-height:44px"><input type="checkbox" value="${e.id}" ${e.locId===id?'checked':''}><span style="min-width:0;overflow-wrap:anywhere">${esc(eqLabel(e))}<br><small class="muted">${e.locId===id?'ここ':e.locId&&locById(e.locId)?'今：'+esc(locPath(e.locId)):'場所未設定'}</small></span></label>`).join('')}</div>
     <button class="btn sec wide" style="min-height:44px;margin-top:8px" onclick="closeModal(true);V.eqNewLoc='${id}';editEquip()">＋ 新しい設備をここに登録</button>
     ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">やめる</button><button class="btn" onclick="applyLocEquip('${id}')">決める</button>`)}`)}
