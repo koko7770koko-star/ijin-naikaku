@@ -180,6 +180,8 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .msetlinks{flex-wrap:wrap}.msetlinks>.btn{flex:1 1 auto;white-space:nowrap}
 /* 設定の CSV・設備の場所の下のボタン（kwrow）：「異常案/件」「設備台/帳」のように言葉の途中で割れないよう、言葉の切れ目（：・（）でだけ折り返し、入らなければ次の行へ */
 .row.csvrow>button.btn.grow,.row.kwrow>button.btn.grow{flex:1 1 auto;word-break:keep-all;overflow-wrap:break-word}
+.btn.kw{word-break:keep-all;overflow-wrap:break-word;min-width:min(min-content,100%)}
+html[data-fs=l] .ptabs button,html[data-fs=xl] .ptabs button{word-break:keep-all;overflow-wrap:anywhere}
 /* 文字「大」「特大」：マスが狭く勤務者の名前が「職…」に切れるので、切らずに折り返す（hz-cal-crew-xl） */
 html[data-fs=l] .cal .wc .w,html[data-fs=xl] .cal .wc .w{white-space:normal;word-break:break-all;overflow:visible;text-overflow:clip;line-height:1.15;padding:0 1px;text-align:center}
 .cal .w.a{background:var(--a-bg);color:var(--a)}.cal .w.b{background:var(--b-bg);color:var(--b)}.cal .w.d{color:var(--d)}.cal .w.ng{background:var(--ng-bg);color:var(--ng)}
@@ -2516,11 +2518,11 @@ function vYear(){
   const fy=V.fy,mk=S.marks[fy]||{},curIdx=fyOf(now.getFullYear(),now.getMonth()+1)===fy?idxOf(now.getMonth()+1):-1;
   let h=mnav(`${fy}年度`,'V.fy--;render()','V.fy++;render()');
   h+=`<div class="card"><h2>年間点検計画 <span class="muted">${fy}/4〜${fy+1}/3</span></h2>
-    <div class="noprint"><div class="row" style="margin-bottom:8px">${fileBtn('📷 写真から追加','ocrItems','sec sm grow')}<button class="btn sm grow" onclick="editItem()">＋ 項目追加</button></div>
+    <div class="noprint"><div class="row" style="margin-bottom:8px">${fileBtn('📷 写真から<wbr>追加','ocrItems','sec sm grow kw')}<button class="btn sm grow" onclick="editItem()">＋ 項目追加</button></div>
     <button class="btn sm wide" onclick="genPlan(${fy})">⚙ 周期から予定を自動作成</button>
     ${curIdx>=0?'<button class="btn sm sec wide" style="margin-top:8px" onclick="yearToNow()">📍 今月の列へ</button>':''}
     <div class="muted" style="margin:10px 0 8px">マスをタップ：空 → ◯予定 → ●実施済み → 空　／　長押し・右クリックで「延」（延期）　／　項目名タップで編集　／　月（見出し）タップでその月のカレンダー・盤の点検へ</div>
-    <button class="btn sm wide ${_mkEnji?'':'sec'}" id="enjiBtn" onclick="toggleEnji()">${_mkEnji?'✔ 延期モード中（マスをタップ＝延期／解除）　タップで終了':'延期モード（マスをタップして「延」を付ける）'}</button>
+    <button class="btn sm wide kw ${_mkEnji?'':'sec'}" id="enjiBtn" onclick="toggleEnji()">${_mkEnji?'✔ 延期モード中（マスをタップ＝延期／解除）　タップで終了':'延期モード（マスを<wbr>タップして<wbr>「延」を<wbr>付ける）'}</button>
     <button class="btn sm sec wide" style="margin-top:8px" onclick="window.print()">🖨 年間計画を印刷（A4 横）</button></div>`;
   if(!S.items.length)return h+`<div class="empty">まだ項目がありません。「📷 写真から追加」で点検表や計画表を撮ると、点検名が自動で入ります。</div></div>`;
   // 絞り込み（画面だけの状態 V.yrCat・V.yrNow。保存しない）：分類・「今月に ◯ のある項目だけ」
@@ -4075,7 +4077,7 @@ function vDailyRep(){
   const emptyDay=!Object.keys(r).length&&!ts.length&&!(S.meas||[]).some(m=>m.date===ds)&&!h&&!(S.dnotes||{})[ds],AUTO='<span class="srcmark" style="font-weight:400;font-size:11px;color:inherit;opacity:.8">（記録から自動）</span>',HAND='<span class="srcmark" style="font-weight:400;font-size:11px;color:inherit;opacity:.8">（手で入力）</span>';
   return mnav(mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div>
     <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">特記事項（日報に印刷）</label><button class="btn sec sm" style="min-height:44px" onclick="aiDailyNote('${ds}')">🤖 下書き</button></div>
-    <button class="btn sec wide" id="dnDraft" style="min-height:44px;margin-top:6px" onclick="addDnoteDraft('${ds}')">📝 今日の記録から入れる（ネット不要・あとで直せます）</button>
+    <button class="btn sec wide kw" id="dnDraft" style="min-height:44px;margin-top:6px" onclick="addDnoteDraft('${ds}')">📝 今日の記録から<wbr>入れる（ネット<wbr>不要・<wbr>あとで<wbr>直せます）</button>
     <textarea maxlength="2000" onchange="setDnote('${ds}',this.value)">${esc((S.dnotes||{})[ds]||'')}</textarea>
     ${(S.dnotes||{})[ds]?'':(()=>{const q=prevDnoteDate(ds);return q?`<button class="btn sec wide" id="dnCopy" style="min-height:44px;margin-top:6px" onclick="copyPrevDnote('${ds}')">⧉ ${md(q)}の特記事項を写す（あとで直せます）</button>`:''})()}</div>
   <div class="card"><div class="rep">${repHead('電気設備 日報',`${ds.replace(/-/g,'/')}（${WD[pd(ds).getDay()]}）`)}
@@ -4135,13 +4137,13 @@ function vSet(){
     <tr><th>内蔵のライブラリ</th><td>QRコードの作成（qrcode-generator、MITライセンス）</td></tr></table></div></div>
   <div class="card"><h2>データ・バックアップ</h2><div class="muted" style="margin-bottom:10px">データ（シフト表・写真を含む）はこの端末のブラウザ内に保存されます。${bkStateHTML()}<span style="display:none">前回の<b>完全な</b>バックアップの書き出し：<b>${st.lastBackup?slash(st.lastBackup):'なし'}</b>（7日以上空くとホームでお知らせ）<br>書き出したファイルの検査で確認できた日：<b>${st.lastVerified?slash(st.lastVerified):'なし'}</b>${st.lastVerifiedInfo?'（'+esc(st.lastVerifiedInfo)+'）':''}<br><span style="font-size:12px"></span>${st.lastBackupInfo?`<br>直近に保存したファイル：${esc(st.lastBackupInfo)}`:''}</span></div>
     ${bkAgeHTML()}
-    <button class="btn wide" style="margin-bottom:8px" onclick="driveBackup()">☁ Googleドライブに保存（共有メニュー）</button>
-    <div class="row"><button class="btn sec grow" onclick="backup()">⬇ ファイルに保存</button>${fileBtn('⬆ ファイルから復元','restore','sec grow','.json,application/json')}</div>
+    <button class="btn wide kw" style="margin-bottom:8px" onclick="driveBackup()">☁ Googleドライブに<wbr>保存（共有<wbr>メニュー）</button>
+    <div class="row"><button class="btn sec grow kw" onclick="backup()">⬇ ファイルに<wbr>保存</button>${fileBtn('⬆ ファイルから<wbr>復元','restore','sec grow kw','.json,application/json')}</div>
     <div class="muted" id="bkHelp" style="font-size:12px;margin-top:6px;line-height:1.5">保存＝予定・点検・設備・写真・シフト表をすべて1つのファイルに書き出します。復元＝今の記録をそのファイルの内容に置き換えます（直前の状態は「バックアップ履歴」に残ります）。</div>
-    <div class="row" style="margin-top:8px">${fileBtn('🔍 ②保存したファイルの検査','verifyBackupFile','sec grow','.json,application/json')}</div>
+    <div class="row" style="margin-top:8px">${fileBtn('🔍 ②保存した<wbr>ファイルの<wbr>検査','verifyBackupFile','sec grow kw','.json,application/json')}</div>
     <div class="row" style="margin-top:8px">${fileBtn('🧪 ③ 復元テスト','restoreTest','sec grow','.json,application/json')}</div>
-    <div class="row" style="margin-top:8px"><button class="btn sec grow" onclick="showGenerations()">🕘 バックアップ履歴</button><button class="btn sec grow" onclick="dataCheck()">🩺 データ点検</button></div>
-    <div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="showOpLog()">📜 操作ログ（${(S.opLog||[]).length}件）</button><button class="btn sec sm grow" onclick="manualSnapshot()">📌 今の状態を履歴に保存</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn sec grow kw" onclick="showGenerations()">🕘 バックアップ<wbr>履歴</button><button class="btn sec grow kw" onclick="dataCheck()">🩺 データ<wbr>点検</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="showOpLog()">📜 操作ログ（${(S.opLog||[]).length}件）</button><button class="btn sec sm grow kw" onclick="manualSnapshot()">📌 今の状態を<wbr>履歴に<wbr>保存</button></div>
     <div class="muted" style="margin-top:6px">記録は本体とは別に「予備保存」（端末内の二重保存）にも自動で残します。本体の保存に失敗したときは、次に開いたときに予備保存から戻せます。</div>
     <div class="row csvrow" style="margin-top:8px"><button class="btn sec sm grow" onclick="exportCsv()">CSV：予定・実績</button><button class="btn sec sm grow" onclick="exportAllDaily()">CSV：日常点検</button></div>
     <div class="row csvrow" style="margin-top:8px"><button class="btn sec sm grow" onclick="exportIssuesCsv()">CSV：異常案件</button><button class="btn sec sm grow" onclick="exportHistoryCsv()">CSV：修正履歴（全件）</button><button class="btn sec sm grow" onclick="exportEquipCsv()">CSV：設備台帳・修理履歴</button></div>
@@ -5520,7 +5522,7 @@ function vQrBan(){
   const cut=!V.qrAll&&all.length>QR_SHOW;V.qrCut=cut;const list=cut?all.slice(0,QR_SHOW):all;
   return `<div class="card noprint">${qrKindTabs()}<h2>🔳 盤のQRラベル</h2><div class="muted" style="margin-bottom:6px">盤に貼ると、「QRを読む」で盤の点検のその盤がすぐ開きます。QRの内容は「BAN:内部ID」で、この端末の記録を指すだけです（別の端末では、同じ記録を復元したときだけ開けます）。</div>
       ${qrSizeSeg()}<div class="grid2"><div><label class="f">場所で絞り込み</label><select onchange="V.qrLoc=this.value;V.qrBanSel=null;V.qrAll=false;render()">${locOptions(loc)}</select></div><div><label class="f">枚数</label><div style="padding:8px 0">${all.length}枚${cut?`（先頭${QR_SHOW}枚を表示）`:''}</div></div></div>
-      <div class="row" style="margin-top:8px"><button class="btn grow" style="min-height:44px" onclick="qrPrint()">🖨 印刷${cut?`（全${all.length}枚）`:''}</button><button class="btn sec grow" style="min-height:44px" onclick="qrScan()">📷 QRを読む</button>${sel?`<button class="btn sec sm" style="min-height:44px" onclick="V.qrBanSel=null;render()">全件</button>`:''}</div></div>
+      <div class="row" style="margin-top:8px"><button class="btn grow" style="min-height:44px" onclick="qrPrint()">🖨 印刷${cut?`（全${all.length}枚）`:''}</button><button class="btn sec grow kw" style="min-height:44px" onclick="qrScan()">📷 QRを読む</button>${sel?`<button class="btn sec sm" style="min-height:44px" onclick="V.qrBanSel=null;render()">全件</button>`:''}</div></div>
     <div class="qrsheet ${V.qrSz==='s'?'qs-s':''}">${list.map(l=>`<div class="qrl" data-ban="${l.id}"><div class="qri">${qrSvg(qrBanText(l),3)}</div><div class="qrt"><b>${esc(l.name)}</b><div>盤の点検</div><small>${esc(locPath(l.parent))}</small></div></div>`).join('')||emptyBox('盤がありません')}</div>`;
 }
 function qrPrint(){if(V.qrCut){V.qrAll=true;render()}setTimeout(()=>window.print(),V.qrCut?50:0)}
@@ -5534,7 +5536,7 @@ function vQr(){
   const cut=!V.qrAll&&all.length>QR_SHOW;V.qrCut=cut;const list=cut?all.slice(0,QR_SHOW):all;
   return `<div class="card noprint">${qrKindTabs()}<h2>🔳 QRラベル</h2><div class="muted" style="margin-bottom:6px">設備IDのQRコードを印刷して設備に貼ると、「QRを読む」で設備カルテを開けます。QRの内容は「EQ:設備ID」です（設備IDが空のときは内部ID）。</div>
       ${qrSizeSeg()}<div class="grid2"><div><label class="f">場所で絞り込み</label><select onchange="V.qrLoc=this.value;V.qrSel=null;V.qrAll=false;render()">${locOptions(loc)}</select></div><div><label class="f">枚数</label><div style="padding:8px 0">${all.length}枚${cut?`（先頭${QR_SHOW}枚を表示）`:''}</div></div></div>
-      <div class="row" style="margin-top:8px"><button class="btn grow" onclick="qrPrint()">🖨 印刷${cut?`（全${all.length}枚）`:''}</button><button class="btn sec grow" onclick="qrScan()">📷 QRを読む</button>${sel?`<button class="btn sec sm" onclick="V.qrSel=null;render()">全件</button>`:''}</div></div>
+      <div class="row" style="margin-top:8px"><button class="btn grow" onclick="qrPrint()">🖨 印刷${cut?`（全${all.length}枚）`:''}</button><button class="btn sec grow kw" onclick="qrScan()">📷 QRを読む</button>${sel?`<button class="btn sec sm" onclick="V.qrSel=null;render()">全件</button>`:''}</div></div>
     <div class="qrsheet ${V.qrSz==='s'?'qs-s':''}">${list.map(e=>`<div class="qrl"><div class="qri">${qrSvg(qrText(e),3)}</div><div class="qrt"><b>${esc(e.code||'')}</b><div>${esc(e.name)}</div><small>${esc(locPath(e.locId)||e.place||'')}</small></div></div>`).join('')||emptyBox('設備がありません')}</div>`;
 }
 let QR_STREAM=null;
@@ -6060,7 +6062,7 @@ function vPlan(){
   let h=tabs16('plTab',[['legal','点検期限'],['renew','更新計画'],['measdue','測定の周期']]);
   if(t==='legal'){
     const D=deadlines(),grp=k=>D.filter(x=>(x.it.legal||'')===k);
-    h+=`<div class="row noprint" style="margin-bottom:8px"><button class="btn sec sm grow" onclick="go('year')">📅 年間計画を開く</button><button class="btn sec sm grow" onclick="go('month')">🗓 カレンダー</button></div>`;
+    h+=`<div class="row noprint" style="margin-bottom:8px"><button class="btn sec sm grow kw" onclick="go('year')">📅 年間計画を<wbr>開く</button><button class="btn sec sm grow" onclick="go('month')">🗓 カレンダー</button></div>`;
     for(const [k,l] of [['法定','⚖ 法定点検'],['社内','🏥 社内（保安規程など）'],['自主','🔧 自主点検'],['','区分 未設定']]){const L=grp(k);if(L.length||k==='法定')h+=card(`${l} <span class="muted">${L.length}件</span>`,L.length?L.map(deadlineRow).join(''):emptyBox(k==='法定'?'点検項目の編集で「区分：法定」を設定すると表示されます':''))}
   }else if(t==='renew'){
     const fy=fyNow(),years=[...Array(11)].map((_,k)=>fy+k);
@@ -6339,7 +6341,7 @@ function vWorkSheet(){
   const from=V.wsFrom||TODAY,to=addD(from,13),L=(S.works||[]).filter(w=>w.date<=to&&(w.endDate||w.date)>=from&&w.status!=='中止').sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
   return `<div class="noprint row" style="margin-bottom:8px;flex-wrap:wrap;gap:6px"><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=addD('${from}',-14);render()">‹ 前の2週</button><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=TODAY;render()">今日</button><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=addD('${from}',14);render()">次の2週 ›</button><input type="date" class="grow" value="${from}" onchange="if(this.value){V.wsFrom=this.value;render()}"><button class="btn grow" style="min-height:44px" onclick="window.print()">🖨 印刷</button><button class="btn sec" style="min-height:44px" onclick="shareReport()">📤 共有</button></div>
   <div class="rep"><h1 style="text-align:center;font-size:18px">作業予定表（${slash(from)}〜${slash(to)}）</h1><table><thead><tr><th>日付</th><th>時間</th><th>作業</th><th>担当・協力会社</th><th>勤務</th><th>状態</th></tr></thead><tbody>
-  ${L.map(w=>{const o=crewDay(w.date);return `<tr><td style="white-space:nowrap">${md(w.date)}${holName(w.date)?'<small class="hlb">祝</small>':''}${w.endDate&&w.endDate!==w.date?'〜<br>'+md(w.endDate):''}</td><td style="white-space:nowrap">${esc(w.start)}〜<br>${esc(w.end)}</td><td>${esc(w.no)} ${esc(w.title)}${w.outage.on?'【停電】':''}</td><td>${w.staff.map(n=>`<span style="white-space:nowrap">${esc(n)}</span>`).join('、')}${w.vendor?'<br>'+esc(w.vendor):''}</td><td style="font-size:11px">${o?`<span style="white-space:nowrap">A:${esc(o.A.join('・'))}</span><br><span style="white-space:nowrap">B:${esc(o.B.join('・'))}</span>`:''}</td><td style="white-space:nowrap">${esc(w.status)}</td></tr>`}).join('')||'<tr><td colspan="6">予定はありません</td></tr>'}</tbody></table></div>${L.length?'':`<div class="noprint card"><div class="muted" style="margin-bottom:8px">この2週間に作業の予定はありません。前後の2週間を見るか、予定を足してください。</div><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sec sm grow" style="min-height:44px" onclick="go('month')">📅 カレンダーで予定を足す</button><button class="btn sec sm grow" style="min-height:44px" onclick="go('works')">📝 作業指示書を作る</button></div></div>`}`;
+  ${L.map(w=>{const o=crewDay(w.date);return `<tr><td style="white-space:nowrap">${md(w.date)}${holName(w.date)?'<small class="hlb">祝</small>':''}${w.endDate&&w.endDate!==w.date?'〜<br>'+md(w.endDate):''}</td><td style="white-space:nowrap">${esc(w.start)}〜<br>${esc(w.end)}</td><td>${esc(w.no)} ${esc(w.title)}${w.outage.on?'【停電】':''}</td><td>${w.staff.map(n=>`<span style="white-space:nowrap">${esc(n)}</span>`).join('、')}${w.vendor?'<br>'+esc(w.vendor):''}</td><td style="font-size:11px">${o?`<span style="white-space:nowrap">A:${esc(o.A.join('・'))}</span><br><span style="white-space:nowrap">B:${esc(o.B.join('・'))}</span>`:''}</td><td style="white-space:nowrap">${esc(w.status)}</td></tr>`}).join('')||'<tr><td colspan="6">予定はありません</td></tr>'}</tbody></table></div>${L.length?'':`<div class="noprint card"><div class="muted" style="margin-bottom:8px">この2週間に作業の予定はありません。前後の2週間を見るか、予定を足してください。</div><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sec sm grow kw" style="min-height:44px" onclick="go('month')">📅 カレンダーで<wbr>予定を<wbr>足す</button><button class="btn sec sm grow kw" style="min-height:44px" onclick="go('works')">📝 作業指示書を<wbr>作る</button></div></div>`}`;
 }
 function exportWorksCsv(){download(`作業指示_${TODAY}.csv`,csvBlob([['作業番号','件名','種別','状態','作業日','終了日','開始','終了','設備','担当','協力会社','停電','費用','承認'],...(S.works||[]).map(w=>[w.no,w.title,w.kind,w.status,w.date,w.endDate,w.start,w.end,w.equipIds.map(equipName).join('、'),w.staff.join('、'),w.vendor,w.outage.on?'あり':'',w.cost,w.approvals.map(a=>a.by+':'+a.act).join(' / ')])]))}
 
@@ -7131,8 +7133,8 @@ function tabify(html,tabs,key,def){
     +tabs.map(([k])=>`<div class="tabpane" data-key="${key}" data-pane="${k}" style="${k===cur?'':'display:none'}">${panes[k].join('')||'<div class="empty">ありません</div>'}</div>`).join('');
 }
 function tabGo(key,k){V[key]=k;document.querySelectorAll(`.ptabs[data-key="${key}"] button`).forEach((b,i,all)=>b.classList.toggle('on',b.getAttribute('onclick').includes(`'${k}'`)));document.querySelectorAll(`.tabpane[data-key="${key}"]`).forEach(p=>p.style.display=p.dataset.pane===k?'':'none');scrollTo(0,0)}
-const SET_TABS=[['data','💾 データ',/データ・バックアップ/],['basic','⚙ 基本',/基本情報|選択肢|棟と階|文字の大きさ/],['items','✏️ 点検項目',/日常点検の項目|数値の項目|確認（○×）/],['link','☀ 天気・AI・通信',/写真読み取り|天気|ネット接続/]];
-const EQ_TABS=[['ov','概要',/設備カルテ|健全度|更新計画|点検の推奨/],['rec','履歴',/時系列|故障・修理履歴|異常案件|作業・点検の実績/],['insp','点検・測定',/点検項目と期限|日常点検の記録|測定記録/],['rel','作業・部品・図面',/作業指示|予備品|図面/]];
+const SET_TABS=[['data','💾 データ',/データ・バックアップ/],['basic','⚙ 基本',/基本情報|選択肢|棟と階|文字の大きさ/],['items','✏️ 点検項目',/日常点検の項目|数値の項目|確認（○×）/],['link','☀ 天気・<wbr>AI・<wbr>通信',/写真読み取り|天気|ネット接続/]];
+const EQ_TABS=[['ov','概要',/設備カルテ|健全度|更新計画|点検の推奨/],['rec','履歴',/時系列|故障・修理履歴|異常案件|作業・点検の実績/],['insp','点検・測定',/点検項目と期限|日常点検の記録|測定記録/],['rel','作業・<wbr>部品・<wbr>図面',/作業指示|予備品|図面/]];
 
 start();
 </script>
