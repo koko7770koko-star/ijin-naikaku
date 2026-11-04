@@ -66,6 +66,9 @@ h2 .muted{font-weight:400}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:var(--r-s);padding:11px 16px;font-size:15px;font-weight:600;background:var(--navy);color:#fff;cursor:pointer;text-align:center;white-space:nowrap}
 .btn.sec{background:#e9eff6;color:var(--navy)}
 .btn.ok{background:var(--ok-line)}
+@media screen{html:not(.night) .btn.ok{background:#2e7d3e}}
+/* 標準の明るさ：小さい補足文字の比を 4.5 以上に（hz-ok-contrast） */
+@media screen{html:not(.night) .quick .qs{color:#566170}html:not(.night) .badge:not(.ok):not(.ng):not(.warn){color:#566170}}
 .btn.red{background:#c00000}
 .btn.sm{padding:8px 12px;font-size:14px;min-height:44px}
 .btn.big{padding:15px 16px;font-size:17px;border-radius:12px}
