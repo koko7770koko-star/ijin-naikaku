@@ -254,7 +254,7 @@ table.yr th .yrmh{all:unset;display:block;box-sizing:border-box;min-height:44px;
 #undobar.on{display:flex}
 #undobar span{flex:1}
 #undobar button{border:0;background:none;color:#8fd1ff;font-weight:700;font-size:15px;padding:6px 8px;min-height:44px}
-@media print{#sysbar,#undobar{display:none!important}html{zoom:1!important}#app .item{break-inside:avoid;page-break-inside:avoid;margin-left:0;margin-right:0}#app .grp>b{break-after:avoid;page-break-after:avoid}}
+@media print{#sysbar,#undobar{display:none!important}html{zoom:1!important}#app .item{break-inside:avoid;page-break-inside:avoid;margin-left:0;margin-right:0}#app .grp>b{break-after:avoid;page-break-after:avoid}#app textarea{field-sizing:content;height:auto!important;min-height:0;overflow:visible;resize:none}.seg button{color:#bbb}.seg button[class*="on-"]{-webkit-print-color-adjust:exact;print-color-adjust:exact;outline:2px solid #333;outline-offset:-2px;font-weight:700}.seg button.on-ok{color:#1b5e20}.seg button.on-na{color:#333}}
 
 /* ---------- モーダル・通知 ---------- */
 .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:none;align-items:flex-end;justify-content:center}
@@ -2932,7 +2932,7 @@ function vDay(){
   // 夜勤で日付をまたいだ（0〜5時台に「今日」を開いている）とき：前日の夜勤の記録なら昨日に入れる、と案内する（表示だけ。日付を選ぶだけで記録の形は変えない）
   if(s===TODAY&&now.getHours()<6&&!((S.daily[addD(TODAY,-1)]||{}).done))h+=`<div class="al info noprint" id="dayCross" style="cursor:default;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="grow">いまは ${now.getHours()}時台です。<b>前日の夜勤の記録</b>なら、昨日（${md(addD(TODAY,-1))}）に入れてください。</span><button class="btn sm" style="min-height:44px" onclick="V.day=addD(TODAY,-1);render()">昨日の記録を開く</button></div>`;
   h+=`<div class="row noprint" style="margin:-4px 0 10px;flex-wrap:nowrap">${[[-1,'昨日'],[0,'今日'],[1,'明日']].map(([n,l])=>`<button class="btn ${addD(TODAY,n)===s?'':'sec'} sm grow" onclick="V.day=addD(TODAY,${n});render()">${l}</button>`).join('')}<button class="btn sec sm grow" onclick="go('dailyRep')">📄 日報</button></div>`;
-  h+=`<div class="quick">
+  h+=`<div class="quick noprint">
     <button class="btn ok full" onclick="quickOK()">✓ 異常なしで記録</button>
     <button class="btn sec" onclick="copyPrev()" ${prev?'':'disabled style="opacity:.5"'}><b>⧉</b>${prev?md(prev)+'と同じ':'前回と同じ'}</button>
     <button class="btn sec" onclick="voiceInput()"><b>🎤</b>音声で入力</button>
@@ -2941,7 +2941,7 @@ function vDay(){
   const I=dailyIssues(s);
   h+=`<div class="card"><div class="hd-row"><h2>日常点検</h2><span class="daysaved" id="daySaved">${daySavedHTML(s)}</span><span id="dayBadge">${dayBadge(s)}</span></div>
     ${crewTags(crewDay(s))}
-    <div class="row" style="margin-bottom:4px"><input type="date" value="${s}" onchange="if(isDate(this.value)){V.day=this.value;render()}" class="grow" style="width:auto">${s!==TODAY?'<button class="btn sec sm" onclick="V.day=TODAY;render()">今日</button>':''}</div>
+    <div class="row" style="margin-bottom:4px"><input type="date" value="${s}" onchange="if(isDate(this.value)){V.day=this.value;render()}" class="grow" style="width:auto">${s!==TODAY?'<button class="btn sec sm noprint" onclick="V.day=TODAY;render()">今日</button>':''}</div>
     ${dHas||dFl?`<div class="row noprint" style="margin:6px 0;flex-wrap:wrap;gap:6px">${dayLocSelects(dFl)}</div>${dFl?`<div class="muted" style="margin-bottom:6px">絞り込み中：場所の合わない・未設定の ${dHide} 件は隠れています（記録は残ります）</div>`:''}`:''}
     <div class="grid3">${nums.map((n,i)=>{
       const longN=nums.some(x=>(x.short||x.name).length>7); // 名前が長い項目があるときだけ、ラベルを2行まで出す（短い名前のときは今までどおり1行）
@@ -2954,17 +2954,17 @@ function vDay(){
       <div class="hint${v==null&&p?' tapprev':''}" id="h_${n.id}" ${v==null&&p?`onclick="useNumPrev('${n.id}')" title="タップで前回の値を入れる"`:''}>${numHint(s,n)}</div></div>`}).join('')}</div>
     <div id="dayAl">${dayAlerts(s)}</div>
     <div style="margin-top:6px">${chkDefs().filter(dOk).map(c=>{const v=(r.c||{})[c.id]||'';return `<div class="chk" data-ck="${c.id}"><div class="l">${esc(c.name)}${c.req?'<span style="color:var(--ng)">*</span>':''}</div><div class="seg">${[['○','on-ok'],['×','on-ng'],['－','on-na']].map(([x,cl])=>`<button class="${v===x?cl:''}" aria-label="${esc(c.name)}：${x==='○'?'良好':x==='×'?'異常':'対象外'}" aria-pressed="${v===x}" onclick="setCheck('${c.id}','${x}')">${x}</button>`).join('')}</div></div>`}).join('')}</div>
-    <div class="row" style="margin-top:10px"><span class="muted grow"><span style="color:var(--ng)">*</span>＝必須</span>${fileBtn('📎 写真を添付','addDayPhoto','sec sm','image/*')}</div>
+    <div class="row" style="margin-top:10px"><span class="muted grow"><span style="color:var(--ng)">*</span>＝必須</span><span class="noprint">${fileBtn('📎 写真を添付','addDayPhoto','sec sm','image/*')}</span></div>
     ${thumbs(r.photos,'rmDayPhoto')}
     <label class="f">点検者${!r.by&&nightCrew(s)?'（シフトから自動）':''}</label><input list="dl_by" value="${esc(r.by||nightCrew(s))}" maxlength="100" onchange="setText('by',this.value)">${staffList('dl_by')}
     <label class="f">備考（× の内容・処置）</label><textarea id="d_note" maxlength="1000" oninput="draftNote(this.value)" onchange="setText('note',this.value)">${esc(r.note||'')}</textarea>
-    <button class="btn ${r.done?'sec':''} big wide" style="margin-top:14px" onclick="finishDay()">${r.done?'✓ 完了済み（内容を確認）':'点検を完了する'}</button>
+    <button class="btn ${r.done?'sec':''} big wide noprint" style="margin-top:14px" onclick="finishDay()">${r.done?'✓ 完了済み（内容を確認）':'点検を完了する'}</button>
     ${r.done?`<div class="muted" style="margin-top:6px;text-align:center">完了：${esc(r.done==='移行'?'以前の版で記録':new Date(r.done).toLocaleString('ja-JP'))}${r.doneBy?'・'+esc(r.doneBy):''}${r.mod?'・完了後に修正あり':''}</div>`:''}
     ${judge(s)==='異常'?'<div class="muted" style="margin-top:6px">異常は「ホーム」の異常案件に自動で登録されます。</div>':''}
-    ${S.daily[s]&&(hasRec(S.daily[s])||S.daily[s].note||(S.daily[s].photos||[]).length||S.daily[s].done)?`<button class="btn sec sm" style="margin-top:12px;color:var(--ng)" onclick="delDay('${s}')">🗑 この日の記録を削除</button>`:''}
+    ${S.daily[s]&&(hasRec(S.daily[s])||S.daily[s].note||(S.daily[s].photos||[]).length||S.daily[s].done)?`<button class="btn sec sm noprint" style="margin-top:12px;color:var(--ng)" onclick="delDay('${s}')">🗑 この日の記録を削除</button>`:''}
     ${editLogHTML('daily',s)}</div>`;
   h+=handoverCard(s);
-  h+=`<div class="card"><h2>${pd(s).getMonth()+1}月の記録状況</h2><div id="dayGrid">${monthGrid(s)}</div>
+  h+=`<div class="card noprint"><h2>${pd(s).getMonth()+1}月の記録状況</h2><div id="dayGrid">${monthGrid(s)}</div>
     <div class="tags" style="margin-top:8px"><span class="tag" style="background:var(--ok-bg);color:var(--ok)">完了</span><span class="tag" style="background:#fff2c2;color:#8a5a00">入力中</span><span class="tag ng">異常</span><span class="tag" style="background:#eceff1;color:#c0261e">未実施</span><span class="tag" style="background:#fff;border:1px solid var(--line)">未入力</span></div></div>`;
   return h;
 }
@@ -3945,10 +3945,10 @@ function aiIssues(){
 function handoverOf(ds){return (S.handover||{})[ds]}
 function handoverCard(ds){
   const h=handoverOf(ds),prev=handoverOf(addD(ds,-1));
-  return `<div class="card"><div class="hd-row"><h2>📝 申し送り（引継ぎ）</h2><button class="btn sec sm" onclick="aiHandover('${ds}')">🤖 下書き</button></div>
+  return `<div class="card"><div class="hd-row"><h2>📝 申し送り（引継ぎ）</h2><button class="btn sec sm noprint" onclick="aiHandover('${ds}')">🤖 下書き</button></div>
     ${prev&&prev.text?`<div class="al info" style="white-space:pre-wrap"><b>前日（${md(addD(ds,-1))}）からの申し送り</b>${prev.by?'・'+esc(prev.by):''}\n${esc(prev.text)}</div>`:''}
     <textarea id="ho_text" maxlength="3000" style="min-height:110px" placeholder="次の勤務の人へ伝えること">${esc(h?h.text:'')}</textarea>
-    <div class="row" style="margin-top:8px"><span class="muted grow">${h&&h.at?'保存：'+esc(new Date(h.at).toLocaleString('ja-JP'))+(h.by?'・'+esc(h.by):''):'まだ保存していません'}</span><button class="btn sm" onclick="saveHandover('${ds}')">保存</button></div></div>`;
+    <div class="row" style="margin-top:8px"><span class="muted grow">${h&&h.at?'保存：'+esc(new Date(h.at).toLocaleString('ja-JP'))+(h.by?'・'+esc(h.by):''):'まだ保存していません'}</span><button class="btn sm noprint" onclick="saveHandover('${ds}')">保存</button></div></div>`;
 }
 function saveHandover(ds,text){
   const t=txt(text!=null?text:$('#ho_text').value,3000).trim();S.handover=S.handover||{};
