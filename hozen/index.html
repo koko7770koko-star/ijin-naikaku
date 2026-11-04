@@ -618,6 +618,8 @@ details.fold[open]>summary{margin-bottom:8px}
 /* 文字「特大」・幅 360px でも、設定のタブと AI の一覧が横にはみ出さない（長い名前は2行に） */
 .seg.tabs.ptabs:not(.istep){grid-template-columns:repeat(2,minmax(0,1fr))}
 .seg.tabs.ptabs:not(.istep) button{white-space:normal;min-width:0;line-height:1.2;padding:4px 6px}
+/* 文字「大」「特大」では、予備品・年間計画・診断などの上のタブも長い名前を2行にして、全部のタブが画面に収まるように（右端で切れない。hz-tabs-xl） */
+html[data-fs=l] .seg.tabs:not(.istep):not(.ptabs):not(.nightseg) button,html[data-fs=xl] .seg.tabs:not(.istep):not(.ptabs):not(.nightseg) button{white-space:normal;flex:1 1 auto;min-width:auto;line-height:1.2;padding:4px 4px;word-break:keep-all;overflow-wrap:break-word}
 .mitem>div{min-width:0;flex:1 1 auto}
 .mitem .aibadge{white-space:normal;max-width:100%}
 .mtile{text-align:left}.mtile .mt,.mtile .md{text-align:left}
