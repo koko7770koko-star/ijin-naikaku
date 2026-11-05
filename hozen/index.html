@@ -44,6 +44,7 @@ nav button b{font-size:22px;font-weight:400;line-height:1}
 html[data-fs=xl] nav button{font-size:10px;letter-spacing:-.03em;white-space:nowrap}
 html[data-fs=l] nav button{font-size:11px;white-space:nowrap}
 html[data-fs=l] #yrFlt>.row,html[data-fs=xl] #yrFlt>.row{flex-wrap:wrap!important}html[data-fs=l] #yrFlt select,html[data-fs=xl] #yrFlt select{flex:1 1 100%;min-width:0}
+html[data-fs=l] .dwgver,html[data-fs=xl] .dwgver{flex-wrap:wrap}html[data-fs=l] .dwgver select,html[data-fs=xl] .dwgver select{flex:1 1 100%;min-width:0}
 html[data-fs=l] .nwl,html[data-fs=xl] .nwl{display:inline-block;max-width:100%;overflow-wrap:anywhere}
 html[data-fs=l] .eqkb .btn,html[data-fs=xl] .eqkb .btn{white-space:normal!important;flex:1 1 40%;min-height:44px}
 nav button.on{color:var(--accent);font-weight:700}
@@ -7006,7 +7007,7 @@ function vDwg(){
   const d=dwgById(V.dwg);if(!d)return emptyBox('図面が見つかりません');
   const v=d.vers.find(x=>x.id===V.dwgVer)||d.vers.at(-1),latest=v===d.vers.at(-1),img=v&&/^image\//.test(v.type),mode=V.pinMode;
   return `<div class="card noprint"><div class="hd-row"><h2>${esc(d.name)}</h2><button class="btn sec sm" onclick="editDwg('${d.id}')">情報</button></div>
-    <div class="row"><select class="grow" onchange="V.dwgVer=this.value;render()">${d.vers.slice().reverse().map(x=>`<option value="${x.id}" ${x===v?'selected':''}>版 ${esc(x.ver)}（${slash(x.date).slice(2)}）${x===d.vers.at(-1)?' 最新':''}</option>`).join('')}</select><button class="btn sec sm" onclick="addDwgVer('${d.id}')">＋ 新しい版</button></div>
+    <div class="row dwgver"><select class="grow" onchange="V.dwgVer=this.value;render()">${d.vers.slice().reverse().map(x=>`<option value="${x.id}" ${x===v?'selected':''}>版 ${esc(x.ver)}（${slash(x.date).slice(2)}）${x===d.vers.at(-1)?' 最新':''}</option>`).join('')}</select><button class="btn sec sm" onclick="addDwgVer('${d.id}')">＋ 新しい版</button></div>
     ${!latest?'<div class="al warn">古い版を表示しています（最新ではありません）</div>':''}${v&&v.note?`<div class="meta">変更内容：${esc(v.note)}</div>`:''}
     ${img?`<div class="row" style="margin-top:6px"><button class="btn ${mode?'':'sec'} sm" onclick="V.pinMode=${!mode};render()">${mode?'✓ 置くモード':'📍 設備の印を置く'}</button><button class="btn sec sm" onclick="window.print()">🖨 印刷</button></div>${mode?'<div class="al noprint" style="margin-top:6px">図面をタップすると印を置けます。置いた印をタップすると外せます（元に戻せます）。もう一度ボタンを押すと終わります。</div>':''}`:`<button class="btn sec sm" style="margin-top:6px" data-n="${esc(d.name)}" onclick="openDoc('${v?v.file:''}',this.dataset.n)">📄 PDFを開く</button><div class="muted">PDFの図面には印を置けません。画像（写真・スキャン）で登録すると設備の印を置けます。</div>`}</div>
     ${img?`<div class="dwgz noprint"><button class="btn sec sm" onclick="V.dwgZ=Math.max(1,(V.dwgZ||1)-0.5);render()" aria-label="縮小">－</button><button class="btn sec sm" onclick="V.dwgZ=1;render()">全体</button><button class="btn sec sm" onclick="V.dwgZ=Math.min(4,(V.dwgZ||1)+0.5);render()" aria-label="拡大">＋</button><span class="muted">拡大 ${Math.round((V.dwgZ||1)*100)}%（拡大したら指でなぞって動かせます）</span></div>`:''}
