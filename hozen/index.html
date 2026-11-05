@@ -4170,7 +4170,7 @@ function vSet(){
     <div class="seg tabs nightseg" role="group" aria-label="画面の明るさ"><button type="button" class="${st.night==='on'?'':'on'}" style="min-height:48px" onclick="setNight('')">標準</button><button type="button" class="${st.night==='on'?'on':''}" style="min-height:48px" onclick="setNight('on')">🌙 夜間</button></div></div>
   <div class="card"><h2>文字の大きさ</h2><div class="muted sethelp" style="font-size:12px;margin-bottom:6px">画面の文字と部品を大きくします（印刷の大きさは変わりません）。</div>
     <div class="seg" role="group" aria-label="文字の大きさ">${FSCALES.map(([v,l])=>`<button type="button" class="${(st.fscale||'')===v?'on':''}" style="min-height:48px" onclick="setFScale('${v}')">${l}</button>`).join('')}</div></div>
-  <div class="card"><h2>基本情報（報告書に表示）</h2>${field('name','施設名','例：○○総合病院','報告書・印刷物の見出しに出ます')}${field('facType','施設の種類（AIへの指示に使います）','例：病院、工場、事務所ビル','AIに質問するときの前提になります')}${field('dept','担当部署','例：施設管理課 電気係','報告書の担当部署の欄に出ます')}${field('reporter','報告者','氏名','報告書の「報告者」欄に出ます')}${field('to','提出先','例：施設管理課長','報告書の「提出先」欄に出ます')}${field('operator','この端末を使う人（修正履歴に残る名前）','氏名','記録を直したとき「誰が直したか」に使います')}</div>
+  <div class="card"><h2>基本情報（報告書に表示）</h2>${field('name','施設名','例：○○総合病院','報告書・印刷物の見出しに出ます')}${field('facType','施設の種類（AIへの指示に使います）',fsPh('例：病院、工場、事務所ビル','例：病院、工場'),'AIに質問するときの前提になります')}${field('dept','担当部署','例：施設管理課 電気係','報告書の担当部署の欄に出ます')}${field('reporter','報告者','氏名','報告書の「報告者」欄に出ます')}${field('to','提出先','例：施設管理課長','報告書の「提出先」欄に出ます')}${field('operator','この端末を使う人（修正履歴に残る名前）','氏名','記録を直したとき「誰が直したか」に使います')}</div>
   <div class="card"><h2>棟と階</h2><div class="muted">棟の名前（自分で入れる）と各階（地下も）を一度に足します。既にある物は重ねません。</div><button class="btn sec wide" style="margin-top:8px" onclick="bldgWizard()">🏗 棟と階をまとめて作る</button></div>
   ${defsCard()}
   <div class="card"><h2>選択肢</h2><div class="muted">シフトの「メンバー」は自動で担当者・点検者の候補に入ります。ここにはそれ以外（委託業者など）を追加。</div>${list('staff','担当者・点検者（追加分）','点検・作業の担当者を選ぶ一覧に加わります')}${list('cats','分類','点検項目の「分類」の選択肢になります')}${list('kinds','区分','点検項目の「区分」の選択肢になります')}</div>
@@ -4178,8 +4178,8 @@ function vSet(){
     <div class="row"><span class="grow">APIキー：<b>${esc(maskKey(key))}</b></span>${key?'<button class="btn red sm" onclick="if(confirm(\'この端末からAPIキーを削除しますか？\')){setApiKey(\'\');render();toast(\'削除しました\')}">削除</button>':''}</div>
     <label class="f">${key?'新しいキーに入れ替える':'APIキーを入れる'}</label><input id="apikey" type="password" placeholder="sk-ant-..." autocomplete="off">
     <label class="f">保存のしかた</label><select id="apimode">
-      <option value="local" ${mode!=='session'?'selected':''}>この端末に保存する（次回も使える）</option>
-      <option value="session" ${mode==='session'?'selected':''}>ブラウザを閉じたら消す（毎回入力）</option></select>
+      <option value="local" ${mode!=='session'?'selected':''}>${fsPh('この端末に保存する（次回も使える）','この端末に保存')}</option>
+      <option value="session" ${mode==='session'?'selected':''}>${fsPh('ブラウザを閉じたら消す（毎回入力）','閉じたら消す')}</option></select>
     <div class="al warn" style="margin-top:10px"><b>⚠ APIキーの保存方式とリスク</b><br>
       このアプリはブラウザだけで動くため、キーを暗号化して守る方法がありません。<br>
       ・<b>この端末に保存する</b>：ブラウザの保存領域に平文で残ります。端末を触れる人、同じブラウザの開発者ツール、端末に入った不正なプログラムから読み取れます。端末をなくした・人に貸した場合は、すぐにAnthropicの管理画面でキーを無効にしてください。<br>
@@ -4188,10 +4188,10 @@ function vSet(){
       対策：このアプリ専用のキーを作り、管理画面で<b>使用上限額を低く</b>設定してください。完全に守るにはキーを持つ中継サーバーが必要で、このHTMLだけでは実現できません。</div>
     <label class="chkl"><input type="checkbox" id="apiack">上のリスクを理解しました</label>
     <button class="btn wide" style="margin-top:10px" onclick="saveKey()">保存</button>
-    <label class="f">モデル</label><select onchange="S.settings.model=this.value;save();toast('保存しました')">${[['claude-sonnet-5-5','Sonnet（標準・おすすめ）'],['claude-opus-5-5','Opus（高精度・高コスト）'],['claude-haiku-5-5','Haiku（速い・安い）']].map(([v,l])=>`<option value="${v}"${st.model===v?' selected':''}>${l}</option>`).join('')}</select>
+    <label class="f">モデル</label><select onchange="S.settings.model=this.value;save();toast('保存しました')">${[['claude-sonnet-5-5',fsPh('Sonnet（標準・おすすめ）','Sonnet（おすすめ）')],['claude-opus-5-5',fsPh('Opus（高精度・高コスト）','Opus（高精度）')],['claude-haiku-5-5',fsPh('Haiku（速い・安い）','Haiku（速い）')]].map(([v,l])=>`<option value="${v}"${st.model===v?' selected':''}>${l}</option>`).join('')}</select>
     <details style="margin-top:10px"><summary class="muted">接続方式（将来のサーバー経由に備えた設定）</summary>
-      <select onchange="setApiMode(this.value)"><option value="direct" ${st.apiMode!=='server'?'selected':''}>ブラウザから直接（APIキーをこの端末に保存）</option><option value="server" ${st.apiMode==='server'?'selected':''}>施設のサーバー経由（キーは端末に置かない）</option></select>
-      <input placeholder="https://（施設の中継サーバーのURL）" value="${esc(st.apiUrl||'')}" onchange="setApiUrl(this.value)" style="margin-top:6px">
+      <select onchange="setApiMode(this.value)"><option value="direct" ${st.apiMode!=='server'?'selected':''}>${fsPh('ブラウザから直接（APIキーをこの端末に保存）','直接（キーは端末）')}</option><option value="server" ${st.apiMode==='server'?'selected':''}>${fsPh('施設のサーバー経由（キーは端末に置かない）','施設のサーバー経由')}</option></select>
+      <input placeholder="${fsPh('https://（中継サーバーのURL）','https://')}" aria-label="施設の中継サーバーのURL" value="${esc(st.apiUrl||'')}" onchange="setApiUrl(this.value)" style="margin-top:6px">
       <div class="muted" style="font-size:12px">サーバー経由にすると、端末にAPIキーを置かずに使えます。中継サーバーは施設側で用意が必要です（このHTMLには含まれません）。送る形式は Claude API と同じです。<b>実際のサーバーでの動作は未検証です。</b></div></details>
     ${QN?`<div class="row" style="margin-top:10px"><span class="muted grow">電波待ち ${QN}件</span><button class="btn sm" onclick="processQueue(true)">今すぐ読み取る</button></div>`:''}</div>
   ${wxSettingsCard()}

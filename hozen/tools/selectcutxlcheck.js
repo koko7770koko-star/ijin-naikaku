@@ -15,17 +15,22 @@ const LIST=process.argv.includes('--list');
   S.settings.fscale=f;save();applyFScale()},fs);
  const views=await p.evaluate(()=>Object.keys(VIEWS));
  for(const v of views){
-  const r=await p.evaluate(v=>{try{const a={equipDetail:{eq:'q0'}}[v]||{};go(v,a)}catch(e){return {err:String(e)}}
+  // 画面の中のタブ（#app .tabs の各ボタン）も 1 つずつ押して測る（hz-xl-select-tabs）。-1 はタブを押す前
+  const nTab=await p.evaluate(v=>{try{const a={equipDetail:{eq:'q0'}}[v]||{};go(v,a)}catch(e){return 0}return Math.min(8,document.querySelectorAll('#app .tabs button').length)},v);
+  for(let ti=-1;ti<nTab;ti++){
+  const r=await p.evaluate(([v,ti])=>{try{const a={equipDetail:{eq:'q0'}}[v]||{};go(v,a);if(ti>=0){const b=document.querySelectorAll('#app .tabs button')[ti];if(!b)return {out:[],sw:0};b.click()}}catch(e){return {err:String(e)}}
    const out=[];for(const s of document.querySelectorAll('#app select')){if(!s.getClientRects().length||s.selectedIndex<0)continue;const cs=getComputedStyle(s),cv=document.createElement('canvas').getContext('2d');cv.font=cs.fontWeight+' '+cs.fontSize+' '+cs.fontFamily;
     const t=s.options[s.selectedIndex].text,tw=cv.measureText(t).width,room=s.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-16;if(tw>room+1)out.push('「'+t+'」（'+Math.round(tw)+'>'+Math.round(room)+'）')}
    // 入力欄の例（placeholder）も同じ測り方で（hz-xl-works-search：作業管理の「…協力」が切れていた）
    for(const s of document.querySelectorAll('#app input[placeholder]')){if(!s.getClientRects().length||s.value)continue;const cs=getComputedStyle(s),cv=document.createElement('canvas').getContext('2d');cv.font=cs.fontWeight+' '+cs.fontSize+' '+cs.fontFamily;
     const t=s.placeholder,tw=cv.measureText(t).width,room=s.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-(s.type==='search'?16:0);if(tw>room+1)out.push('入力欄の例「'+t+'」（'+Math.round(tw)+'>'+Math.round(room)+'）')}
-   return {out,sw:document.documentElement.scrollWidth}},v);
-  if(r.err){errs.push(tag+v+'：開けない '+r.err);continue}
-  if(r.sw>w+1)errs.push(tag+v+'：はみ出す '+r.sw);
+   const tb=ti>=0?document.querySelectorAll('#app .tabs button')[ti]:null;return {out,sw:document.documentElement.scrollWidth,tab:tb?tb.textContent.trim().slice(0,10):''}},[v,ti]);
+  const vt=v+(r.tab?'「'+r.tab+'」':'');
+  if(r.err){errs.push(tag+vt+'：開けない '+r.err);continue}
+  if(r.sw>w+1)errs.push(tag+vt+'：はみ出す '+r.sw);
   // 標準の文字でも 360px で入力欄の例は切れない（hz-std-search-ph）
-  for(const x of r.out)if(fs||LIST||x.startsWith('入力欄'))errs.push(tag+v+'：'+(x.startsWith('入力欄')?'':'選び欄 ')+x+' が切れる');
+  for(const x of r.out)if(fs||LIST||x.startsWith('入力欄'))errs.push(tag+vt+'：'+(x.startsWith('入力欄')?'':'選び欄 ')+x+' が切れる');
+  }
  }
  await c.close()}
  console.log(errs.join('\n')||'NO ERRORS');await b.close();process.exit(errs.length?1:0)})();
