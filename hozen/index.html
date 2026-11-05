@@ -655,6 +655,7 @@ html[data-fs=l] .seg.tabs:not(.istep):not(.ptabs):not(.nightseg) button,html[dat
 .mitem>div{min-width:0;flex:1 1 auto}
 .mitem .aibadge{white-space:normal;max-width:100%}
 /* 文字「大」「特大」：一覧の行（AI支援など）の題が言葉の途中で割れないよう、絵と余白を詰めて幅を広げ、題と札は言葉のまとまりで折る（hz-xl-review-9） */
+html[data-fs=l] #eqQ,html[data-fs=xl] #eqQ{text-overflow:ellipsis} /* 検索欄の説明が字の途中で切れないよう … で省く（hz-l-review-2） */
 html[data-fs=l] .mitem,html[data-fs=xl] .mitem{gap:8px;padding:14px 10px 14px 12px}
 html[data-fs=l] .mitem .ic,html[data-fs=xl] .mitem .ic{font-size:22px;width:26px;flex:none}
 html[data-fs=l] .mitem .ar,html[data-fs=xl] .mitem .ar{flex:none}
