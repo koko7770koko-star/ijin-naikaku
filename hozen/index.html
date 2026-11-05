@@ -660,6 +660,8 @@ html[data-fs=l] .mitem .ds,html[data-fs=xl] .mitem .ds{word-break:normal}
 /* 大・特大：見出しの題は言葉のまとまりで折り、横の小さなボタンは入らなければ下へ（「人/員・資格」の割れ）／予備品の行は −/＋ を下の段へ（題が1文字幅になるのを防ぐ）hz-xl-review-7 */
 html[data-fs=l] .hd-row,html[data-fs=xl] .hd-row{flex-wrap:wrap}
 html[data-fs=l] .hd-row h2,html[data-fs=xl] .hd-row h2{word-break:keep-all;overflow-wrap:anywhere;flex:1 1 9em}
+/* 月報・年報・日報の上の説明文：大・特大では横幅いっぱいに置き、ボタンは下の段へ（説明が細い列で縦に割れる） */
+html[data-fs=l] .card.noprint>.row:first-child>.muted.grow,html[data-fs=xl] .card.noprint>.row:first-child>.muted.grow{flex:1 1 100%}
 html[data-fs=l] .item:has(>.pqb),html[data-fs=xl] .item:has(>.pqb){flex-wrap:wrap}
 html[data-fs=l] .item:has(>.pqb)>.bd,html[data-fs=xl] .item:has(>.pqb)>.bd{flex:1 1 8em;min-width:0}
 html[data-fs=l] .item>.pqb,html[data-fs=xl] .item>.pqb{flex:1 0 100%;justify-content:flex-end}
