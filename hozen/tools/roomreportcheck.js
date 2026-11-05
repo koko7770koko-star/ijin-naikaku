@@ -15,8 +15,9 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  // 階の順は「設備の場所」の並び（盤の点検の画面と同じ。並べ替えの ord が無ければ 1階→3階）。2026-11-03 応援係：画面と紙で順がそろうように
  if(JSON.stringify(T.heads)!==JSON.stringify(['A棟 › 1階','A棟 › 3階 › 第1電気室','A棟 › 3階 › 第2電気室']))bad.push('見出し行 '+JSON.stringify(T.heads));
  if(!T.rows2.some(r=>r.includes('3階 › 第1電気室|2'))||!T.rows2.some(r=>r.includes('1階|1')))bad.push('6の2の行 '+JSON.stringify(T.rows2));
- if(!T.blank.includes('3階 › 第1電気室/動力盤-1')||!T.blank.includes('/動力盤-2')||!T.blank.includes('1階/分電盤-1'))bad.push('空の点検表 '+JSON.stringify(T.blank));
+ if(!T.blank.includes('3階 › 第1電気室/動力盤-1')||!T.blank.some(x=>/^(3階 › 第1電気室)?\/動力盤-2$/.test(x))||!T.blank.includes('1階/分電盤-1'))bad.push('空の点検表 '+JSON.stringify(T.blank));
  const i1=T.all.indexOf('動力盤-1'),i3=T.all.indexOf('動力盤-3');if(i1<0||i3<i1)bad.push('盤の順');
+ // 2026-11-05 e4faf2e（hz-ban-print-a4）から、同じ電気室の2つ目からの行にも「階・電気室」を薄く出す（ページをまたいでも場所が分かる）。左の列は空でも名前入りでもよい（hz-tool-roomreport）
  // 古い形
  T=await texts([['bA','建屋','','A棟'],['r1','電気室','bA','第1電気室'],['k1','盤','r1','盤-1']],{});if(!T.heads.includes('A棟 › 第1電気室'))bad.push('階なし '+JSON.stringify(T.heads));
  T=await texts([['bA','建屋','','A棟'],['f1','階','bA','2階'],['k1','盤','f1','盤-1']],{});if(!T.heads.includes('A棟 › 2階'))bad.push('電気室なし '+JSON.stringify(T.heads));
