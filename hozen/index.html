@@ -677,6 +677,8 @@ html[data-fs=l] #hCount,html[data-fs=xl] #hCount{white-space:nowrap;flex:0 0 aut
 /* 大・特大の 360px で選び欄の文字が切れる所（QRラベルの「場所で絞り込み」が「（指定し」、作業管理の「未完了（予定順）」）：QR は 1 列に、作業管理は選び欄を1段目いっぱいにしてボタンを下の段へ（hz-xl-select-cut） */
 html[data-fs=l] .grid2.qrflt,html[data-fs=xl] .grid2.qrflt{grid-template-columns:minmax(0,1fr)}
 html[data-fs=l] .wkflt>select,html[data-fs=xl] .wkflt>select{flex:1 1 100%}
+/* 大・特大：入力の窓の 2〜3 列の欄（入力欄・選び欄のある物）は 1 列に並べる（ラベルの長さが違うと欄が上下にずれる・選び欄が「（未設」と切れる）（hz-l-review-6） */
+html[data-fs=l] #modal :is(.grid2,.grid3):has(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea),html[data-fs=xl] #modal :is(.grid2,.grid3):has(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea){grid-template-columns:minmax(0,1fr)}
 /* 文字「大」「特大」：設備の場所の木で、深い段（電気室・盤）の名前が1文字ずつ縦に割れないよう、名前の幅が 4 文字ぶん取れないときは「＋盤」「…」を下の段へ（hz-xl-review-12） */
 /* 文字「大」「特大」：測定記録の窓の測定値の行は、測定値を1段目いっぱいに、単位・下限・上限を2段目に並べる（hz-xl-meas-modal） */
 html[data-fs=l] #ms_rows .mvals,html[data-fs=xl] #ms_rows .mvals{flex-wrap:wrap!important}
