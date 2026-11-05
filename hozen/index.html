@@ -661,6 +661,12 @@ html[data-fs=l] .mitem .ar,html[data-fs=xl] .mitem .ar{flex:none}
 html[data-fs=l] .mitem>div,html[data-fs=xl] .mitem>div{word-break:keep-all;overflow-wrap:anywhere}
 html[data-fs=l] .mitem .ds,html[data-fs=xl] .mitem .ds{word-break:normal}
 html[data-fs=l] .mtti,html[data-fs=xl] .mtti{word-break:keep-all;overflow-wrap:anywhere}
+/* 大・特大：見出しの題は言葉のまとまりで折り、横の小さなボタンは入らなければ下へ（「人/員・資格」の割れ）／予備品の行は −/＋ を下の段へ（題が1文字幅になるのを防ぐ）hz-xl-review-7 */
+html[data-fs=l] .hd-row,html[data-fs=xl] .hd-row{flex-wrap:wrap}
+html[data-fs=l] .hd-row h2,html[data-fs=xl] .hd-row h2{word-break:keep-all;overflow-wrap:anywhere;flex:1 1 9em}
+html[data-fs=l] .item:has(>.pqb),html[data-fs=xl] .item:has(>.pqb){flex-wrap:wrap}
+html[data-fs=l] .item:has(>.pqb)>.bd,html[data-fs=xl] .item:has(>.pqb)>.bd{flex:1 1 8em;min-width:0}
+html[data-fs=l] .item>.pqb,html[data-fs=xl] .item>.pqb{flex:1 0 100%;justify-content:flex-end}
 .mtile{text-align:left}.mtile .mt,.mtile .md{text-align:left}
 
 /* NIGHT-GEN-START */
