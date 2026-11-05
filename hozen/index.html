@@ -215,6 +215,12 @@ table.yr .cat span{position:sticky;left:8px}
 /* 盤の点検表 */
 .banrow{display:flex;gap:4px;align-items:center;margin:4px 0}.banrow .bn{flex:1 1 auto;min-width:0;font-weight:700;overflow-wrap:anywhere}
 .banrow .bi,.banrow .bm{flex:0 0 58px;width:58px}.banrow.flash{outline:3px solid #e0b000;outline-offset:1px;background:#fff6d6;transition:background .3s}
+/* 文字「大」「特大」：盤の名前が狭い所で「動/力/盤/-/1」と1字ずつ折れて ◯● のボタンに重なるので、名前を1行に取り、ボタンはその下の行へ（hz-l-ban） */
+html[data-fs=l] .banrow:has(>.bn),html[data-fs=xl] .banrow:has(>.bn){flex-wrap:wrap}
+html[data-fs=l] .banrow>.bn,html[data-fs=xl] .banrow>.bn{flex:1 1 100%;word-break:keep-all;overflow-wrap:anywhere}
+html[data-fs=l] .banrow.bh>.bn,html[data-fs=xl] .banrow.bh>.bn{display:none}
+html[data-fs=l] .banrow:has(>.bn)>.bi,html[data-fs=xl] .banrow:has(>.bn)>.bi,html[data-fs=l] .banrow:has(>.bn)>.bm:not(.bw),html[data-fs=xl] .banrow:has(>.bn)>.bm:not(.bw){flex:1 1 0;width:auto;min-width:44px}
+html[data-fs=l] .banrow.bh>.bi:last-child,html[data-fs=xl] .banrow.bh>.bi:last-child{flex:0 0 44px;width:44px;min-width:44px}
 .banrow.bh .bi{font-size:12px;line-height:1.2;text-align:center;color:var(--mut,#667);word-break:keep-all;overflow-wrap:normal}
 .bm.mk-iss{background:#fde2e1;border-color:#d93025;color:#b3261e}.bm.mk-iss small{font-size:11px}
 .bm{height:44px;font-size:20px;font-weight:700;border:1px solid var(--bd,#cbd5e1);border-radius:10px;background:#fff;padding:0}.bm.bw{flex-basis:44px;width:44px;font-size:16px}
