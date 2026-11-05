@@ -1,4 +1,4 @@
-// メニュー（menu）の札の題と、AI支援（ai）の一覧の題：文字「大」「特大」・360px で言葉の途中で割れない（「カレンダ/ー」「非常用発電/機」「読み/取り」のような割れが無い）。
+// メニュー（menu）の札の題と、AI支援（ai）の一覧の題と、測定のひな形（mtpl）の題（hz-xl-review-10）：文字「大」「特大」・360px で言葉の途中で割れない（「カレンダ/ー」「非常用発電/機」「読み/取り」のような割れが無い）。
 // 折れてよいのは「・」「）」「、」の後、「（」の前、<wbr> の所だけ。標準・390px ははみ出さないことだけ見る。hz-xl-review-9
 // usage: node hozen/tools/menuaixlcheck.js
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');
@@ -9,11 +9,11 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
  await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
  const tag=w+'px・'+({xl:'特大',l:'大','':'標準'})[fs];
- for(const v of ['menu','ai']){
+ for(const v of ['menu','ai','mtpl']){
   await p.evaluate(([f,v])=>{S.settings.fscale=f;save();applyFScale();go(v)},[fs,v]);await p.waitForTimeout(300);
   const r=await p.evaluate(([v,strict])=>{const out=[];const OK_AFTER='・）)、',OK_BEFORE='（(・';
    // 題の文字のノード（.mtile .mt の中、.mitem の div の .aibadge より前）
-   const titles=v==='menu'?[...document.querySelectorAll('.mtile .mt')].map(e=>({e,nodes:[...e.childNodes].filter(n=>n.nodeType===3)})):[...document.querySelectorAll('.mitem>div')].map(e=>{const nodes=[];for(const n of e.childNodes){if(n.nodeType===1&&n.tagName!=='WBR')break;if(n.nodeType===3)nodes.push(n)}return {e,nodes}});
+   const titles=v==='menu'?[...document.querySelectorAll('.mtile .mt')].map(e=>({e,nodes:[...e.childNodes].filter(n=>n.nodeType===3)})):[...document.querySelectorAll(v==='ai'?'.mitem>div':'.mtti')].map(e=>{const nodes=[];for(const n of e.childNodes){if(n.nodeType===1&&n.tagName!=='WBR')break;if(n.nodeType===3)nodes.push(n)}return {e,nodes}});
    if(!titles.length)out.push(v+'：題が見つからない');
    for(const {e,nodes} of titles){if(!e.offsetParent)continue;const bx=e.getBoundingClientRect();if(bx.right>document.documentElement.clientWidth+1)out.push(v+'：「'+e.textContent.trim().slice(0,20)+'」がはみ出す');
     if(!strict)continue;

@@ -660,6 +660,7 @@ html[data-fs=l] .mitem .ic,html[data-fs=xl] .mitem .ic{font-size:22px;width:26px
 html[data-fs=l] .mitem .ar,html[data-fs=xl] .mitem .ar{flex:none}
 html[data-fs=l] .mitem>div,html[data-fs=xl] .mitem>div{word-break:keep-all;overflow-wrap:anywhere}
 html[data-fs=l] .mitem .ds,html[data-fs=xl] .mitem .ds{word-break:normal}
+html[data-fs=l] .mtti,html[data-fs=xl] .mtti{word-break:keep-all;overflow-wrap:anywhere}
 .mtile{text-align:left}.mtile .mt,.mtile .md{text-align:left}
 
 /* NIGHT-GEN-START */
@@ -6048,7 +6049,7 @@ function exportMeasCsv(){download(`測定記録_${TODAY}.csv`,csvBlob([['測定�
 /* 測定のひな形（管理値は人が設定） */
 function vMtpl(){
   return card('📐 測定のひな形と管理値',`<div class="muted" style="margin-bottom:8px">管理値（下限・上限）と周期は、法令・保安規程・メーカー資料など施設の基準に従って人が入れてください。空欄の項目は判定しません。</div>`
-    +((S.mtpl||[]).some(t=>t.id==='mt_gen')?'':`<button class="btn sec wide noprint" style="margin-bottom:8px" onclick="addGenTpl()">⚡ 非常用発電機の月次点検ひな形を足す（管理値は空のまま）</button>`)+(S.mtpl||[]).map(t=>`<div class="item" onclick="editMtpl('${t.id}')"><div class="bd"><div class="ti">${esc(t.type)}：${esc(t.name)}${tplCondText(t)?` <span class="pill plan">${esc(tplCondText(t))}</span>`:''}</div><div class="meta">${t.rows.map(r=>`${esc(r.name)}（${esc(limText(r))}）`).join('・')}${t.cycleM?`・周期 ${t.cycleM}か月`:'・周期 未設定'}</div></div></div>`).join(''),`<button class="btn sm" style="min-height:40px" onclick="editMtpl()">＋ 追加</button>`);
+    +((S.mtpl||[]).some(t=>t.id==='mt_gen')?'':`<button class="btn sec wide noprint" style="margin-bottom:8px" onclick="addGenTpl()">⚡ 非常用発電機の月次点検ひな形を足す（管理値は空のまま）</button>`)+(S.mtpl||[]).map(t=>`<div class="item" onclick="editMtpl('${t.id}')"><div class="bd"><div class="ti mtti">${esc(t.type)}：<wbr>${esc(t.name)}${tplCondText(t)?` <span class="pill plan">${esc(tplCondText(t))}</span>`:''}</div><div class="meta">${t.rows.map(r=>`${esc(r.name)}（${esc(limText(r))}）`).join('・')}${t.cycleM?`・周期 ${t.cycleM}か月`:'・周期 未設定'}</div></div></div>`).join(''),`<button class="btn sm" style="min-height:40px" onclick="editMtpl()">＋ 追加</button>`);
 }
 function addGenTpl(){if(!Array.isArray(S.mtpl))S.mtpl=[];if(S.mtpl.some(t=>t.id==='mt_gen')){toast('すでにあります');return}S.mtpl.push(clone(GEN_TPL));save();render();toast('発電機のひな形を足しました。管理値は施設の基準で入れてください')}
 let MT_ROWS=[];
