@@ -20,6 +20,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
    let idx=0;for(const part of parts){const seg=tops.slice(idx,idx+part.length);idx+=part.length+1;const ts=seg.filter(x=>x.top!=null).map(x=>x.top);
     if(ts.length&&Math.max(...ts)-Math.min(...ts)>2&&part.length<=12){const at=seg.findIndex((x,i)=>i&&x.top>seg[i-1].top+2);out.push('「'+part+'」が「'+part.slice(0,at)+'/'+part.slice(at)+'」と割れる')}}}
   {const hc=document.querySelector('#hCount');if(!hc)out.push('該当の件数が見つからない');else if(hc.getClientRects().length&&hc.getBoundingClientRect().height>parseFloat(getComputedStyle(hc).lineHeight||'0')*1.6+2)out.push('「'+hc.textContent+'」が縦に割れる')}
+  {const pb=document.querySelector('#hPrintBtn');if(pb){const ch=[];const tw=document.createTreeWalker(pb,NodeFilter.SHOW_TEXT);let n;while(n=tw.nextNode())for(let k=0;k<n.textContent.length;k++){const rg=document.createRange();rg.setStart(n,k);rg.setEnd(n,k+1);const q=rg.getClientRects()[0];ch.push({c:n.textContent[k],top:q?Math.round(q.top):null})}
+   const str=ch.map(x=>x.c).join(''),m=str.match(/\d+日分/);if(m){const ts=ch.slice(m.index,m.index+m[0].length).map(x=>x.top).filter(x=>x!=null);if(ts.length&&Math.max(...ts)-Math.min(...ts)>2)out.push('印刷の「'+m[0]+'」が割れる')}}}
   if(document.documentElement.scrollWidth>innerWidth+1)out.push('はみ出す');return [...new Set(out)].slice(0,4)},fs);
  for(const x of r)if(fs||/はみ出す|見つからない/.test(x))errs.push(tag+x);
  await c.close()}
