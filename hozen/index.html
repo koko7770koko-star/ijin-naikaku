@@ -5697,7 +5697,7 @@ const limText=r=>r.ck?'○／×':r.min===''&&r.max===''?'基準未設定':`${r.m
 function measRow(m){
   const j=measJudge(m),e=eqById(m.equipId);
   return `<div class="item ${j.ng?'ng':''}" onclick="editMeas('${m.id}')"><div class="dt">${md(m.date)}<small>${m.date.slice(0,4)}</small></div><div class="bd"><div class="ti">${esc(m.name||m.type)}${e?`<span class="muted">・${esc(e.name)}</span>`:''}</div>
-    <div class="meta">${m.rows.filter(r=>r.v!==''&&r.v!=null).slice(0,4).map(r=>`${esc(r.name)} ${esc(r.v)}${esc(r.ck?'':r.unit)}`).join('・')}</div><span class="pill ${j.ng?'ng':/未|なし/.test(j.text)?'warn':'ok'}">${String(j.text).split('・').map(t=>`<span class="nwl">${esc(t)}</span>`).join('・')}</span>${m.by?`<span class="pill">${esc(m.by)}</span>`:''}</div></div>`;
+    <div class="meta">${m.rows.filter(r=>r.v!==''&&r.v!=null).slice(0,4).map((r,i,a)=>`<span class="nwl">${esc(r.name)} ${esc(r.v)}${esc(r.ck?'':r.unit)}${i<a.length-1?'・':''}</span>`).join('')}</div><span class="pill ${j.ng?'ng':/未|なし/.test(j.text)?'warn':'ok'}">${String(j.text).split('・').map((t,i,a)=>`<span class="nwl">${esc(t)}${i<a.length-1?'・':''}</span>`).join('')}</span>${m.by?`<span class="pill">${esc(m.by)}</span>`:''}</div></div>`;
 }
 
 /* ---------- 測定記録の入力 ---------- */
@@ -6024,7 +6024,7 @@ function vDiag(){
   if(t==='health'){
     const L=E.map(e=>({e,H:healthOf(e),last:(e.health||[]).slice(-1)[0]})).sort((a,b)=>(a.H.score??999)-(b.H.score??999));
     h+=card('💯 設備の健全度',`<div class="muted" style="margin-bottom:6px">参考指標は記録から自動計算した目安です（判定ではありません）。人による評価と合わせて見てください。</div>`+(L.length?L.map(({e,H,last})=>`<div class="item ${H.score!=null&&H.score<50?'ng':''}" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:52px"><b style="font-size:18px">${H.score??'－'}</b><small>参考</small></div>
-      <div class="bd"><div class="ti">${esc(eqLabel(e))}${e.importance?` <span class="pill ${e.importance==='A'?'ng':''}">重要度${esc(e.importance)}</span>`:''}</div><div class="meta">${[esc(locPath(e.locId)||e.place||''),last?`人の評価 ${'★'.repeat(last.score)}（${slash(last.date)}）`:'人の評価 未'].filter(Boolean).join('・')}</div></div></div>`).join(''):emptyBox('設備がありません')));
+      <div class="bd"><div class="ti">${esc(eqLabel(e))}${e.importance?` <span class="pill ${e.importance==='A'?'ng':''}">重要度${esc(e.importance)}</span>`:''}</div><div class="meta">${[esc(locPath(e.locId)||e.place||''),last?`人の評価 ${'★'.repeat(last.score)}（${slash(last.date)}）`:'人の評価 未'].filter(Boolean).map((t,i,a)=>`<span class="nwl">${t}${i<a.length-1?'・':''}</span>`).join('')}</div></div></div>`).join(''):emptyBox('設備がありません')));
     h+=card('💾 端末の記録の大きさ',`<div id="dgStore" class="muted">調べています…</div>`);setTimeout(dgStoreFill,0);
   }else if(t==='rec'){
     const L=E.flatMap(e=>recommendFor(e.id).map(r=>({...r,e}))).sort((a,b)=>(a.lv==='ng'?0:1)-(b.lv==='ng'?0:1));
@@ -6068,7 +6068,7 @@ function genCard(){
   const sel=blds.includes(V.genB)?V.genB:'';
   const shown=W.filter(x=>!sel||x.w.b===sel);
   const doneN=shown.filter(x=>x.d).length;
-  const row=({e,d})=>{const m=last(e.id),j=m?measJudge(m):null;return `<div class="item ${j&&j.ng?'ng':''}" onclick="genStart('${e.id}')"><div class="dt" style="min-width:34px"><b style="font-size:20px">${d?'●':'◯'}</b></div><div class="bd"><div class="ti">${esc(eqLabel(e))}</div><div class="meta">${esc(locPath(e.locId)||e.place||'場所未設定')}・${d?'今月 点検済み':'今月 まだ'}・${m?'前回 '+slash(m.date)+(j.ng?'（管理値外あり）':''):'点検記録なし'}</div></div></div>`};
+  const row=({e,d})=>{const m=last(e.id),j=m?measJudge(m):null;return `<div class="item ${j&&j.ng?'ng':''}" onclick="genStart('${e.id}')"><div class="dt" style="min-width:34px"><b style="font-size:20px">${d?'●':'◯'}</b></div><div class="bd"><div class="ti">${esc(eqLabel(e))}</div><div class="meta"><span class="nwl">${esc(locPath(e.locId)||e.place||'場所未設定')}・</span><span class="nwl">${d?'今月 点検済み':'今月 まだ'}・</span><span class="nwl">${m?'前回 '+slash(m.date)+(j.ng?'（管理値外あり）':''):'点検記録なし'}</span></div></div></div>`};
   let body='';
   if(!G.length)body=emptyBox('設備台帳に種別「発電機」の設備を登録すると、ここから1台ずつ点検できます');
   else{
