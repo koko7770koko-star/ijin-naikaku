@@ -6076,7 +6076,7 @@ function genCard(){
   const sel=blds.includes(V.genB)?V.genB:'';
   const shown=W.filter(x=>!sel||x.w.b===sel);
   const doneN=shown.filter(x=>x.d).length;
-  const row=({e,d})=>{const m=last(e.id),j=m?measJudge(m):null;return `<div class="item ${j&&j.ng?'ng':''}" onclick="genStart('${e.id}')"><div class="dt" style="min-width:34px"><b style="font-size:20px">${d?'●':'◯'}</b></div><div class="bd"><div class="ti">${esc(eqLabel(e))}</div><div class="meta"><span class="nwl">${esc(locPath(e.locId)||e.place||'場所未設定')}・</span><span class="nwl">${d?'今月 点検済み':'今月 まだ'}・</span><span class="nwl">${m?'前回 '+slash(m.date)+(j.ng?'（管理値外あり）':''):'点検記録なし'}</span></div></div></div>`};
+  const row=({e,d})=>{const m=last(e.id),j=m?measJudge(m):null;return `<div class="item ${j&&j.ng?'ng':''}" onclick="genStart('${e.id}')"><div class="dt" style="min-width:34px"><b style="font-size:20px">${d?'●':'◯'}</b></div><div class="bd"><div class="ti">${esc(eqLabel(e))}</div><div class="meta">${nwlJoin([{p:locPath(e.locId)||e.place||'場所未設定'},d?'今月 点検済み':'今月 まだ',m?'前回 '+slash(m.date)+(j.ng?'（管理値外あり）':''):'点検記録なし'])}</div></div></div>`};
   let body='';
   if(!G.length)body=emptyBox('設備台帳に種別「発電機」の設備を登録すると、ここから1台ずつ点検できます');
   else{
@@ -6088,7 +6088,7 @@ function genCard(){
         const inF=inB.filter(x=>x.w.f===f),rs=[...new Set(inF.map(x=>x.w.r))].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}));
         for(const r of rs){
           const L=inF.filter(x=>x.w.r===r).sort((a,b)=>(a.d-b.d)||eqLabel(a.e).localeCompare(eqLabel(b.e),'ja',{numeric:true}));
-          const h2=`${esc(b)}${f?' › '+esc(f):''}${r?' › '+esc(r):''}`;
+          const h2=nwlPath([b,f,r].filter(Boolean).join(' › '));
           body+=`<div class="grp"><b>${h2}</b> <span class="muted">今月 ● ${L.filter(x=>x.d).length}/${L.length}</span>${L.map(row).join('')}</div>`;
         }
       }
