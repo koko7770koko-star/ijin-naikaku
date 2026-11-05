@@ -670,6 +670,8 @@ html[data-fs=l] .dgsum .dgmt,html[data-fs=xl] .dgsum .dgmt{word-break:normal}
 html[data-fs=l] .grid2.dgflt,html[data-fs=xl] .grid2.dgflt{grid-template-columns:minmax(0,1fr);gap:8px}
 /* 設定→点検項目の数値の項目：「急変の注意（前回比%）」と「設備」は大・特大では縦に並べる（ラベルが2行になって欄が上下にずれ、設備の選び欄が「（設備‹」と切れる）（hz-xl-set-items） */
 html[data-fs=l] .grid2.dchg,html[data-fs=xl] .grid2.dchg{grid-template-columns:minmax(0,1fr)}
+/* 点検履歴の行の数値（「変圧器温度 102℃」）は、大・特大では1つずつまとまりで折る（「変/圧器温度」と割れる）（hz-l-review-3） */
+html[data-fs=l] .meta .hv,html[data-fs=xl] .meta .hv{display:inline-block;max-width:100%}
 /* 文字「大」「特大」：設備の場所の木で、深い段（電気室・盤）の名前が1文字ずつ縦に割れないよう、名前の幅が 4 文字ぶん取れないときは「＋盤」「…」を下の段へ（hz-xl-review-12） */
 /* 文字「大」「特大」：測定記録の窓の測定値の行は、測定値を1段目いっぱいに、単位・下限・上限を2段目に並べる（hz-xl-meas-modal） */
 html[data-fs=l] #ms_rows .mvals,html[data-fs=xl] #ms_rows .mvals{flex-wrap:wrap!important}
@@ -3331,7 +3333,7 @@ function histRow(k,item){
   let body;
   if(item&&numDefs().some(n=>n.id===item)){const n=numDef(item),p=prevVal(k,item),o=outOfRange(n,r[item]);body=`<div class="ti ${o?'red':''}" style="${o?'color:var(--ng)':''}">${esc(r[item])}${esc(n.unit)}${o?'（'+esc(o)+'）':''}</div><div class="meta">前回比 ${esc(diffText(r[item],p,'')||'－')}</div>`}
   else if(item){const v=(r.c||{})[item];body=`<div class="ti" style="${v==='×'?'color:var(--ng)':''}">${esc(v)}</div>`}
-  else body=`<div class="meta">${numDefs().filter(n=>r[n.id]!=null).map(n=>`${esc(n.short||n.name)} ${esc(r[n.id])}${esc(n.unit)}`).join('・')}</div>${st.I&&st.I.ng.length?`<div class="meta" style="color:var(--ng)">${esc(st.I.ng.join('、'))}</div>`:''}`;
+  else body=`<div class="meta">${numDefs().filter(n=>r[n.id]!=null).map(n=>`<span class="hv">${esc(n.short||n.name)} ${esc(r[n.id])}${esc(n.unit)}</span>`).join('・')}</div>${st.I&&st.I.ng.length?`<div class="meta" style="color:var(--ng)">${esc(st.I.ng.join('、'))}</div>`:''}`;
   return `<div class="item ${st.cls==='ok'?'ok':st.cls==='ng'?'ng':''}" onclick="go('day',{day:'${k}'})"><div class="dt">${md(k)}<small>（${WD[pd(k).getDay()]}）</small></div>
     <div class="bd">${body}<div class="meta">${esc(st.st)}${r.by?'・'+esc(r.by):''}${(r.photos||[]).length?'・📷'+r.photos.length:''}${r.note?'・'+esc(txt(r.note,40)):''}</div></div></div>`;
 }
