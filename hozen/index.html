@@ -234,6 +234,9 @@ table.yr th .yrmh{all:unset;display:block;box-sizing:border-box;min-height:44px;
 .chk .l{flex:1;font-size:15px}
 html[data-fs=l] .chk .l,html[data-fs=xl] .chk .l{min-width:0;word-break:keep-all;overflow-wrap:break-word}
 html[data-fs=xl] .chk{flex-wrap:wrap}
+html[data-fs=l] .homecount .btn,html[data-fs=xl] .homecount .btn{white-space:normal!important}
+html[data-fs=l] .homecount .hcn,html[data-fs=xl] .homecount .hcn,html[data-fs=l] .tile .ts .tsn,html[data-fs=xl] .tile .ts .tsn{display:inline-block;white-space:nowrap}
+html[data-fs=l] .linkbtn,html[data-fs=xl] .linkbtn{min-height:44px}
 html[data-fs=xl] .chk .l{flex:1 1 100%}
 .chk.flash{background:#fff2c2;transition:background .3s}
 .locn.flash>.item{outline:3px solid #e0b000;background:#fff6d6}
@@ -2529,7 +2532,7 @@ function homeCountLine(){
   const G=(S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止');
   if(G.length)cells.push(['🔌 発電機',G.length-genPending().length,G.length,'homeGen()']);
   if(!cells.length)return '';
-  return `<div class="row homecount" style="gap:6px;margin:0 0 12px;flex-wrap:nowrap">${cells.map(([l,n,m,on])=>`<button class="btn sec grow" style="min-height:52px;flex:1 1 0;min-width:0;padding:4px 4px;line-height:1.25;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;white-space:nowrap;${n>=m?'background:var(--ok-bg);color:var(--ok)':''}" onclick="${on}"><small style="display:block">${l}</small><b style="font-size:14px">済み ${n}／全部 ${m}</b></button>`).join('')}</div>`}
+  return `<div class="row homecount" style="gap:6px;margin:0 0 12px;flex-wrap:nowrap">${cells.map(([l,n,m,on])=>`<button class="btn sec grow" style="min-height:52px;flex:1 1 0;min-width:0;padding:4px 4px;line-height:1.25;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;white-space:nowrap;${n>=m?'background:var(--ok-bg);color:var(--ok)':''}" onclick="${on}"><small style="display:block">${l}</small><b style="font-size:14px"><span class="hcn">済み ${n}</span><span class="hcn">／全部 ${m}</span></b></button>`).join('')}</div>`}
 /* ホーム：今月の盤の点検の残り（盤が1面も無ければ出さない）。押すと盤の点検の「次の未点検の盤」へ。表示だけ・保存しない */
 function homeBanLine(){
   const ym=TODAY.slice(0,7),all=[],per=[];banBldgs().forEach(b=>{const bs=banBoardsOf(b.id);bs.forEach(x=>all.push(x));per.push([b,bs.filter(x=>banPend(ym,x)).length])});
@@ -2552,10 +2555,10 @@ function homeTiles(tt,tst,oi,dl,over){
   return `<div class="tiles t4">`
     +t(over?'ng':'','今日の予定',tt.length,'件',goDay(TODAY),over?`<span style="color:var(--ng)">期限切れ ${over}件</span>`:'')
     +`<div class="tile ${tst.cls==='ng'?'ng':tst.cls==='ok'?'ok':'warn'}" onclick="go('day',{day:TODAY})"><div class="tl">今日の日常点検</div><div class="tv s">${esc(tst.st.replace(/（.*/,''))}</div></div>`
-    +t(urg||odue?'ng':oi.length?'warn':'ok','対応中の異常',oi.length,'件',"go('issues',{isF:'open'})",`緊急・高の異常 ${urg}／対応期限超過 ${odue}`)
+    +t(urg||odue?'ng':oi.length?'warn':'ok','対応中の異常',oi.length,'件',"go('issues',{isF:'open'})",`<span class="tsn">緊急・高の異常 ${urg}</span>／<span class="tsn">対応期限超過 ${odue}</span>`)
     +t(dl.some(x=>x.left<0)?'ng':dl.length?'warn':'ok','期限30日以内',dl.length,'件',"go('plan',{plTab:'legal'})")
-    +t(wait?'warn':'ok','作業（今日）',tw,'件',"go('works',{wkF:'open'})",`承認待ちの作業 ${wait}`)
-    +t(eqNg?'warn':'ok','要対応の設備',eqNg,'台',"go('diag',{dgTab:'rec'})",`健全度 要注意 ${weak}台`)
+    +t(wait?'warn':'ok','作業（今日）',tw,'件',"go('works',{wkF:'open'})",`<span class="tsn">承認待ちの作業 ${wait}</span>`)
+    +t(eqNg?'warn':'ok','要対応の設備',eqNg,'台',"go('diag',{dgTab:'rec'})",`<span class="tsn">健全度 要注意 ${weak}台</span>`)
     +t(low?'warn':'ok','在庫不足',low,'品',"go('stock',{stTab:'parts',ptLow:0})")
     +t(cal?'warn':'ok','校正期限30日内',cal,'点',"go('stock',{stTab:'tools'})")
     +`</div>`;
