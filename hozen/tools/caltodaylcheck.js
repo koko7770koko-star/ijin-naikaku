@@ -3,7 +3,7 @@
 const {chromium}=require('playwright');const path=require('path');
 const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
 (async()=>{const b=await chromium.launch();
- for(const [fsc,W] of [['l',390],['xl',390],['xl',360]]){
+ for(const [fsc,W] of [['l',390],['xl',390],['xl',360],['l',360]]){
   const ctx=await b.newContext({viewport:{width:W,height:780}});const p=await ctx.newPage();
   p.on('pageerror',e=>bad.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
   await ctx.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
@@ -11,6 +11,7 @@ const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
   await p.evaluate(fsc=>{S.settings.fscale=fsc;applyFScale();go('month')},fsc);await p.waitForTimeout(400);
   const r=await p.evaluate(()=>{const o=[];const e=document.querySelector('.cal .tdl');if(!e)return['今日の札が無い'];
    const h=e.getBoundingClientRect().height,lh=parseFloat(getComputedStyle(e).fontSize)*2.2;if(h>lh)o.push('「今日」の札が割れる '+Math.round(h)+'px');
+   {const d=e.closest('.d').getBoundingClientRect(),r=e.getBoundingClientRect(),bw=parseFloat(getComputedStyle(e.closest('.d')).borderRightWidth)||0;if(r.right>d.right-bw+0.5)o.push('「今日」の札が日の枠で切れる（右 '+Math.round(r.right)+' > '+Math.round(d.right-bw)+'）')} // カナメ：取り込みで足した（特大・360px で「日」が隠れていた）
    if(document.documentElement.scrollWidth>innerWidth+1)o.push('横にはみ出す');return o});
   r.forEach(x=>bad.push(`${fsc}・${W}px：${x}`));await ctx.close()}
  console.log(bad.join('\n')||'NO ERRORS');await b.close();process.exit(bad.length?1:0)})();
