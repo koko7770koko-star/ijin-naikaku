@@ -2456,7 +2456,7 @@ function deadlineRow(x){
   const c=x.left==null?'':x.left<0?'ng':x.left<=30?'warn':'ok';
   const label=x.left==null?'記録なし':x.left<0?`${-x.left}日超過`:`あと${x.left}日`;
   return `<div class="item ${x.left!=null&&x.left<0?'ng':''}" onclick="editItem('${x.it.id}')"><div class="dt" style="min-width:76px"><span class="pill ${c}">${label}</span></div>
-    <div class="bd"><div class="ti">${esc(x.it.name)}${x.it.legal?` <span class="pill ${x.it.legal==='法定'?'ng':''}">${esc(x.it.legal)}</span>`:''}</div><div class="meta">${esc(x.it.cycle)}・前回 ${x.ld?md(x.ld):'－'}・期限 ${slash(x.due)}</div></div></div>`;
+    <div class="bd"><div class="ti">${esc(x.it.name)}${x.it.legal?` <span class="pill ${x.it.legal==='法定'?'ng':''}">${esc(x.it.legal)}</span>`:''}</div><div class="meta">${esc(x.it.cycle)}・<span class="nwl">前回 ${x.ld?md(x.ld):'－'}</span>・<span class="nwl">期限 ${slash(x.due)}</span></div></div></div>`;
 }
 
 // お知らせ
@@ -6154,7 +6154,7 @@ function vPlan(){
     const L=[];(S.equipment||[]).forEach(e=>{const M=(S.meas||[]).filter(m=>m.equipId===e.id&&m.tplId).sort((a,b)=>a.date.localeCompare(b.date)),last={};M.forEach(m=>last[m.tplId]=m);
       Object.entries(last).forEach(([tid,m])=>{const t=tplById(tid);if(t&&t.cycleM){const due=addM(m.date,t.cycleM);L.push({e,t,m,due,left:diffD(due,TODAY)})}})});
     L.sort((a,b)=>a.left-b.left);
-    h+=card('📏 測定の周期と次回期限',L.length?L.map(x=>`<div class="item ${x.left<0?'ng':''}" onclick="editMeas(null,{equipId:'${x.e.id}',tplId:'${x.t.id}',type:'${esc(x.t.type)}',name:${esc(JSON.stringify(x.t.name))},rows:${esc(JSON.stringify(x.t.rows.map(r=>({...r,v:''}))))}})"><div class="dt" style="min-width:76px"><span class="pill ${x.left<0?'ng':x.left<=30?'warn':'ok'}">${x.left<0?-x.left+'日超過':'あと'+x.left+'日'}</span></div><div class="bd"><div class="ti">${esc(x.t.name)}：${esc(eqLabel(x.e))}</div><div class="meta">前回 ${slash(x.m.date)}・期限 ${slash(x.due)}（${x.t.cycleM}か月）</div></div></div>`).join(''):emptyBox('ひな形を使った測定記録がまだありません'));
+    h+=card('📏 測定の周期と次回期限',L.length?L.map(x=>`<div class="item ${x.left<0?'ng':''}" onclick="editMeas(null,{equipId:'${x.e.id}',tplId:'${x.t.id}',type:'${esc(x.t.type)}',name:${esc(JSON.stringify(x.t.name))},rows:${esc(JSON.stringify(x.t.rows.map(r=>({...r,v:''}))))}})"><div class="dt" style="min-width:76px"><span class="pill ${x.left<0?'ng':x.left<=30?'warn':'ok'}">${x.left<0?-x.left+'日超過':'あと'+x.left+'日'}</span></div><div class="bd"><div class="ti">${esc(x.t.name)}：${esc(eqLabel(x.e))}</div><div class="meta"><span class="nwl">前回 ${slash(x.m.date)}</span>・<span class="nwl">期限 ${slash(x.due)}</span>（${x.t.cycleM}か月）</div></div></div>`).join(''):emptyBox('ひな形を使った測定記録がまだありません'));
   }
   return h;
 }
