@@ -2448,10 +2448,12 @@ function dayAllDone(ds){
   save();render();
   undoBar(`${md(ds)}の ◯ ${L.length}件を ●（実施済み）にしました`,()=>{R.forEach(({t,prev,U})=>{logEdit('task',t.id,'状態','完了',prev.status);t.status=prev.status;if(prev.result===undefined)delete t.result;else t.result=prev.result;for(const [fy,iid,ix,old] of U.marks.slice().reverse())if(S.marks[fy]&&S.marks[fy][iid])S.marks[fy][iid][ix]=old});save();render()});
 }
+/* 場所の文字（「A棟 › 1階 › 第1電気室 › 動力盤-1」「A棟 1階 第1電気室」）を、段（› や空白で区切った語）の途中で割らないよう .nwl で包む。表示だけ */
+function nwlPath(p){return String(p||'').split(/(\s*›\s*|[\s　]+)/).map((t,k)=>k%2?esc(t):t?`<span class="nwl">${esc(t)}</span>`:'').join('')}
 function issueRow(i){
   const done=i.status==='完了';
   return `<div class="item ${done?'ok':'ng'}" onclick="editIssue('${i.id}')"><div class="dt">${md(i.date)}<small${!done&&diffD(TODAY,i.date)>=14?' class="old"':''}>${done?'':'発見から '+diffD(TODAY,i.date)+'日'}</small></div>
-    <div class="bd"><div class="ti">${esc(i.title)}${i.place?`（${esc(i.place)}）`:''}</div>${i.detail?`<div class="meta">${esc(i.detail)}</div>`:''}${i.action?`<div class="meta">処置：${esc(i.action)}</div>`:''}
+    <div class="bd"><div class="ti">${esc(i.title)}${i.place?`（${nwlPath(i.place)}）`:''}</div>${i.detail?`<div class="meta">${esc(i.detail)}</div>`:''}${i.action?`<div class="meta">処置：${esc(i.action)}</div>`:''}
     ${i.equipId&&eqById(i.equipId)?`<span class="pill">🏭${esc(eqById(i.equipId).name)}</span>`:''}<span class="pill ${ISTAT_CLS[i.status]||'ng'}">${esc(i.status)}</span>${i.status==='完了'&&i.confirmedBy?`<span class="pill ok">確認 ${esc(i.confirmedBy)}</span>`:''}${i.reopened?`<span class="pill warn">再開${i.reopened}回</span>`:''}${(i.photos||[]).length?`<span class="pill">📷${i.photos.length}</span>`:''}</div></div>`;
 }
 function deadlineRow(x){
