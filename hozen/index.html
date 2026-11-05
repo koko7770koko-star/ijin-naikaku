@@ -48,6 +48,7 @@ html[data-fs=l] .dwgver,html[data-fs=xl] .dwgver{flex-wrap:wrap}html[data-fs=l] 
 html[data-fs=l] .seg.tabs button,html[data-fs=xl] .seg.tabs button{height:auto;min-height:44px;padding-top:5px;padding-bottom:5px}
 html[data-fs=l] .nwl,html[data-fs=xl] .nwl{display:inline-block;max-width:100%;overflow-wrap:anywhere}
 @media print{html[data-fs] .nwl{display:inline!important;max-width:none!important;overflow-wrap:normal!important}}
+html[data-fs=l] .isacts,html[data-fs=xl] .isacts{flex-direction:column;align-items:stretch}html[data-fs=l] .isacts .btn,html[data-fs=xl] .isacts .btn{flex:none;width:100%;white-space:normal}
 html[data-fs=l] .eqkb .btn,html[data-fs=xl] .eqkb .btn{white-space:normal!important;flex:1 1 40%;min-height:44px}
 nav button.on{color:var(--accent);font-weight:700}
 nav button b[data-n]:not([data-n=""])::after{content:attr(data-n);position:absolute;top:3px;left:50%;margin-left:6px;background:var(--ng);color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:0 5px;line-height:16px}
@@ -2898,8 +2899,8 @@ function editIssue(id,preset){
   loadPhotos(TP).then(()=>{openModal(`<h3>${id?'異常案件':'異常案件の登録'}</h3>${quick}
     ${body}
     ${id?tpBox():''}
-    ${id?`<div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="useParts('issue:${id}')">📦 使った部品を出庫</button><button class="btn sec sm grow" onclick="closeModal(true);editWork(null,{title:${esc(JSON.stringify('対応：'+i.title))},kind:'修理',equipIds:${esc(JSON.stringify(i.equipId?[i.equipId]:[]))},issueId:'${id}'})">🧰 作業指示を作る</button><button class="btn sec sm grow" onclick="closeModal(true);go('printDoc',{doc:{t:'issue',id:'${id}'}})">修理報告書</button></div>`:''}
-    ${(i.log||[]).length?`<details style="margin-top:10px"><summary class="muted">状態の履歴（${i.log.length}件）</summary>${i.log.slice().reverse().map(l=>`<div class="meta" style="padding:3px 0;border-bottom:1px solid #eef1f4">${esc(l.at?new Date(l.at).toLocaleString('ja-JP'):'')}${l.by?'・'+esc(l.by):''}：${esc(l.from||'－')} → <b>${esc(l.to)}</b>${l.note?'（'+esc(l.note)+'）':''}</div>`).join('')}</details>`:''}
+    ${id?`<div class="row isacts" style="margin-top:8px"><button class="btn sec sm grow" onclick="useParts('issue:${id}')">📦 使った部品を出庫</button><button class="btn sec sm grow" onclick="closeModal(true);editWork(null,{title:${esc(JSON.stringify('対応：'+i.title))},kind:'修理',equipIds:${esc(JSON.stringify(i.equipId?[i.equipId]:[]))},issueId:'${id}'})">🧰 作業指示を作る</button><button class="btn sec sm grow" onclick="closeModal(true);go('printDoc',{doc:{t:'issue',id:'${id}'}})">修理報告書</button></div>`:''}
+    ${(i.log||[]).length?`<details style="margin-top:10px"><summary class="muted">状態の履歴（${i.log.length}件）</summary>${i.log.slice().reverse().map(l=>`<div class="meta" style="padding:3px 0;border-bottom:1px solid #eef1f4"><span class="nwl">${esc(l.at?new Date(l.at).toLocaleString('ja-JP'):'')}${l.by?'・'+esc(l.by):''}</span>：<span class="nwl">${esc(l.from||'－')}</span> → <b class="nwl">${esc(l.to)}</b>${l.note?'（'+esc(l.note)+'）':''}</div>`).join('')}</details>`:''}
     ${id?editLogHTML('issue',id):''}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveIssue('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delIssue('${id}')">削除</button>`:'')}`);
     const sel=$('#modal .grid2 select');if(sel){sel.id='is_equip';modalLabelLink(sel)}
