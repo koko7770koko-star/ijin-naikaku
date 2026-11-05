@@ -661,6 +661,12 @@ html[data-fs=l] .mitem .ar,html[data-fs=xl] .mitem .ar{flex:none}
 html[data-fs=l] .mitem>div,html[data-fs=xl] .mitem>div{word-break:keep-all;overflow-wrap:anywhere}
 html[data-fs=l] .mitem .ds,html[data-fs=xl] .mitem .ds{word-break:normal}
 html[data-fs=l] .mtti,html[data-fs=xl] .mtti{word-break:keep-all;overflow-wrap:anywhere}
+/* 文字「大」「特大」：診断の故障分析の月の札は画面では数字だけ（標準でも「12/月」と割れる。印刷は「月」付き）・まとめの行は言葉のまとまりで折る（「停/止」）・測定記録の2つの絞り込みは縦に並べる（「すべての」で切れる）（hz-xl-review-14） */
+.bars .bar .bm{display:none}
+@media print{.bars .bar .bm{display:inline}}
+html[data-fs=l] .dgsum,html[data-fs=xl] .dgsum{word-break:keep-all;overflow-wrap:anywhere}
+html[data-fs=l] .dgsum .dgmt,html[data-fs=xl] .dgsum .dgmt{word-break:normal}
+html[data-fs=l] .grid2.dgflt,html[data-fs=xl] .grid2.dgflt{grid-template-columns:minmax(0,1fr);gap:8px}
 /* 文字「大」「特大」：日常点検の数字の欄は 2 列にし、ラベル（「変圧器温度(℃)」など）を … で省かず全文を出す（hz-dayfield-label） */
 html[data-fs=l] .grid3:has(>.num),html[data-fs=xl] .grid3:has(>.num){grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end}
 html[data-fs=l] .grid3>.num>label.f,html[data-fs=xl] .grid3>.num>label.f{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;display:block!important;-webkit-line-clamp:none!important;min-height:0!important;word-break:keep-all!important;overflow-wrap:anywhere!important}
@@ -5977,7 +5983,7 @@ function vDiag(){
   if(t==='health'){
     const L=E.map(e=>({e,H:healthOf(e),last:(e.health||[]).slice(-1)[0]})).sort((a,b)=>(a.H.score??999)-(b.H.score??999));
     h+=card('💯 設備の健全度',`<div class="muted" style="margin-bottom:6px">参考指標は記録から自動計算した目安です（判定ではありません）。人による評価と合わせて見てください。</div>`+(L.length?L.map(({e,H,last})=>`<div class="item ${H.score!=null&&H.score<50?'ng':''}" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:52px"><b style="font-size:18px">${H.score??'－'}</b><small>参考</small></div>
-      <div class="bd"><div class="ti">${esc(eqLabel(e))}${e.importance?` <span class="pill ${e.importance==='A'?'ng':''}">重要度${esc(e.importance)}</span>`:''}</div><div class="meta">${esc(locPath(e.locId)||e.place||'')}${last?`・人の評価 ${'★'.repeat(last.score)}（${slash(last.date)}）`:'・人の評価 未'}</div></div></div>`).join(''):emptyBox('設備がありません')));
+      <div class="bd"><div class="ti">${esc(eqLabel(e))}${e.importance?` <span class="pill ${e.importance==='A'?'ng':''}">重要度${esc(e.importance)}</span>`:''}</div><div class="meta">${[esc(locPath(e.locId)||e.place||''),last?`人の評価 ${'★'.repeat(last.score)}（${slash(last.date)}）`:'人の評価 未'].filter(Boolean).join('・')}</div></div></div>`).join(''):emptyBox('設備がありません')));
     h+=card('💾 端末の記録の大きさ',`<div id="dgStore" class="muted">調べています…</div>`);setTimeout(dgStoreFill,0);
   }else if(t==='rec'){
     const L=E.flatMap(e=>recommendFor(e.id).map(r=>({...r,e}))).sort((a,b)=>(a.lv==='ng'?0:1)-(b.lv==='ng'?0:1));
@@ -5991,14 +5997,14 @@ function vDiag(){
     const cnt=months.map(m=>F.filter(i=>i.date.startsWith(m)).length),mx=Math.max(1,...cnt);
     const rows=failRows().sort((a,b)=>b.F.n12-a.F.n12);
     const tot=failStats(null,y1,TODAY);
-    h+=card('📉 故障件数（月別・直近12か月）',`<div class="bars">${months.map((m,k)=>`<div class="bar"><div class="bv" style="height:${cnt[k]/mx*80}px"></div><small>${+m.slice(5)}月</small><b>${cnt[k]||''}</b></div>`).join('')}</div>
-      <div class="meta">直近12か月：故障 ${tot.n}件・停止〜復旧 合計 ${tot.down12}時間・MTTR ${esc(tot.mttrText)}</div>
+    h+=card('📉 故障件数（月別・直近12か月）',`<div class="bars">${months.map((m,k)=>`<div class="bar"><div class="bv" style="height:${cnt[k]/mx*80}px"></div><small>${+m.slice(5)}<span class="bm">月</span></small><b>${cnt[k]||''}</b></div>`).join('')}</div>
+      <div class="meta dgsum">直近12か月：<wbr>故障 ${tot.n}件・<wbr><span style="white-space:nowrap">停止〜復旧</span> 合計 ${tot.down12}時間・MTTR <span class="dgmt">${esc(tot.mttrText)}</span></div>
       <div class="muted" style="font-size:12px">異常案件で「設備の故障として数える」にチェックしたものを集計しています。</div>`);
     h+=card('🏭 設備別',rows.length?`<div class="tblwrap"><table class="tbl"><tr><th>設備</th><th>12か月</th><th>停止h</th><th>未入力</th><th>MTBF</th><th>MTTR</th></tr>${rows.map(({e,F})=>`<tr onclick="go('equipDetail',{eq:'${e.id}'})"><td>${esc(eqLabel(e))}</td><td>${F.n12}</td><td>${F.down12}</td><td>${F.noDown||''}</td><td>${F.mtbf!=null?F.mtbf+'h'+(F.runKind==='推定'?'（推定）':''):'<span class="muted">算出なし</span>'}</td><td>${F.mttr!=null?F.mttr+'h'+(F.mttrNote?'（参考）':''):'<span class="muted">－</span>'}</td></tr>`).join('')}</table></div><div class="muted" style="font-size:12px">${esc(MTBF_DEF)}${esc(MTTR_DEF)}「算出なし」は、稼働時間が未登録・故障2件未満・復旧時間の未入力など、データが足りない場合です（設備カルテで理由を表示）。「未入力」は停止〜復旧の時間が入っていない故障の件数です。</div><button class="btn sec sm noprint" style="margin-top:6px" onclick="exportFailCsv()">CSV（画面と同じ計算）</button>`:emptyBox('故障の記録はありません'));
   }else{
     const ty=V.msType||'',eq=V.measEq||'';
     const M=(S.meas||[]).filter(m=>(!ty||m.type===ty)&&(!eq||m.equipId===eq)).sort((a,b)=>b.date.localeCompare(a.date));
-    h+=card(`📏 測定記録 <span class="muted">${M.length}件</span>`,`<div class="grid2"><select onchange="V.msType=this.value;render()"><option value="">すべての種類</option>${opts(MEAS_TYPES,ty)}</select><select onchange="V.measEq=this.value;render()"><option value="">すべての設備</option>${(S.equipment||[]).map(e=>`<option value="${e.id}" ${e.id===eq?'selected':''}>${esc(eqLabel(e))}</option>`).join('')}</select></div>
+    h+=card(`📏 測定記録 <span class="muted">${M.length}件</span>`,`<div class="grid2 dgflt"><select onchange="V.msType=this.value;render()"><option value="">すべての種類</option>${opts(MEAS_TYPES,ty)}</select><select onchange="V.measEq=this.value;render()"><option value="">すべての設備</option>${(S.equipment||[]).map(e=>`<option value="${e.id}" ${e.id===eq?'selected':''}>${esc(eqLabel(e))}</option>`).join('')}</select></div>
       <div style="margin-top:8px">${M.slice(0,V.msMore||100).map(measRow).join('')||emptyBox('まだありません')}${M.length>(V.msMore||100)?`<button class="btn sec wide" onclick="V.msMore=(V.msMore||100)+100;render()">さらに100件表示（残り ${M.length-(V.msMore||100)}件）</button>`:''}</div>
       <div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="exportMeasCsv()">CSV出力</button><button class="btn sec sm grow" onclick="go('mtpl')">ひな形・管理値の設定</button></div>`,`<button class="btn sm" onclick="editMeas()">＋ 記録</button>`);
     h+=genCard();
