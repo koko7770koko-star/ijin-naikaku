@@ -43,7 +43,7 @@ nav button{flex:1;position:relative;border:0;background:none;padding:8px 0 10px;
 nav button b{font-size:22px;font-weight:400;line-height:1}
 html[data-fs=xl] nav button{font-size:10px;letter-spacing:-.03em;white-space:nowrap}
 html[data-fs=l] nav button{font-size:11px;white-space:nowrap}
-html[data-fs=l] .nwl,html[data-fs=xl] .nwl{white-space:nowrap}
+html[data-fs=l] .nwl,html[data-fs=xl] .nwl{display:inline-block;max-width:100%;overflow-wrap:anywhere}
 nav button.on{color:var(--accent);font-weight:700}
 nav button b[data-n]:not([data-n=""])::after{content:attr(data-n);position:absolute;top:3px;left:50%;margin-left:6px;background:var(--ng);color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:0 5px;line-height:16px}
 /* 横向き（高さが低いとき）：見出しと下のナビを低くして、入力欄が隠れないように */

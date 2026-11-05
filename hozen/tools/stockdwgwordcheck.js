@@ -9,6 +9,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app').children.length>0,null,{timeout:15000});
   await p.evaluate(f=>{S.settings.fscale=f;applyFScale();
    S.parts=[...Array(4)].map((_,i)=>({id:'pm'+i,code:'P-'+(1000+i),name:'予備品'+(i+1)+' 端子台 M6 3極',spec:'定格 6.6kV',maker:'○○電機',place:'予備品庫 第3棚',unit:'個',qty:5,min:2,price:1200,equipIds:[],note:''}));
+   S.parts.push({id:'pmL',code:'ABCDEFGHIJ-1234567890-XYZ',name:'予備品L',spec:'',maker:'',place:'',unit:'個',qty:1,min:'',price:'',equipIds:[],note:''}); // 長い品番でも横にはみ出さない（カナメ：取り込みで足した）
    S.drawings=[...Array(3)].map((_,i)=>({id:'d'+i,name:'図面'+(i+1)+' 受変電設備 単線結線図（高圧側・低圧側）',kind:'単線結線図',locId:'',vers:[{id:'v1',ver:'3',date:'2026-11-03',note:'',by:'',file:'',type:'image/png'}],pins:[]}));save()},fs);
   for(const [v,sel,min] of [['stock','#app .item .ti .nwl',4],['dwgs','#app .item .meta .nwl',6]]){
    await p.evaluate(v=>go(v),v);await p.waitForTimeout(400);
