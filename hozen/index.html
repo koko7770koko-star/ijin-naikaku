@@ -365,6 +365,7 @@ html[data-fs=xl] .chk .l{flex:1 1 100%}
   table.bpt th{border:1px solid #666;padding:1mm;background:#eef2f6;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:9pt}
   table.bpt td{border:1px solid #666;height:10mm;padding:0 1mm}
   table.bpt tr{break-inside:avoid;page-break-inside:avoid}
+  table.bpt .bgs{color:#666;font-size:8pt}
   table.bpt thead{display:table-header-group}
   table.bdt tr{break-inside:avoid;page-break-inside:avoid}
   table.bdt tr.rbh{break-after:avoid;page-break-after:avoid}
@@ -5331,7 +5332,7 @@ function banBlankHTML(ym,B){
   let h='';
   B.forEach(b=>{
     const rows=[];
-    const line=(label,bs)=>bs.forEach((x,i)=>rows.push(`<tr><td>${i?'':esc(label)}</td><td class="bnm">${esc(x.name)}</td>${BAN_ITEMS.map((_,k)=>`<td class="bx">${V.banPrintMk?banShow(banVal(ym,x.id,k)):''}</td>`).join('')}<td class="bx"></td></tr>`));
+    const line=(label,bs)=>bs.forEach((x,i)=>rows.push(`<tr><td>${i?`<span class="bgs">${esc(label)}</span>`:esc(label)}</td><td class="bnm">${esc(x.name)}</td>${BAN_ITEMS.map((_,k)=>`<td class="bx">${V.banPrintMk?banShow(banVal(ym,x.id,k)):''}</td>`).join('')}<td class="bx"></td></tr>`));
     banGroups(b.id).forEach(g=>line(g.label,g.boards)); // 階 › 電気室 の見出しで棟ごとにまとめる
     if(!rows.length)return;
     h+=`<div class="banprint"><div class="phd"><div><h2>盤の点検表　${esc(b.name)}　${ym.slice(0,4)}年${+ym.slice(5,7)}月</h2><div class="muted">実施したら ● ／ 予定なら ◯ ／ 延期なら 延 ／ 異常があれば右の欄に書く　点検者：＿＿＿＿＿＿　点検日：＿＿月＿＿日</div></div>${pStamp}</div>
