@@ -1,5 +1,5 @@
 // 文字「大」「特大」・360px：盤の点検表で、盤の名前（動力盤-1・電灯分電盤-1）が1字ずつ折れず、◯●のボタンに重ならず、
-// 1つの盤のボタン4つ（盤内発熱・端子および碍子・その他異常・⚠）が1行に並び 44px 以上で、見出しの列とボタンの列がそろうことを確かめる（hz-l-ban）。
+// 1つの盤のボタン4つ（盤内発熱・端子および碍子・その他異常・⚠）が1行に並び 44px 以上で、見出しの列とボタンの列がそろうことを確かめる（hz-l-ban）。見出しの列は標準の文字でもそろう（hz-ban-std-align）。
 // 標準の文字（390px）では名前とボタンが同じ行のまま（前と同じ形）であることも見る。名前は「動力盤-1」の形だけ。
 // usage: node hozen/tools/banxlcheck.js   （外部への通信は止める）
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');
@@ -25,7 +25,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
     if(new Set(btn.map(x=>Math.round(R(x).top))).size>1)o.push(nm+'：ボタンが1行に並ばない');
     if(!fs&&btn[0]&&Math.abs(R(bn).top-R(btn[0]).top)>30)o.push(nm+'：標準の文字で名前とボタンが別の行になった')});
    // 見出しの列（盤内発熱・端子・その他）の真ん中が、すぐ下の盤のボタンの真ん中とそろう
-   const hd=document.querySelector('#app .banrow.bh');if(hd&&fs){const hb=[...hd.querySelectorAll(':scope>.bi')].slice(0,3);const row=hd.nextElementSibling&&hd.nextElementSibling.matches('.banrow')?hd.nextElementSibling:rows[0];
+   const hd=document.querySelector('#app .banrow.bh');if(hd){ // 標準の文字でもそろう（hz-ban-std-align）
+    const hb=[...hd.querySelectorAll(':scope>.bi')].slice(0,3);const row=hd.nextElementSibling&&hd.nextElementSibling.matches('.banrow')?hd.nextElementSibling:rows[0];
     const bb=[...row.querySelectorAll(':scope>.bm')].slice(0,3);hb.forEach((h,i)=>{if(!bb[i])return;const d=Math.abs((R(h).left+R(h).right)/2-(R(bb[i]).left+R(bb[i]).right)/2);if(d>8)o.push('見出し「'+h.innerText.replace(/\s/g,'')+'」がボタンの列とずれる '+Math.round(d)+'px')})}
    if(document.documentElement.scrollWidth>document.documentElement.clientWidth+1)o.push('ページが横にはみ出す');
    return [...new Set(o)]},fs);

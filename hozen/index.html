@@ -214,7 +214,7 @@ table.yr .cat td{text-align:left;background:#f0f4f8;font-weight:700;color:var(--
 table.yr .cat span{position:sticky;left:8px}
 /* 盤の点検表 */
 .banrow{display:flex;gap:4px;align-items:center;margin:4px 0}.banrow .bn{flex:1 1 auto;min-width:0;font-weight:700;overflow-wrap:anywhere}
-.banrow .bi,.banrow .bm{flex:0 0 58px;width:58px}.banrow.flash{outline:3px solid #e0b000;outline-offset:1px;background:#fff6d6;transition:background .3s}
+.banrow .bi,.banrow .bm{flex:0 0 58px;width:58px}.banrow.bh>.bi:last-child{flex-basis:44px;width:44px} /* 見出しの最後（⚠ の列）は ⚠ と同じ 44px にして、見出しとボタンの列をそろえる（hz-ban-std-align） */.banrow.flash{outline:3px solid #e0b000;outline-offset:1px;background:#fff6d6;transition:background .3s}
 /* 文字「大」「特大」：盤の名前が狭い所で「動/力/盤/-/1」と1字ずつ折れて ◯● のボタンに重なるので、名前を1行に取り、ボタンはその下の行へ（hz-l-ban） */
 html[data-fs=l] .banrow:has(>.bn),html[data-fs=xl] .banrow:has(>.bn){flex-wrap:wrap}
 html[data-fs=l] .banrow>.bn,html[data-fs=xl] .banrow>.bn{flex:1 1 100%;word-break:keep-all;overflow-wrap:anywhere}
