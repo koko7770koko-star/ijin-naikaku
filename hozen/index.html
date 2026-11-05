@@ -44,6 +44,7 @@ nav button b{font-size:22px;font-weight:400;line-height:1}
 html[data-fs=xl] nav button{font-size:10px;letter-spacing:-.03em;white-space:nowrap}
 html[data-fs=l] nav button{font-size:11px;white-space:nowrap}
 html[data-fs=l] .nwl,html[data-fs=xl] .nwl{display:inline-block;max-width:100%;overflow-wrap:anywhere}
+html[data-fs=l] .eqkb .btn,html[data-fs=xl] .eqkb .btn{white-space:normal!important;flex:1 1 40%;min-height:44px}
 nav button.on{color:var(--accent);font-weight:700}
 nav button b[data-n]:not([data-n=""])::after{content:attr(data-n);position:absolute;top:3px;left:50%;margin-left:6px;background:var(--ng);color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:0 5px;line-height:16px}
 /* 横向き（高さが低いとき）：見出しと下のナビを低くして、入力欄が隠れないように */
@@ -5511,29 +5512,29 @@ function eqKarte(e){
   const sp=Object.entries(e.spec||{}),H=healthOf(e),last=(e.health||[]).slice(-1)[0],F=failStats(e.id);
   let h=`<div class="card"><h2>🗂 設備カルテ</h2>
     <div class="rep"><table>
-      <tr><th style="width:96px">場所</th><td>${e.locId?`<a href="#" style="display:inline-block;padding:15px 0;min-height:20px;min-width:44px" onclick="go('locs');return false">${esc(locPath(e.locId))}</a>`:'<span class="muted">未設定</span>'}</td></tr>
+      <tr><th style="width:96px">場所</th><td>${e.locId?`<a href="#" style="display:inline-block;padding:15px 0;min-height:20px;min-width:44px" onclick="go('locs');return false">${String(locPath(e.locId)).split(' › ').map(t=>`<span class="nwl">${esc(t)}</span>`).join(' › ')}</a>`:'<span class="muted">未設定</span>'}</td></tr>
       <tr><th>種別・重要度</th><td>${esc(e.kind||'未設定')}　${e.importance?`<span class="pill ${e.importance==='A'?'ng':e.importance==='B'?'warn':''}">重要度${esc(e.importance)}</span>`:'<span class="muted">重要度 未設定</span>'}　<span class="pill ${e.status==='稼働'?'ok':'warn'}">${esc(e.status||'稼働')}</span></td></tr>
       ${sp.map(([k,v])=>`<tr><th>${esc(specShowLabel(e.kind,k,v))}</th><td>${esc(v)}</td></tr>`).join('')}
     </table></div>
-    <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn sec sm grow noprint" style="white-space:nowrap" onclick="qrOne('${e.id}')">🔳 QRコード</button><button class="btn sec sm grow noprint" style="white-space:nowrap" onclick="editMeas(null,{equipId:'${e.id}'})">＋ 測定記録</button><button class="btn sec sm grow noprint" style="white-space:nowrap" onclick="editWork(null,{equipIds:['${e.id}']})">＋ 作業指示</button></div></div>`;
+    <div class="row eqkb" style="margin-top:8px;flex-wrap:wrap"><button class="btn sec sm grow noprint" style="white-space:nowrap" onclick="qrOne('${e.id}')">🔳 QRコード</button><button class="btn sec sm grow noprint" style="white-space:nowrap" onclick="editMeas(null,{equipId:'${e.id}'})">＋ 測定記録</button><button class="btn sec sm grow noprint" style="white-space:nowrap" onclick="editWork(null,{equipIds:['${e.id}']})">＋ 作業指示</button></div></div>`;
   // 健全度
   h+=`<div class="card"><div class="hd-row"><h2>💯 健全度</h2><button class="btn sm noprint" onclick="rateHealth('${e.id}')">評価を記録</button></div>
     <div class="row" style="align-items:flex-start">
       <div class="grow"><div class="muted">人による評価</div>${last?`<div style="font-size:22px;font-weight:700">${'★'.repeat(last.score)}${'☆'.repeat(5-last.score)}</div><div class="meta">${slash(last.date)}・${esc(last.by)}${last.note?'<br>'+esc(last.note):''}</div>`:'<div class="muted">未評価</div>'}</div>
       <div class="grow"><div class="muted">参考指標（自動計算・判定ではありません）</div>${H.score==null?'<div class="muted">計算に使える情報がありません</div>':`<div style="font-size:22px;font-weight:700;color:${H.score<50?'var(--ng)':H.score<75?'var(--warn)':'var(--ok)'}">${H.score}<small>点</small></div>`}</div></div>
-    <details open style="margin-top:6px"><summary class="muted">計算の根拠と内訳</summary>${H.parts.map(p=>`<div class="meta">・${esc(p.label)}：${esc(p.basis)}${p.risk==null?'（計算に使わない）':`→ 劣化度 ${Math.round(p.risk*100)}%（重み${p.w}）`}</div>`).join('')}
+    <details open style="margin-top:6px"><summary class="muted" style="min-height:44px;padding:10px 0;box-sizing:border-box">計算の根拠と内訳</summary>${H.parts.map(p=>`<div class="meta">・${esc(p.label)}：${esc(p.basis)}${p.risk==null?'（計算に使わない）':`→ 劣化度 ${Math.round(p.risk*100)}%（重み${p.w}）`}</div>`).join('')}
       <div class="meta muted">点数＝100−重み付き平均の劣化度×100。重みは「設定 → 保全の設定」で変えられます。</div></details></div>`;
   // 更新計画・故障統計
   const age=e.installed?Math.floor(diffD(TODAY,e.installed+'-01')/365.25):null,rec=renewRecommend(e);
   h+=`<div class="card"><h2>📆 更新計画・故障統計</h2><div class="rep"><table>
     <tr><th style="width:110px">経過年数</th><td>${age==null?'－（設置年月 未設定）':age+'年'}${e.life!==''&&e.life!=null?` ／ 耐用年数 ${esc(e.life)}年`:''}</td></tr>
     <tr><th>更新推奨</th><td>${rec?esc(rec):'－（耐用年数 未設定）'}</td></tr>
-    <tr><th>更新予定</th><td>${e.renewYear?esc(e.renewYear)+'年度':'－'}${e.renewCost!==''&&e.renewCost!=null?'・'+yen(e.renewCost):''}</td></tr>
+    <tr><th>更新予定</th><td>${e.renewYear?esc(e.renewYear)+'年度':'－'}${e.renewCost!==''&&e.renewCost!=null?'・<span class="nwl">'+yen(e.renewCost)+'</span>':''}</td></tr>
     <tr><th>故障（直近12か月）</th><td>${F.n12}件・停止 ${F.down12}時間</td></tr>
     <tr><th>稼働時間</th><td>${esc(RUN_LABEL[(e.run||{}).mode||''])}${(e.run||{}).mode==='perday'?`（1日 ${esc(e.run.perDay)}時間）`:''}${(e.run||{}).mode==='meter'?`・記録 ${(e.run.meters||[]).length}回${e.run.meters.length?`（最新 ${slash(e.run.meters.at(-1).date)} ${e.run.meters.at(-1).value}h）`:''}`:''}
       ${(e.run||{}).mode==='meter'?`<button class="btn sec sm" style="margin-left:6px" onclick="addMeter('${e.id}')">稼働時間計の記録</button>`:''}</td></tr>
     <tr><th>MTBF</th><td>${esc(F.mtbfText)}</td></tr><tr><th>MTTR</th><td>${esc(F.mttrText)}</td></tr>
-    <tr><td colspan="2"><details><summary class="muted">計算の根拠と定義</summary><div class="meta">${esc(F.basis)}</div></details></td></tr></table></div></div>`;
+    <tr><td colspan="2"><details><summary class="muted" style="min-height:44px;padding:10px 0;box-sizing:border-box">計算の根拠と定義</summary><div class="meta">${esc(F.basis)}</div></details></td></tr></table></div></div>`;
   // 測定記録
   const M=(S.meas||[]).filter(m=>m.equipId===e.id).sort((a,b)=>b.date.localeCompare(a.date));
   h+=card(`📏 測定記録 <span class="muted">${M.length}件</span>`,M.length?M.slice(0,8).map(measRow).join('')+(M.length>8?`<button class="linkbtn" onclick="go('meas',{measEq:'${e.id}'})">すべて見る</button>`:''):emptyBox('まだありません'),`<button class="btn sm" style="min-height:40px" onclick="editMeas(null,{equipId:'${e.id}'})">＋ 追加</button>`);
@@ -5696,7 +5697,7 @@ const limText=r=>r.ck?'○／×':r.min===''&&r.max===''?'基準未設定':`${r.m
 function measRow(m){
   const j=measJudge(m),e=eqById(m.equipId);
   return `<div class="item ${j.ng?'ng':''}" onclick="editMeas('${m.id}')"><div class="dt">${md(m.date)}<small>${m.date.slice(0,4)}</small></div><div class="bd"><div class="ti">${esc(m.name||m.type)}${e?`<span class="muted">・${esc(e.name)}</span>`:''}</div>
-    <div class="meta">${m.rows.filter(r=>r.v!==''&&r.v!=null).slice(0,4).map(r=>`${esc(r.name)} ${esc(r.v)}${esc(r.ck?'':r.unit)}`).join('・')}</div><span class="pill ${j.ng?'ng':/未|なし/.test(j.text)?'warn':'ok'}">${esc(j.text)}</span>${m.by?`<span class="pill">${esc(m.by)}</span>`:''}</div></div>`;
+    <div class="meta">${m.rows.filter(r=>r.v!==''&&r.v!=null).slice(0,4).map(r=>`${esc(r.name)} ${esc(r.v)}${esc(r.ck?'':r.unit)}`).join('・')}</div><span class="pill ${j.ng?'ng':/未|なし/.test(j.text)?'warn':'ok'}">${String(j.text).split('・').map(t=>`<span class="nwl">${esc(t)}</span>`).join('・')}</span>${m.by?`<span class="pill">${esc(m.by)}</span>`:''}</div></div>`;
 }
 
 /* ---------- 測定記録の入力 ---------- */
