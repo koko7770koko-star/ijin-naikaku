@@ -3472,10 +3472,10 @@ function eqLinks(e){
 }
 function vEquip(){
   const q=(V.eqQ||'').trim(),E=(S.equipment||[]).filter(e=>(!q||sFold([e.code,e.name,e.place,e.maker,e.model,e.serial,e.kind,locPath(e.locId)].join(' ')).includes(sFold(q)))&&(!V.eqKind||e.kind===V.eqKind)&&(!V.eqImp||e.importance===V.eqImp)&&(!V.eqLoc||locDesc(V.eqLoc).has(e.locId))&&(V.eqAll||e.status!=='廃止'))
-    .sort((a,b)=>(a.code||'').localeCompare(b.code||'',undefined,{numeric:true})||a.name.localeCompare(b.name));
+    .sort((a,b)=>(a.code||'').localeCompare(b.code||'',undefined,{numeric:true})||a.name.localeCompare(b.name,'ja',{numeric:true}));
   const sortK=V.eqSort||'code',DLM={},OPN={},LD={};
   if(sortK!=='code'&&sortK!=='name'){deadlines().filter(x=>x.it.equipId&&x.left!=null).forEach(x=>{if(DLM[x.it.equipId]==null||x.left<DLM[x.it.equipId])DLM[x.it.equipId]=x.left});E.forEach(e=>OPN[e.id]=eqLinks(e).issues.filter(i=>i.status!=='完了').length)}
-  if(sortK==='name')E.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
+  if(sortK==='name')E.sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}));
   else if(sortK==='issue')E.sort((a,b)=>(OPN[b.id]||0)-(OPN[a.id]||0));
   else if(sortK==='due')E.sort((a,b)=>(DLM[a.id]??1e9)-(DLM[b.id]??1e9));
   else if(sortK==='loc'){const P=e=>locPath(e.locId)||e.place||'';E.sort((a,b)=>{const x=P(a),y=P(b);return (!x)-(!y)||x.localeCompare(y,'ja',{numeric:true})})}
@@ -5846,7 +5846,7 @@ function saveMeas(id){
 }
 /* 発電機の月次の数字を保存した後：次の未入力の発電機へ（一覧と同じ 棟→階→電気室 の順で、今の台の次から。全部済みなら知らせるだけ） */
 function genOrder(){const where=e=>{let l=locById(e.locId),n=0,b='',f='',r='';while(l&&n<10){if(l.type==='階'&&!f)f=l.name;if(l.type==='電気室'&&!r)r=l.name;if(l.type==='建屋'&&!b)b=l.name;l=locById(l.parent);n++}return{b:b||(e.locId?'（棟の指定なし）':'場所未設定'),f,r}};
-  return (S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止').map(e=>({e,w:where(e)})).sort((a,b)=>a.w.b.localeCompare(b.w.b,'ja')||a.w.f.localeCompare(b.w.f,'ja',{numeric:true})||a.w.r.localeCompare(b.w.r,'ja',{numeric:true})||eqLabel(a.e).localeCompare(eqLabel(b.e),'ja')).map(x=>x.e)}
+  return (S.equipment||[]).filter(e=>e.kind==='発電機'&&e.status!=='廃止').map(e=>({e,w:where(e)})).sort((a,b)=>a.w.b.localeCompare(b.w.b,'ja',{numeric:true})||a.w.f.localeCompare(b.w.f,'ja',{numeric:true})||a.w.r.localeCompare(b.w.r,'ja',{numeric:true})||eqLabel(a.e).localeCompare(eqLabel(b.e),'ja',{numeric:true})).map(x=>x.e)}
 function genAskNext(curId){const pend=new Set(genPending().map(e=>e.id)),O=genOrder(),i=O.findIndex(e=>e.id===curId);
   const nx=[...O.slice(i+1),...O.slice(0,Math.max(0,i))].find(e=>pend.has(e.id));
   if(!nx){if(O.length>1)setTimeout(()=>toast('今月の発電機は、すべて入力済みです'),900);return}
@@ -6070,7 +6070,7 @@ function genCard(){
   // 棟・階は場所の階層（建屋・階）をたどって決める。無ければ「場所未設定」
   const where=e=>{let l=locById(e.locId),n=0,b='',f='',r='';while(l&&n<10){if(l.type==='階'&&!f)f=l.name;if(l.type==='電気室'&&!r)r=l.name;if(l.type==='建屋'&&!b)b=l.name;l=locById(l.parent);n++}return{b:b||(e.locId?'（棟の指定なし）':'場所未設定'),f,r}};
   const W=G.map(e=>({e,w:where(e),d:doneThis(e.id)}));
-  const blds=[...new Set(W.map(x=>x.w.b))].sort((a,b)=>a.localeCompare(b,'ja'));
+  const blds=[...new Set(W.map(x=>x.w.b))].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}));
   const sel=blds.includes(V.genB)?V.genB:'';
   const shown=W.filter(x=>!sel||x.w.b===sel);
   const doneN=shown.filter(x=>x.d).length;
@@ -6079,13 +6079,13 @@ function genCard(){
   if(!G.length)body=emptyBox('設備台帳に種別「発電機」の設備を登録すると、ここから1台ずつ点検できます');
   else{
     if(blds.length>1)body+=`<div class="row" style="margin-bottom:8px;flex-wrap:wrap;gap:6px"><button class="btn sm ${sel?'sec':''}" onclick="V.genB='';render()">すべて</button>${blds.map(b=>`<button class="btn sm ${sel===b?'':'sec'}" onclick="V.genB=${esc(JSON.stringify(b))};render()">${esc(b)}</button>`).join('')}</div>`;
-    const bs=[...new Set(shown.map(x=>x.w.b))].sort((a,b)=>a.localeCompare(b,'ja'));
+    const bs=[...new Set(shown.map(x=>x.w.b))].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}));
     for(const b of bs){
       const inB=shown.filter(x=>x.w.b===b),fs=[...new Set(inB.map(x=>x.w.f))].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}));
       for(const f of fs){
         const inF=inB.filter(x=>x.w.f===f),rs=[...new Set(inF.map(x=>x.w.r))].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}));
         for(const r of rs){
-          const L=inF.filter(x=>x.w.r===r).sort((a,b)=>(a.d-b.d)||eqLabel(a.e).localeCompare(eqLabel(b.e),'ja'));
+          const L=inF.filter(x=>x.w.r===r).sort((a,b)=>(a.d-b.d)||eqLabel(a.e).localeCompare(eqLabel(b.e),'ja',{numeric:true}));
           const h2=`${esc(b)}${f?' › '+esc(f):''}${r?' › '+esc(r):''}`;
           body+=`<div class="grp"><b>${h2}</b> <span class="muted">今月 ● ${L.filter(x=>x.d).length}/${L.length}</span>${L.map(row).join('')}</div>`;
         }
