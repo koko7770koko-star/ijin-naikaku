@@ -672,6 +672,8 @@ html[data-fs=l] .grid2.dgflt,html[data-fs=xl] .grid2.dgflt{grid-template-columns
 html[data-fs=l] .grid2.dchg,html[data-fs=xl] .grid2.dchg{grid-template-columns:minmax(0,1fr)}
 /* 点検履歴の行の数値（「変圧器温度 102℃」）は、大・特大では1つずつまとまりで折る（「変/圧器温度」と割れる）（hz-l-review-3） */
 html[data-fs=l] .meta .hv,html[data-fs=xl] .meta .hv{display:inline-block;max-width:100%}
+/* 点検履歴の「該当 10日」は、大・特大では1文字ずつ縦に割れないよう1行に（hz-xl-hist-by） */
+html[data-fs=l] #hCount,html[data-fs=xl] #hCount{white-space:nowrap;flex:0 0 auto}
 /* 文字「大」「特大」：設備の場所の木で、深い段（電気室・盤）の名前が1文字ずつ縦に割れないよう、名前の幅が 4 文字ぶん取れないときは「＋盤」「…」を下の段へ（hz-xl-review-12） */
 /* 文字「大」「特大」：測定記録の窓の測定値の行は、測定値を1段目いっぱいに、単位・下限・上限を2段目に並べる（hz-xl-meas-modal） */
 html[data-fs=l] #ms_rows .mvals,html[data-fs=xl] #ms_rows .mvals{flex-wrap:wrap!important}
@@ -3309,7 +3311,7 @@ function vHist(){
     <label class="f">キーワード（備考・点検者）</label><input value="${esc(V.hKw||'')}" onchange="V.hKw=this.value;render()">
     ${V.hRange==='custom'?`<div class="grid2"><div><label class="f">から</label><input type="date" value="${esc(V.hFrom||addD(TODAY,-30))}" onchange="V.hFrom=this.value;render()"></div><div><label class="f">まで</label><input type="date" value="${esc(V.hTo||TODAY)}" onchange="V.hTo=this.value;render()"></div></div>`:''}
     <button type="button" id="hNgBtn" class="btn wide ${V.hNg?'':'sec'}" style="min-height:44px;margin-top:8px" aria-pressed="${!!V.hNg}" onclick="V.hNg=!V.hNg;render()">${V.hNg?'✔ 異常だけ表示中（押すと全部）':'異常・基準外だけ表示'}</button>
-    <div class="row" style="margin-top:10px"><span class="muted grow">該当 ${rows.length}日</span><button class="btn sec sm" ${rows.length?'':'aria-disabled="true" style="opacity:.5"'} onclick="exportDailyCsv()">${rows.length?`CSVに書き出す（${rows.length}日分）`:'CSVに書き出す'}</button></div>${rows.length?`<button class="btn sec sm wide" id="hPrintBtn" style="min-height:44px;margin-top:8px" onclick="window.print()">🖨 この条件で印刷（A4 縦・${rows.length}日分）</button>`:''}</div>`;
+    <div class="row" style="margin-top:10px"><span class="muted grow" id="hCount">該当 ${rows.length}日</span><button class="btn sec sm" ${rows.length?'':'aria-disabled="true" style="opacity:.5"'} onclick="exportDailyCsv()">${rows.length?`CSVに書き出す（${rows.length}日分）`:'CSVに書き出す'}</button></div>${rows.length?`<button class="btn sec sm wide" id="hPrintBtn" style="min-height:44px;margin-top:8px" onclick="window.print()">🖨 この条件で印刷（A4 縦・${rows.length}日分）</button>`:''}</div>`;
   if(isNum)h+=trendCard(numDef(item)).replace('<div class="card">','<div class="card noprint">');
   h+=histPrintHTML(rows,item);
   h+=`<div class="card noprint"><h2>記録</h2>${rows.length?rows.slice(0,200).map(k=>histRow(k,item)).join('')+(rows.length>200?`<div class="muted">ほか ${rows.length-200}日（CSVで全件出力できます）</div>`:''):`<div class="empty">該当する記録はありません${Object.keys(S.daily||{}).length?'<br>期間や絞り込みを変えてみてください':'<br>日常点検を入力すると、ここに出ます'}</div>${Object.keys(S.daily||{}).length?'<button class="btn wide" id="hClearBtn" style="min-height:44px" onclick="histClearFilter()">✖ 条件を外して全期間を見る</button>':'<button class="btn sec wide" style="min-height:44px" onclick="go(\'day\')">✅ 日常点検を入力する</button>'}`}</div>`;
@@ -3335,7 +3337,7 @@ function histRow(k,item){
   else if(item){const v=(r.c||{})[item];body=`<div class="ti" style="${v==='×'?'color:var(--ng)':''}">${esc(v)}</div>`}
   else body=`<div class="meta">${numDefs().filter(n=>r[n.id]!=null).map(n=>`<span class="hv">${esc(n.short||n.name)} ${esc(r[n.id])}${esc(n.unit)}</span>`).join('・')}</div>${st.I&&st.I.ng.length?`<div class="meta" style="color:var(--ng)">${esc(st.I.ng.join('、'))}</div>`:''}`;
   return `<div class="item ${st.cls==='ok'?'ok':st.cls==='ng'?'ng':''}" onclick="go('day',{day:'${k}'})"><div class="dt">${md(k)}<small>（${WD[pd(k).getDay()]}）</small></div>
-    <div class="bd">${body}<div class="meta">${esc(st.st)}${r.by?'・'+esc(r.by):''}${(r.photos||[]).length?'・📷'+r.photos.length:''}${r.note?'・'+esc(txt(r.note,40)):''}</div></div></div>`;
+    <div class="bd">${body}<div class="meta"><span class="hv">${esc(st.st)}</span>${r.by?'・<span class="hv">'+esc(r.by)+'</span>':''}${(r.photos||[]).length?'・<span class="hv">📷'+r.photos.length+'</span>':''}${r.note?'・'+esc(txt(r.note,40)):''}</div></div></div>`;
 }
 function trendCard(n){
   const [from,to]=histRange(),pts=Object.keys(S.daily).filter(k=>k>=from&&k<=to&&S.daily[k][n.id]!=null).sort().map(k=>[k,S.daily[k][n.id]]);
