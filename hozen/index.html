@@ -2426,14 +2426,14 @@ function setMark(itemId,ds,val,undo){
 function taskRow(t,quick){
   const over=t.status==='予定'&&t.date<TODAY,cf=conflicts(t);
   const cls=isNG(t)||over?'ng':t.status==='完了'?'ok':t.status==='予定'?'':'dim';
-  const meta=[t.time,t.place,t.staff,t.attend?'立会 '+t.attend:''].filter(Boolean).join('・');
+  const meta=nwlJoin([t.time,t.place?{p:t.place}:'',t.staff,t.attend?'立会 '+t.attend:'']);
   const pills=(t.status!=='予定'?`<span class="pill ${t.status==='完了'?'ok':''}">${esc(t.status)}</span>`:'')
     +(t.result&&t.result!=='良'?`<span class="pill ${isNG(t)?'ng':''}">${esc(t.result)}</span>`:'')
     +(over?'<span class="pill ng">期限超過</span>':'')
     +((t.photos||[]).length?`<span class="pill">📷${t.photos.length}</span>`:'')
     +(cf.length?`<span class="pill warn">⚠ ${esc(cf.join('、'))}</span>`:'');
   return `<div class="item ${cls}" onclick="editTask('${t.id}')"><div class="dt">${md(t.date)}<small>（${WD[pd(t.date).getDay()]}）</small></div>
-    <div class="bd"><div class="ti">${esc(t.title)}</div>${meta?`<div class="meta">${esc(meta)}</div>`:''}${pills?`<div>${pills}</div>`:''}${quick&&t.status==='予定'?`<button type="button" class="btn sec sm" style="margin-top:6px;min-height:44px" onclick="event.stopPropagation();quickDone('${t.id}')">● 実施済みにする</button>`:''}</div></div>`;
+    <div class="bd"><div class="ti">${esc(t.title)}</div>${meta?`<div class="meta">${meta}</div>`:''}${pills?`<div>${pills}</div>`:''}${quick&&t.status==='予定'?`<button type="button" class="btn sec sm" style="margin-top:6px;min-height:44px" onclick="event.stopPropagation();quickDone('${t.id}')">● 実施済みにする</button>`:''}</div></div>`;
 }
 // 一覧から、開かずに1回で「実施済み（●）」にする（既存の完了と同じ：状態=完了・結果=良。押し間違えは「元に戻す」で戻せる）
 function quickDone(id){const t=S.tasks.find(x=>x.id===id);if(!t||t.status!=='予定')return;
@@ -2449,7 +2449,9 @@ function dayAllDone(ds){
   undoBar(`${md(ds)}の ◯ ${L.length}件を ●（実施済み）にしました`,()=>{R.forEach(({t,prev,U})=>{logEdit('task',t.id,'状態','完了',prev.status);t.status=prev.status;if(prev.result===undefined)delete t.result;else t.result=prev.result;for(const [fy,iid,ix,old] of U.marks.slice().reverse())if(S.marks[fy]&&S.marks[fy][iid])S.marks[fy][iid][ix]=old});save();render()});
 }
 /* 場所の文字（「A棟 › 1階 › 第1電気室 › 動力盤-1」「A棟 1階 第1電気室」）を、段（› や空白で区切った語）の途中で割らないよう .nwl で包む。表示だけ */
-function nwlPath(p){return String(p||'').split(/(\s*›\s*|[\s　]+)/).map((t,k)=>k%2?esc(t):t?`<span class="nwl">${esc(t)}</span>`:'').join('')}
+function nwlPath(p,tail){const a=String(p||'').split(/(\s*›\s*|[\s　]+)/);let L=-1;a.forEach((t,k)=>{if(k%2===0&&t)L=k});return a.map((t,k)=>k%2?esc(t):t?`<span class="nwl">${esc(t)}${k===L&&tail?esc(tail):''}</span>`:'').join('')+(L<0&&tail?esc(tail):'')}
+/* 「種類・場所・メーカー」のような「・」つなぎ：場所（{p:…}）は段ごと、ほかは語ごとに .nwl で包み、「・」は包みの後ろ（行が「・」から始まらない）。表示だけ */
+function nwlJoin(a){a=a.filter(x=>x&&(typeof x==='string'||x.p));return a.map((x,i)=>{const t=i<a.length-1?'・':'';return typeof x==='string'?`<span class="nwl">${esc(x)}${t}</span>`:nwlPath(x.p,t)}).join('')}
 function issueRow(i){
   const done=i.status==='完了';
   return `<div class="item ${done?'ok':'ng'}" onclick="editIssue('${i.id}')"><div class="dt">${md(i.date)}<small${!done&&diffD(TODAY,i.date)>=14?' class="old"':''}>${done?'':'発見から '+diffD(TODAY,i.date)+'日'}</small></div>
@@ -2708,7 +2710,7 @@ function vMonth(){
     <div class="row mocr" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div>
     <button class="btn sm sec wide" style="margin-top:8px" onclick="window.print()">🖨 この月の予定表を印刷（A4 縦）</button></div>${monthPrintHTML(y,m)}`;
   const dayT=S.tasks.filter(t=>t.date===V.sel).sort(byDate),dayW=worksOn(V.sel);
-  h+=`<div class="card noprint" id="dayCard"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.filter(t=>t.status==='予定').length>=2?`<button class="btn sec sm wide" id="dayAllDone" style="min-height:44px;margin:4px 0 8px" onclick="dayAllDone('${V.sel}')">この日の ◯ ${dayT.filter(t=>t.status==='予定').length}件を全部 ●</button>`:''}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):(dayW.length?'':'<div class="empty">予定はありません</div>')}${dayW.length?`<div id="dayWorks"><b class="muted" style="display:block;margin:8px 0 4px">🔧 この日の工事・作業指示 ${dayW.length}件</b>${dayW.map(w=>`<div class="item" onclick="editWork('${w.id}')"><div class="dt" style="min-width:64px">${esc(w.start||'')}</div><div class="bd"><div class="ti">${esc(w.title)}</div><div class="meta">${esc([w.no,w.status,w.date!==(w.endDate||w.date)?md(w.date)+'〜'+md(w.endDate):'',w.place].filter(Boolean).join('・'))}</div></div></div>`).join('')}</div>`:''}</div>`;
+  h+=`<div class="card noprint" id="dayCard"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.filter(t=>t.status==='予定').length>=2?`<button class="btn sec sm wide" id="dayAllDone" style="min-height:44px;margin:4px 0 8px" onclick="dayAllDone('${V.sel}')">この日の ◯ ${dayT.filter(t=>t.status==='予定').length}件を全部 ●</button>`:''}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):(dayW.length?'':'<div class="empty">予定はありません</div>')}${dayW.length?`<div id="dayWorks"><b class="muted" style="display:block;margin:8px 0 4px">🔧 この日の工事・作業指示 ${dayW.length}件</b>${dayW.map(w=>`<div class="item" onclick="editWork('${w.id}')"><div class="dt" style="min-width:64px">${esc(w.start||'')}</div><div class="bd"><div class="ti">${esc(w.title)}</div><div class="meta">${nwlJoin([w.no,w.status,w.date!==(w.endDate||w.date)?md(w.date)+'〜'+md(w.endDate):'',w.place?{p:w.place}:''])}</div></div></div>`).join('')}</div>`:''}</div>`;
   const mt=tasksOf(y,m);
   h+=`<div class="card noprint"><div class="hd-row"><h2>${m}月の一覧</h2><span class="muted">完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件</span></div>${mt.length?mt.map(taskRow).join(''):'<div class="empty">この月の予定はまだありません</div>'}</div>`;
   return h;
@@ -3491,7 +3493,7 @@ function vEquip(){
     <div class="row" style="margin-top:8px;align-items:center"><span class="muted">${filt?`絞り込み：${E.length}台 ／ 全${(S.equipment||[]).length}台`:`${E.length}台を表示`}</span><span class="sp"></span><select aria-label="並び順" class="noprint" style="width:auto" onchange="V.eqSort=this.value;render()">${[['code','ID順'],['name','名前順'],['loc','場所順'],['last','最後の点検が古い順'],['issue','異常の多い順'],['due','期限が近い順']].map(([v,l])=>`<option value="${v}" ${sortK===v?'selected':''}>${l}</option>`).join('')}</select></div>${filt?`<div class="row noprint" style="margin-top:4px"><button class="btn sec sm" style="min-height:44px" onclick="V.eqQ='';V.eqKind='';V.eqImp='';V.eqLoc='';render()">絞り込みをやめる</button></div>`:''}
     <div style="margin-top:10px">${E.length?E.map(e=>{const L=eqLinks(e),open=L.issues.filter(i=>i.status!=='完了').length,dl=deadlines().filter(x=>x.it.equipId===e.id&&x.left!=null).sort((a,b)=>a.left-b.left)[0];
       return `<div class="item ${open?'ng':''}" onclick="go('equipDetail',{eq:'${e.id}',eqTab:'ov'})"><div class="dt" style="min-width:64px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}${e.importance?` <span class="pill ${e.importance==='A'?'ng':e.importance==='B'?'warn':''}">${esc(e.importance)}</span>`:''}${e.status&&e.status!=='稼働'?` <span class="pill">${esc(e.status)}</span>`:''}</div>
-        <div class="meta">${esc([e.kind,locPath(e.locId)||e.place,e.maker,e.model].filter(Boolean).join('・'))}</div>
+        <div class="meta">${nwlJoin([e.kind,(locPath(e.locId)||e.place)?{p:locPath(e.locId)||e.place}:'',e.maker,e.model])}</div>
         <div>${open?`<span class="pill ng">対応中の異常 ${open}</span>`:''}${dl?`<span class="pill ${dl.left<0?'ng':dl.left<=30?'warn':'ok'}">${esc(dl.it.name)} ${dl.left<0?(-dl.left)+'日超過':'あと'+dl.left+'日'}</span>`:''}${(e.repairs||[]).length?`<span class="pill">修理等 ${e.repairs.length}</span>`:''}${sortK==='last'?`<span class="pill">最後の点検 ${LD[e.id]?slash(LD[e.id]):'記録なし'}</span>`:''}</div></div></div>`}).join(''):(filt?'<div class="empty">条件に合う設備がありません。「絞り込みをやめる」を押してください。</div>':'<div class="empty">設備がありません。「＋ 設備を追加」から登録してください。</div>')}</div></div>`;
 }
 let EQ_ST=0;function eqSearch(el){clearTimeout(EQ_ST);EQ_ST=setTimeout(()=>{V.eqQ=el.value;render();const n=document.getElementById('eqQ');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}},350)}
@@ -3523,7 +3525,7 @@ function vEquipDetail(){
   const L=eqLinks(e),f=(l,v)=>v?`<tr><th style="width:96px">${l}</th><td>${esc(v)}</td></tr>`:'';
   let h=eqSummary(e,L);
   h+=`<div class="card"><div class="hd-row"><h2>${esc(e.code?e.code+'　':'')}${esc(e.name)}</h2><span><button class="btn sec sm noprint" onclick="editEquip('','${e.id}')">複製</button> <button class="btn sec sm noprint" onclick="editEquip('${e.id}')">編集</button></span></div>
-    <div class="rep"><table>${f('設備ID',e.code)}${f('設置場所',e.place)}${f('メーカー',e.maker)}${f('型式',e.model)}${f('製造番号',e.serial)}${f('設置年月',e.installed?e.installed.replace('-','年')+'月':'')}${f('点検周期',e.cycle)}${f('備考',e.note)}</table></div>
+    <div class="rep"><table>${f('設備ID',e.code)}${e.place?`<tr><th style="width:96px">設置場所</th><td>${nwlPath(e.place)}</td></tr>`:''}${f('メーカー',e.maker)}${f('型式',e.model)}${f('製造番号',e.serial)}${f('設置年月',e.installed?e.installed.replace('-','年')+'月':'')}${f('点検周期',e.cycle)}${f('備考',e.note)}</table></div>
     ${thumbsFold(e.photos,'eqPhAll_'+e.id)}${docsList(e.docs)}</div>`;
   h+=eqLibCard(e);
   h+=eqFuelCard(e);
@@ -5001,9 +5003,9 @@ function applyLocFix(id){const l=locById(id);if(!l)return;const nt=l.type==='階
   undoBar(`${sel.length}件を「${to.name}」へ移しました`,()=>{prev.forEach(([x,p,o])=>{x.parent=p;if(o===undefined)delete x.ord;else x.ord=o});if(made)S.locs=S.locs.filter(x=>x.id!==made.id)},'変更')}
 /* この場所に設備（設備台帳の物）を結びつける・外す。保存は equipment.locId のまま。ほかの場所にある物は「今：…」と出し、移すと件数を出す。元に戻せる */
 function locEquip(id){const l=locById(id);if(!l)return;const E=(S.equipment||[]).filter(e=>e.status!=='廃止'||e.locId===id);
-  if(!E.length){openModal(`<h3>🏭 ${esc(locPath(id))} の設備</h3><div class="muted">設備台帳にまだ設備がありません。ここに置く設備を登録できます。</div>${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="closeModal(true);V.eqNewLoc='${id}';editEquip()">＋ ここに設備を登録</button>`)}`);return}
+  if(!E.length){openModal(`<h3>🏭 ${nwlPath(locPath(id))} の設備</h3><div class="muted">設備台帳にまだ設備がありません。ここに置く設備を登録できます。</div>${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn" onclick="closeModal(true);V.eqNewLoc='${id}';editEquip()">＋ ここに設備を登録</button>`)}`);return}
   E.sort((a,b)=>(b.locId===id)-(a.locId===id)||(!a.locId?-1:0)-(!b.locId?-1:0)||String(a.code||a.name).localeCompare(String(b.code||b.name),'ja',{numeric:true}));
-  openModal(`<h3>🏭 ${esc(locPath(id))} の設備</h3><div class="muted" style="font-size:12px">チェックを入れた設備をここに結びつけます。外すと「場所未設定」になります（設備は消えません）。</div>
+  openModal(`<h3>🏭 ${nwlPath(locPath(id))} の設備</h3><div class="muted" style="font-size:12px">チェックを入れた設備をここに結びつけます。外すと「場所未設定」になります（設備は消えません）。</div>
     ${E.length>8?`<input id="le_q" type="search" placeholder="名前・番号で探す" style="margin-top:6px" oninput="const q=sFold(norm(this.value));document.querySelectorAll('#le_list label').forEach(x=>x.style.display=!q||sFold(norm(x.textContent)).includes(q)?'':'none')">`:''}
     <div id="le_list" style="margin-top:6px;max-height:50vh;overflow-y:auto">${E.map(e=>`<label class="chkl" style="margin:2px 0;display:flex;gap:6px;align-items:flex-start;min-height:44px"><input type="checkbox" value="${e.id}" ${e.locId===id?'checked':''}><span style="min-width:0;overflow-wrap:anywhere">${esc(eqLabel(e))}<br><small class="muted">${e.locId===id?'ここ':e.locId&&locById(e.locId)?'今：'+esc(locPath(e.locId)):'場所未設定'}</small></span></label>`).join('')}</div>
     <button class="btn sec wide" style="min-height:44px;margin-top:8px" onclick="closeModal(true);V.eqNewLoc='${id}';editEquip()">＋ 新しい設備をここに登録</button>
@@ -5652,14 +5654,14 @@ function qrOpen(raw){
   const list=hits.length?hits:byId?[byId]:[];
   if(list.length===1){qrStop();closeModal(true);go('equipDetail',{eq:list[0].id});return}
   if(list.length>1){qrStop();openModal(`<h3>⚠ 同じ設備IDの設備が複数あります</h3><div class="al ng">設備ID「${esc(s)}」が ${list.length}台に登録されています。正しい設備を選んでください。あとで設備台帳で設備IDの重複を直してください。</div>
-    ${list.map(e=>`<div class="item" onclick="closeModal(true);go('equipDetail',{eq:'${e.id}'})"><div class="bd"><div class="ti">${esc(eqLabel(e))}</div><div class="meta">${esc(locPath(e.locId)||e.place||'')}</div></div></div>`).join('')}${modalFoot('<button class="btn sec" onclick="closeModal(true)">閉じる</button>')}`);return}
+    ${list.map(e=>`<div class="item" onclick="closeModal(true);go('equipDetail',{eq:'${e.id}'})"><div class="bd"><div class="ti">${esc(eqLabel(e))}</div><div class="meta">${nwlPath(locPath(e.locId)||e.place||'')}</div></div></div>`).join('')}${modalFoot('<button class="btn sec" onclick="closeModal(true)">閉じる</button>')}`);return}
   toast(`設備「${s}」は設備台帳にありません`);
   if($('#qr_id')){$('#qr_id').value=s;qrSearch(s)}
 }
 function qrSearch(q){
   const box=$('#qr_res');if(!box)return;q=String(q||'').trim();if(!q){box.innerHTML='';return}
   const n=normCode(q),L=(S.equipment||[]).filter(e=>normCode(e.code).includes(n)||normCode(e.name).includes(n)||normCode(locPath(e.locId)).includes(n)).slice(0,20);
-  box.innerHTML=L.length?L.map(e=>`<div class="item" onclick="qrStop();closeModal(true);go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${esc(locPath(e.locId)||e.place||'')}</div></div></div>`).join(''):'<div class="muted">見つかりません</div>';
+  box.innerHTML=L.length?L.map(e=>`<div class="item" onclick="qrStop();closeModal(true);go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${nwlPath(locPath(e.locId)||e.place||'')}</div></div></div>`).join(''):'<div class="muted">見つかりません</div>';
 }
 function addMeter(id){
   const e=eqById(id);if(!e)return;const last=(e.run.meters||[]).at(-1);
@@ -6030,7 +6032,7 @@ function vDiag(){
   if(t==='health'){
     const L=E.map(e=>({e,H:healthOf(e),last:(e.health||[]).slice(-1)[0]})).sort((a,b)=>(a.H.score??999)-(b.H.score??999));
     h+=card('💯 設備の健全度',`<div class="muted" style="margin-bottom:6px">参考指標は記録から自動計算した目安です（判定ではありません）。人による評価と合わせて見てください。</div>`+(L.length?L.map(({e,H,last})=>`<div class="item ${H.score!=null&&H.score<50?'ng':''}" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:52px"><b style="font-size:18px">${H.score??'－'}</b><small>参考</small></div>
-      <div class="bd"><div class="ti">${esc(eqLabel(e))}${e.importance?` <span class="pill ${e.importance==='A'?'ng':''}">重要度${esc(e.importance)}</span>`:''}</div><div class="meta">${[esc(locPath(e.locId)||e.place||''),last?`人の評価 ${'★'.repeat(last.score)}（${slash(last.date)}）`:'人の評価 未'].filter(Boolean).map((t,i,a)=>`<span class="nwl">${t}${i<a.length-1?'・':''}</span>`).join('')}</div></div></div>`).join(''):emptyBox('設備がありません')));
+      <div class="bd"><div class="ti">${esc(eqLabel(e))}${e.importance?` <span class="pill ${e.importance==='A'?'ng':''}">重要度${esc(e.importance)}</span>`:''}</div><div class="meta">${nwlJoin([(locPath(e.locId)||e.place)?{p:locPath(e.locId)||e.place}:'',last?`人の評価 ${'★'.repeat(last.score)}（${slash(last.date)}）`:'人の評価 未'])}</div></div></div>`).join(''):emptyBox('設備がありません')));
     h+=card('💾 端末の記録の大きさ',`<div id="dgStore" class="muted">調べています…</div>`);setTimeout(dgStoreFill,0);
   }else if(t==='rec'){
     const L=E.flatMap(e=>recommendFor(e.id).map(r=>({...r,e}))).sort((a,b)=>(a.lv==='ng'?0:1)-(b.lv==='ng'?0:1));
@@ -6230,7 +6232,7 @@ function workRow(w){
   const c=workChecks(w).filter(x=>x.lv==='ng').length;
   const fin=['完了','中止'].includes(w.status),od=!fin&&isDate(w.endDate||w.date)&&(w.endDate||w.date)<TODAY?diffD(TODAY,w.endDate||w.date):0; // 予定日（終了日があればそれ）を過ぎて未完了
   return `<div class="item ${w.status==='中止'?'':(c||od)&&!fin?'ng':''}" ${fin?'style="opacity:.62"':''} onclick="editWork('${w.id}')"><div class="dt">${md(w.date)}<small>${esc(w.start||'')}</small></div><div class="bd"><div class="ti">${esc(w.title).replace(/(?<![&#\d])(第?\d+\S?)$/,'<span style="white-space:nowrap">$1</span>')}</div>
-    <div class="meta">${[w.place,w.no,w.kind,...(w.staff||[]),w.vendor].filter(Boolean).map(x=>`<span class="hv">${esc(x)}</span>`).join('・')}</div><span class="pill ${WORK_STAT_CLS[w.status]||''}">${esc(w.status)}</span>${od?`<span class="pill ng">${od}日超過</span>`:''}${w.outage.on?'<span class="pill ng">停電</span>':''}${c&&!['完了','中止'].includes(w.status)?`<span class="pill ng">要確認 ${c}</span>`:''}</div></div>`;
+    <div class="meta">${[w.place?{p:w.place}:'',w.no,w.kind,...(w.staff||[]),w.vendor].filter(Boolean).map(x=>`<span class="hv">${x.p?nwlPath(x.p):esc(x)}</span>`).join('・')}</div><span class="pill ${WORK_STAT_CLS[w.status]||''}">${esc(w.status)}</span>${od?`<span class="pill ng">${od}日超過</span>`:''}${w.outage.on?'<span class="pill ng">停電</span>':''}${c&&!['完了','中止'].includes(w.status)?`<span class="pill ng">要確認 ${c}</span>`:''}</div></div>`;
 }
 /* 作業の確認事項（人員・資格・勤務表との照合など）。判断材料を示すだけ */
 function workChecks(w0){
