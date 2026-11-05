@@ -2,7 +2,7 @@
 // ① 2 列の欄（.grid2・.grid3）でラベルの長さが違って入力欄が上下にずれない ② select・input の中の文字が切れない（diagxlcheck の測り方） ③ 窓がはみ出さない、を見る。
 // 標準・390px ははみ出さないことだけ見る。usage: node hozen/tools/modalfieldlcheck.js
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');
-const CALLS=['editIssue()','editWork()','editEquip()','editTask(null,TODAY)'];
+const CALLS=['editIssue()','editWork()','editEquip()','editTask(null,TODAY)','editPart()','editMeas()','editLib()','editDwg()','editTool()','editPlan()','editStd()','editItem()','editLoc(null,null)','editBudget()','editMtpl()'];
 (async()=>{const b=await chromium.launch();const errs=[];let opened=0;
  for(const [w,fs] of [[390,'l'],[360,'xl'],[390,'']]){
  const c=await b.newContext({viewport:{width:w,height:844}});const p=await c.newPage();
@@ -25,5 +25,5 @@ const CALLS=['editIssue()','editWork()','editEquip()','editTask(null,TODAY)'];
   if(r.err){errs.push(tag+call+'：'+r.err);continue}opened++;
   for(const x of r.out)if(fs||/はみ出す/.test(x))errs.push(tag+call+'：'+x)}
  await c.close()}
- if(opened<12)errs.push('開けた窓が少ない '+opened);
+ if(opened<36)errs.push('開けた窓が少ない '+opened);
  console.log(errs.join('\n')||'NO ERRORS');await b.close();process.exit(errs.length?1:0)})();
