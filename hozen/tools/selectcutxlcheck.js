@@ -1,10 +1,11 @@
 // 文字「大」「特大」・360px で全画面（VIEWS）を開き、選び欄（select）で選んだ文字が欄の中で切れないかを測る（hz-xl-select-cut）。
 // 測り方は diagxlcheck と同じ（canvas で選んだ文字の幅を測り、select の中の幅（左右の余白と▼の 16px を除く）と比べる）。標準・390px ははみ出さないことだけ見る。
+// 入力欄の例（placeholder）は標準の文字・360px でも見る（hz-std-search-ph）。
 // usage: node hozen/tools/selectcutxlcheck.js [--list]（--list は標準でも切れる物を一覧に出すだけ）
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');
 const LIST=process.argv.includes('--list');
 (async()=>{const b=await chromium.launch();const errs=[];
- for(const [w,fs] of [[360,'xl'],[360,'l'],[390,'']]){
+ for(const [w,fs] of [[360,'xl'],[360,'l'],[390,''],[360,'']]){
  const c=await b.newContext({viewport:{width:w,height:800}});const p=await c.newPage();
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
@@ -23,7 +24,8 @@ const LIST=process.argv.includes('--list');
    return {out,sw:document.documentElement.scrollWidth}},v);
   if(r.err){errs.push(tag+v+'：開けない '+r.err);continue}
   if(r.sw>w+1)errs.push(tag+v+'：はみ出す '+r.sw);
-  for(const x of r.out)if(fs||LIST)errs.push(tag+v+'：'+(x.startsWith('入力欄')?'':'選び欄 ')+x+' が切れる');
+  // 標準の文字でも 360px で入力欄の例は切れない（hz-std-search-ph）
+  for(const x of r.out)if(fs||LIST||x.startsWith('入力欄'))errs.push(tag+v+'：'+(x.startsWith('入力欄')?'':'選び欄 ')+x+' が切れる');
  }
  await c.close()}
  console.log(errs.join('\n')||'NO ERRORS');await b.close();process.exit(errs.length?1:0)})();
