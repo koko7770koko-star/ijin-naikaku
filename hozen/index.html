@@ -674,6 +674,9 @@ html[data-fs=l] .grid2.dchg,html[data-fs=xl] .grid2.dchg{grid-template-columns:m
 html[data-fs=l] .meta .hv,html[data-fs=xl] .meta .hv{display:inline-block;max-width:100%}
 /* 点検履歴の「該当 10日」は、大・特大では1文字ずつ縦に割れないよう1行に（hz-xl-hist-by） */
 html[data-fs=l] #hCount,html[data-fs=xl] #hCount{white-space:nowrap;flex:0 0 auto}
+/* 大・特大の 360px で選び欄の文字が切れる所（QRラベルの「場所で絞り込み」が「（指定し」、作業管理の「未完了（予定順）」）：QR は 1 列に、作業管理は選び欄を1段目いっぱいにしてボタンを下の段へ（hz-xl-select-cut） */
+html[data-fs=l] .grid2.qrflt,html[data-fs=xl] .grid2.qrflt{grid-template-columns:minmax(0,1fr)}
+html[data-fs=l] .wkflt>select,html[data-fs=xl] .wkflt>select{flex:1 1 100%}
 /* 文字「大」「特大」：設備の場所の木で、深い段（電気室・盤）の名前が1文字ずつ縦に割れないよう、名前の幅が 4 文字ぶん取れないときは「＋盤」「…」を下の段へ（hz-xl-review-12） */
 /* 文字「大」「特大」：測定記録の窓の測定値の行は、測定値を1段目いっぱいに、単位・下限・上限を2段目に並べる（hz-xl-meas-modal） */
 html[data-fs=l] #ms_rows .mvals,html[data-fs=xl] #ms_rows .mvals{flex-wrap:wrap!important}
@@ -5579,7 +5582,7 @@ function vQrBan(){
   const loc=V.qrLoc||'',sel=V.qrBanSel;const all=(loc?banBoards(loc):banBoards('')).filter(l=>!sel||sel.includes(l.id));
   const cut=!V.qrAll&&all.length>QR_SHOW;V.qrCut=cut;const list=cut?all.slice(0,QR_SHOW):all;
   return `<div class="card noprint">${qrKindTabs()}<h2>🔳 盤のQRラベル</h2><div class="muted" style="margin-bottom:6px">盤に貼ると、「QRを読む」で盤の点検のその盤がすぐ開きます。QRの内容は「BAN:内部ID」で、この端末の記録を指すだけです（別の端末では、同じ記録を復元したときだけ開けます）。</div>
-      ${qrSizeSeg()}<div class="grid2"><div><label class="f">場所で絞り込み</label><select onchange="V.qrLoc=this.value;V.qrBanSel=null;V.qrAll=false;render()">${locOptions(loc)}</select></div><div><label class="f">枚数</label><div style="padding:8px 0">${all.length}枚${cut?`（先頭${QR_SHOW}枚を表示）`:''}</div></div></div>
+      ${qrSizeSeg()}<div class="grid2 qrflt"><div><label class="f">場所で絞り込み</label><select onchange="V.qrLoc=this.value;V.qrBanSel=null;V.qrAll=false;render()">${locOptions(loc)}</select></div><div><label class="f">枚数</label><div style="padding:8px 0">${all.length}枚${cut?`（先頭${QR_SHOW}枚を表示）`:''}</div></div></div>
       <div class="row" style="margin-top:8px"><button class="btn grow" style="min-height:44px" onclick="qrPrint()">🖨 印刷${cut?`（全${all.length}枚）`:''}</button><button class="btn sec grow kw" style="min-height:44px" onclick="qrScan()">📷 QRを読む</button>${sel?`<button class="btn sec sm" style="min-height:44px" onclick="V.qrBanSel=null;render()">全件</button>`:''}</div></div>
     <div class="qrsheet ${V.qrSz==='s'?'qs-s':''}">${list.map(l=>`<div class="qrl" data-ban="${l.id}"><div class="qri">${qrSvg(qrBanText(l),3)}</div><div class="qrt"><b>${esc(l.name)}</b><div>盤の点検</div><small>${esc(locPath(l.parent))}</small></div></div>`).join('')||emptyBox('盤がありません')}</div>`;
 }
@@ -5593,7 +5596,7 @@ function vQr(){
   const all=E.filter(e=>(!loc||locDesc(loc).has(e.locId))&&(!sel||sel.includes(e.id)));
   const cut=!V.qrAll&&all.length>QR_SHOW;V.qrCut=cut;const list=cut?all.slice(0,QR_SHOW):all;
   return `<div class="card noprint">${qrKindTabs()}<h2>🔳 QRラベル</h2><div class="muted" style="margin-bottom:6px">設備IDのQRコードを印刷して設備に貼ると、「QRを読む」で設備カルテを開けます。QRの内容は「EQ:設備ID」です（設備IDが空のときは内部ID）。</div>
-      ${qrSizeSeg()}<div class="grid2"><div><label class="f">場所で絞り込み</label><select onchange="V.qrLoc=this.value;V.qrSel=null;V.qrAll=false;render()">${locOptions(loc)}</select></div><div><label class="f">枚数</label><div style="padding:8px 0">${all.length}枚${cut?`（先頭${QR_SHOW}枚を表示）`:''}</div></div></div>
+      ${qrSizeSeg()}<div class="grid2 qrflt"><div><label class="f">場所で絞り込み</label><select onchange="V.qrLoc=this.value;V.qrSel=null;V.qrAll=false;render()">${locOptions(loc)}</select></div><div><label class="f">枚数</label><div style="padding:8px 0">${all.length}枚${cut?`（先頭${QR_SHOW}枚を表示）`:''}</div></div></div>
       <div class="row" style="margin-top:8px"><button class="btn grow" onclick="qrPrint()">🖨 印刷${cut?`（全${all.length}枚）`:''}</button><button class="btn sec grow kw" onclick="qrScan()">📷 QRを読む</button>${sel?`<button class="btn sec sm" onclick="V.qrSel=null;render()">全件</button>`:''}</div></div>
     <div class="qrsheet ${V.qrSz==='s'?'qs-s':''}">${list.map(e=>`<div class="qrl"><div class="qri">${qrSvg(qrText(e),3)}</div><div class="qrt"><b>${esc(e.code||'')}</b><div>${esc(e.name)}</div><small>${esc(locPath(e.locId)||e.place||'')}</small></div></div>`).join('')||emptyBox('設備がありません')}</div>`;
 }
@@ -6389,7 +6392,7 @@ function workListHTML(L,f){
 function vWorks(){
   const f=V.wkF||'open',wq=(V.wkQ||'').trim(),L=(S.works||[]).filter(w=>(f==='all'||(f==='open'?!['完了','中止'].includes(w.status):w.status===f))&&(!wq||sFold([w.no,w.title,w.place,w.vendor,w.content,(w.staff||[]).join(' '),(w.equipIds||[]).map(equipName).join(' ')].join(' ')).includes(sFold(wq)))).sort((a,b)=>f==='open'?a.date.localeCompare(b.date):b.date.localeCompare(a.date));
   const cnt=s=>(S.works||[]).filter(w=>w.status===s).length;
-  return `<div class="row noprint" style="margin-bottom:8px"><select onchange="V.wkF=this.value;render()" class="grow"><option value="open" ${f==='open'?'selected':''}>未完了（予定順）</option>${WORK_STAT.map(s=>`<option ${f===s?'selected':''}>${s}</option>`).join('')}<option value="all" ${f==='all'?'selected':''}>すべて</option></select><button class="btn sm" onclick="editWork()">＋ 作業指示</button></div>
+  return `<div class="row noprint wkflt" style="margin-bottom:8px"><select onchange="V.wkF=this.value;render()" class="grow"><option value="open" ${f==='open'?'selected':''}>未完了（予定順）</option>${WORK_STAT.map(s=>`<option ${f===s?'selected':''}>${s}</option>`).join('')}<option value="all" ${f==='all'?'selected':''}>すべて</option></select><button class="btn sm" onclick="editWork()">＋ 作業指示</button></div>
     <input id="wkQ" class="noprint" type="search" enterkeyhint="search" placeholder="件名・番号・設備・担当・協力会社で探す" value="${esc(V.wkQ||'')}" oninput="wkSearch(this)" style="margin-bottom:8px">
     <div class="tiles wkt noprint">${['承認待ち','承認済み','実施中','保留'].map(s=>`<div class="tile ${s==='承認待ち'&&cnt(s)?'warn':''} ${f===s?'on':''}" role="button" onclick="V.wkF='${s}';render()"><span class="tl">${s}</span> <span class="tv">${cnt(s)}</span></div>`).join('')}</div>`
     +card(`🧰 作業指示 <span class="muted">${L.length}件</span>`,workListHTML(L,f)+(L.length>(V.wkMore||100)?`<button class="btn sec wide noprint" onclick="V.wkMore=(V.wkMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.wkMore||100)}件）</button>`:''),`<button class="btn sec sm noprint" onclick="exportWorksCsv()">CSV</button>`)
