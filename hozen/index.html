@@ -679,6 +679,10 @@ html[data-fs=l] .hd-row,html[data-fs=xl] .hd-row{flex-wrap:wrap}
 html[data-fs=l] .hd-row h2,html[data-fs=xl] .hd-row h2{word-break:keep-all;overflow-wrap:anywhere;flex:1 1 9em}
 /* 月報・年報・日報の上の説明文：大・特大では横幅いっぱいに置き、ボタンは下の段へ（説明が細い列で縦に割れる） */
 html[data-fs=l] .card.noprint>.row:first-child>.muted.grow,html[data-fs=xl] .card.noprint>.row:first-child>.muted.grow{flex:1 1 100%}
+/* カレンダーの「点検の案内・計画表を撮ると…」も同じ：大・特大では説明を横幅いっぱい、写真のボタンは下の段の右へ（hz-xl-review-11） */
+html[data-fs=l] .row.mocr,html[data-fs=xl] .row.mocr{flex-wrap:wrap}
+html[data-fs=l] .row.mocr>.muted.grow,html[data-fs=xl] .row.mocr>.muted.grow{flex:1 1 100%}
+html[data-fs=l] .row.mocr>:not(.muted),html[data-fs=xl] .row.mocr>:not(.muted){margin-left:auto}
 html[data-fs=l] .item:has(>.pqb),html[data-fs=xl] .item:has(>.pqb){flex-wrap:wrap}
 html[data-fs=l] .item:has(>.pqb)>.bd,html[data-fs=xl] .item:has(>.pqb)>.bd{flex:1 1 8em;min-width:0}
 html[data-fs=l] .item>.pqb,html[data-fs=xl] .item>.pqb{flex:1 0 100%;justify-content:flex-end}
@@ -2666,7 +2670,7 @@ function vMonth(){
       ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件 ${ts.filter(t=>t.status==='完了').length}/${ts.length}</div>`:''}${wn?`<div class="wkm" aria-label="工事・作業 ${wn}件">🔧${wn}</div>`:''}${crew}</div>`;
   }
   h+=`</div><div class="tags" style="margin-top:10px">${st.showCrew!==false?'<span class="tag a" style="font-size:12px">A夜勤</span><span class="tag b" style="font-size:12px">B夜勤</span>':''}${st.calDay?'<span class="tag d" style="font-size:12px">日勤</span>':''}<span class="tag task" style="font-size:12px">点検・作業</span>${(S.works||[]).length?'<span class="wkm" style="font-size:12px;align-self:center">🔧 工事・作業指示</span>':''}<span class="lgd" id="calLg"><span class="lg pl">◯ 予定</span><span class="lg ok">● 実施済み</span><span class="lg ex">延期・中止</span><span class="lg ng">⚠ 衝突・異常</span></span></div>
-    <div class="row" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div>
+    <div class="row mocr" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div>
     <button class="btn sm sec wide" style="margin-top:8px" onclick="window.print()">🖨 この月の予定表を印刷（A4 縦）</button></div>${monthPrintHTML(y,m)}`;
   const dayT=S.tasks.filter(t=>t.date===V.sel).sort(byDate),dayW=worksOn(V.sel);
   h+=`<div class="card noprint" id="dayCard"><div class="hd-row"><h2>${mdw(V.sel)}の予定</h2><button class="btn sm" onclick="editTask(null,'${V.sel}')">＋ 追加</button></div>${crewTags(crewDay(V.sel))}${dayT.filter(t=>t.status==='予定').length>=2?`<button class="btn sec sm wide" id="dayAllDone" style="min-height:44px;margin:4px 0 8px" onclick="dayAllDone('${V.sel}')">この日の ◯ ${dayT.filter(t=>t.status==='予定').length}件を全部 ●</button>`:''}${dayT.length?dayT.map(t=>taskRow(t,true)).join(''):(dayW.length?'':'<div class="empty">予定はありません</div>')}${dayW.length?`<div id="dayWorks"><b class="muted" style="display:block;margin:8px 0 4px">🔧 この日の工事・作業指示 ${dayW.length}件</b>${dayW.map(w=>`<div class="item" onclick="editWork('${w.id}')"><div class="dt" style="min-width:64px">${esc(w.start||'')}</div><div class="bd"><div class="ti">${esc(w.title)}</div><div class="meta">${esc([w.no,w.status,w.date!==(w.endDate||w.date)?md(w.date)+'〜'+md(w.endDate):'',w.place].filter(Boolean).join('・'))}</div></div></div>`).join('')}</div>`:''}</div>`;
