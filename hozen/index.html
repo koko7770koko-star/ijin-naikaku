@@ -232,6 +232,9 @@ table.yr th .yrmh{all:unset;display:block;box-sizing:border-box;min-height:44px;
 .daysaved{font-size:12px;color:var(--ok);font-weight:700;white-space:nowrap}
 .chk{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eef1f4}
 .chk .l{flex:1;font-size:15px}
+html[data-fs=l] .chk .l,html[data-fs=xl] .chk .l{min-width:0;word-break:keep-all;overflow-wrap:break-word}
+html[data-fs=xl] .chk{flex-wrap:wrap}
+html[data-fs=xl] .chk .l{flex:1 1 100%}
 .chk.flash{background:#fff2c2;transition:background .3s}
 .locn.flash>.item{outline:3px solid #e0b000;background:#fff6d6}
 .seg{display:flex;border:1px solid var(--field);border-radius:var(--r-s);overflow:hidden;flex:none}
