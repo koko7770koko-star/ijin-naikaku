@@ -43,6 +43,7 @@ nav button{flex:1;position:relative;border:0;background:none;padding:8px 0 10px;
 nav button b{font-size:22px;font-weight:400;line-height:1}
 html[data-fs=xl] nav button{font-size:10px;letter-spacing:-.03em;white-space:nowrap}
 html[data-fs=l] nav button{font-size:11px;white-space:nowrap}
+html[data-fs=l] .nwl,html[data-fs=xl] .nwl{white-space:nowrap}
 nav button.on{color:var(--accent);font-weight:700}
 nav button b[data-n]:not([data-n=""])::after{content:attr(data-n);position:absolute;top:3px;left:50%;margin-left:6px;background:var(--ng);color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:0 5px;line-height:16px}
 /* 横向き（高さが低いとき）：見出しと下のナビを低くして、入力欄が隠れないように */
@@ -6484,7 +6485,7 @@ async function copyOrderMemo(){const t=orderMemoText();if(!t){toast('最低在�
   if(window.hzSave){const ok=await window.hzSave(`発注のメモ_${TODAY}.txt`,new Blob([t],{type:'text/plain;charset=utf-8'}));if(ok)toast('文字のファイルとして保存しました');return}
   toast('コピーできませんでした')}
 function partRow(p){const low=p.min!==''&&p.qty<=p.min;
-  return `<div class="item ${low?'ng':''}" onclick="editPart('${p.id}')"><div class="dt" style="min-width:58px"><b style="font-size:17px">${p.qty}</b><small>${esc(p.unit)}</small></div><div class="bd"><div class="ti">${esc(p.name)}${p.code?` <span class="muted">${esc(p.code)}</span>`:''}</div>
+  return `<div class="item ${low?'ng':''}" onclick="editPart('${p.id}')"><div class="dt" style="min-width:58px"><b style="font-size:17px">${p.qty}</b><small>${esc(p.unit)}</small></div><div class="bd"><div class="ti">${esc(p.name)}${p.code?` <span class="muted nwl">${esc(p.code)}</span>`:''}</div>
     <div class="meta">${[p.spec,p.place].filter(Boolean).map(x=>`<span class="hv">${esc(x)}</span>`).join('・')}${p.min!==''?`・<span class="hv">最低 ${p.min}${esc(p.unit)}</span>`:''}${p.equipIds.length?'・'+p.equipIds.map(equipName).filter(Boolean).map(esc).join('、'):''}</div>${low?'<span class="pill ng">在庫不足</span>':''}</div><div class="pqb noprint" onclick="event.stopPropagation()"><button class="btn sec" aria-label="1つ出庫" onclick="stockQuick('${p.id}',-1)">−</button><button class="btn sec" aria-label="1つ入庫" onclick="stockQuick('${p.id}',1)">＋</button></div></div>`}
 /* 一覧の −/＋：1つずつ出庫・入庫をその場で記録（入出庫履歴の形は stockMove と同じ） */
 function stockQuick(id,d){const p=partById(id);if(!p)return;
@@ -6944,7 +6945,7 @@ function vDwgList(){
   return card(`🗺 図面 <span class="muted">${ws.length?D.length+' / ':''}${D0.length}件</span>`,`<div class="muted" style="margin-bottom:6px">単線結線図・配置図などを画像（写真・スキャン）やPDFで登録します。画像の図面には設備の印を置けます。新しい版を追加しても古い版は残ります。</div>`
     +(D0.length>=6||ws.length?`<input id="dwgQ" type="search" enterkeyhint="search" placeholder="名称・種類・場所で探す" value="${esc(V.dwgQ||'')}" oninput="dwgSearch(this)" style="margin-bottom:8px">`:'')
     +(ws.length&&!D.length?'<div class="empty">見つかりません。言葉を短くしてみてください<div style="margin-top:8px"><button id="dwgQClr" class="btn sec sm" style="min-height:44px" onclick="V.dwgQ=\'\';render()">条件を外す</button></div></div>':'')
-    +(D.map(d=>{const v=d.vers.at(-1);return `<div class="item" onclick="go('dwg',{dwg:'${d.id}',dwgZ:1})"><div class="bd"><div class="ti">${esc(d.name)}</div><div class="meta">${esc(d.kind)}${d.locId?'・'+esc(locPath(d.locId)):''}・${v?`版 ${esc(v.ver)}（${slash(v.date)}）`:'版なし'}・設備の印 ${d.pins.length}</div></div><span class="ar">›</span></div>`}).join('')||emptyGuide('図面はまだありません。単線結線図や配置図の写真・PDFを登録すると、設備の位置に印を付けて見られます。','図面を登録','editDwg()')),
+    +(D.map(d=>{const v=d.vers.at(-1);return `<div class="item" onclick="go('dwg',{dwg:'${d.id}',dwgZ:1})"><div class="bd"><div class="ti">${esc(d.name)}</div><div class="meta">${esc(d.kind)}${d.locId?'・'+esc(locPath(d.locId)):''}・${v?`<span class="nwl">版 ${esc(v.ver)}（${slash(v.date)}）</span>`:'版なし'}・<span class="nwl">設備の印 ${d.pins.length}</span></div></div><span class="ar">›</span></div>`}).join('')||emptyGuide('図面はまだありません。単線結線図や配置図の写真・PDFを登録すると、設備の位置に印を付けて見られます。','図面を登録','editDwg()')),
     `<button class="btn sm" onclick="editDwg()">＋ 図面</button>`);
 }
 function editDwg(id){
