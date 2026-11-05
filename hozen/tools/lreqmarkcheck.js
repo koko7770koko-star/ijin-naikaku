@@ -1,4 +1,5 @@
 // 文字「大」「特大」：日常点検の必須の印 * が行の頭に1字だけ落ちない（hz-l-review）。
+// 設備台帳の検索欄の説明は … で省く（hz-l-review-2）。
 // usage: node hozen/tools/lreqmarkcheck.js
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');
 (async()=>{const b=await chromium.launch();const errs=[];
@@ -12,5 +13,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   const prev=l.firstChild;const t=document.createRange();t.setStart(prev,Math.max(0,prev.textContent.length-1));t.setEnd(prev,prev.textContent.length);const q=t.getBoundingClientRect();if(a.top>q.bottom-2)o.push(l.textContent)});return {n:document.querySelectorAll('.chk .l span').length,o}});
  if(!r.n)errs.push(w+fs+'：必須の印が見つからない');
  for(const x of r.o)errs.push(w+'px・'+(fs||'標準')+'：「'+x+'」の * が1字だけ次の行に落ちる');
+ await p.evaluate(()=>go('equip',{day:TODAY}));await p.waitForTimeout(200);
+ const te=await p.evaluate(()=>getComputedStyle(document.querySelector('#eqQ')).textOverflow);
+ if(fs&&te!=='ellipsis')errs.push(w+'px・'+fs+'：設備台帳の検索欄の説明が … で省かれない');
  await c.close()}
  console.log(errs.join('\n')||'NO ERRORS');await b.close();process.exit(errs.length?1:0)})();
