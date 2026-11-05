@@ -170,6 +170,10 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .cal .d.today{background:#fffbe8;border:2px solid #e0b000}
 .cal .d .tdl{display:inline-block;white-space:nowrap;margin-left:2px;font-size:10px;font-weight:700;color:#755c00;background:#ffe9a8;border-radius:6px;padding:0 3px;vertical-align:middle}
 .cal .d.sel{outline:2.5px solid var(--accent);outline-offset:-1px}
+html[data-fs=l] .qxd,html[data-fs=xl] .qxd{display:inline-block;max-width:100%;overflow-wrap:anywhere}
+html[data-fs=l] #modal .qlx,html[data-fs=xl] #modal .qlx{flex-wrap:wrap!important}
+html[data-fs=l] #modal .qlx>span,html[data-fs=xl] #modal .qlx>span{flex:1 1 100%}
+html[data-fs=l] #modal .qlx>input,html[data-fs=xl] #modal .qlx>input{flex:1 1 100%!important;width:100%!important}
 html[data-fs=l] .cal .d .tdl,html[data-fs=xl] .cal .d .tdl{margin-left:0;padding:0 1px;max-width:100%}
 .cal .n{font-size:13px;font-weight:700;margin-bottom:2px}
 .cal .n.sun{color:#c00000}.hlb{font-size:11px;font-weight:700;margin-left:2px;color:#c00000}.cal .n.sat{color:var(--accent)}
@@ -6452,11 +6456,11 @@ function staffMonthHTML(name){if(!hasShift())return '';const L=staffMonth(name),
 /* 資格の有効期限：60 日以内・過ぎた物を返す（期限の無い資格は数えない） */
 function qualExpOf(name,q){const m=(S.qualExp||{})[name];return m&&isDate(m[q])?m[q]:''}
 function qualExpWarn(name){return (S.quals[name]||[]).map(q=>({q,d:qualExpOf(name,q)})).filter(x=>x.d&&diffD(x.d,TODAY)<=60).map(x=>({...x,left:diffD(x.d,TODAY)})).sort((a,b)=>a.left-b.left)}
-function qualExpPill(name){const W=qualExpWarn(name);if(!W.length)return '';const x=W[0];return ` <span class="pill ${x.left<0?'ng':'warn'}" title="${esc(W.map(w=>w.q+' '+slash(w.d)).join('、'))}">⚠ ${esc(x.q)} ${x.left<0?'期限切れ':'あと'+x.left+'日'}${W.length>1?` ほか${W.length-1}`:''}</span>`}
+function qualExpPill(name){const W=qualExpWarn(name);if(!W.length)return '';const x=W[0];return ` <span class="pill ${x.left<0?'ng':'warn'}" title="${esc(W.map(w=>w.q+' '+slash(w.d)).join('、'))}">⚠ ${esc(x.q)} <span class="qxd">${x.left<0?'期限切れ':'あと'+x.left+'日'}</span>${W.length>1?` <span class="qxd">ほか${W.length-1}</span>`:''}</span>`}
 function vStaff(){
   const names=[...new Set([...staffAll(),...Object.keys(S.quals)])];
   return qualNeedHTML()+card('🪪 人員・資格',`<div class="muted" style="margin-bottom:8px">シフトのメンバーと設定の担当者が表示されます。資格を登録すると、作業指示で必要な資格・人数を照合します。</div>`
-    +(names.length?names.map(n=>`<div class="item" onclick="editQual(${esc(JSON.stringify(n))})"><div class="bd"><div class="ti">${esc(n)}${qualExpPill(n)}</div><div class="meta">${(S.quals[n]||[]).map(q=>esc(q)+(qualExpOf(n,q)?`<small class="muted">（〜${slash(qualExpOf(n,q))}）</small>`:'')).join('・')||'<b class="qadd noprint" style="color:var(--accent)">資格を登録 ›</b><span class="mprint muted">資格の登録なし</span>'}</div>${(()=>{const t=hasShift()?staffMonthSum(staffMonth(n)):'';return t?`<div class="meta stsum">今月：${esc(t)}</div>`:''})()}</div><span class="ar">›</span></div>`).join(''):emptyBox('メンバーがいません')),`<button class="btn sec sm noprint" onclick="exportStaffCsv()">CSV</button> <button class="btn sec sm noprint" onclick="editQualList()">資格の種類</button>`)
+    +(names.length?names.map(n=>`<div class="item" onclick="editQual(${esc(JSON.stringify(n))})"><div class="bd"><div class="ti">${esc(n)}${qualExpPill(n)}</div><div class="meta">${(S.quals[n]||[]).map(q=>esc(q)+(qualExpOf(n,q)?`<small class="muted qxd">（〜${slash(qualExpOf(n,q))}）</small>`:'')).join('・')||'<b class="qadd noprint" style="color:var(--accent)">資格を登録 ›</b><span class="mprint muted">資格の登録なし</span>'}</div>${(()=>{const t=hasShift()?staffMonthSum(staffMonth(n)):'';return t?`<div class="meta stsum">今月：${esc(t)}</div>`:''})()}</div><span class="ar">›</span></div>`).join(''):emptyBox('メンバーがいません')),`<button class="btn sec sm noprint" onclick="exportStaffCsv()">CSV</button> <button class="btn sec sm noprint" onclick="editQualList()">資格の種類</button>`)
     +card('📅 今後14日の作業と勤務',[...Array(14)].map((_,k)=>{const d=addD(TODAY,k),W=(S.works||[]).filter(w=>w.date<=d&&(w.endDate||w.date)>=d&&!['中止','完了'].includes(w.status));if(!W.length)return '';const o=crewDay(d);
       return `<div class="grp"><b>${md(d)}（${WD[pd(d).getDay()]}）</b>${o?crewRow(o,'勤務'):''}${W.map(workRow).join('')}</div>`}).join('')||emptyBox('予定されている作業はありません'));
 }
