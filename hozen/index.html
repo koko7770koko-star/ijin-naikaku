@@ -2892,7 +2892,7 @@ function dupTask(id){const t=S.tasks.find(x=>x.id===id);const n={...t,id:uid(),s
 // 異常案件
 /* 窓の 1 行の欄で Enter（キーボードの「次へ」）を押すと次の欄へ移る。複数行の欄では何もせず、最後の欄では閉じるだけ（保存はしない）。表示と押し方だけで保存の形は変えない */
 function modalEnterNext(pre){
-  const vis=e=>e.offsetParent!==null&&!e.disabled&&!e.readOnly;
+  const vis=e=>(e.checkVisibility?e.checkVisibility():e.offsetParent!==null)&&!e.disabled&&!e.readOnly; /* たたんだ details の中の欄は offsetParent が null にならないので checkVisibility で見る */
   const all=()=>[...document.querySelectorAll('#modal input,#modal textarea')].filter(e=>e.id.startsWith(pre)&&(e.tagName==='TEXTAREA'||/^(text|number|search|tel|)$/.test(e.type)));
   all().forEach(e=>{if(e.tagName==='TEXTAREA'||e.dataset.enx)return;e.dataset.enx='1';
     e.addEventListener('keydown',ev=>{if(ev.key!=='Enter'||ev.isComposing||ev.keyCode===229)return;

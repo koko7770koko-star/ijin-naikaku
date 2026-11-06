@@ -15,6 +15,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
    const tag=await p.evaluate(()=>document.activeElement.tagName);if(tag==='TEXTAREA')break;}
   if(seq.length<2)bad.push(name+'：Enter で次の欄に進まない');
   const tag=await p.evaluate(()=>document.activeElement.tagName);
+  if(tag==='INPUT')bad.push(name+'：最後の見える 1 行の欄の Enter で止まる（たたんだ欄へ移ろうとして焦点が外れない）');
   if(!await p.evaluate(()=>!!document.querySelector('#modal.on,#mask.on')))bad.push(name+'：Enter で窓が閉じた（保存した？）');
   const n1=await p.evaluate(()=>[S.issues.length,(S.works||[]).length].join());if(n0!==n1)bad.push(name+'：Enter で保存された');
   const v=await p.evaluate(f=>document.getElementById(f).value,first);if(v!=='テスト')bad.push(name+'：入れた値が残らない');
