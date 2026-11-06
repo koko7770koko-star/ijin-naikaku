@@ -2773,7 +2773,7 @@ function editItem(id){
       <div class="grid2"><div><label class="f">間隔</label><select id="i_rp"><option value="1">毎月</option><option value="2">隔月（2か月ごと）</option><option value="3">3か月ごと</option><option value="6">半年ごと</option><option value="12">年1回</option></select></div>
       <div><label class="f">最初の月</label><select id="i_rs">${MONTHS.map((m,i)=>`<option value="${i}">${m}月</option>`).join('')}</select></div></div>
       <button type="button" class="btn sec sm wide" style="margin-top:6px;min-height:44px" onclick="placeMarks('${id}')">◯ を置く（空のマスだけ。●・延は変えません）</button></div>`:''}
-    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveItem('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delItem('${id}')">削除</button>`:'')}`);
+    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveItem('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delItem('${id}')">削除</button>`:'')}`);modalEnterNext('i_');
 }
 function saveItem(id){
   const g=k=>$('#i_'+k).value.trim();
@@ -2899,7 +2899,7 @@ function modalEnterNext(pre){
   all().forEach(e=>{if(e.tagName==='TEXTAREA'||e.dataset.enx)return;e.dataset.enx='1';
     e.addEventListener('keydown',ev=>{if(ev.key!=='Enter'||ev.isComposing||ev.keyCode===229)return;
       const a=all().filter(x=>vis(x)||x===e),i=a.indexOf(e),n=a[i+1];ev.preventDefault();
-      if(n){try{n.focus()}catch(_){}}else e.blur()})});
+      if(n){try{n.focus({preventScroll:true});n.scrollIntoView({block:'center'})}catch(_){}}else e.blur()})}); /* 次の欄が下の固定の「保存・キャンセル」の帯に隠れないよう、真ん中まで送る（hz-v-modal-enter-item） */
   const a=all().filter(vis);a.forEach((e,i)=>{if(e.tagName==='INPUT')e.setAttribute('enterkeyhint',i<a.length-1?'next':'done')});
 }
 function editIssue(id,preset){
@@ -3666,12 +3666,12 @@ function delEquip0(id,noConfirm){
 function editRepair(eid,rid){
   const e=eqById(eid),r=(e.repairs||[]).find(x=>x.id===rid)||{date:TODAY,kind:'修理',content:'',vendor:'',cost:'',photos:[]};
   TP=[...(r.photos||[])];
-  loadPhotos(TP).then(()=>openModal(`<h3>${esc(e.name)}：${rid?'履歴の編集':'故障・修理の記録'}</h3>
+  loadPhotos(TP).then(()=>{openModal(`<h3>${esc(e.name)}：${rid?'履歴の編集':'故障・修理の記録'}</h3>
     <div class="grid2"><div><label class="f">日付 *</label><input type="date" id="r_date" value="${esc(r.date)}"></div><div><label class="f">種類</label><select id="r_kind">${opts(REPAIR_KINDS,r.kind)}</select></div></div>
     <label class="f">内容 *</label><textarea id="r_content" style="min-height:70px" maxlength="2000">${esc(r.content)}</textarea>
     <div class="grid2"><div><label class="f">業者・対応者</label><input id="r_vendor" value="${esc(r.vendor)}" maxlength="60"></div><div><label class="f">費用（円）</label><input id="r_cost" type="number" inputmode="numeric" min="0" value="${esc(r.cost)}"></div></div>
     ${tpBox()}
-    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveRepair('${eid}','${rid||''}')">保存</button>`,rid?`<button class="btn red sm" onclick="delRepair('${eid}','${rid}')">削除</button>`:'')}`));
+    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveRepair('${eid}','${rid||''}')">保存</button>`,rid?`<button class="btn red sm" onclick="delRepair('${eid}','${rid}')">削除</button>`:'')}`);modalEnterNext('r_')});
 }
 function saveRepair(eid,rid){
   const e=eqById(eid),g=k=>$('#r_'+k).value.trim();
