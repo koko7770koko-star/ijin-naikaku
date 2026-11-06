@@ -3166,7 +3166,7 @@ function dayRestList(s){
 function dayRestHTML(s){
   const all=numDefs().length+chkDefs().length,L=dayRestList(s);
   if(all<6||!L.length||(S.daily[s]||{}).done)return '';
-  return `<button class="btn sec wide noprint" id="dayNextBtn" style="margin-top:8px;min-height:48px" onclick="dayNextEmpty()">⏭ 次の未入力へ（残り ${L.length} 件）</button>`;
+  return `<button class="btn sec wide noprint" id="dayNextBtn" style="margin-top:8px;min-height:48px" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="dayNextEmpty()">⏭ 次の未入力へ（残り ${L.length} 件）</button>`;
 }
 /* 入力欄から「次の未入力へ」を押すと、欄を離れた瞬間の部分更新でボタンが作り直されて最初の1回が効かなかった。ボタンは別の枠に置き、同じ物のまま残りの数だけ書き換える */
 function dayRestRefresh(s){
