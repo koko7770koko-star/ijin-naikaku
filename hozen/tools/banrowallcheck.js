@@ -1,0 +1,20 @@
+// 盤の点検：盤1面の「●」ボタンで 空・◯ の項目だけを ● にする（延期は残す）。元に戻せる。44px以上・横にはみ出さない。
+const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
+(async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
+ p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
+ await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
+ await p.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});S.locs=[mk('l1','設備1棟','建屋',''),mk('l2','1F','階','l1'),mk('b1','盤1','盤','l2'),mk('b2','盤2','盤','l2')];
+  const ym=TODAY.slice(0,7);S.banChk={[ym]:{b1:['延','○',''],b2:['済','済','済']}};go('ban')});await p.waitForTimeout(300);
+ const q=async()=>JSON.parse(await p.evaluate(()=>JSON.stringify(S.banChk[TODAY.slice(0,7)])));
+ if(await p.locator('#ban-b2 .banrowall').count())bad.push('全部済みの盤に ● ボタンが出ている');
+ const bx=await p.locator('#ban-b1 .banrowall').boundingBox();if(!bx||bx.width<44||bx.height<44)bad.push('● ボタンが44px未満 '+JSON.stringify(bx));
+ const sw=await p.evaluate(()=>document.documentElement.scrollWidth);if(sw>390)bad.push('横にはみ出し '+sw);
+ await p.click('#ban-b1 .banrowall');await p.waitForTimeout(200);
+ let v=await q();if(v.b1.join()!=='延,済,済')bad.push('● にならない／延期が変わった '+v.b1);
+ if(v.b2.join()!=='済,済,済')bad.push('ほかの盤が変わった');
+ if(await p.locator('#ban-b1 .banrowall').count())bad.push('済んだ後も ● ボタンが残る');
+ await p.click('#undoBar button, .undo button, button:has-text("元に戻す")');await p.waitForTimeout(200);
+ v=await q();if(v.b1.join()!=='延,○,')bad.push('元に戻せない '+v.b1);
+ await p.click('#ban-b1 .bnm');await p.waitForSelector('#modal');
+ console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
