@@ -1,0 +1,21 @@
+// 人員：担当者の一覧（設定の追加分）から職員を消しても、その人が担当・点検者だった過去の記録（予定・日常点検・資格）が消えず、点検履歴に名前が残る。シフト表 kinmuhyo_v1 は変わらない。390px ではみ出さない
+const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
+(async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
+ p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
+ await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
+ await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});await p.waitForTimeout(150);
+ await p.evaluate(()=>{const d=addD(TODAY,-2);S.settings.staff=['職員1','職員2'];S.quals={'職員2':['第三種電気主任技術者']};
+  S.tasks.push({id:'tdk1',date:d,title:'試験',staff:'職員2',status:'完了'});S.daily[d]={by:'職員2',done:'移行',note:'試験の備考',c:{'x1':'○'}};save();go('set')});await p.waitForTimeout(300);
+ const before=await p.evaluate(()=>({t:JSON.stringify(S.tasks),d:JSON.stringify(S.daily),q:JSON.stringify(S.quals),k:localStorage.getItem('kinmuhyo_v1')}));
+ await p.evaluate(()=>setList('staff','職員1'));await p.waitForTimeout(200);
+ await p.evaluate(()=>{go('set')});await p.waitForTimeout(300);
+ const after=await p.evaluate(()=>({t:JSON.stringify(S.tasks),d:JSON.stringify(S.daily),q:JSON.stringify(S.quals),k:localStorage.getItem('kinmuhyo_v1'),st:JSON.stringify(S.settings.staff)}));
+ if(after.st!=='["職員1"]')bad.push('一覧から消えない '+after.st);
+ for(const k of ['t','d','q','k'])if(before[k]!==after[k])bad.push('消した人の記録が変わった：'+k);
+ await p.evaluate(()=>{V.hKw='職員2';go('hist')});await p.waitForTimeout(400);
+ const h=await p.evaluate(()=>({t:document.getElementById('app').innerText,sw:document.documentElement.scrollWidth}));
+ if(!/職員2/.test(h.t))bad.push('点検履歴に消した人の名前が残らない');if(h.sw>392)bad.push('横にはみ出す '+h.sw);
+ await p.reload();await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0);
+ const re=await p.evaluate(()=>({q:JSON.stringify(S.quals),n:S.tasks.filter(x=>x.staff==='職員2').length,by:Object.values(S.daily).filter(r=>r.by==='職員2').length}));
+ if(re.q!==before.q||re.n!==1||re.by!==1)bad.push('読み直すと記録が消える '+JSON.stringify(re));
+ console.log([...errs,...bad].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length||bad.length?1:0)})();
