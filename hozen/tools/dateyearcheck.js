@@ -1,4 +1,4 @@
-// 一覧の日付の年（hz-v-date-noyear-k1）：異常の一覧（issueRow）・工事の一覧（workRow）で、今年でない日付には年が付き、今年の日付には付かない。
+// 一覧の日付の年（hz-v-date-noyear-k1・k2）：異常の一覧（issueRow）・工事の一覧（workRow）・設備の詳細の日常点検の記録・在庫の入出庫履歴で、今年でない日付には年が付き、今年の日付には付かない。
 // 文字「特大」「大」・360px で横にはみ出さず、日付の欄が 2 行に割れない
 // usage: node hozen/tools/dateyearcheck.js
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const errs=[];
@@ -23,6 +23,15 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
     if(document.documentElement.scrollWidth>innerWidth+1)o.push(nm+'：横にはみ出す')};
    go('issues');look('異常の一覧','去年の異常','今年の異常');
    go('works');look('工事の一覧','去年の工事','今年の工事');
+   // k2：設備の詳細（日常点検の記録）
+   S.equipment=[{id:'e1',code:'E-1',name:'設備1',kind:'',status:'稼働',locId:'',place:'',importance:'',run:{meters:[]},repairs:[],docs:[],photos:[],health:[]}];
+   S.settings.dnums=[{id:'dny1',name:'去年今年の電圧',short:'電圧',unit:'V',equip:'e1',min:'',max:''}];
+   S.daily[last]={dny1:101};S.daily[now]={dny1:202};save();
+   go('equipDetail',{eq:'e1',eqTab:'insp'});look('設備の詳細の日常点検','101','202');
+   // k2：在庫の入出庫履歴
+   S.parts=[{id:'p1',code:'',name:'部品1',spec:'',maker:'',place:'',unit:'個',qty:2,min:'',price:'',equipIds:[]}];
+   S.moves=[{id:'m1',partId:'p1',date:last,type:'入庫',qty:1,after:1,by:'',ref:'',note:'去年の入庫'},{id:'m2',partId:'p1',date:now,type:'入庫',qty:1,after:2,by:'',ref:'',note:'今年の入庫'}];save();
+   go('stock',{stTab:'parts'});look('入出庫履歴','去年の入庫','今年の入庫');
    return o},fs);
   r.forEach(x=>errs.push(tag+x));await c.close()}
  console.log([...new Set(errs)].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length?1:0)})();
