@@ -46,6 +46,7 @@ html[data-fs=l] nav button{font-size:11px;white-space:nowrap}
 html[data-fs=l] #yrFlt>.row,html[data-fs=xl] #yrFlt>.row{flex-wrap:wrap!important}html[data-fs=l] #yrFlt select,html[data-fs=xl] #yrFlt select{flex:1 1 100%;min-width:0}
 html[data-fs=l] .dwgver,html[data-fs=xl] .dwgver{flex-wrap:wrap}html[data-fs=l] .dwgver select,html[data-fs=xl] .dwgver select{flex:1 1 100%;min-width:0}
 html[data-fs=l] .seg.tabs button,html[data-fs=xl] .seg.tabs button{height:auto;min-height:44px;padding-top:5px;padding-bottom:5px}
+.al .nu{display:inline-block;white-space:nowrap}
 html[data-fs=l] .nwl,html[data-fs=xl] .nwl{display:inline-block;max-width:100%;overflow-wrap:anywhere}
 @media print{html[data-fs] .nwl{display:inline!important;max-width:none!important;overflow-wrap:normal!important}}
 html[data-fs=l] .isacts,html[data-fs=xl] .isacts{flex-direction:column;align-items:stretch}html[data-fs=l] .isacts .btn,html[data-fs=xl] .isacts .btn{flex:none;width:100%;white-space:normal}
@@ -2480,6 +2481,8 @@ function deadlineRow(x){
 // お知らせ
 const goDay=ds=>`go('month',{y:${pd(ds).getFullYear()},m:${pd(ds).getMonth()+1},sel:'${ds}'})`;
 let QN=0;
+/* お知らせの「数字＋単位」（1台・3件・2面）を行の途中で割らない。表示だけ */
+function alNu(h){return h.replace(/(\d+)(台|件|面|品|点|日)/g,'<span class="nu">$1$2</span>')}
 function alerts(){
   const A=[],add=(lv,t,on,chips)=>A.push([lv,t,on,chips]);
   const over=S.tasks.filter(t=>t.status==='予定'&&t.date<TODAY).sort(byDate);
@@ -2521,7 +2524,7 @@ function vHome(){ // v16.4：上から「今すぐ対応すること → 今日�
   h+=`<div class="quick hq4" style="margin:0 0 12px;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:6px"><button class="btn sec" onclick="go('day',{day:TODAY})"><b>✅</b>今日の点検${qs(dn?'済み ✓':dReq?`残り${dReq}件`:'入力する')}</button><button class="btn sec" onclick="go('year')"><b>◯●</b>印を付ける</button><button class="btn sec" onclick="homeGen()"><b>⚡</b>発電機の数字</button><button class="btn sec" onclick="editIssue()"><b>🛠</b>異常を記録${qs(oi.length?`未完了${oi.length}件`:'')}</button></div>`;
   // 1 今すぐ対応すること
   if(A.length){
-    const al=([c,t,on,ch])=>`<div class="al ${c}" onclick="${on}">${esc(t)}${ch?`<div class="alchips noprint">${ch.days.map(d=>`<button class="alchip" onclick="event.stopPropagation();go('day',{day:'${d}'})">${md(d)} を開く</button>`).join('')}${ch.more?`<span class="muted">ほか ${ch.more}日</span>`:''}</div>`:''}</div>`,top=A.slice(0,3),rest=A.slice(3),ngN=A.filter(a=>a[0]==='ng').length;
+    const al=([c,t,on,ch])=>`<div class="al ${c}" onclick="${on}">${alNu(esc(t))}${ch?`<div class="alchips noprint">${ch.days.map(d=>`<button class="alchip" onclick="event.stopPropagation();go('day',{day:'${d}'})">${md(d)} を開く</button>`).join('')}${ch.more?`<span class="muted">ほか ${ch.more}日</span>`:''}</div>`:''}</div>`,top=A.slice(0,3),rest=A.slice(3),ngN=A.filter(a=>a[0]==='ng').length;
     h+=`<div class="card"><h2>🔔 お知らせ <span class="muted">${ngN?`要対応 ${ngN}件・`:''}全${A.length}件</span></h2>${top.map(al).join('')}${rest.length?(V.moreAl?rest.map(al).join('')+`<button class="linkbtn" onclick="V.moreAl=false;render()">閉じる</button>`:`<button class="linkbtn" onclick="V.moreAl=true;render()">ほか ${rest.length}件を表示</button>`):''}</div>`;
   }
   if(S.inbox.length)h+=`<div class="card" id="inboxCard"><h2>📥 読み取り結果（確認待ち）</h2>${S.inbox.map(x=>`<div class="item" onclick="openInbox('${x.id}')"><div class="dt">${md(x.at.slice(0,10))}</div><div class="bd"><div class="ti">${x.kind==='daily'?'日常点検 '+x.recs.length+'日分':'点検名・日時の読み取り'}</div><div class="meta">${x.kind==='daily'?'タップして確認・反映':esc(x.summary||'')}</div></div></div>`).join('')}</div>`;
