@@ -13,6 +13,10 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  if(!koumoku)bad.push('ホームに「点検項目を足す」ボタンが無い');else if(koumoku.h<44)bad.push('点検項目を足すボタンが小さい '+koumoku.h);
  if(h.sw>392)bad.push('ホームが横にはみ出す '+h.sw);
  if(process.argv[2])await p.screenshot({path:process.argv[2]});
+ // 設備だけ登録してある端末（場所・予定・日常点検はまだ）では「はじめに」は出さない（S.equipment を見る）
+ await p.evaluate(()=>{S.equipment.push({id:'eqHF',name:'設備1',repairs:[]});go('home')});await p.waitForTimeout(200);
+ if(await p.evaluate(()=>!!document.getElementById('startGuide')))bad.push('設備が登録してあるのに「はじめに」が出る（S.equipment を見ていない）');
+ await p.evaluate(()=>{S.equipment=S.equipment.filter(e=>e.id!=='eqHF');go('home')});await p.waitForTimeout(150);
  for(const [name,open] of [['設備',"go('equip')"],['履歴',"go('hist')"],['年間計画',"go('year')"]]){
   await p.evaluate(open);await p.waitForTimeout(300);const r=await info();
   const bt=r.btn.filter(x=>/足す|追加|登録|点検/.test(x.t));
