@@ -1,5 +1,5 @@
 // ホームの印刷（朝礼で配る）：異常 8 件・今日の予定 5 件・今日の作業 5 件・盤 10 面・申し送り 3 行の日に A4 1 枚に収まる。
-// たたんだ一覧の見出し・「写真で入力」の札は紙に出さない。画面の見た目は変わらない（hz-v-home-print-a4）
+// 今日の作業 5 件（画面は 4 件まで）の残りは紙に「ほか 1件」と文字で出す（hz-v-home-print-more）。たたんだ一覧の見出し・「写真で入力」の札は紙に出さない。画面の見た目は変わらない（hz-v-home-print-a4）
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:718,height:900}});const p=await c.newPage();const errs=[];
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
@@ -18,6 +18,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  const r=await p.evaluate(()=>{const vis=e=>{const q=e.getBoundingClientRect();return q.width>0&&q.height>0};
   return {fold:[...document.querySelectorAll('#app details.fold:not([open])')].filter(vis).length,quick:[...document.querySelectorAll('#app .quick')].filter(vis).length,
    rowH:Math.max(0,...[...document.querySelectorAll('#app .item')].filter(vis).map(e=>e.getBoundingClientRect().height))}});
+ const more=await p.evaluate(()=>[...document.querySelectorAll('#app .ponly.hmore')].filter(e=>e.getBoundingClientRect().height>0).map(e=>e.textContent).join('|'));
+ if(!/ほか 1件/.test(more))bad.push('今日の作業の残りの件数が紙に出ない '+more);
  if(r.fold)bad.push('たたんだ一覧の見出しが紙に出る '+r.fold);
  if(r.quick)bad.push('「写真で入力」などの札が紙に出る '+r.quick);
  if(r.rowH>48)bad.push('予定の行が高い（1行になっていない） '+Math.round(r.rowH)+'px');
