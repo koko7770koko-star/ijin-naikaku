@@ -2838,7 +2838,7 @@ function undoLast(){
 function editTask(id,date){
   const t=S.tasks.find(x=>x.id===id)||{date:date||TODAY,time:'',kind:'',cat:'',title:'',place:'',staff:'',attend:'',status:'予定',result:'',note:'',photos:[]};
   TP=[...(t.photos||[])];const cf=conflicts(t);
-  loadPhotos(TP).then(()=>openModal(`<h3>${id?'予定・実績の編集':'予定の追加'}</h3>${cf.length?`<div class="al warn">⚠ ${esc(cf.join('、'))}</div>`:''}
+  loadPhotos(TP).then(()=>{openModal(`<h3>${id?'予定・実績の編集':'予定の追加'}</h3>${cf.length?`<div class="al warn">⚠ ${esc(cf.join('、'))}</div>`:''}
     ${id&&t.status==='予定'?`<button class="btn ok wide" style="margin-bottom:6px" onclick="doneTask('${id}')">✓ 完了（結果：良）にする</button>`:''}
     <div class="grid2"><div><label class="f">日付 *</label><input type="date" id="t_date" value="${esc(t.date)}" onchange="$('#t_crew').innerHTML=this.value?crewTags(crewDay(this.value)):''"></div><div><label class="f">開始時刻</label><input type="time" id="t_time" value="${esc(t.time)}"></div></div>
     <div id="t_crew">${crewTags(crewDay(t.date))}</div>
@@ -2851,7 +2851,7 @@ function editTask(id,date){
     <label class="f">備考（異常内容など）</label><textarea id="t_note" style="min-height:60px">${esc(t.note)}</textarea>
     ${tpBox()}<div class="muted" style="margin-top:6px">結果を「要観察」「不良」にすると異常案件に自動登録されます</div>
     ${id?editLogHTML('task',id):''}
-    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveTask('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delTask('${id}')">削除</button><button class="btn sec sm" onclick="dupTask('${id}')">複製</button>`:'')}`));
+    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveTask('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delTask('${id}')">削除</button><button class="btn sec sm" onclick="dupTask('${id}')">複製</button>`:'')}`);modalEnterNext('t_')});
 }
 // 設備・場所の候補：過去の予定・年間計画の場所と、場所の階層（棟 › 階 › 盤 など）。保存は今までどおりの文字列
 function placeList(id){const seen=new Set(),out=[];const add=v=>{v=(v||'').trim();if(v&&!seen.has(v)&&out.length<400){seen.add(v);out.push(v)}};
@@ -3612,7 +3612,7 @@ function editEquip(id,dupId){
   const src=dupId?eqById(dupId):null,pre=!id&&!src&&locById(V.eqNewLoc)?V.eqNewLoc:'';V.eqNewLoc='';
   const e=src?{...src,id:'',code:'',serial:'',name:dupEquipName(src.name),photos:[],docs:[],run:{...(src.run||{}),meters:[]},spec:{...(src.spec||{})}}:eqById(id)||{code:'',name:'',place:pre?locPath(pre):'',locId:pre,maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[]};
   TP=[...(e.photos||[])];TD=[...(e.docs||[])];
-  loadPhotos(TP).then(()=>openModal(`<h3>${id?'設備の編集':src?'設備の複製':'設備の追加'}</h3>${src?`<div class="al info">「${esc(src.name)}」と同じ内容で新しい設備を作ります。<b>設備名称・設備ID・製造番号</b>を入れ直して保存してください（写真・資料・修理履歴は引き継ぎません）。</div>`:''}
+  loadPhotos(TP).then(()=>{openModal(`<h3>${id?'設備の編集':src?'設備の複製':'設備の追加'}</h3>${src?`<div class="al info">「${esc(src.name)}」と同じ内容で新しい設備を作ります。<b>設備名称・設備ID・製造番号</b>を入れ直して保存してください（写真・資料・修理履歴は引き継ぎません）。</div>`:''}
     <div class="grid2"><div><label class="f">設備ID</label><input id="e_code" value="${esc(e.code)}" maxlength="30" placeholder="例：E-001"></div><div><label class="f">設置年月</label><input id="e_installed" type="month" value="${esc(e.installed)}"></div></div>
     <label class="f">設備名称 *</label><input id="e_name" value="${esc(e.name)}" maxlength="60" placeholder="例：非常用発電機 1号">
     <label class="f">設置場所</label><input id="e_place" value="${esc(e.place)}" maxlength="60">
@@ -3622,7 +3622,7 @@ function editEquip(id,dupId){
     ${eqEditExtra(e)}
     ${tpBox()}
     <div style="margin-top:8px">${fileBtn('📄 関連資料（PDF・画像）を添付','addTD','sec sm','application/pdf,image/*')}</div><div id="td">${docsList(TD,'rmTD')}</div>
-    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveEquip('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delEquip('${id}')">削除</button>`:'')}`));
+    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveEquip('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delEquip('${id}')">削除</button>`:'')}`);modalEnterNext('e_')});
 }
 function saveEquip(id){
   const g=k=>$('#e_'+k).value.trim();
