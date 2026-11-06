@@ -1,0 +1,28 @@
+// 一覧の日付の年（hz-v-date-noyear-k1）：異常の一覧（issueRow）・工事の一覧（workRow）で、今年でない日付には年が付き、今年の日付には付かない。
+// 文字「特大」「大」・360px で横にはみ出さず、日付の欄が 2 行に割れない
+// usage: node hozen/tools/dateyearcheck.js
+const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const errs=[];
+(async()=>{const b=await chromium.launch();
+ for(const fs of ['xl','l','m']){
+  const c=await b.newContext({viewport:{width:360,height:900}});const p=await c.newPage();
+  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
+  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
+  await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0);
+  const tag='360px・'+({xl:'特大',l:'大',m:'標準'})[fs]+'・';
+  const r=await p.evaluate(async f=>{const o=[];const y=+TODAY.slice(0,4),last=(y-1)+TODAY.slice(4),now=TODAY;
+   S.issues=[{id:'i1',date:last,title:'去年の異常（受変電設備の発熱）',place:'',status:'対応中',action:'',closed:'',detail:'',photos:[]},{id:'i2',date:now,title:'今年の異常',place:'',status:'対応中',action:'',closed:'',detail:'',photos:[]}];
+   const wk=(id,date,title)=>({id,no:id,title,kind:'工事',status:'承認済み',date,endDate:'',start:'09:00',end:'17:00',equipIds:[],locId:'',place:'',staff:[],vendor:'',vendorStaff:'',needQuals:[],needN:0,content:'',outage:{on:false,range:'',from:'',to:'',affect:'',contact:''},ky:[],kyBy:'',pre:[],post:[],stdId:'',stdVer:'',stdName:'',result:'',cost:'',photos:[],docs:[],approvals:[],hist:[],issueId:''});
+   S.works=[wk('w1',last,'去年の工事'),wk('w2',now,'今年の工事')];S.settings.fscale=f;save();applyFScale();
+   const look=(nm,a,bb)=>{const items=[...document.querySelectorAll('#app .item')];
+    const A=items.find(e=>e.textContent.includes(a)),B=items.find(e=>e.textContent.includes(bb));if(!A||!B)return o.push(nm+'：行が無い');
+    const da=A.querySelector('.dt'),db=B.querySelector('.dt');
+    if(!da.textContent.includes(String(y-1)+'/'))o.push(nm+'：去年の日付に年が無い「'+da.textContent+'」');
+    if(db.textContent.includes(String(y)+'/'))o.push(nm+'：今年の日付に年が付く「'+db.textContent+'」');
+    const yr=da.querySelector('.yr');if(yr){const q=yr.getBoundingClientRect(),m=da.firstChild&&da.getBoundingClientRect();if(q.bottom>m.top+30)o.push(nm+'：日付の欄が 2 行に割れる')}
+    if(da.scrollWidth>da.clientWidth+1)o.push(nm+'：日付の欄から文字が出る');
+    if(document.documentElement.scrollWidth>innerWidth+1)o.push(nm+'：横にはみ出す')};
+   go('issues');look('異常の一覧','去年の異常','今年の異常');
+   go('works');look('工事の一覧','去年の工事','今年の工事');
+   return o},fs);
+  r.forEach(x=>errs.push(tag+x));await c.close()}
+ console.log([...new Set(errs)].join('\n')||'NO ERRORS');await b.close();process.exit(errs.length?1:0)})();
