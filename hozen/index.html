@@ -230,6 +230,8 @@ html[data-fs=l] .banrow>.bn,html[data-fs=xl] .banrow>.bn{flex:1 1 100%;word-brea
 html[data-fs=l] .banrow.bh>.bn,html[data-fs=xl] .banrow.bh>.bn{display:none}
 html[data-fs=l] .banrow:has(>.bn)>.bi,html[data-fs=xl] .banrow:has(>.bn)>.bi,html[data-fs=l] .banrow:has(>.bn)>.bm:not(.bw),html[data-fs=xl] .banrow:has(>.bn)>.bm:not(.bw){flex:1 1 0;width:auto;min-width:44px}
 html[data-fs=l] .banrow.bh>.bi:last-child,html[data-fs=xl] .banrow.bh>.bi:last-child{flex:0 0 44px;width:44px;min-width:44px}
+/* 幅 340px 以下（320px の小さい端末）：名前の列が 0 幅になり ◯● のボタンに重なっていたので、「大」「特大」と同じに名前を1行に取りボタンは下の行へ（hz-ban-320） */
+@media (max-width:340px){.banrow:has(>.bn){flex-wrap:wrap}.banrow>.bn{flex:1 1 100%;word-break:keep-all;overflow-wrap:anywhere}.banrow.bh>.bn{display:none}.banrow:has(>.bn)>.bi,.banrow:has(>.bn)>.bm:not(.bw){flex:1 1 0;width:auto;min-width:44px}.banrow.bh>.bi:last-child{flex:0 0 44px;width:44px;min-width:44px}}
 .banrow.bh .bi{font-size:12px;line-height:1.2;text-align:center;color:var(--mut,#667);word-break:keep-all;overflow-wrap:normal}
 .bm.mk-iss{background:#fde2e1;border-color:#d93025;color:#b3261e}.bm.mk-iss small{font-size:11px}
 .bm{height:44px;font-size:20px;font-weight:700;border:1px solid var(--bd,#cbd5e1);border-radius:10px;background:#fff;padding:0}.bm.bw{flex-basis:44px;width:44px;font-size:16px}
