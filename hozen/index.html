@@ -2890,6 +2890,16 @@ function delTask(id){
 function dupTask(id){const t=S.tasks.find(x=>x.id===id);const n={...t,id:uid(),status:'予定',result:'',note:'',photos:[],issueId:''};S.tasks.push(n);save();editTask(n.id)}
 
 // 異常案件
+/* 窓の 1 行の欄で Enter（キーボードの「次へ」）を押すと次の欄へ移る。複数行の欄では何もせず、最後の欄では閉じるだけ（保存はしない）。表示と押し方だけで保存の形は変えない */
+function modalEnterNext(pre){
+  const vis=e=>e.offsetParent!==null&&!e.disabled&&!e.readOnly;
+  const all=()=>[...document.querySelectorAll('#modal input,#modal textarea')].filter(e=>e.id.startsWith(pre)&&(e.tagName==='TEXTAREA'||/^(text|number|search|tel|)$/.test(e.type)));
+  all().forEach(e=>{if(e.tagName==='TEXTAREA'||e.dataset.enx)return;e.dataset.enx='1';
+    e.addEventListener('keydown',ev=>{if(ev.key!=='Enter'||ev.isComposing||ev.keyCode===229)return;
+      const a=all().filter(x=>vis(x)||x===e),i=a.indexOf(e),n=a[i+1];ev.preventDefault();
+      if(n){try{n.focus()}catch(_){}}else e.blur()})});
+  const a=all().filter(vis);a.forEach((e,i)=>{if(e.tagName==='INPUT')e.setAttribute('enterkeyhint',i<a.length-1?'next':'done')});
+}
 function editIssue(id,preset){
   mdraftNext('issue-'+(id||'new'),['is_title','is_place','is_detail','is_action','is_memo']);
   const i=S.issues.find(x=>x.id===id)||{date:TODAY,title:'',place:'',detail:'',status:'発見',action:'',closed:'',photos:[],equipId:'',...(preset||{})};
@@ -2927,6 +2937,7 @@ function editIssue(id,preset){
     const sel=$('#modal .grid2 select');if(sel){sel.id='is_equip';modalLabelLink(sel)}
     const pl=$('#is_place');if(pl&&sel){pl.insertAdjacentHTML('afterend','<div id="is_recur" class="muted" style="font-size:13px;margin-top:4px"></div>');ISS_CUR=id||'';sel.addEventListener('change',issueRecurHint);issueRecurHint()}
     const us=$('#is_urg');if(us)us.addEventListener('change',()=>setIssueUrg(us.value,true));
+    modalEnterNext('is_');
     if(!id){const t=$('#is_title');if(t&&!t.value)try{t.focus()}catch(e){}}});
 }
 /* 設備を選んだとき、その設備の未完了の異常と過去1年の件数を1行で出す（再発に気づく。表示だけ・押すとその案件を開く） */
@@ -6363,7 +6374,7 @@ function editWork(id,preset){
     ${id?`<div class="grp"><b>承認・変更の履歴</b>${w.approvals.length?`<div class="meta"><b>承認</b>：${w.approvals.map(a=>`${new Date(a.at).toLocaleString('ja-JP')} ${esc(a.role)} ${esc(a.by)}・${esc(a.act)}（${esc(a.method||AUTH_NAME)}）`).join('<br>')}</div>`:''}${[...w.hist].reverse().map(h=>`<div class="meta">${new Date(h.at).toLocaleString('ja-JP')}・${esc(h.act)}${h.from?`（${esc(h.from)}→${esc(h.to)}）`:''}・${esc(h.by||'操作者名 未設定')}${h.note?'：'+esc(h.note):''}</div>`).join('')||'<div class="muted">なし</div>'}</div>`:''}
     ${id?`<div class="row" style="margin-top:8px;gap:6px">${workActs(w).map(([a,l,c])=>`<button class="btn ${c||'sec'} sm" onclick="workAct('${id}','${a}')">${l}</button>`).join('')}<button class="btn sec sm" onclick="closeModal(true);go('printDoc',{doc:{t:'work',id:'${id}'}})">作業報告書</button><button class="btn sec sm" onclick="dupWork('${id}')">写して新しく作る</button><button class="btn sec sm" onclick="closeModal(true);editMeas(null,{workId:'${id}',equipId:'${w.equipIds[0]||''}'})">＋測定</button></div>`:''}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">閉じる</button>${locked?'':`<button class="btn" onclick="saveWork('${id||''}')">保存</button>`}`,id?`<button class="btn red sm" onclick="delWork('${id}')">削除</button>`:'')}`);
-    wkKy();wkChk('pre');wkChk('post');MODAL_SIG=modalSig()});
+    wkKy();wkChk('pre');wkChk('post');modalEnterNext('wk_');MODAL_SIG=modalSig()});
 }
 function dupWork(id){const w=workById(id);if(!w)return;closeModal(true);
   const pc=a=>(a||[]).map(c=>({text:c.text,req:c.req!==false,done:false,by:'',at:''}));
