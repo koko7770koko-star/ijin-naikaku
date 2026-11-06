@@ -3608,7 +3608,7 @@ function vEquipDetail(){
   }
   h+=`<div class="card${(e.repairs||[]).length?'':' eqE'}"><div class="hd-row"><h2>🔧 故障・修理履歴</h2><button class="btn sm" onclick="editRepair('${e.id}')">＋ 追加</button></div>${(e.repairs||[]).length?eqMore('rep',[...e.repairs].sort((a,b)=>b.date.localeCompare(a.date)),r=>`<div class="item ${r.kind==='故障'?'ng':''}" onclick="editRepair('${e.id}','${r.id}')"><div class="dt">${md(r.date)}<small>${r.date.slice(0,4)}</small></div><div class="bd"><div class="ti" style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(r.kind)}：${esc(r.content)}</div><div class="meta">${esc([r.vendor,r.cost?r.cost+'円':''].filter(Boolean).join('・'))}${(r.photos||[]).length?'・📷'+r.photos.length:''}</div></div></div>`):'<div class="muted">まだありません</div>'}</div>`;
   h+=`<div class="card${L.issues.length?'':' eqE'}"><div class="hd-row"><h2>🛠 異常案件</h2><button class="btn sm" style="min-height:40px" onclick="editIssue(null,{equipId:'${e.id}',place:${esc(JSON.stringify(e.place||''))}})">＋ 追加</button></div>${L.issues.length?eqMore('iss',L.issues,issueRow):'<div class="muted">ありません</div>'}</div>`;
-  h+=`<div class="card${L.tasks.length?'':' eqE'}"><h2>🗓 作業・点検の実績</h2>${L.tasks.length?eqMore('task',L.tasks.slice(0,30),taskRow):'<div class="muted">ありません</div>'}</div>`;
+  h+=`<div class="card${L.tasks.length?'':' eqE'}"><h2>🗓 作業・点検の実績</h2>${L.tasks.length?eqMore('task',L.tasks,taskRow):'<div class="muted">ありません</div>'}</div>`;
   return h;
 }
 /* 設備カルテ：この設備に結んだ技術資料（S.library の equipIds）を並べ、押すとその資料が開く。0 件なら出さない。表示だけ */
