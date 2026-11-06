@@ -2896,7 +2896,7 @@ function dupTask(id){const t=S.tasks.find(x=>x.id===id);const n={...t,id:uid(),s
 function modalEnterNext(pre){
   const vis=e=>(e.checkVisibility?e.checkVisibility():e.offsetParent!==null)&&!e.disabled&&!e.readOnly; /* たたんだ details の中の欄は offsetParent が null にならないので checkVisibility で見る */
   const all=()=>[...document.querySelectorAll('#modal input,#modal textarea')].filter(e=>e.id.startsWith(pre)&&(e.tagName==='TEXTAREA'||/^(text|number|search|tel|)$/.test(e.type)));
-  all().forEach(e=>{if(e.tagName==='TEXTAREA'||e.dataset.enx)return;e.dataset.enx='1';
+  all().forEach(e=>{if(e.tagName==='TEXTAREA'||e.dataset.enx||e.hasAttribute('onkeydown'))return; /* 自分の Enter を持つ欄（場所を足す la_name など）はそのまま */e.dataset.enx='1';
     e.addEventListener('keydown',ev=>{if(ev.key!=='Enter'||ev.isComposing||ev.keyCode===229)return;
       const a=all().filter(x=>vis(x)||x===e),i=a.indexOf(e),n=a[i+1];ev.preventDefault();
       if(n){try{n.focus({preventScroll:true});n.scrollIntoView({block:'center'})}catch(_){}}else e.blur()})}); /* 次の欄が下の固定の「保存・キャンセル」の帯に隠れないよう、真ん中まで送る（hz-v-modal-enter-item） */
@@ -5094,7 +5094,7 @@ function locAdd(parent,type){
     <label class="f">名前 *</label><input id="la_name" maxlength="60" placeholder="${LOC_EX[t]||''}" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();locAddSave('${parent}',true)}">
     <div class="muted" style="font-size:12px">「足して続ける」で同じ所に続けて足せます。</div>${bulk}
     ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button><button class="btn sec" onclick="locAddSave('${parent}',true)">足して続ける</button><button class="btn" onclick="locAddSave('${parent}',false)">足す</button>`)}`);
-  setTimeout(()=>{const i=$('#la_name');if(i)i.focus()},50);
+  modalEnterNext('la_');setTimeout(()=>{const i=$('#la_name');if(i)i.focus()},50);
 }
 function locAddSave(parent,cont){
   const t=LOC_TYPES.includes($('#la_type').value)?$('#la_type').value:'盤',nm=txt($('#la_name').value,60).trim();
@@ -5156,7 +5156,7 @@ function editLoc(id,parent){
     <details style="margin-top:8px"><summary class="muted">位置（配置図・将来の3D表示用・任意）</summary>
       <div class="grid2"><div><label class="f">階</label><input id="lo_floor" value="${esc(l.pos.floor)}" maxlength="20" placeholder="例：B1F"></div><div><label class="f">高さ（m）</label><input id="lo_z" type="number" inputmode="decimal" step="any" value="${esc(l.pos.z)}"></div></div>
       <div class="grid2"><div><label class="f">X（m）</label><input id="lo_x" type="number" inputmode="decimal" step="any" value="${esc(l.pos.x)}"></div><div><label class="f">Y（m）</label><input id="lo_y" type="number" inputmode="decimal" step="any" value="${esc(l.pos.y)}"></div></div></details>
-    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveLoc('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delLoc('${id}')">削除</button><button class="btn sec sm" onclick="closeModal(true);locAdd('${id}')">＋下位</button>`:'')}`);
+    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveLoc('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delLoc('${id}')">削除</button><button class="btn sec sm" onclick="closeModal(true);locAdd('${id}')">＋下位</button>`:'')}`);modalEnterNext('lo_');
 }
 function saveLoc(id){
   const g=k=>$('#lo_'+k).value.trim();
@@ -5197,6 +5197,7 @@ function bldgWizard(){
     <div id="bw_sum" class="muted" style="font-size:12px;margin-top:6px"></div>
     ${modalFoot('<button class="btn sec" onclick="closeModal()">やめる</button><button class="btn" onclick="applyBldgWizard()">足す</button>')}`);
   document.querySelectorAll('#modal input,#modal select').forEach(el=>{el.addEventListener('input',bwSum);el.addEventListener('change',bwSum)}); // 窓の中の欄に付ける（窓そのものに付けると、開くたびに増えていた）
+  modalEnterNext('bw_');
 }
 /* 足す数の目安（多くて：既にある同じ名前の物は重ねないので、実際はこれ以下） */
 function bwSum(){const el=$('#bw_sum');if(!el)return;const fr=floorRangeVal('bw'),nb=splitNames(($('#bw_names')||{}).value).length,ne=document.querySelectorAll('#bw_rows input[data-ex]:checked').length,
