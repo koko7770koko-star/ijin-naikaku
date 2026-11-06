@@ -3432,13 +3432,16 @@ function trendCard(n){
   if(ymin===ymax){ymin-=1;ymax+=1}const pad_=(ymax-ymin)*.1;ymin-=pad_;ymax+=pad_;
   const W=320,H=180,L=40,d0=pd(pts[0][0]),span=Math.max(1,diffD(pts[pts.length-1][0],pts[0][0]));
   const X=k=>L+(W-L-6)*(diffD(k,pts[0][0])/span),Y=v=>8+(H-24)*(1-(v-ymin)/(ymax-ymin));
-  const line=y=>y==null?'':`<line x1="${L}" x2="${W-6}" y1="${Y(y)}" y2="${Y(y)}" stroke="#d0342c" stroke-dasharray="4 3"/><text x="${W-6}" y="${Y(y)-3}" font-size="11" fill="#d0342c" text-anchor="end">${y}</text>`;
+  /* 管理値の数は線の左の端に「上限 100」の形で出す（右の端は最後の値の数と重なるため。hz-v-meas-graph-xl） */
+  const line=(y,lb)=>y==null?'':`<line x1="${L}" x2="${W-6}" y1="${Y(y)}" y2="${Y(y)}" stroke="#d0342c" stroke-dasharray="4 3"/><text x="${L+3}" y="${lb==='下限'&&Y(y)<H-34?Y(y)+12:Y(y)-3}" font-size="11" fill="#d0342c">${lb} ${y}</text>`;
+  /* 期間が年をまたぐときは日付に年を付ける（2 年分で始めと終わりが同じ「11/6」に見えないように） */
+  const yrs=pts[0][0].slice(0,4)!==pts[pts.length-1][0].slice(0,4),gd=k=>yrs?k.slice(0,4)+'/'+md(k):md(k);
   const ticks=[ymin+pad_,(ymin+ymax)/2,ymax-pad_].map(v=>`<text x="${L-4}" y="${Y(v)+3}" font-size="11" text-anchor="end" fill="#6b7684">${+v.toFixed(2)}</text>`).join('');
   const svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block" role="img" aria-label="${esc(n.name)}の推移">
-    <line x1="${L}" x2="${L}" y1="8" y2="${H-16}" stroke="#ccc"/><line x1="${L}" x2="${W-6}" y1="${H-16}" y2="${H-16}" stroke="#ccc"/>${ticks}${line(lo)}${line(hi)}
+    <line x1="${L}" x2="${L}" y1="8" y2="${H-16}" stroke="#ccc"/><line x1="${L}" x2="${W-6}" y1="${H-16}" y2="${H-16}" stroke="#ccc"/>${ticks}${line(lo,'下限')}${line(hi,'上限')}
     <polyline fill="none" stroke="#2f6fb0" stroke-width="1.6" points="${pts.map(([k,v])=>`${X(k).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')}"/>
     ${pts.map(([k,v])=>{const o=outOfRange(n,v);return `<circle cx="${X(k).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${o?3.2:2}" fill="${o?'#d0342c':'#2f6fb0'}"><title>${md(k)} ${v}${n.unit}</title></circle>`}).join('')}
-    <text x="${L}" y="${H-3}" font-size="11" fill="#6b7684">${md(pts[0][0])}</text>${pts.length>2?`<text x="${((L+W-6)/2).toFixed(1)}" y="${H-3}" font-size="11" text-anchor="middle" fill="#6b7684">${md(pts[Math.floor((pts.length-1)/2)][0])}</text>`:''}<text x="${W-6}" y="${H-3}" font-size="11" text-anchor="end" fill="#6b7684">${md(pts[pts.length-1][0])}</text>
+    <text x="${L}" y="${H-3}" font-size="11" fill="#6b7684">${gd(pts[0][0])}</text>${pts.length>2?`<text x="${((L+W-6)/2).toFixed(1)}" y="${H-3}" font-size="11" text-anchor="middle" fill="#6b7684">${gd(pts[Math.floor((pts.length-1)/2)][0])}</text>`:''}<text x="${W-6}" y="${H-3}" font-size="11" text-anchor="end" fill="#6b7684">${gd(pts[pts.length-1][0])}</text>
     <text x="${Math.min(W-6,Math.max(L+10,+X(pts[pts.length-1][0]).toFixed(1)))}" y="${Math.max(12,+Y(pts[pts.length-1][1]).toFixed(1)-6)}" font-size="12" font-weight="700" text-anchor="end" fill="${outOfRange(n,pts[pts.length-1][1])?'#d0342c':'#2f6fb0'}">${isFinite(Number(pts[pts.length-1][1]))?+Number(pts[pts.length-1][1]).toFixed(3):esc(pts[pts.length-1][1])}</text></svg>`;
   const avg=vals.reduce((a,b)=>a+b,0)/vals.length,ng=pts.filter(([,v])=>outOfRange(n,v));
   const allNg=Object.keys(S.daily).filter(k=>S.daily[k][n.id]!=null&&outOfRange(n,S.daily[k][n.id])).sort().reverse().slice(0,10);
