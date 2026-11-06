@@ -6238,7 +6238,7 @@ function editPlan(id){
     <label class="f">設備</label><select id="pl_eq"><option value="">（指定しない）</option>${(S.equipment||[]).map(e=>`<option value="${e.id}" ${e.id===p.equipId?'selected':''}>${esc(eqLabel(e))}</option>`).join('')}</select>
     <div class="grid2"><div><label class="f">概算費用（円）</label><input id="pl_cost" type="number" inputmode="numeric" value="${esc(p.cost)}"></div><div><label class="f">状況</label><select id="pl_status">${opts(['計画','予算化','実施済み','見送り'],p.status)}</select></div></div>
     <label class="f">備考</label><textarea id="pl_note" maxlength="2000">${esc(p.note)}</textarea>
-    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="savePlan('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delPlan('${id}')">削除</button>`:'')}`);
+    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="savePlan('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delPlan('${id}')">削除</button>`:'')}`);modalEnterNext('pl_');
 }
 function savePlan(id){const g=k=>$('#pl_'+k).value.trim();const o={title:txt(g('title'),100),year:num16(g('year')),kind:g('kind'),equipId:eqById(g('eq'))?g('eq'):'',cost:num16(g('cost')),status:g('status'),note:txt(g('note'),2000)};
   if(!o.title){toast('件名を入れてください');return}if(!Number.isInteger(o.year)||o.year<1900||o.year>2200){toast('年度を入れてください');return}const p=(S.plans||[]).find(x=>x.id===id);if(p){logEdit('plan',id,'計画',`${p.year} ${p.status} ${p.cost}`,`${o.year} ${o.status} ${o.cost}`);Object.assign(p,o)}else S.plans.push({id:uid(),...o});save();closeModal(true);render();toast('保存しました')}
@@ -6633,7 +6633,7 @@ function editPart(id){
     <label class="f">備考</label><input id="pt_note" value="${esc(p.note)}" maxlength="1000">
     ${id?`<div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="stockMove('${id}','入庫')">＋ 入庫</button><button class="btn sec sm grow" onclick="stockMove('${id}','出庫')">− 出庫</button><button class="btn sec sm grow" onclick="stockMove('${id}','棚卸')">棚卸</button></div>
       <div class="grp"><b>入出庫履歴</b>${M.map(m=>`<div class="meta">${slash(m.date)} ${esc(m.type)} ${m.type==='棚卸'?'→'+m.after:m.qty}（残 ${m.after}）${m.by?'・'+esc(m.by):''}${m.note?'・'+esc(m.note):''}</div>`).join('')||'<div class="muted">なし</div>'}</div>`:''}
-    ${modalFoot(`<button class="btn sec" onclick="closeModal()">閉じる</button><button class="btn" onclick="savePart('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delPart('${id}')">削除</button>`:'')}`);
+    ${modalFoot(`<button class="btn sec" onclick="closeModal()">閉じる</button><button class="btn" onclick="savePart('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delPart('${id}')">削除</button>`:'')}`);modalEnterNext('pt_');
 }
 function savePart(id,silent){const g=k=>$('#pt_'+k).value.trim();
   const o={code:txt(g('code'),30),name:txt(g('name'),80),spec:txt(g('spec'),200),maker:txt(g('maker'),60),place:txt(g('place'),80),unit:txt(g('unit'),10)||'個',min:num16(g('min')),price:num16(g('price')),equipIds:eqMultiVal('pt_eqs'),note:txt(g('note'),1000)};
@@ -6758,7 +6758,7 @@ function editTool(id){
     ${id?`<div class="grp"><b>貸出</b>${loan?`<div>貸出中：${esc(loan.to)}（${slash(loan.out)}〜${loan.due?slash(loan.due):''}）</div><button class="btn sec sm" onclick="toolReturn('${id}')">返却を記録</button>`:`<button class="btn sec sm" onclick="toolLoan('${id}')">貸出を記録</button>`}
       ${t.loans.filter(l=>l.back).slice(-5).reverse().map(l=>`<div class="meta">${slash(l.out)}〜${slash(l.back)} ${esc(l.to)}</div>`).join('')}</div>
       <div class="grp"><b>校正履歴</b><button class="btn sec sm" onclick="toolCal('${id}')">校正を記録</button>${t.calHist.slice().reverse().map(c=>`<div class="meta">${slash(c.date)} ${esc(c.by)} ${esc(c.result)}（次回 ${slash(c.next)}）</div>`).join('')}</div>`:''}
-    ${modalFoot(`<button class="btn sec" onclick="closeModal()">閉じる</button><button class="btn" onclick="saveTool('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delTool('${id}')">削除</button>`:'')}`);
+    ${modalFoot(`<button class="btn sec" onclick="closeModal()">閉じる</button><button class="btn" onclick="saveTool('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delTool('${id}')">削除</button>`:'')}`);modalEnterNext('tl_');
 }
 function saveTool(id,silent){const g=k=>$('#tl_'+k).value.trim();const o={kind:g('kind'),code:txt(g('code'),30),name:txt(g('name'),80),maker:txt(g('maker'),60),model:txt(g('model'),60),serial:txt(g('serial'),60),place:txt(g('place'),80),calDue:isDate(g('calDue'))?g('calDue'):'',calCycleM:num16(g('calCycleM')),note:txt(g('note'),1000)};
   if(!o.name){toast('名称を入れてください');return false}const t=(S.tools||[]).find(x=>x.id===id);if(t){logEdit('tool',id,'校正期限',t.calDue,o.calDue);Object.assign(t,o)}else S.tools.push({id:uid(),...o,calHist:[],loans:[]});save();if(silent)return true;closeModal(true);render();toast('保存しました');return true}
