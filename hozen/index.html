@@ -398,6 +398,12 @@ html[data-fs=xl] .chk .l{flex:1 1 100%}
   body[data-view=home] #app button,body[data-view=home] #app input,body[data-view=home] #app select{display:none!important}
   /* ホームの印刷：A4 1枚に収めるよう行の余白を詰め、数字の札は頁の境で割らない（hz-v-home-print-a4） */
   body[data-view=home] #app .item{padding-top:2px;padding-bottom:2px;min-height:0}body[data-view=home] #app .card{margin-bottom:4px}body[data-view=home] #app .tile,body[data-view=home] #app .tiles{break-inside:avoid;page-break-inside:avoid}
+  /* ホームの印刷の続き：たたんだ一覧の見出し・「写真で入力」の札は紙に出さない。予定の行は日付・件名・時刻を1行に、数字の札は小さく（hz-v-home-print-a4） */
+  body[data-view=home] #app details.fold:not([open]),body[data-view=home] #app .quick{display:none!important}
+  body[data-view=home] #app .item{margin-bottom:2px}body[data-view=home] #app .item .dt{display:flex;gap:4px;align-items:baseline;min-width:62px}body[data-view=home] #app .item .dt small{display:inline}
+  body[data-view=home] #app .item .bd{display:flex;flex-wrap:wrap;gap:0 10px;align-items:baseline}body[data-view=home] #app .item .ti{margin-bottom:0}
+  body[data-view=home] #app .tiles{gap:4px;margin-bottom:4px}body[data-view=home] #app .tile{padding:4px 8px}body[data-view=home] #app .tile .tv{font-size:18px}body[data-view=home] #app .tile .tv.s{font-size:16px}
+  body[data-view=home] #app .hero{padding-bottom:4px}body[data-view=home] #app h2{margin-bottom:4px}body[data-view=home] #app .al{padding:3px 8px;margin:3px 0}body[data-view=home] #app .crewrow{padding:2px 0}body[data-view=home] #app .sub{margin-top:4px}
   /* 診断：表は A4 の幅に収め、棒グラフはページの境で割らない */
   #app .tblwrap{overflow:visible!important}#app .tblwrap .tbl{width:100%}#app .tblwrap .tbl td,#app .tblwrap .tbl th{white-space:normal;overflow-wrap:anywhere}#app .bars{break-inside:avoid;page-break-inside:avoid}
   main{padding:0;max-width:none}
