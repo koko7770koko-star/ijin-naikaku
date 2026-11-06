@@ -6679,7 +6679,7 @@ function stockDo(id,type,ref,from){
   if(p.min!==''&&p.qty<=p.min)toast(`在庫が最低在庫数（${p.min}）以下になりました`);else toast(`${type}を記録しました（残 ${p.qty}${p.unit}）`);
   if(from)editPart(id);else render();
 }
-function delPart(id){const i=S.parts.findIndex(p=>p.id===id),p=S.parts[i];if(!confirm(`予備品「${p.name}」を削除しますか？（入出庫履歴も一緒に外れます）`))return;const mv=S.moves.filter(m=>m.partId===id);S.parts.splice(i,1);S.moves=S.moves.filter(m=>m.partId!==id);save();closeModal(true);render();undoBar(`予備品「${p.name}」を削除しました`,()=>{S.parts.splice(i,0,p);S.moves.push(...mv)})}
+function delPart(id){const i=S.parts.findIndex(p=>p.id===id),p=S.parts[i];if(!confirm(`予備品「${p.name}」を削除しますか？（入出庫履歴も一緒に外れます）`))return;const mvAll=S.moves.slice();S.parts.splice(i,1);S.moves=S.moves.filter(m=>m.partId!==id);save();closeModal(true);render();undoBar(`予備品「${p.name}」を削除しました`,()=>{S.parts.splice(i,0,p);/* 入出庫は元の並びの位置に戻す（戻す前に増えた分は後ろへ） */S.moves=mvAll.concat(S.moves.filter(m=>!mvAll.includes(m)))})}
 /* 予備品CSVの読み戻し（exportStockCsv の最初の表＝予備品だけを読む。入出庫の表は読まない。読む前に件数を見せて確認） */
 function planStockCsv(text){
   const rows=parseCsv(text),hi=rows.findIndex(r=>r.map(x=>String(x).trim()).includes('品名')&&r.map(x=>String(x).trim()).includes('品番'));
