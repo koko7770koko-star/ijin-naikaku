@@ -7269,7 +7269,8 @@ function menuAll(q){const box=document.getElementById('mall');if(!box)return;q=S
    ['⚠ 不具合',(S.issues||[]).filter(i=>m([i.title,i.detail,i.action,i.cause,i.place,i.equipId?equipName(i.equipId):''])).map(i=>[i.title,`editIssue('${i.id}')`])],
    ['🧰 工事・作業',(S.works||[]).filter(w=>m([w.no,w.title,w.place,w.vendor,w.content,(w.staff||[]).join(' ')])).map(w=>[w.title,`editWork('${w.id}')`])],
    ['📚 技術資料',(S.library||[]).filter(d=>m([d.title,d.tags,d.text])).map(d=>[d.title,`editLib('${d.id}')`])],
-   ['🗺 図面',(S.drawings||[]).filter(d=>m([d.name,d.kind,d.locId?locPath(d.locId):''])).map(d=>[d.name,`go('dwg',{dwg:'${d.id}'})`])]];
+   ['🗺 図面',(S.drawings||[]).filter(d=>m([d.name,d.kind,d.locId?locPath(d.locId):''])).map(d=>[d.name,`go('dwg',{dwg:'${d.id}'})`])],
+   ['📦 予備品',(S.parts||[]).filter(x=>m([x.code,x.name,x.spec,x.maker,x.place])).map(x=>[x.name+(x.spec?'（'+x.spec+'）':''),`editPart('${x.id}')`])]];
   const h=G.filter(g=>g[1].length).map(g=>`<div class="mgrp">${g[0]} <span class="muted">${g[1].length}件</span></div>`+g[1].slice(0,5).map(x=>`<div class="item" style="min-height:44px" onclick="${x[1]}"><div class="bd"><div class="ti">${esc(x[0]||'(名前なし)')}</div></div></div>`).join('')).join('');
   box.innerHTML=h||'<div class="muted" style="margin:8px 0">見つかりません</div>'}
 function menuFilter(q){q=String(q||'').trim();let n=0;document.querySelectorAll('.mtile').forEach(t=>{const ok=!q||sFold(t.dataset.q).includes(sFold(q));t.style.display=ok?'':'none';if(ok)n++});
