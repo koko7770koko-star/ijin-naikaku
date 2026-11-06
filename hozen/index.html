@@ -6616,7 +6616,7 @@ function costsOf(fy){
 }
 function editBudget(id,fy){const b=(S.budget||[]).find(x=>x.id===id)||{fy:fy||fyNow(),cat:BUDGET_CATS[0],name:'',amount:''};
   openModal(`<h3>予算</h3><div class="grid2"><div><label class="f">年度</label><input id="bg_fy" type="number" inputmode="numeric" value="${b.fy}"></div><div><label class="f">区分</label><select id="bg_cat">${opts(BUDGET_CATS,b.cat)}</select></div></div><label class="f">内訳</label><input id="bg_name" value="${esc(b.name)}" maxlength="80"><label class="f">金額（円）</label><input id="bg_amount" type="number" inputmode="numeric" value="${esc(b.amount)}">
-  ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveBudget('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delBudget('${id}')">削除</button>`:'')}`)}
+  ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveBudget('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delBudget('${id}')">削除</button>`:'')}`);modalEnterNext('bg_')}
 function saveBudget(id){const o={fy:parseInt($('#bg_fy').value),cat:$('#bg_cat').value,name:txt($('#bg_name').value.trim(),80),amount:num16($('#bg_amount').value)};if(!Number.isInteger(o.fy)){toast('年度を入れてください');return}
   const b=(S.budget||[]).find(x=>x.id===id);if(b){logEdit('budget',id,'予算',`${b.cat} ${b.amount}`,`${o.cat} ${o.amount}`);Object.assign(b,o)}else S.budget.push({id:uid(),...o});V.bgFy=o.fy;save();closeModal(true);render()}
 function delBudget(id){const i=S.budget.findIndex(x=>x.id===id),b=S.budget[i];S.budget.splice(i,1);save();closeModal(true);render();undoBar('予算を削除しました',()=>S.budget.splice(i,0,b))}
@@ -7127,7 +7127,7 @@ function editLib(id){
     <label class="f">本文（検索の対象。必要な部分を貼り付け）</label><textarea id="lb_text" style="min-height:140px" maxlength="30000">${esc(d.text)}</textarea>
     <label class="f">関連する設備</label>${eqMulti(d.equipIds,'lb_eqs')}
     <div style="margin-top:8px">${fileBtn('📎 ファイルを添付（1つ）','addLibFile','sec sm','application/pdf,image/*')}</div><div id="td">${docsList(TD,'rmTD')}</div>
-    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveLib('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delLib('${id}')">削除</button>`:'')}`);
+    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveLib('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delLib('${id}')">削除</button>`:'')}`);modalEnterNext('lb_');
 }
 async function addLibFile(inp){const prev=TD;TD=[];await addTD(inp);TD=TD.length?TD.slice(-1):prev;$('#td').innerHTML=docsList(TD,'rmTD')}
 function saveLib(id){const o={title:txt($('#lb_title').value.trim(),100),tags:txt($('#lb_tags').value.trim(),200),text:txt($('#lb_text').value,30000),equipIds:eqMultiVal('lb_eqs'),file:TD[0]?TD[0].id:'',type:TD[0]?TD[0].type:''};
