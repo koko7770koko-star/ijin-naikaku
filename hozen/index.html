@@ -2469,7 +2469,7 @@ function taskRow(t,quick){
     +(over?'<span class="pill ng">期限超過</span>':'')
     +((t.photos||[]).length?`<span class="pill">📷${t.photos.length}</span>`:'')
     +(cf.length?`<span class="pill warn">⚠ ${esc(cf.join('、'))}</span>`:'');
-  return `<div class="item ${cls}" onclick="editTask('${t.id}')"><div class="dt">${md(t.date)}<small>（${WD[pd(t.date).getDay()]}）</small></div>
+  return `<div class="item ${cls}" onclick="editTask('${t.id}')"><div class="dt">${mdY(t.date)}<small>（${WD[pd(t.date).getDay()]}）</small></div>
     <div class="bd"><div class="ti">${esc(t.title)}</div>${meta?`<div class="meta">${meta}</div>`:''}${pills?`<div>${pills}</div>`:''}${quick&&t.status==='予定'?`<button type="button" class="btn sec sm" style="margin-top:6px;min-height:44px" onclick="event.stopPropagation();quickDone('${t.id}')">● 実施済みにする</button>`:''}</div></div>`;
 }
 // 一覧から、開かずに1回で「実施済み（●）」にする（既存の完了と同じ：状態=完了・結果=良。押し間違えは「元に戻す」で戻せる）
@@ -3423,7 +3423,7 @@ function histRow(k,item){
   if(item&&numDefs().some(n=>n.id===item)){const n=numDef(item),p=prevVal(k,item),o=outOfRange(n,r[item]);body=`<div class="ti ${o?'red':''}" style="${o?'color:var(--ng)':''}">${esc(r[item])}${esc(n.unit)}${o?'（'+esc(o)+'）':''}</div><div class="meta">前回比 ${esc(diffText(r[item],p,'')||'－')}</div>`}
   else if(item){const v=(r.c||{})[item];body=`<div class="ti" style="${v==='×'?'color:var(--ng)':''}">${esc(v)}</div>`}
   else body=`<div class="meta">${numDefs().filter(n=>r[n.id]!=null).map(n=>`<span class="hv">${esc(n.short||n.name)} ${esc(r[n.id])}${esc(n.unit)}</span>`).join('・')}</div>${st.I&&st.I.ng.length?`<div class="meta" style="color:var(--ng)">${esc(st.I.ng.join('、'))}</div>`:''}`;
-  return `<div class="item ${st.cls==='ok'?'ok':st.cls==='ng'?'ng':''}" onclick="go('day',{day:'${k}'})"><div class="dt">${md(k)}<small>（${WD[pd(k).getDay()]}）</small></div>
+  return `<div class="item ${st.cls==='ok'?'ok':st.cls==='ng'?'ng':''}" onclick="go('day',{day:'${k}'})"><div class="dt">${mdY(k)}<small>（${WD[pd(k).getDay()]}）</small></div>
     <div class="bd">${body}<div class="meta"><span class="hv">${esc(st.st)}</span>${r.by?'・<span class="hv">'+esc(r.by)+'</span>':''}${(r.photos||[]).length?'・<span class="hv">📷'+r.photos.length+'</span>':''}${r.note?'・'+esc(txt(r.note,40)):''}</div></div></div>`;
 }
 function trendCard(n){
