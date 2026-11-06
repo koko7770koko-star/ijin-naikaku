@@ -204,7 +204,7 @@ html[data-fs=l] .cal .wc .w,html[data-fs=xl] .cal .wc .w{white-space:normal;word
 .cal .t{background:#e9eff6;color:#1f3b57;padding:1px 3px}
 .cal .t.ex{background:#eceff1;color:#56636f;text-decoration:line-through}
 .cal .t.ok{background:var(--ok-bg);color:var(--ok)}.cal .t.ng{background:var(--ng-bg);color:var(--ng)}
-.cal .more{font-size:10px;color:var(--accent)}
+.cal .more{font-size:10px;color:var(--accent)}.cal .more .mn{white-space:nowrap} /* 「他10件」が細いマスで「他10／件」に割れていたので「+10」に（読み上げは「他10件」）。割れるのは件数と完了数の間だけ（hz-v-month-more-wrap） */
 .cal .wkm{font-size:10px;color:var(--warn,#b26a00);font-weight:700;white-space:nowrap}
 .aisend{font-size:12px;color:#456}
 .lgd{display:flex;flex-wrap:wrap;gap:4px 6px;width:100%}.lgd .lg{font-size:12px;font-weight:600;border-radius:4px;padding:3px 8px;background:#e9eff6;color:#1f3b57}.lgd .lg.ok{background:var(--ok-bg);color:var(--ok)}.lgd .lg.ng{background:var(--ng-bg);color:var(--ng)}.lgd .lg.ex{background:#eceff1;color:#56636f;text-decoration:line-through}
@@ -2740,7 +2740,7 @@ function vMonth(){
     if(crew)crew=`<div class="wc">${crew}</div>`;
     h+=`<div class="d ${d.getMonth()!==m-1?'o':''} ${s===TODAY?'today':''} ${s===V.sel?'sel':''}" onclick="pickDay('${s}')">
       <div class="n ${wd===0||holName(s)?'sun':wd===6?'sat':''}" ${holName(s)?`title="${holName(s)}"`:''}>${d.getDate()}${s===TODAY?'<small class="tdl">今日</small>':''}${holName(s)?'<small class="hlb">祝</small>':''}${cf?' <span style="color:var(--ng)">⚠</span>':''}</div>
-      ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more">他${ts.length-2}件 ${ts.filter(t=>t.status==='完了').length}/${ts.length}</div>`:''}${wn?`<div class="wkm" aria-label="工事・作業 ${wn}件">🔧${wn}</div>`:''}${crew}</div>`;
+      ${ts.slice(0,2).map(t=>`<div class="t ${isNG(t)?'ng':t.status==='完了'?'ok':t.status==='延期'||t.status==='中止'?'ex':''}">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${ts.length>2?`<div class="more" aria-label="他${ts.length-2}件・完了 ${ts.filter(t=>t.status==='完了').length}/${ts.length}"><span class="mn">+${ts.length-2}</span> <span class="mn">${ts.filter(t=>t.status==='完了').length}/${ts.length}</span></div>`:''}${wn?`<div class="wkm" aria-label="工事・作業 ${wn}件">🔧${wn}</div>`:''}${crew}</div>`;
   }
   h+=`</div><div class="tags" style="margin-top:10px">${st.showCrew!==false?'<span class="tag a" style="font-size:12px">A夜勤</span><span class="tag b" style="font-size:12px">B夜勤</span>':''}${st.calDay?'<span class="tag d" style="font-size:12px">日勤</span>':''}<span class="tag task" style="font-size:12px">点検・作業</span>${(S.works||[]).length?'<span class="wkm" style="font-size:12px;align-self:center">🔧 工事・作業指示</span>':''}<span class="lgd" id="calLg"><span class="lg pl">◯ 予定</span><span class="lg ok">● 実施済み</span><span class="lg ex">延期・中止</span><span class="lg ng">⚠ 衝突・異常</span></span></div>
     <div class="row mocr" style="margin-top:4px"><span class="muted grow">点検の案内・計画表を撮ると日付ごとに自動登録</span>${fileBtn('📷 写真から追加','ocrItems','sm')}</div>

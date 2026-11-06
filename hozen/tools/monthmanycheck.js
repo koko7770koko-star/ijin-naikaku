@@ -1,4 +1,4 @@
-// カレンダー：1日に予定 12 件・件名が長いとき、390px・360px（文字 標準・特大）で月のマスが伸びすぎず、その日の一覧に 12 件が出てボタンが重ならず、横にはみ出さない（hz-v-day-many）
+// カレンダー：1日に予定 12 件・件名が長いとき、390px・360px（文字 標準・特大）で月のマスが伸びすぎず「+n」が割れず、その日の一覧に 12 件が出てボタンが重ならず、横にはみ出さない（hz-v-day-many）
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
 (async()=>{const b=await chromium.launch();const errs=[];
  for(const w of [390,360])for(const fs of ['','xl']){
@@ -9,6 +9,10 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   const tag=`${w}px ${fs||'標準'}`;
   const m=await p.evaluate(()=>{const cells=[...document.querySelectorAll('#app td, #app .cal > *, #app [class*=cal] [onclick]')].filter(e=>e.textContent.trim()&&e.getBoundingClientRect().height>0);const hs=cells.map(e=>e.getBoundingClientRect().height).sort((a,b)=>b-a);return {max:Math.round(hs[0]||0),med:Math.round(hs[Math.floor(hs.length/2)]||0),sw:document.documentElement.scrollWidth}});
   if(m.sw>w+2)bad.push(tag+' 月：横にはみ出す '+m.sw);
+  const mo=await p.evaluate(()=>{const e=document.querySelector('.cal .more');if(!e)return null;const w=document.createTreeWalker(e,NodeFilter.SHOW_TEXT);let n,tn=null;while(n=w.nextNode())if(/[他+]\d/.test(n.data)){tn=n;break}if(!tn)return {lines:[9],out:false,t:e.textContent};
+   const s=tn.data.search(/[他+]\d/),m=tn.data.slice(s).match(/^[他+]\d+件?/)[0],r=document.createRange();r.setStart(tn,s);r.setEnd(tn,s+m.length);const tops=new Set([...r.getClientRects()].map(x=>Math.round(x.top)));const cell=e.parentElement.getBoundingClientRect(),b=r.getBoundingClientRect();
+   return {lines:[tops.size],out:b.right>cell.right+1||b.left<cell.left-1,t:e.textContent}});
+  if(!mo)bad.push(tag+' 月：12 件の日に「他 n 件」が無い');else{if(mo.lines.some(n=>n>1))bad.push(tag+` 月：「${mo.t}」の件数が 2 行に割れる`);if(mo.out)bad.push(tag+` 月：「${mo.t}」がマスの外にはみ出す`);}
   if(m.max>Math.max(220,m.med*4))bad.push(tag+` 月：12 件の日のマスが伸びすぎる（${m.max}px、ふつう ${m.med}px）`);
   const d=await p.evaluate(()=>{const sw=document.documentElement.scrollWidth;const bs=[...document.querySelectorAll('#app button')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0});let ov=0,ex='';
    for(let i=0;i<bs.length;i++)for(let j=i+1;j<bs.length;j++){const a=bs[i].getBoundingClientRect(),q=bs[j].getBoundingClientRect();const x=Math.min(a.right,q.right)-Math.max(a.left,q.left),y=Math.min(a.bottom,q.bottom)-Math.max(a.top,q.top);if(x>2&&y>2&&!bs[i].contains(bs[j])&&!bs[j].contains(bs[i])){ov++;if(!ex)ex=bs[i].textContent.trim().slice(0,12)+'／'+bs[j].textContent.trim().slice(0,12)}}
