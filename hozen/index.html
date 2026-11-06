@@ -5632,7 +5632,7 @@ function eqKarte(e){
   const D=(S.drawings||[]).filter(d=>d.pins.some(p=>p.equipId===e.id));
   if(D.length)h+=card('🗺 図面',D.map(d=>`<div class="item" onclick="go('dwg',{dwg:'${d.id}',pinEq:'${e.id}'})"><div class="bd"><div class="ti">${esc(d.name)}</div><div class="meta">${esc(d.kind)}</div></div></div>`).join(''));
   // 時系列
-  h+=card('🕘 設備の時系列（点検・異常・修理・測定・作業）',eqMore('tl',eqTimeline(e).slice(0,30),x=>`<div class="item ${x.cls||''}" ${x.on?`onclick="${x.on}"`:''}><div class="dt">${md(x.date)}<small>${x.date.slice(0,4)}</small></div><div class="bd"><div class="ti">${esc(x.kind)}：${esc(x.title)}</div>${x.meta?`<div class="meta">${esc(x.meta)}</div>`:''}</div></div>`)||emptyBox('まだ記録がありません'));
+  h+=card('🕘 設備の時系列（点検・異常・修理・測定・作業）',eqMore('tl',eqTimeline(e),x=>`<div class="item ${x.cls||''}" ${x.on?`onclick="${x.on}"`:''}><div class="dt">${md(x.date)}<small>${x.date.slice(0,4)}</small></div><div class="bd"><div class="ti">${esc(x.kind)}：${esc(x.title)}</div>${x.meta?`<div class="meta">${esc(x.meta)}</div>`:''}</div></div>`)||emptyBox('まだ記録がありません'));
   return h;
 }
 function eqTimeline(e){
