@@ -597,6 +597,8 @@ html[data-fs=l] .seg.istep button,html[data-fs=xl] .seg.istep button{flex:1 0 30
 .tbl{border-collapse:collapse;width:100%;font-size:13px}
 .tbl th,.tbl td{border-bottom:1px solid #e3e8ee;padding:6px 4px;text-align:left;white-space:nowrap}
 .tbl th{color:var(--mut);font-weight:600}
+/* 文字「大」「特大」：予算の表は 1 区分を 2 段（区分／予算・実績・残）に並べ、右の「残」が切れないようにする（表示だけ） */
+@media screen{html[data-fs=l] .bgtbl,html[data-fs=xl] .bgtbl{display:block}html[data-fs=l] .bgtbl tbody,html[data-fs=xl] .bgtbl tbody{display:block}html[data-fs=l] .bgtbl tr:first-child,html[data-fs=xl] .bgtbl tr:first-child{display:none}html[data-fs=l] .bgtbl tr,html[data-fs=xl] .bgtbl tr{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.8fr) minmax(0,1.6fr);gap:0 4px;padding:6px 0;border-bottom:1px solid #e3e8ee}html[data-fs=l] .bgtbl td,html[data-fs=xl] .bgtbl td{border:0;padding:2px 0;white-space:normal;overflow-wrap:anywhere}html[data-fs=l] .bgtbl td:first-child,html[data-fs=xl] .bgtbl td:first-child{grid-column:1/-1;font-weight:700}html[data-fs=l] .bgtbl td[data-l]::before,html[data-fs=xl] .bgtbl td[data-l]::before{content:attr(data-l);display:block;font-size:11px;color:var(--mut);font-weight:600}}
 .tbl tr[onclick]{cursor:pointer}@media screen{.rep tr.lk{cursor:pointer}}
 .bars{display:flex;align-items:flex-end;gap:3px;height:112px;padding:4px 0}
 .bars .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:0}
@@ -6583,7 +6585,7 @@ function vStock(){
   }else{
     const fy=V.bgFy||fyNow(),B=(S.budget||[]).filter(b=>b.fy===fy),act=costsOf(fy);
     h+=`<div class="row" style="margin-bottom:8px"><button class="btn sec sm noprint" onclick="V.bgFy=${fy-1};render()">‹ ${fy-1}</button><b class="grow" style="text-align:center">${fy}年度（${fy}/4〜${fy+1}/3）</b><button class="btn sec sm noprint" onclick="V.bgFy=${fy+1};render()">${fy+1} ›</button></div>`;
-    h+=card('💴 保全予算と実績',`<div class="tblwrap"><table class="tbl"><tr><th>区分</th><th>予算</th><th>実績</th><th>残</th></tr>${BUDGET_CATS.map(c=>{const b=B.filter(x=>x.cat===c).reduce((a,x)=>a+(Number(x.amount)||0),0),a=act[c]||0;return `<tr><td>${esc(c)}</td><td>${yen(b)}</td><td>${yen(a)}</td><td style="${b&&a>b?'color:var(--ng);font-weight:700':''}">${b?yen(b-a):'－'}</td></tr>`}).join('')}</table></div>
+    h+=card('💴 保全予算と実績',`<div class="tblwrap"><table class="tbl bgtbl"><tr><th>区分</th><th>予算</th><th>実績</th><th>残</th></tr>${BUDGET_CATS.map(c=>{const b=B.filter(x=>x.cat===c).reduce((a,x)=>a+(Number(x.amount)||0),0),a=act[c]||0;return `<tr><td>${esc(c)}</td><td data-l="予算">${yen(b)}</td><td data-l="実績">${yen(a)}</td><td data-l="残" style="${b&&a>b?'color:var(--ng);font-weight:700':''}">${b?yen(b-a):'－'}</td></tr>`}).join('')}</table></div>
       <div class="muted" style="font-size:12px;margin-top:4px">実績：修理履歴・異常案件・作業指示の費用（修繕費）、予備品の入庫×単価（部品・消耗品）、保全計画で「実施済み」の費用（更新工事費）を年度で集計しています。</div>
       ${B.map(b=>`<div class="item" onclick="editBudget('${b.id}')"><div class="bd"><div class="ti">${esc(b.cat)}：${esc(b.name||'')}</div></div><b>${yen(b.amount)}</b></div>`).join('')}`,`<button class="btn sm noprint" onclick="editBudget(null,${fy})">＋ 予算</button>`);
     const plan=[...Array(10)].map((_,k)=>fy+k).map(y=>{const s=(S.equipment||[]).filter(e=>e.status!=='廃止'&&(e.renewYear||(e.life!==''&&e.life!=null&&e.installed?+e.installed.slice(0,4)+Number(e.life):0))===y).reduce((a,e)=>a+(Number(e.renewCost)||0),0)+(S.plans||[]).filter(p=>p.year===y&&p.status!=='見送り').reduce((a,p)=>a+(Number(p.cost)||0),0);return [y,s]});
