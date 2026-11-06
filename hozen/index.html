@@ -317,6 +317,7 @@ html[data-fs=xl] .chk .l{flex:1 1 100%}
 .rep table{border-collapse:collapse;width:100%;margin-bottom:8px}
 .rep th,.rep td{border:1px solid #999;padding:3px 5px;vertical-align:middle;overflow-wrap:anywhere}.rep p{overflow-wrap:anywhere}
 .rep th{background:var(--a-bg);color:var(--navy);font-weight:700;text-align:center}
+#app .rep tr.lt>td,#app .rep tr.lt>th{padding-top:0;padding-bottom:0}#app .rep tr.ltf>td,#app .rep tr.ltf>th{padding-top:3px}#app .rep tr.ltl>td,#app .rep tr.ltl>th{padding-bottom:3px}#app .rep tr.ltc>td,#app .rep tr.ltc>th{border-top-style:hidden}
 .rep .sec{background:var(--navy);color:#fff;font-weight:700;padding:4px 6px;margin:10px 0 4px;font-size:13px}
 .rep .c{text-align:center}
 .rep .red{color:#c00000;font-weight:700}.rep .grn{color:var(--ok);font-weight:700}
@@ -6225,6 +6226,11 @@ function savePlan(id){const g=k=>$('#pl_'+k).value.trim();const o={title:txt(g('
 function delPlan(id){const i=S.plans.findIndex(x=>x.id===id);if(i<0)return;const p=S.plans[i];S.plans.splice(i,1);save();closeModal(true);render();undoBar(`計画「${p.title}」を削除しました`,()=>S.plans.splice(i,0,p))}
 
 /* ---------- 報告書（点検報告書・修理報告書・作業報告書） ---------- */
+/* 印刷の長い欄（内容・処置など）：1 行ずつ別の tr にして、頁の境で行ごと次の頁へ送られて前の頁が空になるのを防ぐ（hz-v-print-longrow）。
+   1 行だけの欄は今までどおり 1 つの tr。続きの行は上の線を消し、見た目は 1 つの欄のまま */
+function longTr(lab,txt){const L=String(txt==null?'':txt).replace(/\r\n?/g,'\n').split('\n');
+  if(L.length<2)return `<tr class="prbrk"><th>${lab}</th><td colspan="3" style="white-space:pre-wrap">${esc(L[0])}</td></tr>`;
+  return L.map((t,k)=>`<tr class="lt${k?' ltc':' ltf'}${k===L.length-1?' ltl':''}"><th>${k?'':lab}</th><td colspan="3" style="white-space:pre-wrap">${t===''?'&nbsp;':esc(t)}</td></tr>`).join('')}
 function vPrintDoc(){
   const d=V.doc||{},head=t=>`<div class="noprint row" style="margin-bottom:8px"><button class="btn grow" onclick="window.print()">🖨 印刷・PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button><button class="btn sec" onclick="history.length;go(${d.t==='meas'?"'diag',{dgTab:'meas'}":d.t==='work'?"'works'":d.t==='std'?"'stds'":"'issues'"})">戻る</button></div><div class="rep"><h1 style="text-align:center;font-size:20px;margin:6px 0">${t}</h1><div style="text-align:right">${esc(S.settings.name)} ${esc(S.settings.dept)}</div>`;
   const sign=`<table style="margin-top:14px;width:auto;margin-left:auto"><tr><th>作成</th><th>確認</th><th>承認</th></tr><tr><td style="height:48px;width:70px"></td><td style="width:70px"></td><td style="width:70px"></td></tr></table></div>`;
@@ -6235,8 +6241,8 @@ function vPrintDoc(){
       <p><b>総合：</b>${esc(j.text)}</p><p><b>所見：</b>${esc(m.note)||'－'}</p>${thumbs(m.photos)}<p class="muted" style="font-size:12px">判定は上表の管理値（施設で設定した値）によるものです。</p>`+sign}
   if(d.t==='issue'){const i=S.issues.find(x=>x.id===d.id);if(!i)return emptyBox('案件がありません');const e=eqById(i.equipId);
     return head('修 理 報 告 書')+`<table><tr><th style="width:90px">発見日</th><td>${slash(i.date)}</td><th style="width:80px">状態</th><td>${esc(i.status)}${i.closed?'（'+slash(i.closed)+' 完了）':''}</td></tr><tr><th>設備</th><td colspan="3">${esc(eqLabel(e))||esc(i.place)}</td></tr><tr><th>件名</th><td colspan="3">${esc(i.title)}</td></tr>
-      <tr><th>緊急度</th><td>${esc(i.urgency||'－')}</td><th>停止時間</th><td>${i.downH!==''&&i.downH!=null?esc(i.downH)+'時間':'－'}</td></tr><tr><th>内容</th><td colspan="3" style="white-space:pre-wrap">${esc(i.detail)}</td></tr><tr><th>処置</th><td colspan="3" style="white-space:pre-wrap">${esc(i.action)}</td></tr>
-      <tr><th>原因</th><td colspan="3" style="white-space:pre-wrap">${esc(i.cause||'')}</td></tr><tr><th>再発防止</th><td colspan="3" style="white-space:pre-wrap">${esc(i.prevent||'')}</td></tr><tr><th>費用</th><td>${yen(i.cost)}</td><th>確認者</th><td>${esc(i.confirmedBy||'')}</td></tr>
+      <tr><th>緊急度</th><td>${esc(i.urgency||'－')}</td><th>停止時間</th><td>${i.downH!==''&&i.downH!=null?esc(i.downH)+'時間':'－'}</td></tr>${longTr('内容',i.detail)}${longTr('処置',i.action)}
+      ${longTr('原因',i.cause)}${longTr('再発防止',i.prevent)}<tr><th>費用</th><td>${yen(i.cost)}</td><th>確認者</th><td>${esc(i.confirmedBy||'')}</td></tr>
       <tr><th>使用部品</th><td colspan="3">${(S.moves||[]).filter(m=>m.ref==='issue:'+i.id&&m.type==='出庫').map(m=>`${esc(partName(m.partId))} ${m.qty}`).join('、')||'－'}</td></tr>
       <tr><th>承認履歴</th><td colspan="3">${(i.approvals||[]).map(a=>`${slash(ymd(new Date(a.at)))} ${esc(a.role)} ${esc(a.by)}：${esc(a.act)}（${esc(a.method||AUTH_NAME)}）`).join('<br>')||'－'}</td></tr></table>${thumbs(i.photos)}`+sign}
   if(d.t==='std'){const t=stdById(d.id);if(!t)return emptyBox('作業標準がありません');
@@ -6250,7 +6256,7 @@ function vPrintDoc(){
   if(d.t==='work'){const w=(S.works||[]).find(x=>x.id===d.id);if(!w)return emptyBox('作業がありません');
     return head('作 業 報 告 書')+`<table><tr><th style="width:90px">作業番号</th><td>${esc(w.no)}</td><th style="width:80px">状態</th><td>${esc(w.status)}</td></tr><tr><th>作業日</th><td colspan="3">${slash(w.date)} ${esc(w.start)}〜${w.endDate&&w.endDate!==w.date?slash(w.endDate)+' ':''}${esc(w.end)}</td></tr><tr><th>件名</th><td colspan="3">${esc(w.title)}（${esc(w.kind)}）</td></tr>
       <tr><th>設備</th><td colspan="3">${w.equipIds.map(id=>esc(eqLabel(eqById(id)))).join('、')||esc(w.place)}</td></tr><tr><th>担当</th><td colspan="3">${esc(w.staff.join('、'))}${w.vendor?'／協力会社 '+esc(w.vendor)+' '+esc(w.vendorStaff):''}</td></tr>
-      <tr class="prbrk"><th>作業内容</th><td colspan="3" style="white-space:pre-wrap">${esc(w.content)}</td></tr><tr class="prbrk"><th>結果</th><td colspan="3" style="white-space:pre-wrap">${esc(w.result)}</td></tr>
+      ${longTr('作業内容',w.content)}${longTr('結果',w.result)}
       <tr><th>作業前確認</th><td colspan="3">${w.pre.map(c=>`${c.done?'☑':'☐'} ${esc(c.text)}${c.by?'（'+esc(c.by)+'）':''}`).join('<br>')}</td></tr><tr><th>作業後確認</th><td colspan="3">${w.post.map(c=>`${c.done?'☑':'☐'} ${esc(c.text)}${c.by?'（'+esc(c.by)+'）':''}`).join('<br>')}</td></tr>
       <tr><th>測定結果</th><td colspan="3">${(S.meas||[]).filter(m=>m.workId===w.id).map(m=>`${esc(m.name)}：${esc(measJudge(m).text)}`).join('<br>')||'－'}</td></tr><tr><th>作業標準</th><td colspan="3">${w.stdName?esc(w.stdName)+' 版'+esc(w.stdVer):'－'}</td></tr><tr><th>責任者確認</th><td colspan="3">${w.resp?`${slash(ymd(new Date(w.resp.at)))} ${esc(w.resp.role)} ${esc(w.resp.by)}${w.resp.note?'：'+esc(w.resp.note):''}（${esc(w.resp.method)}）`:isImportant(w)?'未記録':'－（重要作業ではない）'}</td></tr><tr><th>承認</th><td colspan="3">${w.approvals.map(a=>`${slash(ymd(new Date(a.at)))} ${esc(a.role)} ${esc(a.by)}：${esc(a.act)}（${esc(a.method||AUTH_NAME)}）`).join('<br>')||'－'}</td></tr><tr><th>履歴</th><td colspan="3" style="font-size:11px">${w.hist.map(h=>`${slash(ymd(new Date(h.at)))} ${esc(h.act)} ${esc(h.by)}${h.note?'：'+esc(h.note):''}`).join('<br>')}</td></tr></table>${thumbs(w.photos)}<p style="font-size:12px">※ 確認欄はアプリ上で名前を入力して記録したもので、本人認証ではありません。本書は安全の成立をアプリが保証するものではありません。</p>`+sign}
   return emptyBox('報告書の種類が指定されていません');
