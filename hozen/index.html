@@ -6656,7 +6656,7 @@ function stockMove(id,type,ref){
     <label class="f">担当者</label><input id="sm_by" list="dl_staff" value="${esc(who())}" maxlength="60">${staffList('dl_staff')}
     <label class="f">${type==='出庫'?'用途（例：○○盤の修理）':'メモ（任意）'}</label><input id="sm_note" maxlength="500">
     ${modalFoot(`<button class="btn" onclick="stockDo('${id}','${type}','${esc(ref||'')}',${from})">${type}を記録</button>`,`<button class="btn sec" onclick="closeModal(true);${from?`editPart('${id}')`:''}">やめる</button>`)}`);
-  setTimeout(()=>{const i=$('#sm_n');if(i)i.focus()},50);
+  modalEnterNext('sm_');setTimeout(()=>{const i=$('#sm_n');if(i)i.focus()},50);
 }
 function stockChk(id,type){const p=partById(id),w=$('#sm_w'),i=$('#sm_n');if(!p||!w||!i)return;
   w.innerHTML=type==='出庫'&&String(i.value).trim()!==''&&Number(i.value)>p.qty?`<span style="color:var(--ng);font-weight:700">記録上の在庫（${esc(p.qty)}）より多い出庫です</span>（記録との差は棚卸で直してください）`:''}
@@ -6769,7 +6769,7 @@ function saveTool(id,silent){const g=k=>$('#tl_'+k).value.trim();const o={kind:g
 function toolLoan(id){if($('#tl_name')&&!saveTool(id,true))return;const t=S.tools.find(x=>x.id===id);if(!t)return;
   openModal(`<h3>貸出：${esc(t.name)}</h3><label class="f">貸出先（名前）*</label><input id="tn_to" list="dl_staff" value="${esc(who())}" maxlength="60" style="min-height:48px">${staffList('dl_staff')}
     <label class="f">返却予定日（空欄可）</label><input id="tn_due" type="date" style="min-height:48px">
-    ${modalFoot(`<button class="btn" onclick="toolLoanDo('${id}')">貸出を記録</button>`,`<button class="btn sec" onclick="closeModal(true);editTool('${id}')">やめる</button>`)}`)}
+    ${modalFoot(`<button class="btn" onclick="toolLoanDo('${id}')">貸出を記録</button>`,`<button class="btn sec" onclick="closeModal(true);editTool('${id}')">やめる</button>`)}`);modalEnterNext('tn_')}
 function toolLoanDo(id){const t=S.tools.find(x=>x.id===id);if(!t)return;const to=$('#tn_to').value,due=$('#tn_due').value;
   if(!to.trim()){toast('貸出先を入れてください');return}if(due&&!isDate(due)){toast('日付は 2026-11-30 の形で入れてください');return}
   t.loans.push({id:uid(),to:txt(to.trim(),60),out:TODAY,due,back:'',note:''});save();closeModal(true);editTool(id);toast('貸出を記録しました')}
@@ -6779,7 +6779,7 @@ function toolCal(id){if($('#tl_name')&&!saveTool(id,true))return;const t=S.tools
   openModal(`<h3>校正を記録：${esc(t.name)}</h3><label class="f">校正実施者・機関</label><input id="tc_by" maxlength="80" style="min-height:48px">
     <label class="f">結果（例：合格、成績書No.）</label><input id="tc_res" maxlength="200">
     <label class="f">次回の校正期限</label><input id="tc_next" type="date" value="${esc(def)}" style="min-height:48px">
-    ${modalFoot(`<button class="btn" onclick="toolCalDo('${id}')">校正を記録</button>`,`<button class="btn sec" onclick="closeModal(true);editTool('${id}')">やめる</button>`)}`)}
+    ${modalFoot(`<button class="btn" onclick="toolCalDo('${id}')">校正を記録</button>`,`<button class="btn sec" onclick="closeModal(true);editTool('${id}')">やめる</button>`)}`);modalEnterNext('tc_')}
 function toolCalDo(id){const t=S.tools.find(x=>x.id===id);if(!t)return;const by=$('#tc_by').value,result=$('#tc_res').value,next=$('#tc_next').value;
   if(next&&!isDate(next)){toast('日付の形が正しくありません');return}
   t.calHist.push({date:TODAY,by:txt(by,80),result:txt(result,200),next});logEdit('tool',id,'校正期限',t.calDue,next);t.calDue=next||t.calDue;save();closeModal(true);editTool(id);toast('校正を記録しました')}
@@ -6813,7 +6813,7 @@ function editStd(id){
     ${stdOk(t)?`<div class="meta">承認：${slash(t.approvedDate)} ${esc(t.approvedRole)} ${esc(t.approvedBy)}（${esc(t.method)}）</div>`:''}
     ${(t.hist||[]).length?`<details><summary class="muted">履歴</summary>${t.hist.slice().reverse().map(h=>`<div class="meta">${new Date(h.at).toLocaleString('ja-JP')}・${esc(h.act)}・${esc(h.by)}${h.note?'：'+esc(h.note):''}</div>`).join('')}</details>`:''}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">閉じる</button><button class="btn" onclick="saveStd('${id||''}')">保存</button>`,`${id?`<button class="btn sec sm" style="min-height:44px" onclick="closeModal(true);go('printDoc',{doc:{t:'std',id:'${id}'}})">🖨 印刷</button><button class="btn red sm" onclick="delStd('${id}')">削除</button>`:''}${id&&!stdOk(t)?`<button class="btn ok sm" onclick="approveStd('${id}')">承認を記録</button>`:''}`)}`);
-  stdRender();MODAL_SIG=modalSig();
+  stdRender();modalEnterNext('sd_');MODAL_SIG=modalSig();
 }
 function stdRender(){for(const k of ['pre','post'])$('#sd_'+k).innerHTML=STD[k].map((c,i)=>`<div class="stdrow"><textarea rows="2" maxlength="200" aria-label="確認項目" onchange="STD.${k}[${i}].text=this.value.replace(/\\s*\\n\\s*/g,' ')">${esc(c.text)}</textarea><div class="stdctl"><label class="chkl" style="margin:0;white-space:nowrap"><input type="checkbox" ${c.req?'checked':''} onchange="STD.${k}[${i}].req=this.checked">必須</label><button type="button" class="btn sec sm" aria-label="この項目を外す" style="min-width:44px" onclick="STD.${k}.splice(${i},1);stdRender()">×</button></div></div>`).join('')
   +`<button type="button" class="btn sec sm" onclick="STD.${k}.push({text:'',req:true});stdRender()">＋ 項目</button>`;
@@ -7039,7 +7039,7 @@ function editDwg(id){
   openModal(`<h3>${id?'図面の情報':'図面の登録'}</h3><label class="f">名称 *</label><input id="dw_name" value="${esc(d.name)}" maxlength="80" placeholder="例：本館 受変電設備 単線結線図">
     <div class="grid2"><div><label class="f">種類</label><select id="dw_kind">${opts(DWG_KINDS,d.kind)}</select></div><div><label class="f">場所</label><select id="dw_loc">${locOptions(d.locId)}</select></div></div>
     ${id?'':`<label class="f">図面ファイル（画像またはPDF）*</label><input type="file" id="dw_file" accept="image/*,application/pdf"><div class="grid2"><div><label class="f">版</label><input id="dw_ver" value="1" maxlength="20"></div><div><label class="f">版の日付</label><input type="date" id="dw_date" value="${TODAY}"></div></div>`}
-    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveDwg('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delDwg('${id}')">削除</button>`:'')}`);
+    ${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="saveDwg('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delDwg('${id}')">削除</button>`:'')}`);modalEnterNext('dw_');
 }
 async function dwgFile(f){
   if(!f)throw new Error('ファイルを選んでください');
