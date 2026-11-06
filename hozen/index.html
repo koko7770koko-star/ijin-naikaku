@@ -3919,7 +3919,7 @@ function repHead(title,period){
     <table><tr><th style="width:72px">施設名</th><td>${esc(st.name)}</td></tr><tr><th>対象期間</th><td>${period}</td></tr><tr><th>担当</th><td>${esc([st.dept,st.reporter].filter(Boolean).join('　'))}</td></tr><tr><th>作成日</th><td>${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日</td></tr></table></div>
     <table class="stamp"><tr><th>承認</th><th>確認</th><th>作成</th></tr><tr><td></td><td></td><td></td></tr></table></div>`;
 }
-const repTable=(heads,rows,empty)=>`<table><thead><tr>${heads}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="20" class="c">${empty}</td></tr>`}</tbody></table>`;
+const repTable=(heads,rows,empty)=>!rows.length?`<div class="c repEmpty" style="padding:6px 8px;border:1px solid #888;border-top:0">${empty}</div>`:`<table><thead><tr>${heads}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
 function monthStats(y,m){
   const ts=tasksOf(y,m),last=lastDayOf(y,m),days=[];
   for(let i=1;i<=last;i++){const k=`${y}-${pad(m)}-${pad(i)}`;if(judge(k))days.push(k)}
