@@ -6022,21 +6022,22 @@ const MTTR_DEF='MTTR＝「設備の故障として数える」異常案件のう
 const MTBF_DEF='MTBF＝（期間中の稼働時間−停止〜復旧の時間）÷期間中の故障件数。稼働時間は設備ごとに登録した実測または推定の値で、暦の日数だけでは計算しません。';
 /* 故障統計：区分「故障」の異常案件だけを数える（「異常」「計画停止」は数えない）。データ不足のときは確定値を出さない */
 function failStats(eqId,fromDate,toDate){
+  const okH=i=>i.downH!==''&&i.downH!=null&&Number.isFinite(Number(i.downH))&&Number(i.downH)>=0,dh=i=>okH(i)?Number(i.downH):0; // マイナス・数でない停止時間は未入力と同じに扱う
   const e=eqById(eqId),F=S.issues.filter(i=>i.failure&&(!eqId||i.equipId===eqId)),PS=S.issues.filter(i=>i.icat==='計画停止'&&(!eqId||i.equipId===eqId));
   let y1=addD(TODAY,-365);if(!fromDate&&e){if(e.installed&&e.installed+'-01'>y1)y1=e.installed+'-01';if(e.statsFrom&&e.statsFrom>y1)y1=e.statsFrom}
   const in12=F.filter(i=>i.date>=y1);
-  const down12=in12.reduce((a,i)=>a+(Number(i.downH)||0),0);
+  const down12=in12.reduce((a,i)=>a+dh(i),0);
   let from=fromDate||addD(TODAY,-365*3),to=toDate||TODAY;
   if(!fromDate&&e&&e.installed&&e.installed+'-01'>from)from=e.installed+'-01';
   if(!fromDate&&e&&e.statsFrom&&e.statsFrom>from)from=e.statsFrom; // 設備の更新などで集計を始め直した日
   const R=eqId?runHours(e,from,to):{hours:null,kind:null,basis:'全体のMTBFは設備ごとの稼働時間が必要なため算出しません'};
   const r1=x=>Math.round(x*10)/10,mFrom=from,mTo=to; // MTTRは稼働時間の記録の範囲にかかわらず、既定の期間で数える
-  const tW=F.filter(i=>i.date>=mFrom&&i.date<=mTo),tH=tW.filter(i=>i.downH!==''&&i.downH!=null),tDown=tH.reduce((a,i)=>a+Number(i.downH),0);
+  const tW=F.filter(i=>i.date>=mFrom&&i.date<=mTo),tH=tW.filter(okH),tDown=tH.reduce((a,i)=>a+dh(i),0);
   if(R.hours!=null){from=R.from;to=R.to}
-  const inW=F.filter(i=>i.date>=from&&i.date<=to),withH=inW.filter(i=>i.downH!==''&&i.downH!=null);
-  const wDown=withH.reduce((a,i)=>a+Number(i.downH),0),noDown=inW.length-withH.length;
-  const psW=PS.filter(i=>i.date>=from&&i.date<=to),psH=psW.reduce((a,i)=>a+(Number(i.downH)||0),0);
-  if(R.hours!=null&&R.kind==='推定'&&psH){const r=(e&&e.run)||{},sub=r.mode==='perday'?Math.min(psH,psW.reduce((a,i)=>a+Math.ceil((Number(i.downH)||0)/24),0)*Number(r.perDay)):psH;R.hours=R.hours-sub;R.basis+=`・計画停止 ${r1(sub)}時間を差し引き`;if(!(R.hours>0)){R.basis+='（差し引くと0以下）';R.hours=null}}
+  const inW=F.filter(i=>i.date>=from&&i.date<=to),withH=inW.filter(okH);
+  const wDown=withH.reduce((a,i)=>a+dh(i),0),noDown=inW.length-withH.length;
+  const psW=PS.filter(i=>i.date>=from&&i.date<=to),psH=psW.reduce((a,i)=>a+dh(i),0);
+  if(R.hours!=null&&R.kind==='推定'&&psH){const r=(e&&e.run)||{},sub=r.mode==='perday'?Math.min(psH,psW.reduce((a,i)=>a+Math.ceil(dh(i)/24),0)*Number(r.perDay)):psH;R.hours=R.hours-sub;R.basis+=`・計画停止 ${r1(sub)}時間を差し引き`;if(!(R.hours>0)){R.basis+='（差し引くと0以下）';R.hours=null}}
   let mtbf=null,mtbfNote='';
   if(R.hours==null)mtbfNote='算出しません（'+R.basis+'）';
   else if(!(R.hours>0)||R.hours-wDown<=0)mtbfNote=`算出しません（稼働時間 ${r1(R.hours)}時間が停止〜復旧の時間 ${r1(wDown)}時間以下です。稼働時間の登録を確認してください）`;
