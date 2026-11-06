@@ -4010,7 +4010,7 @@ function vAnnual(){
     <text x="-24" y="8" font-size="7" fill="#1f4e78">kW</text><text x="${W-4}" y="8" font-size="7" fill="#c00000" text-anchor="end">― 完了率</text></g></svg>`;
   let h=mnav(`${fy}年度`,'V.rfy--;render()','V.rfy++;render()');
   if(!T('tot')&&!T('ddays')&&!fis.length)h+=`<div class="card noprint yearlyEmpty" style="text-align:center"><div style="font-weight:700;margin-bottom:6px">この年度の記録はありません</div><div class="muted" style="margin-bottom:6px">点検・日常点検・異常の記録がまだ（または設置前の）年度です。</div><div class="row" style="gap:8px;justify-content:center"><button class="btn sec" style="min-height:44px" onclick="V.rfy--;render()">‹ 前の年度へ</button></div>${reportEmptyGo()}</div>`;
-  h+=`<div class="card noprint"><div class="row"><span class="muted grow">年度の実績を自動で集計します。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div></div>`;
+  h+=`<div class="card noprint"><div class="row"><span class="muted grow" style="flex:1 1 100%">年度の実績を自動で集計します。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div></div>`;
   h+=`<div class="card"><div class="rep">${repHead('電気設備 保守管理 年次報告書',`${fy}/4/1 ～ ${fy+1}/3/31`)}
     <div class="sec">1. 月別実績</div>
     <div class="muted noprint" style="font-size:12px;margin:-2px 0 4px">表は左右にスクロールできます</div><div class="scrx"><table><tr><th>月</th><th>予定</th><th>完了</th><th>完了率</th><th>要観察/不良</th><th>点検日数</th><th>異常日数</th><th>最大需要(kW)</th><th>最高温度(℃)</th><th>計画 済/予</th></tr>
@@ -4171,7 +4171,7 @@ function vDailyRep(){
   const iss=S.issues.filter(i=>i.date<=ds&&(!i.closed||i.closed>=ds)).sort((a,b)=>a.date.localeCompare(b.date));
   window._sh=n=>{V.day=addD(V.day,n);render()};
   const emptyDay=!Object.keys(r).length&&!ts.length&&!(S.meas||[]).some(m=>m.date===ds)&&!h&&!(S.dnotes||{})[ds],AUTO='<span class="srcmark" style="font-weight:400;font-size:11px;color:inherit;opacity:.8">（記録から自動）</span>',HAND='<span class="srcmark" style="font-weight:400;font-size:11px;color:inherit;opacity:.8">（手で入力）</span>';
-  return mnav(mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div>
+  return mnav(mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow" style="flex:1 1 100%">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div>
     <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">特記事項（日報に印刷）</label><button class="btn sec sm" style="min-height:44px" onclick="aiDailyNote('${ds}')">🤖 下書き</button></div>
     <button class="btn sec wide kw" id="dnDraft" style="min-height:44px;margin-top:6px" onclick="addDnoteDraft('${ds}')">📝 今日の記録から<wbr>入れる（ネット<wbr>不要・<wbr>あとで<wbr>直せます）</button>
     <textarea maxlength="2000" onchange="setDnote('${ds}',this.value)">${esc((S.dnotes||{})[ds]||'')}</textarea>
