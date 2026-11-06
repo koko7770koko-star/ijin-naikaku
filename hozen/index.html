@@ -402,6 +402,8 @@ html[data-fs=xl] .chk .l{flex:1 1 100%}
   .rep tr{break-inside:avoid;page-break-inside:avoid}
   .rep thead{display:table-header-group}
   .rep .sec{break-after:avoid;page-break-after:avoid}
+  /* 日報：ふつうの1日分（点検10項目・作業3件・測定3件・盤・申し送り5行）が A4 1枚に収まるよう、余白と行の高さだけ詰める（文字は 9.5pt 以上） */
+  body[data-view=dailyRep] .rep{font-size:9.5pt}body[data-view=dailyRep] .rep h1{font-size:15pt;margin:0 0 4px}body[data-view=dailyRep] .rep th,body[data-view=dailyRep] .rep td{padding:1.5px 4px}body[data-view=dailyRep] .rep table{margin-bottom:4px}body[data-view=dailyRep] .rep .sec{margin:5px 0 3px;padding:2px 6px;font-size:10.5pt}body[data-view=dailyRep] .rep .obs{min-height:12mm}body[data-view=dailyRep] .rep .stamp td{height:15mm}
   body:not(.mode-shift) #shiftApp,body.mode-shift #app{display:none!important}
   /* 年間計画：A4 横に12か月が収まり、項目名が折れず、◯●が読め、行がページの境で割れない */
   .tbw{overflow:visible;border:0}
