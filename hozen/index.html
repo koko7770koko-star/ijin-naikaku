@@ -366,7 +366,7 @@ html[data-fs=xl] .chk .l{flex:1 1 100%}
   table.mpt tr{break-inside:avoid;page-break-inside:avoid}
   table.mpt .n{font-weight:700;font-size:9pt}
   table.mpt .sun,table.mpt th.sun{color:#c00000}table.mpt .sat,table.mpt th.sat{color:#1f5f99}
-  table.mpt .t{overflow-wrap:anywhere;line-height:1.25;margin-top:.5mm}
+  table.mpt .t{overflow-wrap:anywhere;line-height:1.25;margin-top:.5mm}table.mpt .t.wk{color:#7a4a00}
   table.mpt .wc{margin-top:1mm;font-size:7.5pt;color:#444}table.mpt .wc span{margin-right:2mm;white-space:nowrap}
 }
 .banprint{display:none}
@@ -2711,12 +2711,12 @@ function monthPrintHTML(y,m){
       const ts=S.tasks.filter(t=>t.date===s).sort(byDate),o=crewDay(s);let crew='';
       if(o&&st.showCrew!==false)crew+=o.A.map(n=>`<span>A:${esc(sn(n))}</span>`).join('')+o.B.map(n=>`<span>B:${esc(sn(n))}</span>`).join('');
       if(o&&st.calDay)crew+=o.D.map(n=>`<span>日:${esc(sn(n))}</span>`).join('');
-      tds+=`<td><div class="n ${k===0||holName(s)?'sun':k===6?'sat':''}">${d.getDate()}${holName(s)?'<small class="hlb">祝</small>':''}</div>${ts.map(t=>`<div class="t">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${crew?`<div class="wc">${crew}</div>`:''}</td>`;
+      tds+=`<td><div class="n ${k===0||holName(s)?'sun':k===6?'sat':''}">${d.getDate()}${holName(s)?'<small class="hlb">祝</small>':''}</div>${ts.map(t=>`<div class="t">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${worksOn(s).map(w=>`<div class="t wk">🔧${esc(w.title)}</div>`).join('')}${crew?`<div class="wc">${crew}</div>`:''}</td>`;
     }
     rows+=`<tr>${tds}</tr>`;
   }
   const mt=tasksOf(y,m);
-  return `<div class="card mprint"><div class="phd"><div><h2>${y}年${m}月 点検予定表</h2><div class="muted">◯＝予定　●＝実施済み　（完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件）</div></div>${pStamp}</div>
+  return `<div class="card mprint"><div class="phd"><div><h2>${y}年${m}月 点検予定表</h2><div class="muted">◯＝予定　●＝実施済み${(S.works||[]).some(w=>w.status!=='中止'&&w.date&&w.date<=y+'-'+pad(m)+'-31'&&(w.endDate||w.date)>=y+'-'+pad(m)+'-01')?'　🔧＝工事・作業（複数日は期間中の毎日）':''}　（完了 ${mt.filter(t=>t.status==='完了').length} / ${mt.length} 件）</div></div>${pStamp}</div>
     <table class="mpt"><thead><tr>${[...WD].map((w,i)=>`<th class="${i===0?'sun':i===6?'sat':''}">${w}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 const pStamp='<table class="pstamp"><tr><th>担当</th><th>確認</th><th>承認</th></tr><tr><td></td><td></td><td></td></tr></table>';
