@@ -3103,7 +3103,7 @@ function vDay(){
       return `<div class="num"><label class="f" style="${lblSt}" title="${esc(n.name)}">${esc(n.short||n.name)}<span style="font-weight:400">(${esc(n.unit)})</span>${n.req?'<span style="color:var(--ng)">*</span>':''}</label>
       <input id="n_${n.id}" class="${cl}" type="number" inputmode="decimal" step="any" enterkeyhint="${i<nums.length-1?'next':'done'}" value="${esc(v??'')}" placeholder="${p?esc(p[1]):''}" onchange="setNum('${n.id}',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();${next}}">
       <div class="hint${v==null&&p?' tapprev':''}" id="h_${n.id}" ${v==null&&p?`onclick="useNumPrev('${n.id}')" title="タップで前回の値を入れる"`:''}>${numHint(s,n)}</div></div>`}).join('')}</div>
-    <div id="dayAl">${dayAlerts(s)}</div>
+    <div id="dayAl">${dayAlerts(s)}</div><div id="dayRest">${dayRestHTML(s)}</div>
     <div style="margin-top:6px">${chkDefs().filter(dOk).map(c=>{const v=(r.c||{})[c.id]||'';return `<div class="chk" data-ck="${c.id}"><div class="l">${esc(c.name)}${c.req?'&#8288;<span style="color:var(--ng)">*</span>':''}</div><div class="seg">${[['○','on-ok'],['×','on-ng'],['－','on-na']].map(([x,cl])=>`<button class="${v===x?cl:''}" aria-label="${esc(c.name)}：${x==='○'?'良好':x==='×'?'異常':'対象外'}" aria-pressed="${v===x}" onclick="setCheck('${c.id}','${x}')">${x}</button>`).join('')}</div></div>`}).join('')}</div>
     <div class="row" style="margin-top:10px"><span class="muted grow"><span style="color:var(--ng)">*</span>＝必須</span><span class="noprint">${fileBtn('📎 写真を添付','addDayPhoto','sec sm','image/*')}</span></div>
     ${thumbs(r.photos,'rmDayPhoto')}
@@ -3154,7 +3154,7 @@ function dayAlerts(s){
   }
   if(I.warn.length)h+=`<div class="al warn">⚠ 前回から大きく変化：${esc(I.warn.join('、'))}</div>`;
   if(hasRec(r)&&I.miss.length&&!r.done)h+=`<div class="al info">未入力の必須項目：${esc(I.miss.join('、'))}</div>`;
-  return h+dayRestHTML(s);
+  return h;
 }
 /* まだ入れていない項目の数と「次の未入力へ」（表示だけ。場所の絞り込み中は見えている項目だけ数える） */
 function dayRestList(s){
@@ -3167,13 +3167,22 @@ function dayRestHTML(s){
   if(all<6||!L.length||(S.daily[s]||{}).done)return '';
   return `<button class="btn sec wide noprint" id="dayNextBtn" style="margin-top:8px;min-height:48px" onclick="dayNextEmpty()">⏭ 次の未入力へ（残り ${L.length} 件）</button>`;
 }
+/* 入力欄から「次の未入力へ」を押すと、欄を離れた瞬間の部分更新でボタンが作り直されて最初の1回が効かなかった。ボタンは別の枠に置き、同じ物のまま残りの数だけ書き換える */
+function dayRestRefresh(s){
+  const box=$('#dayRest');if(!box)return;const t=document.createElement('div');t.innerHTML=dayRestHTML(s);
+  const ob=box.querySelector('#dayNextBtn'),nb=t.querySelector('#dayNextBtn');
+  if(ob&&nb){if(ob.textContent!==nb.textContent)ob.textContent=nb.textContent}else box.innerHTML=t.innerHTML;
+}
 function dayNextEmpty(){
   const L=dayRestList(V.day);if(!L.length){toast('すべて入力済みです');return}
-  const cur=document.activeElement&&document.activeElement.id,i=L.indexOf(cur),k=L[i>=0&&i<L.length-1?i+1:0];
+  const ae=document.activeElement,ck=ae&&ae.closest&&ae.closest('[data-ck]'),cur=ck?'c_'+ck.dataset.ck:ae&&ae.id,i=L.indexOf(cur),k=L[i>=0&&i<L.length-1?i+1:0];
   const el=k[0]==='n'?document.getElementById(k):document.querySelector('[data-ck="'+k.slice(2)+'"]');
-  if(!el)return;el.scrollIntoView({block:'center',behavior:'smooth'});
+  if(!el)return;
+  // キーボードが出ていても隠れないよう、見えている範囲（visualViewport）の上から 1/3 に置く
+  const vv=window.visualViewport,vh=vv?vv.height:innerHeight,top=el.getBoundingClientRect().top;
+  window.scrollBy({top:top-vh*0.3,behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
   if(k[0]==='n')el.focus({preventScroll:true});
-  else{el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1500)}
+  else{const b=el.querySelector('button');if(b)b.focus({preventScroll:true});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1500)}
 }
 function monthGrid(s){
   const d=pd(s),y=d.getFullYear(),m=d.getMonth()+1,first=new Date(y,m-1,1).getDay();
@@ -3184,7 +3193,7 @@ function monthGrid(s){
 // 数値・文字は画面を作り直さずに部分更新（入力中のフォーカスを保つ）
 function refreshDay(){
   const s=V.day;if(!$('#dayBadge'))return;
-  $('#dayBadge').innerHTML=dayBadge(s);if($('#daySaved'))$('#daySaved').textContent=daySavedHTML(s);$('#dayAl').innerHTML=dayAlerts(s);$('#dayGrid').innerHTML=monthGrid(s);
+  $('#dayBadge').innerHTML=dayBadge(s);if($('#daySaved'))$('#daySaved').textContent=daySavedHTML(s);$('#dayAl').innerHTML=dayAlerts(s);dayRestRefresh(s);$('#dayGrid').innerHTML=monthGrid(s);
   const I=dailyIssues(s),r=S.daily[s]||{};
   numDefs().forEach(n=>{const e=$('#n_'+n.id);if(!e)return;
     e.classList.toggle('bad',I.ng.some(x=>x.startsWith(n.name+' ')));e.classList.toggle('chg',I.warn.some(x=>x.startsWith(n.name+' ')));e.classList.toggle('copied',!!(r.cp||{})[n.id]);
