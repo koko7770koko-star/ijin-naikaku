@@ -330,6 +330,7 @@ html[data-fs=xl] .chk .l{flex:1 1 100%}
 .rph figcaption{font-size:9pt;text-align:center}
 .rph figure img,.rph figure figcaption{break-inside:avoid}
 .rph figcaption{overflow-wrap:anywhere;line-height:1.3}
+@media print{.card.eqE{padding:2px 0;margin:2px 0;box-shadow:none}.card.eqE .hd-row,.card.eqE h2{display:inline;font-size:11pt;margin:0}.card.eqE .muted{display:inline;margin-left:8px}}
 @media print{.rep .sec{break-after:avoid;page-break-after:avoid}.rph figure{page-break-inside:avoid}}
 
 /* 画面（スマホ）だけ：報告書の見本の上の表と承認欄を縦に並べ、日付を途中で折らない（印刷は触らない） */
@@ -3553,16 +3554,16 @@ function vEquipDetail(){
   h+=eqFuelCard(e);
   if(e.kind==='発電機'){const t=gen12m(e,TODAY.slice(0,7));if(t)h+=`<div class="card"><details id="gen12d"><summary style="min-height:44px;display:flex;align-items:center;font-weight:700">📈 過去12か月の数字（前年同月との差）</summary>${t}<div class="muted" style="font-size:12px;margin-top:4px">${gen12mNote}</div></details></div>`}
   h+=eqKarte(e);
-  h+=`<div class="card"><h2>📋 点検項目と期限</h2>${L.items.length?deadlines().filter(x=>x.it.equipId===e.id).map(deadlineRow).join('')+L.items.filter(i=>!CYC[i.cycle]).map(i=>`<div class="item" onclick="editItem('${i.id}')"><div class="bd"><div class="ti">${esc(i.name)}</div><div class="meta">${esc(i.cycle||'周期未設定')}</div></div></div>`).join(''):'<div class="muted">この設備に紐づいた点検項目はありません（年間計画の項目編集で「設備」を選ぶと紐づきます）</div>'}</div>`;
+  h+=`<div class="card${L.items.length?'':' eqE'}"><h2>📋 点検項目と期限</h2>${L.items.length?deadlines().filter(x=>x.it.equipId===e.id).map(deadlineRow).join('')+L.items.filter(i=>!CYC[i.cycle]).map(i=>`<div class="item" onclick="editItem('${i.id}')"><div class="bd"><div class="ti">${esc(i.name)}</div><div class="meta">${esc(i.cycle||'周期未設定')}</div></div></div>`).join(''):'<div class="muted">この設備に紐づいた点検項目はありません（年間計画の項目編集で「設備」を選ぶと紐づきます）</div>'}</div>`;
   if(L.nums.length||L.checks.length){
     const days=Object.keys(S.daily).filter(k=>hasRec(S.daily[k])).sort().reverse().slice(0,10);
     h+=`<div class="card"><h2>✅ 日常点検の記録（直近10日）</h2>${days.map(k=>{const r=S.daily[k],bad=L.nums.some(n=>outOfRange(n,r[n.id]))||L.checks.some(c=>(r.c||{})[c.id]==='×');
       return `<div class="item ${bad?'ng':''}" onclick="go('day',{day:'${k}'})"><div class="dt">${md(k)}</div><div class="bd"><div class="meta">${[...L.nums.filter(n=>r[n.id]!=null).map(n=>`${esc(n.short||n.name)} ${esc(r[n.id])}${esc(n.unit)}`),...L.checks.filter(c=>(r.c||{})[c.id]).map(c=>`${esc(c.name)} ${esc(r.c[c.id])}`)].join('・')||'－'}</div></div></div>`}).join('')}
       ${L.nums.length?`<button class="btn sec sm" style="margin-top:8px" onclick="go('hist',{hItem:'${L.nums[0].id}',hRange:'90'})">📈 推移を見る</button>`:''}</div>`;
   }
-  h+=`<div class="card"><div class="hd-row"><h2>🔧 故障・修理履歴</h2><button class="btn sm" onclick="editRepair('${e.id}')">＋ 追加</button></div>${(e.repairs||[]).length?eqMore('rep',[...e.repairs].sort((a,b)=>b.date.localeCompare(a.date)),r=>`<div class="item ${r.kind==='故障'?'ng':''}" onclick="editRepair('${e.id}','${r.id}')"><div class="dt">${md(r.date)}<small>${r.date.slice(0,4)}</small></div><div class="bd"><div class="ti">${esc(r.kind)}：${esc(r.content)}</div><div class="meta">${esc([r.vendor,r.cost?r.cost+'円':''].filter(Boolean).join('・'))}${(r.photos||[]).length?'・📷'+r.photos.length:''}</div></div></div>`):'<div class="muted">まだありません</div>'}</div>`;
-  h+=`<div class="card"><div class="hd-row"><h2>🛠 異常案件</h2><button class="btn sm" style="min-height:40px" onclick="editIssue(null,{equipId:'${e.id}',place:${esc(JSON.stringify(e.place||''))}})">＋ 追加</button></div>${L.issues.length?eqMore('iss',L.issues,issueRow):'<div class="muted">ありません</div>'}</div>`;
-  h+=`<div class="card"><h2>🗓 作業・点検の実績</h2>${L.tasks.length?eqMore('task',L.tasks.slice(0,30),taskRow):'<div class="muted">ありません</div>'}</div>`;
+  h+=`<div class="card${(e.repairs||[]).length?'':' eqE'}"><div class="hd-row"><h2>🔧 故障・修理履歴</h2><button class="btn sm" onclick="editRepair('${e.id}')">＋ 追加</button></div>${(e.repairs||[]).length?eqMore('rep',[...e.repairs].sort((a,b)=>b.date.localeCompare(a.date)),r=>`<div class="item ${r.kind==='故障'?'ng':''}" onclick="editRepair('${e.id}','${r.id}')"><div class="dt">${md(r.date)}<small>${r.date.slice(0,4)}</small></div><div class="bd"><div class="ti">${esc(r.kind)}：${esc(r.content)}</div><div class="meta">${esc([r.vendor,r.cost?r.cost+'円':''].filter(Boolean).join('・'))}${(r.photos||[]).length?'・📷'+r.photos.length:''}</div></div></div>`):'<div class="muted">まだありません</div>'}</div>`;
+  h+=`<div class="card${L.issues.length?'':' eqE'}"><div class="hd-row"><h2>🛠 異常案件</h2><button class="btn sm" style="min-height:40px" onclick="editIssue(null,{equipId:'${e.id}',place:${esc(JSON.stringify(e.place||''))}})">＋ 追加</button></div>${L.issues.length?eqMore('iss',L.issues,issueRow):'<div class="muted">ありません</div>'}</div>`;
+  h+=`<div class="card${L.tasks.length?'':' eqE'}"><h2>🗓 作業・点検の実績</h2>${L.tasks.length?eqMore('task',L.tasks.slice(0,30),taskRow):'<div class="muted">ありません</div>'}</div>`;
   return h;
 }
 /* 設備カルテ：この設備に結んだ技術資料（S.library の equipIds）を並べ、押すとその資料が開く。0 件なら出さない。表示だけ */
