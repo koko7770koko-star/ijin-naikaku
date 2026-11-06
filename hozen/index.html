@@ -3111,6 +3111,7 @@ function vDay(){
     <label class="f">備考（× の内容・処置）</label><textarea id="d_note" maxlength="1000" oninput="draftNote(this.value)" onchange="setText('note',this.value)">${esc(r.note||'')}</textarea>
     <button class="btn ${r.done?'sec':''} big wide noprint" style="margin-top:14px" onclick="finishDay()">${r.done?'✓ 完了済み（内容を確認）':'点検を完了する'}</button>
     ${r.done?`<div class="muted" style="margin-top:6px;text-align:center">完了：${esc(r.done==='移行'?'以前の版で記録':new Date(r.done).toLocaleString('ja-JP'))}${r.doneBy?'・'+esc(r.doneBy):''}${r.mod?'・完了後に修正あり':''}</div>`:''}
+    ${r.done?`<div class="row daynext noprint" id="dayNext" style="gap:6px;margin-top:8px;flex-wrap:wrap"><span class="muted" style="flex:1 1 100%;font-size:12px">次にすること</span><button class="btn sec" style="flex:1 1 140px;min-height:44px" onclick="dayToHandover()">📝 申し送りを書く</button><button class="btn sec" style="flex:1 1 140px;min-height:44px" onclick="go('home')">🏠 ホームへ</button></div>`:''}
     ${judge(s)==='異常'?'<div class="muted" style="margin-top:6px">異常は「ホーム」の異常案件に自動で登録されます。</div>':''}
     ${S.daily[s]&&(hasRec(S.daily[s])||S.daily[s].note||(S.daily[s].photos||[]).length||S.daily[s].done)?`<button class="btn sec sm noprint" style="margin-top:12px;color:var(--ng)" onclick="delDay('${s}')">🗑 この日の記録を削除</button>`:''}
     ${editLogHTML('daily',s)}</div>`;
@@ -3261,7 +3262,10 @@ function completeDay(){
   r.done=new Date().toISOString();r.doneBy=r.by;delete r.mod;
   logEdit('daily',s,'状態','入力中','完了');syncDailyIssue(s);save();closeModal(true);render();
   toast(I.ng.length?'完了しました（異常は異常案件に登録済み）':'点検を完了しました');
+  setTimeout(()=>{const e=$('#dayNext');if(e&&e.scrollIntoView)e.scrollIntoView({block:'center'})},60); // 完了の後、次にすること（申し送り・ホーム）が見える所へ
 }
+/* 日常点検の完了の後：下の申し送りの欄へ移って書けるようにする（表示だけ・保存の形は変えない） */
+function dayToHandover(){const t=$('#ho_text');if(!t)return;if(t.scrollIntoView)t.scrollIntoView({block:'center'});try{t.focus({preventScroll:true})}catch(e){t.focus()}}
 function copyPrev(){
   const p=prevRecDay(V.day);if(!p){toast('直近2週間に記録がありません');return}
   const src=S.daily[p],r=dayRec();
