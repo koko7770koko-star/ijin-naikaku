@@ -47,6 +47,7 @@ html[data-fs=l] #yrFlt>.row,html[data-fs=xl] #yrFlt>.row{flex-wrap:wrap!importan
 html[data-fs=l] .dwgver,html[data-fs=xl] .dwgver{flex-wrap:wrap}html[data-fs=l] .dwgver select,html[data-fs=xl] .dwgver select{flex:1 1 100%;min-width:0}
 html[data-fs=l] .seg.tabs button,html[data-fs=xl] .seg.tabs button{height:auto;min-height:44px;padding-top:5px;padding-bottom:5px}
 .al .nu{display:inline-block;white-space:nowrap}
+.homeban .hbk{display:inline-block;max-width:100%}
 html[data-fs=l] .nwl,html[data-fs=xl] .nwl{display:inline-block;max-width:100%;overflow-wrap:anywhere}
 @media print{html[data-fs] .nwl{display:inline!important;max-width:none!important;overflow-wrap:normal!important}}
 html[data-fs=l] .isacts,html[data-fs=xl] .isacts{flex-direction:column;align-items:stretch}html[data-fs=l] .isacts .btn,html[data-fs=xl] .isacts .btn{flex:none;width:100%;white-space:normal}
@@ -2568,7 +2569,7 @@ function homeBanLine(){
   const n=all.filter(x=>banPend(ym,x)).length,late=n>0&&+TODAY.slice(8,10)>=20;
   /* 棟ごとの残り：残りのある棟が2つ以上のときだけ出す（1つだけなら上の行で足りる）。押すとその棟のタブ。月の20日以降は黄色 */
   const rest=per.filter(x=>x[1]>0),bl=rest.length>=2?`<div class="row homebanb" style="gap:6px;margin:-6px 0 12px;flex-wrap:wrap">${rest.map(([b,c])=>`<button class="btn sec sm" style="min-height:44px"${late?' data-late="1"':''} onclick="homeBanGo('${b.id}')">${esc(b.name)} <b>${c}</b>面</button>`).join('')}</div>`:'';
-  return `<button class="btn sec wide homeban" style="min-height:48px;margin:0 0 12px;text-align:left${late?';background:var(--warn-bg,#fff6d6)':''}" onclick="homeBanGo()"><span>⚡ 今月の盤の点検　${n?`あと<b>${n}面</b>（全${all.length}面）　次の盤へ ›`:`<span class="pill ok">全${all.length}面 済み</span>`}</span></button>`+bl}
+  return `<button class="btn sec wide homeban" style="min-height:48px;margin:0 0 12px;text-align:left${late?';background:var(--warn-bg,#fff6d6)':''}" onclick="homeBanGo()"><span><span class="hbk">⚡ 今月の盤の点検</span>　${n?`<span class="hbk">あと<b>${n}面</b>（全${all.length}面）</span>　<span class="hbk">次の盤へ ›</span>`:`<span class="pill ok">全${all.length}面 済み</span>`}</span></button>`+bl}
 function homeBanGo(bid){V.banYm=TODAY.slice(0,7);V.banEdit=false;V.banQ='';if(bid){V.banB=bid;go('ban');return}go('ban');setTimeout(banNext,60)}
 /* たたみ表示のカード（開閉は覚えておく） */
 function fold(k,title,body,openDef,id){const open=V['fold_'+k]??openDef??false;
