@@ -395,6 +395,8 @@ html[data-fs=xl] .chk .l{flex:1 1 100%}
   .ponly{display:block!important;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11pt}
   /* ホームを朝礼で配る：ボタンは紙に出さず、数字・案内の文字だけ残す */
   body[data-view=home] #app button,body[data-view=home] #app input,body[data-view=home] #app select{display:none!important}
+  /* ホームの印刷：A4 1枚に収めるよう行の余白を詰め、数字の札は頁の境で割らない（hz-v-home-print-a4） */
+  body[data-view=home] #app .item{padding-top:2px;padding-bottom:2px;min-height:0}body[data-view=home] #app .card{margin-bottom:4px}body[data-view=home] #app .tile,body[data-view=home] #app .tiles{break-inside:avoid;page-break-inside:avoid}
   /* 診断：表は A4 の幅に収め、棒グラフはページの境で割らない */
   #app .tblwrap{overflow:visible!important}#app .tblwrap .tbl{width:100%}#app .tblwrap .tbl td,#app .tblwrap .tbl th{white-space:normal;overflow-wrap:anywhere}#app .bars{break-inside:avoid;page-break-inside:avoid}
   main{padding:0;max-width:none}
