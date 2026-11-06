@@ -1,4 +1,4 @@
-// 予備品：在庫が最低在庫数以下の物があるとき、ホームのお知らせから「少ない物だけ」の一覧に行け、「すべて」に戻せる（390px・保存の形は変えない）
+// 予備品：在庫が最低在庫数以下の物があるとき、ホームのお知らせから「少ない物だけ」の一覧に行け（1品目ならその品の窓も開く）、「すべて」に戻せる（390px・保存の形は変えない）
 // usage: node hozen/tools/stocklowhomecheck.js
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();const errs=[];
@@ -10,6 +10,8 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
  const hasNote=await p.evaluate(()=>/在庫不足 1品目/.test(document.querySelector('#app').innerText));if(!hasNote)errs.push('ホームに「在庫不足 1品目」が出ない');
  await p.evaluate(()=>{const e=[...document.querySelectorAll('#app [onclick]')].find(x=>/在庫不足/.test(x.innerText)&&/stTab/.test(x.getAttribute('onclick')));if(e)e.click();else window.__nf=1});await p.waitForTimeout(400);
  if(await p.evaluate(()=>window.__nf))errs.push('ホームの在庫不足の行が押せない');
+ if(!await p.evaluate(()=>{const i=document.getElementById('pt_name');return !!(i&&i.offsetParent!==null&&i.value==='ヒューズ少')}))errs.push('1品目の在庫不足を押してもその品の窓が開かない（hz-v-alert-open-part）');
+ await p.evaluate(()=>{try{closeModal(true)}catch(e){}});await p.waitForTimeout(300);
  let t=await p.evaluate(()=>document.querySelector('#app').innerText);
  if(!/ヒューズ少/.test(t)||/ランプ十分/.test(t))errs.push('少ない物だけになっていない');
  await p.click('button:has-text("すべての予備品を見る")');await p.waitForTimeout(300);
