@@ -4746,7 +4746,7 @@ function repScrollHint(){document.querySelectorAll('.repscroll').forEach(e=>{con
 /* 画面を作る間だけ、場所の子の表を覚える（盤が数千面でも ◯● を押すたびに待たない。hz-perf-ban-many）。
    画面を作る関数は S.locs を書き換えないので、render の中だけ有効にし、終わったら捨てる */
 let LK_ON=false,LK_MAP=null;
-function render(){LK_ON=true;LK_MAP=null;try{return render0()}finally{LK_ON=false;LK_MAP=null}}
+function render(){LK_ON=true;LK_MAP=null;DG_ON=true;DG_IX=null;try{return render0()}finally{LK_ON=false;LK_MAP=null;DG_ON=false;DG_IX=null}}
 function render0(){
   applyFScale();applyNight();
   CREW={};DL_CACHE=null;AL_CACHE=null;
@@ -5989,9 +5989,15 @@ function trendCross(series,min,max){
   if(f.a>0&&max!=null&&lv<max){target=(max-f.b)/f.a;which='上限'}else if(f.a<0&&min!=null&&lv>min){target=(min-f.b)/f.a;which='下限'}
   if(target==null||!isFinite(target))return null;const days=Math.round(target-last);return days>0?{days,which,n:series.length,slope:f.a}:null;
 }
+/* 画面を作る間（render の中・診断の画面）だけの「設備→異常案件・測定記録」の表。設備 2000 台で 1 台ごとに全件をなめないため（下のお知らせの数・診断・ホーム）。
+   元の並び順のまま入れるので結果は同じ。最初に使うときに作り、render の終わりで捨てる（hz-v-diag-many） */
+let DG_IX=null,DG_ON=false;
+function dgIxBuild(){const iss=new Map(),meas=new Map(),put=(m,k,x)=>{let a=m.get(k);if(!a)m.set(k,a=[]);a.push(x)};S.issues.forEach(i=>put(iss,i.equipId,i));(S.meas||[]).forEach(x=>put(meas,x.equipId,x));return {iss,meas}}
+function dgIxGet(){if(!DG_IX&&DG_ON)DG_IX=dgIxBuild();return DG_IX}
+const dgIss=eqId=>{const x=dgIxGet();return x?(x.iss.get(eqId)||[]):S.issues},dgMeas=eqId=>{const x=dgIxGet();return x?(x.meas.get(eqId)||[]):(S.meas||[])};
 function recommendFor(eqId){
   const R=[],e=eqById(eqId);if(!e)return R;
-  const M=(S.meas||[]).filter(m=>m.equipId===eqId).sort((a,b)=>a.date.localeCompare(b.date));
+  const M=dgMeas(eqId).filter(m=>m.equipId===eqId).sort((a,b)=>a.date.localeCompare(b.date));
   // 周期
   const byTpl={};M.forEach(m=>{if(m.tplId)byTpl[m.tplId]=m});
   Object.entries(byTpl).forEach(([tid,m])=>{const t=tplById(tid);if(!t||!t.cycleM)return;const due=addM(m.date,t.cycleM),left=diffD(due,TODAY);
@@ -6009,7 +6015,7 @@ function recommendFor(eqId){
   // 更新
   const rec=renewRecommend(e);if(rec&&rec.startsWith('耐用年数を'))R.push({lv:'warn',text:rec});
   // 期限超過の異常
-  S.issues.filter(i=>i.equipId===eqId&&i.status!=='完了'&&i.due&&i.due<TODAY).forEach(i=>R.push({lv:'ng',text:`異常「${i.title}」の対応期限（${slash(i.due)}）を過ぎています`}));
+  dgIss(eqId).filter(i=>i.equipId===eqId&&i.status!=='完了'&&i.due&&i.due<TODAY).forEach(i=>R.push({lv:'ng',text:`異常「${i.title}」の対応期限（${slash(i.due)}）を過ぎています`}));
   return R;
 }
 function renewRecommend(e){
@@ -6022,11 +6028,11 @@ function healthOf(e){
   const w=S.healthCfg||DEF_HEALTH,P=[];
   if(e.life!==''&&e.life!=null&&e.installed){const age=diffD(TODAY,e.installed+'-01')/365.25,r=Math.min(1,age/Number(e.life));P.push({label:'経年',basis:`${age.toFixed(1)}年 / 耐用 ${e.life}年`,risk:r,w:w.age})}
   else P.push({label:'経年',basis:'設置年月か耐用年数が未設定',risk:null,w:w.age});
-  const M=(S.meas||[]).filter(m=>m.equipId===e.id),lastBy={};M.sort((a,b)=>a.date.localeCompare(b.date)).forEach(m=>{lastBy[m.tplId||m.name]=m});
+  const M=dgMeas(e.id).filter(m=>m.equipId===e.id),lastBy={};M.sort((a,b)=>a.date.localeCompare(b.date)).forEach(m=>{lastBy[m.tplId||m.name]=m});
   const rows=Object.values(lastBy).flatMap(m=>m.rows).map(rowJudge).filter(s=>s==='ok'||s==='ng');
   P.push(rows.length?{label:'測定値',basis:`最新の測定で管理値外 ${rows.filter(s=>s==='ng').length} / ${rows.length}項目`,risk:rows.filter(s=>s==='ng').length/rows.length,w:w.meas}:{label:'測定値',basis:'管理値のある測定記録なし',risk:null,w:w.meas});
   const F=failStats(e.id);P.push({label:'故障',basis:`直近12か月の故障 ${F.n12}件（0件=0%・1件=50%・2件以上=100%）`,risk:F.n12>=2?1:F.n12*0.5,w:w.fail});
-  const oi=S.issues.filter(i=>i.equipId===e.id&&i.status!=='完了');
+  const oi=dgIss(e.id).filter(i=>i.equipId===e.id&&i.status!=='完了');
   P.push({label:'未完了の異常',basis:oi.length?`${oi.length}件（緊急・高があれば100%、それ以外は50%）`:'なし',risk:oi.length?(oi.some(i=>['緊急','高'].includes(i.urgency))?1:.5):0,w:w.issue});
   const use=P.filter(p=>p.risk!=null&&p.w>0),sw=use.reduce((a,p)=>a+p.w,0);
   return {score:sw?Math.round(100-100*use.reduce((a,p)=>a+p.w*p.risk,0)/sw):null,parts:P};
@@ -6052,7 +6058,7 @@ const MTBF_DEF='MTBF＝（期間中の稼働時間−停止〜復旧の時間）
 /* 故障統計：区分「故障」の異常案件だけを数える（「異常」「計画停止」は数えない）。データ不足のときは確定値を出さない */
 function failStats(eqId,fromDate,toDate){
   const okH=i=>i.downH!==''&&i.downH!=null&&Number.isFinite(Number(i.downH))&&Number(i.downH)>=0,dh=i=>okH(i)?Number(i.downH):0; // マイナス・数でない停止時間は未入力と同じに扱う
-  const e=eqById(eqId),F=S.issues.filter(i=>i.failure&&(!eqId||i.equipId===eqId)),PS=S.issues.filter(i=>i.icat==='計画停止'&&(!eqId||i.equipId===eqId));
+  const e=eqById(eqId),IS=eqId?dgIss(eqId):S.issues,F=IS.filter(i=>i.failure&&(!eqId||i.equipId===eqId)),PS=IS.filter(i=>i.icat==='計画停止'&&(!eqId||i.equipId===eqId));
   let y1=addD(TODAY,-365);if(!fromDate&&e){if(e.installed&&e.installed+'-01'>y1)y1=e.installed+'-01';if(e.statsFrom&&e.statsFrom>y1)y1=e.statsFrom}
   const in12=F.filter(i=>i.date>=y1);
   const down12=in12.reduce((a,i)=>a+dh(i),0);
@@ -6130,7 +6136,8 @@ async function dgStoreFill(){const el=document.getElementById('dgStore');if(!el)
   const pc=Math.round(i.ls/i.lsMax*100),ph=(S.equipment||[]).reduce((n,e)=>n+((e.photos||[]).length),0)+(S.issues||[]).reduce((n,x)=>n+((x.photos||[]).length),0),big=pc>=80||(i.usage&&i.quota&&i.usage/i.quota>=.8);
   el.className=big?'al warn':'muted';el.innerHTML=`記録 <b>${fmtCh(i.ls)}</b> / 約${fmtCh(i.lsMax)}（${pc}%）・写真など ${fmtMB(i.usage)} / ${fmtMB(i.quota)}・設備と異常の写真 ${ph}枚`
    +(big?`<div style="margin-top:6px"><b>いっぱいに近づいています。</b>写真を減らし、バックアップを取ってから古い記録を整理してください。</div><div class="row" style="margin-top:6px"><button class="btn sm grow" style="min-height:44px" onclick="backup()">💾 バックアップを取る</button><button class="btn sec sm grow" style="min-height:44px" onclick="dataCheck()">データ点検</button></div>`:'')}
-function vDiag(){
+function vDiag(){const own=!DG_ON&&!DG_IX;if(own)DG_IX=dgIxBuild();try{return vDiag0()}finally{if(own)DG_IX=null}}
+function vDiag0(){
   const t=V.dgTab||'health';
   let h=tabs16('dgTab',[['health','健全度'],['rec','推奨・傾向'],['fail','故障分析'],['meas','測定記録']]);
   const E=(S.equipment||[]).filter(e=>e.status!=='廃止');
