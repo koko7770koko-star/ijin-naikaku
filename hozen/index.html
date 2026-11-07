@@ -4216,8 +4216,10 @@ function dnoteDraftText(ds){
   const iss=S.issues.filter(i=>i.date<=ds&&(!i.closed||i.closed>=ds));
   const a=[];
   if(h)a.push('日常点検：'+dayState(ds).st+(I.ng.length?'（異常：'+I.ng.join('、')+'）':'（異常なし）')+'。');
-  if(ts.length)a.push('作業：'+ts.map(t=>t.title+(t.status?'['+t.status+(t.result?'・'+t.result:'')+']':'')).join('、')+'。');
-  if(iss.length)a.push('異常案件：'+iss.map(i=>i.title+'['+(i.closed&&i.closed<=ds?'完了':i.status)+']').join('、')+'。');
+  /* 多い日は特記事項の上限（2000字）で後ろの大事な行が切れないよう、要観察・不良・未完了を先に n 件まで（ほか○件） */
+  const few=(L,f,n,pri)=>{const A=L.length>n&&pri?L.map((x,k)=>[x,k]).sort((p,q)=>(pri(p[0])-pri(q[0]))||p[1]-q[1]).slice(0,n).sort((p,q)=>p[1]-q[1]).map(x=>x[0]):L.slice(0,n);return A.map(f).join('、')+(L.length>n?` ほか${L.length-n}件`:'')};
+  if(ts.length)a.push('作業：'+few(ts,t=>t.title+(t.status?'['+t.status+(t.result?'・'+t.result:'')+']':''),15,t=>isNG(t)?0:t.status!=='完了'?1:2)+'。');
+  if(iss.length)a.push('異常案件：'+few(iss,i=>i.title+'['+(i.closed&&i.closed<=ds?'完了':i.status)+']',10,i=>i.closed&&i.closed<=ds?1:0)+'。');
   /* 引き継ぎ用に1行ずつ（無い物は出さない）：未完了の異常・今夜〜明朝の作業・出ている警報 */
   const op=iss.filter(i=>!(i.closed&&i.closed<=ds)&&i.status!=='完了');
   if(op.length)a.push(`未完了の異常 ${op.length}件：`+op.slice(0,5).map(i=>i.title+(i.place?'（'+i.place+'）':'')).join('、')+(op.length>5?' ほか':'')+'。');
