@@ -2121,8 +2121,11 @@ function unlockSave(saved){
 function save(){
   if(SAVE_LOCK){SAVE_FAIL.app=true;sysBar();return}
   S.schema=SCHEMA;
-  try{localStorage.setItem(KEY,JSON.stringify(S));SAVE_FAIL.app=false;try{localStorage.setItem(KEY+'_at',String(Date.now()))}catch(e){}}
+  let js='';
+  try{js=JSON.stringify(S);localStorage.setItem(KEY,js);SAVE_FAIL.app=false;try{localStorage.setItem(KEY+'_at',String(Date.now()))}catch(e){}}
   catch(e){SAVE_FAIL.app=true}
+  /* 開いたままで記録が増えて 8 割を超えたら、次に開き直すのを待たずにホームの知らせに出す（数えるのは本体の記録だけ。開き直すと checkStorage で全体を数え直す） */
+  try{if(!SAVE_FAIL.app&&!STORAGE_WARN&&js.length/5000000>.8)STORAGE_WARN=`記録データの保存領域が ${Math.round(js.length/5000000*100)}% 使われています`}catch(e){}
   sysBar();mirrorSoon('app');
 }
 /* ── 予備保存：本体（localStorage）とは別に IndexedDB にも最新の状態を残す ──
