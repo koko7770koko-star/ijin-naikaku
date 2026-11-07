@@ -4150,10 +4150,15 @@ function aiTrend(id){
     '',null);
 }
 // 異常案件の要約
+const AI_ISS_MAX=150;
 function aiIssues(){
-  const L=openIssues();if(!L.length){toast('対応中の異常はありません');return}
-  const lines=L.map(i=>`・${i.date} ${i.title}${i.place?'（'+i.place+'）':''}［${i.status}］${i.equipId?'設備:'+equipName(i.equipId):''} 詳細:${i.detail||'なし'} 処置:${i.action||'なし'} 経過:${(i.log||[]).map(l=>l.to+(l.note?'('+l.note+')':'')).join('→')}`).join('\n');
-  aiDraft('対応中の異常案件の要約',`${facLabel()}の対応中の異常案件の一覧です。\n${lines}\n\n全体の状況を3〜6行で要約し、続けて「未完了の対応」「次に確認すること」を箇条書きにしてください。`,'',null);
+  const A=openIssues();if(!A.length){toast('対応中の異常はありません');return}
+  /* 多いときは送る文が大きくなりすぎないよう、緊急・高を先に新しい順で AI_ISS_MAX 件まで。各欄も短く切る（送る前の窓に省略を出す） */
+  const U={'緊急':0,'高':1},sh=v=>{v=String(v||'');return v.length>200?v.slice(0,200)+'…':v};
+  const L=A.length>AI_ISS_MAX?A.slice().sort((a,b)=>((U[a.urgency]??9)-(U[b.urgency]??9))||b.date.localeCompare(a.date)).slice(0,AI_ISS_MAX):A;
+  const lines=L.map(i=>`・${i.date} ${sh(i.title)}${i.place?'（'+sh(i.place)+'）':''}［${i.status}］${i.equipId?'設備:'+equipName(i.equipId):''} 詳細:${sh(i.detail)||'なし'} 処置:${sh(i.action)||'なし'} 経過:${sh((i.log||[]).map(l=>l.to+(l.note?'('+l.note+')':'')).join('→'))}`).join('\n');
+  const head=A.length>L.length?`（対応中は全${A.length}件。緊急・高を先に新しい順で${L.length}件を送ります。ほか${A.length-L.length}件は省略）`:`（全${A.length}件）`;
+  aiDraft('対応中の異常案件の要約',`${facLabel()}の対応中の異常案件の一覧です${head}。\n${lines}\n\n全体の状況を3〜6行で要約し、続けて「未完了の対応」「次に確認すること」を箇条書きにしてください。`,'',null);
 }
 // 申し送り（引継ぎ）
 function handoverOf(ds){return (S.handover||{})[ds]}
@@ -7237,7 +7242,7 @@ function aiSearchHist(q){
     ${modalFoot(`<button class="btn sec" onclick="closeModal(true)">閉じる</button>${R.length?'<button class="btn" onclick="aiHistSummary()">🤖 AIで要約（下書き）</button>':''}`)}`);
   V.hsQ=q;window.__hs=R;
 }
-function aiHistSummary(){const R=(window.__hs||[]).slice(0,40);aiDraft('過去の故障・修理の要約',`次は${facLabel()}の故障・修理・作業の記録（検索語「${V.hsQ}」）です。同じ設備・同じ症状の繰り返し、処置の傾向、再発防止の実施状況を、記録の日付を示して要約してください。\n\n`+R.map((r,k)=>`[${k+1}] ${r.date} ${r.kind} ${r.eq}：${r.title}／${r.body}`).join('\n')+AI_RULE2,'',null)}
+function aiHistSummary(){const RA=window.__hs||[],R=RA.slice(0,40);aiDraft('過去の故障・修理の要約',`次は${facLabel()}の故障・修理・作業の記録（検索語「${V.hsQ}」${RA.length>R.length?`、見つかった${RA.length}件のうち新しい${R.length}件。ほか${RA.length-R.length}件は省略`:''}）です。同じ設備・同じ症状の繰り返し、処置の傾向、再発防止の実施状況を、記録の日付を示して要約してください。\n\n`+R.map((r,k)=>`[${k+1}] ${r.date} ${r.kind} ${r.eq}：${r.title}／${r.body}`).join('\n')+AI_RULE2,'',null)}
 function aiLib(){const q=V.libQ||'',H=libSearch(q).slice(0,6);if(!H.length){toast('検索結果がありません');return}
   aiDraft('技術資料からの回答（下書き）',`質問：「${q}」\n次の【資料】の文章だけを根拠に答えてください。根拠にした資料を [資料1] のように必ず示し、資料に書かれていないことは「資料に記載なし」と答えてください。\n\n`+H.map((h,k)=>`【資料${k+1}：${h.d.title}】\n${h.ctx}`).join('\n\n')+AI_RULE2,'',null)}
 function aiPickEq(){const E=S.equipment||[];if(!E.length){toast('設備台帳に設備がありません');return}
@@ -7257,10 +7262,10 @@ function aiDiag(id){
   aiDraft('設備診断の補助説明（下書き）',`${facLabel()}の担当者向けに、次の記録からこの設備の状態を分かりやすく説明してください。良否の判定・寿命の断定・原因の断定はせず、記録から言えることと、追加で確認するとよい点（点検・測定の提案）に分けてください。\n\n${ctx}`+AI_RULE2,'',null);
 }
 function aiPlan(){
-  const E=(S.equipment||[]).filter(e=>e.status!=='廃止').slice(0,80).map(e=>{const H=healthOf(e),F=failStats(e.id);return `${eqLabel(e)}｜${e.kind||'-'}｜重要度${e.importance||'-'}｜設置${e.installed||'-'}｜耐用${e.life===''?'-':e.life}｜更新予定${e.renewYear||'-'}｜費用${e.renewCost===''?'-':e.renewCost}｜参考指標${H.score??'-'}｜故障12か月${F.n12}`}).join('\n');
+  const EA=(S.equipment||[]).filter(e=>e.status!=='廃止'),E=EA.slice(0,80).map(e=>{const H=healthOf(e),F=failStats(e.id);return `${eqLabel(e)}｜${e.kind||'-'}｜重要度${e.importance||'-'}｜設置${e.installed||'-'}｜耐用${e.life===''?'-':e.life}｜更新予定${e.renewYear||'-'}｜費用${e.renewCost===''?'-':e.renewCost}｜参考指標${H.score??'-'}｜故障12か月${F.n12}`}).join('\n');
   const P=(S.plans||[]).map(p=>`${p.year}年度 ${p.title} ${p.kind} ${p.cost} ${p.status}`).join('\n');
   const B=(S.budget||[]).filter(b=>b.fy>=fyNow()).map(b=>`${b.fy}年度 ${b.cat} ${b.amount}`).join('\n');
-  aiDraft('保全計画の改善案（下書き）',`${facLabel()}の保全計画について、次の一覧から改善案を下書きしてください。重要度・経年・故障の多い設備の優先順位、更新時期の集中の平準化、点検周期の見直しの検討項目などを、根拠となる行を示して挙げてください。費用や寿命を推測で決めないでください。\n\n【設備】\n${E||'なし'}\n\n【保全計画】\n${P||'なし'}\n\n【予算】\n${B||'なし'}`+AI_RULE2,'',null);
+  aiDraft('保全計画の改善案（下書き）',`${facLabel()}の保全計画について、次の一覧から改善案を下書きしてください。重要度・経年・故障の多い設備の優先順位、更新時期の集中の平準化、点検周期の見直しの検討項目などを、根拠となる行を示して挙げてください。費用や寿命を推測で決めないでください。\n\n【設備】${EA.length>80?`（全${EA.length}台のうち先頭の80台。ほか${EA.length-80}台は省略）`:''}\n${E||'なし'}\n\n【保全計画】\n${P||'なし'}\n\n【予算】\n${B||'なし'}`+AI_RULE2,'',null);
 }
 
 /* ---------- 統合ダッシュボード（ホームの上部に差し込む） ---------- */
