@@ -2145,7 +2145,7 @@ async function mirrorNow(kind){
   try{
     const data=kind==='app'?clone(S):(hasShift()?SHIFT.get():null);if(!data)return false;
     const at=Date.now();await idb('m','readwrite',st=>st.put({at,ver:APP_VER,data,lsFailed:!!SAVE_FAIL[kind]},kind));MIRROR_AT[kind]=at;MIRROR_ERR='';if(SAVE_FAIL.idbM){SAVE_FAIL.idbM='';sysBar()}return true;
-  }catch(e){MIRROR_ERR=String(e&&e.message||e);SAVE_FAIL.idbM='予備保存の書き込みに失敗：'+MIRROR_ERR.slice(0,60);sysBar();return false}
+  }catch(e){MIRROR_ERR=String(e&&e.message||e);SAVE_FAIL.idbM='予備保存の書き込みに失敗：'+cutU(MIRROR_ERR,60);sysBar();return false}
 }
 async function mirrorAll(){for(const k of ['app','shift']){clearTimeout(MIRROR_T[k]);await mirrorNow(k)}}
 async function readMirror(kind){try{return await idb('m','readonly',st=>st.get(kind))}catch(e){return null}}
@@ -3262,7 +3262,7 @@ function delDay(ds){
   const r=S.daily[ds];if(!r)return;
   if(!confirm(`${mdw(ds)}の日常点検の記録（数値・確認・点検者・備考・写真の紐づけ）を削除しますか？${r.done?'\n※完了済みの記録です。':''}`))return;
   const iss=S.issues.find(i=>i.src==='daily:'+ds),issCopy=iss?clone(iss):null;
-  delete S.daily[ds];logEdit('daily',ds,'記録の削除',JSON.stringify(r).slice(0,1000),'（削除）');
+  delete S.daily[ds];logEdit('daily',ds,'記録の削除',cutU(JSON.stringify(r),1000),'（削除）');
   if(iss&&iss.auto&&iss.status==='発見'&&!iss.action)S.issues=S.issues.filter(i=>i!==iss); // 未着手の自動案件だけ外す
   save();render();
   undoBar(`${md(ds)}の記録を削除しました`,()=>{S.daily[ds]=r;if(issCopy&&!S.issues.some(i=>i.id===issCopy.id))S.issues.push(issCopy);logEdit('daily',ds,'記録の削除を取り消し','（削除）','復元')});
@@ -4197,7 +4197,7 @@ function aiHandover(ds){
     `日常点検：${dayState(ds).st}${numDefs().filter(n=>r[n.id]!=null).map(n=>` ${n.name}${r[n.id]}${n.unit}`).join('')}${I.ng.length?'　異常：'+I.ng.join('、'):''}${I.warn.length?'　急変：'+I.warn.join('、'):''}${r.note?'　備考：'+r.note:''}`,
     `今日の作業：${tasksBetween(ds,ds).map(t=>`${t.title}[${t.status}${t.result?'・'+t.result:''}]${t.note?'('+t.note+')':''}`).join('、')||'なし'}`,
     `明日の予定：${tasksBetween(addD(ds,1),addD(ds,1)).map(t=>`${t.time?t.time+' ':''}${t.title}${t.staff?'('+t.staff+')':''}`).join('、')||'なし'}`,
-    `対応中の異常：${aiIssLine(openIssues(),i=>`${i.title}[${i.status}]${i.action?'処置:'+String(i.action).slice(0,200):''}`)||'なし'}`,
+    `対応中の異常：${aiIssLine(openIssues(),i=>`${i.title}[${i.status}]${i.action?'処置:'+cutU(i.action,200):''}`)||'なし'}`,
     handoverOf(addD(ds,-1))?`前日の申し送り：${handoverOf(addD(ds,-1)).text}`:''].filter(Boolean).join('\n');
   aiDraft(`${md(ds)}の申し送りの下書き`,`${facLabel()}の担当者の勤務交代時の申し送り文を作ってください。次の勤務者が確認・対応すべきことを先に、箇条書きで10行以内。\n\n${data}`,'申し送りに入れる',t=>{const e=$('#ho_text');if(e){e.value=t;toast('下書きを入れました。確認して「保存」を押してください')}else saveHandover(ds,t)});
 }
@@ -4210,7 +4210,7 @@ function aiMonthlyNote(y,m){
   const data=[`対象：${y}年${m}月`,`作業：予定${st.tot}件・完了${st.done}件・要観察/不良${st.ng}件`,`日常点検：記録${st.ddays}日・完了${st.ddone}日・未実施${st.dmiss}日・異常あり${st.dng}日`,
     ...numDefs().map(n=>{const a=st.vals[n.id]||[];return a.length?`${n.name}：最小${Math.min(...a)}・最大${Math.max(...a)}${n.unit}・基準外${a.filter(v=>outOfRange(n,v)).length}日`:''}).filter(Boolean),
     `作業実績：${aiTaskLine(st.ts)||'なし'}`,
-    `異常案件：${aiIssLine(IS,i=>`${md(i.date)} ${i.title}（${i.st}）${i.action?'処置:'+String(i.action).slice(0,200):''}`)||'なし'}`].join('\n');
+    `異常案件：${aiIssLine(IS,i=>`${md(i.date)} ${i.title}（${i.st}）${i.action?'処置:'+cutU(i.action,200):''}`)||'なし'}`].join('\n');
   aiDraft(`${y}年${m}月 月報の所見の下書き`,`${facLabel()}の保守管理の月次報告書の「所見・特記事項」を200〜300字で書いてください。記録の事実だけを使ってください。\n\n${data}`,'所見に入れる',t=>{S.notes[key]=t;logEdit('report',key,'所見（AI下書きを採用）','',t);save();render();toast('所見に入れました。内容を確認してください')});
 }
 
@@ -4433,7 +4433,7 @@ async function verifyBackupFile(inp){
     ${d.integrity&&S.settings.bk&&S.settings.bk.exported?`<div class="meta">${d.integrity.digest===S.settings.bk.exported.digest?'✓ 最後に書き出したファイルと同じ内容です':'⚠ 最後に書き出したファイルとは別のファイルです'}</div>`:''}
     <div class="al ${okAll?'info':'ng'}">${okAll&&ig.st==='ok'?'このファイルは復元に使えます（② 保存確認済み）。最後まで確かめるには「③ 復元テスト」を行ってください。':okAll?'このファイルは復元に使えます。ただし検査情報がない古い形式のため「② 保存確認済み」には記録しません。':'このファイルには問題があります。別のバックアップを用意してください。'}</div>
     ${modalFoot('<button class="btn" onclick="closeModal(true)">閉じる</button>')}`);
-  if(okAll&&ig.st==='ok'){S.settings.lastVerified=TODAY;S.settings.lastVerifiedInfo=`${f.name}`.slice(0,80);S.settings.bk=S.settings.bk||{};S.settings.bk.verified={at:new Date().toISOString(),digest:d.integrity.digest,name:txt(f.name,120)};if(V.view==='set')render();opLog('バックアップファイルの検査',`${f.name}：問題なし`);save()}
+  if(okAll&&ig.st==='ok'){S.settings.lastVerified=TODAY;S.settings.lastVerifiedInfo=cutU(`${f.name}`,80);S.settings.bk=S.settings.bk||{};S.settings.bk.verified={at:new Date().toISOString(),digest:d.integrity.digest,name:txt(f.name,120)};if(V.view==='set')render();opLog('バックアップファイルの検査',`${f.name}：問題なし`);save()}
   else opLog('バックアップファイルの検査',`${f.name}：${okAll?'検査情報なし':'問題あり'}`);
 }
 /* バックアップの3段階：①書き出し開始 ②保存確認済み（保存したファイルを読み直して検査） ③復元検証済み（復元テストで最後まで確認） */
@@ -4769,9 +4769,9 @@ function nameFields(root){
     if(/^(hidden|button|submit|reset|file)$/.test(e.type)||(e.labels&&e.labels.length)||e.getAttribute('aria-label')||e.getAttribute('aria-labelledby')||e.title)return;
     const oc=e.getAttribute('onchange')||'';let n='';
     for(const [re,t] of FIELD_NAMES)if(re.test(oc)){n=t;break}
-    if(!n&&e.id&&/^n_/.test(e.id)){const pv=e.previousElementSibling;if(pv)n=pv.textContent.replace(/[*＊]/g,'').trim().slice(0,30)}
+    if(!n&&e.id&&/^n_/.test(e.id)){const pv=e.previousElementSibling;if(pv)n=cutU(pv.textContent.replace(/[*＊]/g,'').trim(),30)}
     if(!n&&e.placeholder)n=e.placeholder.replace(/^[^぀-ヿ一-鿿A-Za-z0-9]+/,'').trim();
-    if(!n){const pv=e.previousElementSibling;if(pv&&(pv.tagName==='LABEL'||pv.classList.contains('f')))n=pv.textContent.trim().slice(0,30)}
+    if(!n){const pv=e.previousElementSibling;if(pv&&(pv.tagName==='LABEL'||pv.classList.contains('f')))n=cutU(pv.textContent.trim(),30)}
     if(n)e.setAttribute('aria-label',n)})
 }
 function lwMark(root){if(!root)return;root.querySelectorAll('.rep td,.rep th').forEach(c=>{if(/[!-~]{16,}/.test(c.textContent))c.classList.add('lw')})}
@@ -5799,7 +5799,7 @@ function qrOpen(raw){
 }
 /* QR・設備IDで見つからないとき：その設備IDを入れた「設備の追加」を開く（読み取った番号を打ち直さずに済む。hz-v-qr-unknown） */
 let EQ_NEW_CODE='';
-function qrAddEquip(code){qrStop();closeModal(true);go('equip');EQ_NEW_CODE=String(code||'').slice(0,30);editEquip()}
+function qrAddEquip(code){qrStop();closeModal(true);go('equip');EQ_NEW_CODE=cutU(String(code||''),30);editEquip()}
 function qrSearch(q){
   const box=$('#qr_res');if(!box)return;q=String(q||'').trim();if(!q){box.innerHTML='';return}
   const n=normCode(q),L=(S.equipment||[]).filter(e=>normCode(e.code).includes(n)||normCode(e.name).includes(n)||normCode(locPath(e.locId)).includes(n)).slice(0,20);
