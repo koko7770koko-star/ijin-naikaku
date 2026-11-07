@@ -7187,12 +7187,16 @@ function vLib(){
     `<button class="btn sm noprint" onclick="editLib()">＋ 資料</button>`);
 }
 /* 全角/半角・カタカナ/ひらがなを無視して比べる。NFKC で長さが変わっても、元の文字の位置に戻せるよう1文字（濁点つき半角は2文字）ずつ折る（hz-search-fold-dwglib） */
-function foldMap(t){t=String(t==null?'':t);let f='';const st=[],en=[];for(let i=0;i<t.length;){let j=i+1;if(/[\uFF9E\uFF9F]/.test(t[j]||''))j++;const g=sFold(t.slice(i,j));for(let k=0;k<g.length;k++){f+=g[k];st.push(i);en.push(j)}i=j}return {f,st,en}}
-function libSearch(q){
+/* 1 文字をたたむ。NFKC で変わらない文字（英数・ひらがな・カタカナ・漢字）は normalize を呼ばずに同じ結果を出す（長い資料で速く） */
+function foldCh(t,i){const c=t.charCodeAt(i);if(c>=0x21&&c<=0x7E)return c>=65&&c<=90?String.fromCharCode(c+32):t[i];if(c>=0x3041&&c<=0x3096)return t[i];if(c>=0x30A1&&c<=0x30F6)return String.fromCharCode(c-0x60);if(c>=0x4E00&&c<=0x9FFF)return t[i];return sFold(t[i])}
+/* need を渡すと、たたんだ文に need が初めて出たところで止める（長い資料で全文をたたまない。最初の位置は全文のときと同じ） */
+function foldMap(t,need){t=String(t==null?'':t);const fa=[],st=[],en=[],L=need?need.length:0;let hit=false;for(let i=0;i<t.length&&!hit;){let j=i+1;if(/[\uFF9E\uFF9F]/.test(t[j]||''))j++;const g=j===i+1?foldCh(t,i):sFold(t.slice(i,j));for(let k=0;k<g.length;k++){fa.push(g[k]);st.push(i);en.push(j);
+  if(L&&fa.length>=L&&g[k]===need[L-1]){let m=true;for(let q=0;q<L;q++)if(fa[fa.length-L+q]!==need[q]){m=false;break}if(m)hit=true}}i=j}return {f:fa.join(''),st,en}}
+function libSearch(q,lim=Infinity){ /* lim：先頭から lim 件見つかったら止める（並びは資料の順のまま。AI に送る 6 件などで全件を読まない） */
   const words=q.split(/[\s　]+/).filter(Boolean),out=[];
   const lw=words.map(sFold);
-  (S.library||[]).forEach(d=>{const hay=sFold(`${d.title}\n${d.tags}\n${d.text}`);if(!lw.every(w=>hay.includes(w)))return;
-    const fm=foldMap(d.text),k=fm.f.indexOf(lw[0]);
+  (S.library||[]).some(d=>{if(out.length>=lim)return true;const ft=sFold(d.text),hay=sFold(`${d.title}\n${d.tags}\n`)+ft;if(!lw.every(w=>hay.includes(w)))return;
+    const fm=lw[0]&&ft.includes(lw[0])?foldMap(d.text,lw[0]):{f:'',st:[],en:[]},k=lw[0]?fm.f.indexOf(lw[0]):-1;
     if(k>=0&&lw[0]){const i=fm.st[k],e=fm.en[k+lw[0].length-1];out.push({d,before:d.text.slice(Math.max(0,i-60),i),mid:d.text.slice(i,e),after:d.text.slice(e,e+100),pos:i,ctx:d.text.slice(Math.max(0,i-300),i+500)})}
     else out.push({d,before:'',mid:'',after:(d.title+' '+d.tags).slice(0,100),pos:-1,ctx:d.text.slice(0,600)})});
   return out;
@@ -7249,7 +7253,7 @@ function aiSearchHist(q){
   V.hsQ=q;window.__hs=R;
 }
 function aiHistSummary(){const RA=window.__hs||[],R=RA.slice(0,40);aiDraft('過去の故障・修理の要約',`次は${facLabel()}の故障・修理・作業の記録（検索語「${V.hsQ}」${RA.length>R.length?`、見つかった${RA.length}件のうち新しい${R.length}件。ほか${RA.length-R.length}件は省略`:''}）です。同じ設備・同じ症状の繰り返し、処置の傾向、再発防止の実施状況を、記録の日付を示して要約してください。\n\n`+R.map((r,k)=>`[${k+1}] ${r.date} ${r.kind} ${r.eq}：${r.title}／${r.body}`).join('\n')+AI_RULE2,'',null)}
-function aiLib(){const q=V.libQ||'',H=libSearch(q).slice(0,6);if(!H.length){toast('検索結果がありません');return}
+function aiLib(){const q=V.libQ||'',H=libSearch(q,6);if(!H.length){toast('検索結果がありません');return}
   aiDraft('技術資料からの回答（下書き）',`質問：「${q}」\n次の【資料】の文章だけを根拠に答えてください。根拠にした資料を [資料1] のように必ず示し、資料に書かれていないことは「資料に記載なし」と答えてください。\n\n`+H.map((h,k)=>`【資料${k+1}：${h.d.title}】\n${h.ctx}`).join('\n\n')+AI_RULE2,'',null)}
 function aiPickEq(){const E=S.equipment||[];if(!E.length){toast('設備台帳に設備がありません');return}
   openModal(`<h3>設備診断の補助説明</h3><label class="f">設備</label><select id="ai_eq">${E.map(e=>`<option value="${e.id}">${esc(eqLabel(e))}</option>`).join('')}</select>${modalFoot(`<button class="btn sec" onclick="closeModal()">キャンセル</button><button class="btn" onclick="aiDiag($('#ai_eq').value)">下書きを作る</button>`)}`)}

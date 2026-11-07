@@ -1,4 +1,4 @@
-// AI 支援：設備 2000 台・異常 5000 件（対応中 3300）・測定 2 万件・今月の予定 3000 件のとき、AI に送る文が上限で切られ、切ったことが画面に出て、
+// AI 支援：設備 2000 台・異常 5000 件（対応中 3300）・測定 2 万件・今月の予定 3000 件・技術資料 200 件（1 件 3 万字）のとき、AI に送る文が上限で切られ、切ったことが画面に出て、
 // 送る前の窓が速く開き、つながらない（通信を止めた）ときも画面が固まらず「つながらない」窓になるか（hz-v-ai-context-big）。
 // キーは書かない（端末の一時保存に試しの文字を置くだけ）。外への通信はすべて止める。usage: node hozen/tools/aicontextbigcheck.js
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];const LIM=60000;
@@ -13,11 +13,13 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   S.meas=[...Array(20000)].map((_,i)=>({id:'m'+i,date:addD(T,-(i%700)),equipId:'e'+(i%2000),tplId:'t'+(i%3),type:'絶縁抵抗',name:'測定',rows:[{name:'R',v:String(i%50),min:'5',max:'',unit:'MΩ'}]}));
   const ym=T.slice(0,8);for(let i=0;i<3000;i++)S.tasks.push({id:'tm'+i,date:ym+String(1+i%28).padStart(2,'0'),time:'',kind:'定期',cat:S.settings.cats[0],title:'点検'+i,place:'',staff:'',attend:'',status:i%5?'完了':'予定',result:i%50?'':'要観察',note:'',photos:[]});
   S.issues.slice(0,600).forEach((x,k)=>x.date=ym+String(1+k%28).padStart(2,'0'));
+  const para='受変電設備の点検手順。VCB の開閉操作の前に負荷を確認する。異音・異臭があれば記録する。';S.library=[...Array(200)].map((_,i)=>({id:'lb'+i,title:'資料'+i,tags:'点検',text:para.repeat(Math.ceil(30000/para.length)).slice(0,30000),equipIds:[],file:'',type:''}));
   for(let i=0;i<400;i++){const d=addD(T,-i);S.daily[d]=S.daily[d]||{}}
   save()});
  const cases=[['異常案件の要約',()=>aiIssues()],['保全計画の改善案',()=>aiPlan()],['異常候補の抽出',()=>aiCandidates()],['設備診断',()=>aiDiag('e0')],
   ['申し送りの下書き',()=>aiHandover(TODAY)],['日報の特記事項の下書き',()=>aiDailyNote(TODAY)],
   ['月報の所見の下書き',()=>aiMonthlyNote(+TODAY.slice(0,4),+TODAY.slice(5,7))],
+  ['技術資料からの回答',()=>{V.libQ='VCB 異音';aiLib()}],
   ['過去の故障の要約',()=>{aiSearchHist('VCB');aiHistSummary()}]];
  for(const [name,fn] of cases){
   const s=Date.now();await p.evaluate(`(${fn})()`);await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));const ms=Date.now()-s;
