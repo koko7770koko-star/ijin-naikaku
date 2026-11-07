@@ -5024,15 +5024,20 @@ window.addEventListener('beforeprint',()=>{if(V.view==='locs'){PRINT_LOCS=true;r
 window.addEventListener('afterprint',()=>{if(PRINT_LOCS){PRINT_LOCS=false;render()}});
 function vLocs(){
   const L=S.locs||[],E=S.equipment||[],sortM=!!V.locSortM;
-  const eqAt=id=>E.filter(e=>e.locId===id),manyLocs=L.length>40,fac=locFac1(),top=fac?fac.id:'';
-  const seenN=new Set(),node=(l,d,sib,i)=>{if(seenN.has(l.id))return '';seenN.add(l.id);const ch=locKids(l.id),eq=eqAt(l.id),all=E.filter(e=>locDesc(l.id).has(e.locId)).length,open=PRINT_LOCS?true:V['lo_'+l.id]!==undefined?V['lo_'+l.id]!==false:(manyLocs?LOC_TYPES.indexOf(l.type)<LOC_TYPES.indexOf('建屋'):true); // 場所が多い（40件超）ときは、最初は棟までを出して階より下はたたむ。押した後はその状態を覚える
-    const cc=locCountTxt(l.id),nx=LOC_CHILD[l.type];
+  // 場所が多い（数千か所）ときも速く：子・設備・下の設備の数を、この画面を作る間だけ表にして引く（全部開いて約 38 秒かかっていた。hz-v-locs-deep）
+  const KM=new Map(),EM=new Map(),CN=new Map();L.forEach(l=>{if(l&&l.id&&l.parent&&l.parent!==l.id){if(!KM.has(l.parent))KM.set(l.parent,[]);KM.get(l.parent).push(l)}});KM.forEach(a=>a.sort(locCmp));
+  E.forEach(e=>{if(e.locId){if(!EM.has(e.locId))EM.set(e.locId,[]);EM.get(e.locId).push(e)}});
+  const kidsOf=id=>KM.get(id)||[],fixKids=l=>l.type==='階'?kidsOf(l.id).filter(x=>x.type==='盤'):l.type==='建屋'?kidsOf(l.id).filter(x=>x.type==='電気室'||x.type==='盤'):[];
+  const eqAll=id=>{if(CN.has(id))return CN.get(id);let n=0;const seen=new Set([id]),st=[id];while(st.length){const x=st.pop();n+=(EM.get(x)||[]).length;kidsOf(x).forEach(k=>{if(!seen.has(k.id)){seen.add(k.id);st.push(k.id)}})}CN.set(id,n);return n};
+  const eqAt=id=>EM.get(id)||[],manyLocs=L.length>40,fac=locFac1(),top=fac?fac.id:'';
+  const seenN=new Set(),node=(l,d,sib,i)=>{if(seenN.has(l.id))return '';seenN.add(l.id);const ch=kidsOf(l.id),eq=eqAt(l.id),all=eqAll(l.id),open=PRINT_LOCS?true:V['lo_'+l.id]!==undefined?V['lo_'+l.id]!==false:(manyLocs?LOC_TYPES.indexOf(l.type)<LOC_TYPES.indexOf('建屋'):true); // 場所が多い（40件超）ときは、最初は棟までを出して階より下はたたむ。押した後はその状態を覚える
+    const cc=locCountTxt2(kidsOf(l.id)),nx=LOC_CHILD[l.type];
     const btns=sortM?`<button class="btn sec sm" style="min-width:44px" aria-label="${esc(l.name)}を上へ" ${i===0?'disabled':''} onclick="locShift('${l.id}',-1)">↑</button><button class="btn sec sm" style="min-width:44px" aria-label="${esc(l.name)}を下へ" ${i===sib-1?'disabled':''} onclick="locShift('${l.id}',1)">↓</button>`
       :`${nx?`<button class="btn sec sm" style="white-space:nowrap" onclick="locAdd('${l.id}')" aria-label="${esc(l.name)}に${LOC_SHOW(nx)}を足す">＋${LOC_SHOW(nx)}</button>`:''}<button class="btn sec sm" style="min-width:44px" onclick="locMenu('${l.id}')" aria-label="${esc(l.name)}の操作">⋯</button>`;
     return `<div class="locn" data-loc="${l.id}" style="margin-left:${Math.min(d,4)*8}px"><div class="item"><div class="dt" style="min-width:0"><span class="pill">${esc(LOC_SHOW(l.type))}</span></div>
       <div class="bd" style="min-width:0" onclick="V['lo_${l.id}']=${!open};render()"><div class="ti" style="overflow-wrap:anywhere">${ch.length||eq.length?(open?'▾ ':'▸ '):''}${esc(l.name)}</div><div class="meta">${cc?esc(cc)+'・':''}<span style="white-space:nowrap">設備 ${all}台</span>${l.note?'・'+esc(l.note):''}</div></div>
       <div class="row noprint" style="flex-wrap:nowrap;gap:4px;margin:0">${btns}</div></div>
-      ${!sortM&&locFixKids(l).length?`<div class="row locfix noprint" style="margin:2px 0 4px ${Math.min(d,4)*8+12}px;align-items:center;flex-wrap:nowrap"><span class="muted grow" style="font-size:12px;min-width:0">${l.type==='階'?`電気室を通さず盤が ${locFixKids(l).length}面あります`:`階を通さず ${esc(locCountTxt2(locFixKids(l)))} があります`}</span><button class="btn sec sm" style="min-height:44px;white-space:nowrap" onclick="locFix('${l.id}')">${l.type==='階'?'電気室を足して移す':'階を足して移す'}</button></div>`:''}
+      ${!sortM&&fixKids(l).length?`<div class="row locfix noprint" style="margin:2px 0 4px ${Math.min(d,4)*8+12}px;align-items:center;flex-wrap:nowrap"><span class="muted grow" style="font-size:12px;min-width:0">${l.type==='階'?`電気室を通さず盤が ${fixKids(l).length}面あります`:`階を通さず ${esc(locCountTxt2(fixKids(l)))} があります`}</span><button class="btn sec sm" style="min-height:44px;white-space:nowrap" onclick="locFix('${l.id}')">${l.type==='階'?'電気室を足して移す':'階を足して移す'}</button></div>`:''}
       ${open?eq.map(e=>`<div class="item" style="margin-left:${d*8+14}px" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">🏭 ${esc(e.name)}</div><div class="meta">${esc([e.kind,e.importance?'重要度'+e.importance:'',e.status!=='稼働'?e.status:''].filter(Boolean).join('・'))}</div></div></div>`).join('')+ch.map((c,j)=>node(c,d+1,ch.length,j)).join(''):''}</div>`};
   const none=E.filter(e=>!e.locId),roots=locKids(top),addTop=fac?'建屋':(roots.some(r=>r.type==='施設')?'施設':'建屋');
   const tree=roots.map((l,i)=>node(l,0,roots.length,i)).join('');
