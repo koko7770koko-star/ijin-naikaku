@@ -1,6 +1,5 @@
 // 設備台帳 CSV の書き出し→読み込み（絵文字・異体字版。hz-v-csv-emoji）：名前などの絵文字（🔥）・異体字（𠮷・葉＋異体字の印）・丸数字・タブ・全角空白が元の字のまま戻るか。
-// 元の csvquotecheck（記号・改行）と同じ作り。：名前・設置場所・メーカー・備考に「,」「"」「""」改行（LF・CRLF）・先頭の「=」が入っていても同じ値に戻る（前後の空白は取り込みで削る決まり）。
-// 件数が変わらない・読み飛ばしが出ない・BOM を付けても同じ（hz-v-csv-quote）
+// 件数が変わらない・読み飛ばしが出ない・BOM を付けても同じ。作りは csvquotecheck（記号・改行）と同じ。
 // usage: node hozen/tools/csvemojicheck.js
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const errs=[];
 (async()=>{const b=await chromium.launch();const c=await b.newContext();const p=await c.newPage();
