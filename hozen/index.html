@@ -4526,7 +4526,12 @@ function restore(inp){
     const needed=new Set(Object.keys(photoOwnersOf(a)));
     const haveFile=new Set(okPh.map(x=>x[0])),lackInFile=[...needed].filter(i=>!haveFile.has(i));
     PENDING_RESTORE={data:a,shift:sv&&sv.data,photos:okPh,hArc};
-    let DF='';try{const m2=migrate(clone(a),true);DF=`<details open style="margin-top:6px"><summary class="muted">記録ごとの差分（追加・消える・変更）</summary>${diffHTML(diffData(S,m2))}</details>`}catch(e){}
+    let DF='',CAP='';try{const m2=migrate(clone(a),true);DF=`<details open style="margin-top:6px"><summary class="muted">記録ごとの差分（追加・消える・変更）</summary>${diffHTML(diffData(S,m2))}</details>`;
+      // 戻した後の記録が端末の保存の上限を超えそうなら、押す前に知らせる（復元テストと同じ計算。超えたときは保存に失敗して元に戻る＝記録は消えない。hz-v-near-full）
+      let ls=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);ls+=k.length+(localStorage.getItem(k)||'').length}}catch(e){}
+      const size=JSON.stringify(m2).length,free=5000000-(ls-JSON.stringify(S).length);
+      if(size>=free*0.95)CAP=`<div class="al ng" id="rsCap">⛔ 戻した後の記録 約${fmtCh(size)}が、この端末で使える量 約${fmtCh(free)}を超えそうです。「復元する」を押しても保存できず、今のデータのままになることがあります。先に写真の整理・古い記録の整理をしてください。</div>`;
+      else if(size>=free*0.8)CAP=`<div class="al warn" id="rsCap">⚠ 戻した後の記録 約${fmtCh(size)}は、この端末で使える量 約${fmtCh(free)}の ${Math.round(size/free*100)}% です。戻した後は早めに写真・古い記録の整理を。</div>`}catch(e){}
     const row=(l,now,nw)=>`<tr><td>${l}</td><td class="c">${now}</td><td class="c"><b>${nw}</b></td></tr>`;
     openModal(`<h3>復元の確認</h3><p class="muted">ファイル：${esc(f.name)}<br>書き出した日：${savedAt0&&!isNaN(savedAt0)?`<b>${esc(savedAt0.toLocaleString('ja-JP'))}</b>`:'<b>記録なし</b>（古い形式のファイルです）'}</p>
       <div class="rep"><table><tr><th></th><th>今のデータ</th><th>ファイル</th></tr>
@@ -4534,7 +4539,7 @@ function restore(inp){
       ${row('異常案件',S.issues.length,a.issues.length)}${row('写真',referencedPhotos().size,okPh.length)}${row('シフトのメンバー',hasShift()?SHIFT.members().length:'－',sv?sv.data.members.filter(m=>m.name.trim()).length:'（含まれていない）')}</table></div>
       ${v.log.length||(sv&&sv.log.length)||badPh?`<div class="al warn">修復・除外して読み込みます：<br>${[...v.log,...(sv?sv.log:[]),badPh?`不正な写真を除外：${badPh}件`:''].filter(Boolean).map(esc).join('<br>')}</div>`:''}
       ${lackInFile.length?`<div class="al ng">⛔ このファイルには、記録が参照している写真・資料のうち <b>${lackInFile.length}件</b> が含まれていません${bi&&bi.complete===false?'（保存時から不完全と記録されています）':''}。この端末内に同じ写真があれば表示されますが、なければ表示できません。</div>`:''}
-      ${DF}
+      ${CAP}${DF}
       <div class="al ${ig.st==='ok'?'info':ig.st==='ng'?'ng':'warn'}">ファイルの検査：${esc(ig.text)}</div>
       <div class="al info">今のデータは上書きされます。上書き前の状態は「バックアップ履歴」に自動で残します（残せなかったときは中止できます）。</div>
       ${modalFoot('<button class="btn sec" onclick="PENDING_RESTORE=null;closeModal(true)">やめる</button><button class="btn" onclick="applyRestore()">復元する</button>')}`);
