@@ -4708,7 +4708,9 @@ const SUB_VIEWS=['year','report','set','hist','equip','equipDetail','dailyRep'];
 const BACK={equipDetail:'equip',dailyRep:'day'};
 function updateNavBadge(fromRender){
   if(!fromRender){DL_CACHE=null;AL_CACHE=null}
-  const A=AL_CACHE||(AL_CACHE=alerts());
+  // render の外（日常点検の入力のたびの refreshDay など）でも、数える間だけ「設備→異常・測定」の表を使う（設備 2000 台で入力ごとに 1 秒止まっていた。hz-v-navbadge-outside）
+  const own=!DG_ON;if(own){DG_ON=true;DG_IX=null}
+  let A;try{A=AL_CACHE||(AL_CACHE=alerts())}finally{if(own){DG_ON=false;DG_IX=null}}
   const b=document.querySelector('nav button[data-v=home] b');if(b)b.dataset.n=A.filter(a=>a[0]==='ng').length||'';
   const d=document.querySelector('nav button[data-v=day] b');if(d){const r=S.daily[TODAY];d.dataset.n=r&&r.done?'':'!'}
 }
