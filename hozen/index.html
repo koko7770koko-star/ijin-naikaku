@@ -4730,7 +4730,11 @@ function nameFields(root){
     if(n)e.setAttribute('aria-label',n)})
 }
 function repScrollHint(){document.querySelectorAll('.repscroll').forEach(e=>{const m=e.scrollWidth-e.clientWidth;e.classList.toggle('rs-more',m>2&&e.scrollLeft<m-2);e.classList.toggle('rs-less',m>2&&e.scrollLeft>2)})}
-function render(){
+/* 画面を作る間だけ、場所の子の表を覚える（盤が数千面でも ◯● を押すたびに待たない。hz-perf-ban-many）。
+   画面を作る関数は S.locs を書き換えないので、render の中だけ有効にし、終わったら捨てる */
+let LK_ON=false,LK_MAP=null;
+function render(){LK_ON=true;LK_MAP=null;try{return render0()}finally{LK_ON=false;LK_MAP=null}}
+function render0(){
   applyFScale();applyNight();
   CREW={};DL_CACHE=null;AL_CACHE=null;
   const shiftMode=V.view==='shift';
@@ -5013,7 +5017,9 @@ function locCmp(a,b){const oa=Number.isFinite(a.ord),ob=Number.isFinite(b.ord);i
 function locTop(){const L=(S.locs||[]).filter(l=>l&&l.id),ids=new Set(L.map(l=>l.id)),top=L.filter(l=>!l.parent||!ids.has(l.parent)||l.parent===l.id),seen=new Set();
   const mark=id=>{const st=[id];while(st.length){const x=st.pop();if(seen.has(x))continue;seen.add(x);L.forEach(c=>{if(c.parent===x&&c.id!==x)st.push(c.id)})}};
   top.forEach(t=>mark(t.id));L.forEach(l=>{if(!seen.has(l.id)){top.push(l);mark(l.id)}});return top.sort(locCmp)}
-const locKids=p=>p?(S.locs||[]).filter(l=>l&&l.id&&l.id!==p&&l.parent===p).sort(locCmp):locTop();
+const locKids=p=>{if(!p)return locTop();
+  if(LK_ON){if(!LK_MAP){LK_MAP=new Map();(S.locs||[]).forEach(l=>{if(l&&l.id&&l.parent&&l.id!==l.parent){if(!LK_MAP.has(l.parent))LK_MAP.set(l.parent,[]);LK_MAP.get(l.parent).push(l)}});LK_MAP.forEach(a=>a.sort(locCmp))}return (LK_MAP.get(p)||[]).slice()}
+  return (S.locs||[]).filter(l=>l&&l.id&&l.id!==p&&l.parent===p).sort(locCmp)};
 function locNewOrd(p){const s=locKids(p).filter(l=>Number.isFinite(l.ord));return s.length?Math.max(...s.map(l=>l.ord))+1:undefined}
 function locMk(type,name,parent,floor){const l={id:uid(),type,parent:parent||'',name:txt(name,60).trim(),note:'',pos:{floor:txt(floor||'',20),x:'',y:'',z:''}},o=locNewOrd(parent);if(o!==undefined)l.ord=o;return l}
 const locFac1=()=>{const f=(S.locs||[]).filter(l=>l.type==='施設');return f.length===1&&!f[0].parent?f[0]:null};
