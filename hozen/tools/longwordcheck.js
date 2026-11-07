@@ -1,11 +1,12 @@
 // 全画面：使う人が入れる文（設備・異常・作業・予備品・工具・場所・予定・点検項目・作業標準・図面・メモ・申し送り）に、空白の無い長い英数字（60 字：製造番号・貼り付けたアドレスなど）を
 // 入れたとき、390px の標準・特大で横にはみ出す画面が無いか（hz-v-longword-all）。はみ出したら、いちばん右に出ている要素を出す。
-// 保存の形は変えない。外への通信は止める。usage: node hozen/tools/longwordcheck.js
+// 保存の形は変えない。外への通信は止める。usage: node hozen/tools/longwordcheck.js（幅と文字の大きさは VW=360 FS=l,xl で変えられる）
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[];
+const VW=+(process.env.VW||390),FSL=(process.env.FS||'m,xl').split(',');
 const READY=()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0;
 (async()=>{const b=await chromium.launch();
- for(const fs of ['m','xl']){const tag=(fs==='xl'?'特大':'標準')+'・';
- const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();
+ for(const fs of FSL){const tag=({m:'標準',l:'大',xl:'特大'}[fs]||fs)+'・'+VW+'px・';
+ const c=await b.newContext({viewport:{width:VW,height:844}});const p=await c.newPage();
  p.on('pageerror',e=>bad.push(tag+'PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
  await p.goto('file://'+FILE);await p.waitForFunction(READY,null,{timeout:15000});await p.waitForTimeout(150);
@@ -26,8 +27,8 @@ const READY=()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='obj
  const extra=[['equipDetail',{eq:'e1',eqTab:'ov'}],['equipDetail',{eq:'e1',eqTab:'hist'}],['stock',{stTab:'tools'}],['stock',{stTab:'budget'}],['ban',{banRoom:'lr'}],['dwg',{dwg:'d1'}],['dailyRep',{day:'TODAY'}],['printDoc',{doc:{t:'issueList'}}]];
  for(const [v,ex] of [...views.filter(v=>!['equipDetail','dwg'].includes(v)).map(v=>[v,null]),...extra]){
   const r=await p.evaluate(([v,ex])=>{try{if(ex){for(const k in ex)if(ex[k]==='TODAY')ex[k]=TODAY;Object.assign(V,ex)}go(v,ex||undefined)}catch(e){return {err:e.message}}
-   const sw=document.documentElement.scrollWidth;if(sw<=392)return {sw};let w=null,mx=0;document.querySelectorAll('#app *').forEach(e=>{const r=e.getBoundingClientRect();if(r.right>mx&&e.children.length===0){mx=r.right;w=e}});
+   const sw=document.documentElement.scrollWidth;if(sw<=(typeof VW!=='undefined'?VW:innerWidth)+2)return {sw};let w=null,mx=0;document.querySelectorAll('#app *').forEach(e=>{const r=e.getBoundingClientRect();if(r.right>mx&&e.children.length===0){mx=r.right;w=e}});
    return {sw,el:w?(w.tagName+'.'+w.className+' '+(w.textContent||'').slice(0,20)):''}},[v,ex]);
-  if(r.err)bad.push(tag+v+' を開けない '+r.err);else if(r.sw>392)bad.push(tag+v+(ex?JSON.stringify(ex):'')+' で横にはみ出す '+r.sw+'px：'+r.el)}
+  if(r.err)bad.push(tag+v+' を開けない '+r.err);else if(r.sw>(typeof VW!=='undefined'?VW:innerWidth)+2)bad.push(tag+v+(ex?JSON.stringify(ex):'')+' で横にはみ出す '+r.sw+'px：'+r.el)}
  await c.close()}
  console.log(bad.join('\n')||'NO ERRORS');await b.close();process.exit(bad.length?1:0)})();
