@@ -7297,7 +7297,7 @@ function vMset(){
     <div class="grp"><b>作業後チェックリスト（初期値）</b><div class="muted" style="font-size:12px">1行に1つ。作業が終わったときの確認に使います。</div><textarea class="noprint" style="min-height:120px" onchange="setChkDef('chkPost',this.value)">${esc(S.chkPost.join('\n'))}</textarea><div class="ponly">${esc(S.chkPost.join('\n'))}</div></div>
     <div class="row noprint msetlinks"><button class="btn sec sm grow" onclick="go('mtpl')">📐 測定のひな形・管理値</button><button class="btn sec sm grow" onclick="go('staff')">🪪 人員・資格</button></div>`);
 }
-function setHealthW(k,v){const n=Number(v);if(!(n>=0&&n<=100)){toast('0〜100で入れてください');render();return}logEdit('settings','健全度','重み：'+k,S.healthCfg[k],n);S.healthCfg[k]=n;save();toast('保存しました')}
+function setHealthW(k,v){const n=Number(v);if(String(v).trim()===''||!(n>=0&&n<=100)){toast('0〜100で入れてください（使わない要素は 0）');render();return} /* 空にしただけで 0（その要素を使わない）にならないように */logEdit('settings','健全度','重み：'+k,S.healthCfg[k],n);S.healthCfg[k]=n;save();toast('保存しました')}
 function setChkDef(k,v){S[k]=strs(v.split('\n').map(s=>s.trim()),200,40);save();toast('保存しました（既存の作業指示は変わりません）')}
 
 /* ---------- メニュー（13区分） ---------- */
