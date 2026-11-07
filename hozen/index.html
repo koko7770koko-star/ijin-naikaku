@@ -645,6 +645,8 @@ mark{background:#fff2a8;padding:0 1px}
 .rep td,.rep th{overflow-wrap:anywhere}
 /* 狭い列（No・分類・周期・状態・日付）を1字ずつ折り返さない（印刷・PDF の見た目） */
 .rep th,.rep td.c,.rep td.cat{overflow-wrap:break-word;word-break:keep-all}
+/* 空白の無い長い英数字（製造番号・貼り付けたアドレスなど）がある欄だけ、どこでも折り返す（lwMark が付ける。ふつうの名前は今までどおり） */
+.rep th.lw,.rep td.lw{overflow-wrap:anywhere;word-break:normal}
 @media print{.rep td.cat{white-space:nowrap}.rep th{white-space:nowrap}}
 .aisrc{white-space:pre-wrap;font-size:12px;max-height:30vh;overflow:auto;background:#f5f7fa;padding:6px;border-radius:6px}
 .modal h3{overflow-wrap:anywhere}
@@ -4769,6 +4771,7 @@ function nameFields(root){
     if(!n){const pv=e.previousElementSibling;if(pv&&(pv.tagName==='LABEL'||pv.classList.contains('f')))n=pv.textContent.trim().slice(0,30)}
     if(n)e.setAttribute('aria-label',n)})
 }
+function lwMark(root){if(!root)return;root.querySelectorAll('.rep td,.rep th').forEach(c=>{if(/[!-~]{16,}/.test(c.textContent))c.classList.add('lw')})}
 function repScrollHint(){document.querySelectorAll('.repscroll').forEach(e=>{const m=e.scrollWidth-e.clientWidth;e.classList.toggle('rs-more',m>2&&e.scrollLeft<m-2);e.classList.toggle('rs-less',m>2&&e.scrollLeft>2)})}
 /* 画面を作る間だけ、場所の子の表を覚える（盤が数千面でも ◯● を押すたびに待たない。hz-perf-ban-many）。
    画面を作る関数は S.locs を書き換えないので、render の中だけ有効にし、終わったら捨てる */
@@ -4791,7 +4794,7 @@ function render0(){
   const _yw=V.view==='year'&&_yrFy===V.fy&&$('.tbw'),_yl=_yw?_yw.scrollLeft:-1;
   $('#app').innerHTML=VIEWS[V.view]();document.body.dataset.view=V.view;
   if(V.view==='set'||V.view==='mtpl')printMirror($('#app'));
-  nameFields($('#app'));repScrollHint();
+  nameFields($('#app'));lwMark($('#app'));repScrollHint();
   updateNavBadge(true);
   if(V.view==='day')restoreDraft();
   if(V.view==='year'){const w=$('.tbw');if(w){if(_yl>=0)w.scrollLeft=_yl;else yearToNow();_yrFy=V.fy}}else _yrFy=null
@@ -5089,7 +5092,7 @@ function vLocs(){
       <div class="bd" style="min-width:0" onclick="V['lo_${l.id}']=${!open};render()"><div class="ti" style="overflow-wrap:anywhere">${ch.length||eq.length?(open?'▾ ':'▸ '):''}${esc(l.name)}</div><div class="meta">${cc?esc(cc)+'・':''}<span style="white-space:nowrap">設備 ${all}台</span>${l.note?'・'+esc(l.note):''}</div></div>
       <div class="row noprint" style="flex-wrap:nowrap;gap:4px;margin:0">${btns}</div></div>
       ${!sortM&&fixKids(l).length?`<div class="row locfix noprint" style="margin:2px 0 4px ${Math.min(d,4)*8+12}px;align-items:center;flex-wrap:nowrap"><span class="muted grow" style="font-size:12px;min-width:0">${l.type==='階'?`電気室を通さず盤が ${fixKids(l).length}面あります`:`階を通さず ${esc(locCountTxt2(fixKids(l)))} があります`}</span><button class="btn sec sm" style="min-height:44px;white-space:nowrap" onclick="locFix('${l.id}')">${l.type==='階'?'電気室を足して移す':'階を足して移す'}</button></div>`:''}
-      ${open?eq.map(e=>`<div class="item" style="margin-left:${d*8+14}px" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">🏭 ${esc(e.name)}</div><div class="meta">${esc([e.kind,e.importance?'重要度'+e.importance:'',e.status!=='稼働'?e.status:''].filter(Boolean).join('・'))}</div></div></div>`).join('')+ch.map((c,j)=>node(c,d+1,ch.length,j)).join(''):''}</div>`};
+      ${open?eq.map(e=>`<div class="item" style="margin-left:${d*8+14}px" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px;overflow-wrap:anywhere">${esc(e.code||'－')}</div><div class="bd"><div class="ti">🏭 ${esc(e.name)}</div><div class="meta">${esc([e.kind,e.importance?'重要度'+e.importance:'',e.status!=='稼働'?e.status:''].filter(Boolean).join('・'))}</div></div></div>`).join('')+ch.map((c,j)=>node(c,d+1,ch.length,j)).join(''):''}</div>`};
   const none=E.filter(e=>!e.locId),roots=locKids(top),addTop=fac?'建屋':(roots.some(r=>r.type==='施設')?'施設':'建屋');
   const tree=roots.map((l,i)=>node(l,0,roots.length,i)).join('');
   return card('🏢 設備の場所',`<div class="muted noprint" style="margin-bottom:8px">棟 → 階 → 電気室 → 盤 の順に、名前を自分で登録します。各行の「＋」で下の段を足し、「⋯」で名前の変更・並べ替え・移す・消すができます。</div>
@@ -5100,7 +5103,7 @@ function vLocs(){
       <div class="row noprint kwrow" style="margin-top:10px"><button class="btn sm grow" style="min-height:44px" onclick="locAdd('${top}','${addTop}')">＋ ${LOC_SHOW(addTop)}を足す</button><button class="btn sec sm grow" style="min-height:44px" onclick="bldgWizard()">🏗 棟と階をまとめて足す</button></div>
       <div class="row noprint kwrow" style="margin-top:6px"><button class="btn sec sm grow" onclick="suggestLocs()">設置場所の文字から階層を提案</button><button class="btn sec sm grow" onclick="go('qr')">🔳 QRラベル</button></div>`,
       `<button class="btn sm noprint" onclick="editLoc()">詳しく追加</button>`)
-    +(none.length?card(`場所が未設定の設備 <span class="muted">${none.length}台</span>`,none.map(e=>`<div class="item" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${esc(e.place||'')}</div></div></div>`).join('')):'');
+    +(none.length?card(`場所が未設定の設備 <span class="muted">${none.length}台</span>`,none.map(e=>`<div class="item" onclick="go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px;overflow-wrap:anywhere">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${esc(e.place||'')}</div></div></div>`).join('')):'');
 }
 /* 古い形から直す手伝い（押したときだけ。勝手には変えない）：階の下に直接ある盤 → 電気室を足して移す。棟の下に直接ある電気室・盤 → 階を足して移す。
    移すのは parent の付け替えだけなので、盤の ◯/●・日常点検・履歴・設備の結びつき（id で持つ）はそのまま残る。元に戻せる */
@@ -5457,7 +5460,7 @@ function vBan(){
       ${s.direct.length?`<div style="margin-top:6px">${hdr}${s.direct.map(row).join('')}</div>`:''}
       ${s.rooms.map((x,i)=>room(x.r,x.bs,i===0&&!s.direct.length)).join('')}
       ${s.fl&&!bs.length&&!s.rooms.length?`<div class="row" style="margin-top:6px;align-items:center"><span class="muted grow">この階にはまだ電気室・盤がありません。</span><button class="btn sec sm" style="min-height:44px" onclick="locAdd('${s.fl.id}','電気室')">＋ 電気室を足す</button></div>`:''}</div>`};
-  return head+(plan?`<button class="btn wide" style="min-height:44px;margin:0 0 8px" onclick="banPlanAsk()">📋 先月と同じ盤に ◯ を置く（${plan.L.length}面）</button>`:'')+(carry.length?`<button class="btn sec wide" style="min-height:44px;margin:0 0 8px;background:var(--warn-bg,#fff6d6)" onclick="banCarryGo()">⏪ 先月のやり残し ${carry.length}面（押すと先月へ）</button>`:'')+tabs+`<div class="card" style="padding:8px 12px"><div class="row" style="flex-wrap:nowrap"><span class="grow"><b>${esc(bl.name)}</b>：${tot.t?`${tot.d}/${tot.t} 実施済み（●）・${allB.filter(x=>banDone(ym,x)).length}/${allB.length}面が完了`:'盤がまだ登録されていません'}</span>${tot.t&&!ed?`<button class="btn sm" style="min-height:44px;white-space:nowrap" onclick="banNext()">次の未点検へ ▼</button>`:''}</div>
+  return head+(plan?`<button class="btn wide" style="min-height:44px;margin:0 0 8px" onclick="banPlanAsk()">📋 先月と同じ盤に ◯ を置く（${plan.L.length}面）</button>`:'')+(carry.length?`<button class="btn sec wide" style="min-height:44px;margin:0 0 8px;background:var(--warn-bg,#fff6d6)" onclick="banCarryGo()">⏪ 先月のやり残し ${carry.length}面（押すと先月へ）</button>`:'')+tabs+`<div class="card" style="padding:8px 12px"><div class="row" style="flex-wrap:nowrap"><span class="grow" style="min-width:0;overflow-wrap:anywhere"><b>${esc(bl.name)}</b>：${tot.t?`${tot.d}/${tot.t} 実施済み（●）・${allB.filter(x=>banDone(ym,x)).length}/${allB.length}面が完了`:'盤がまだ登録されていません'}</span>${tot.t&&!ed?`<button class="btn sm" style="min-height:44px;white-space:nowrap" onclick="banNext()">次の未点検へ ▼</button>`:''}</div>
     ${allB.length||secs.some(x=>x.rooms.length)?`<div class="row" style="margin-top:6px"><button class="btn ${ed?'':'sec'} sm grow" style="min-height:44px" onclick="V.banEdit=${!ed};render()">${ed?'✓ 直し終える（点検に戻る）':'✎ 盤の名前・並びを直す'}</button></div>${ed?'<div class="muted" style="font-size:12px;margin-top:4px">名前はその場で書き換えられます。↑↓ で同じ電気室の中の順番を変えます。点検の印（◯/●）は変わりません。</div>':''}`:''}</div>`
     +(allB.length>=8||q?`<div class="row" style="margin:0 0 8px"><input id="banQ" type="search" enterkeyhint="search" class="grow" style="min-height:44px" placeholder="盤の名前で探す（例：動力盤-1）" aria-label="盤の名前で探す" value="${esc(V.banQ||'')}" oninput="banSearch(this)"></div>`:'')
     +(()=>{const out=secs.map(sec).join('');if(!q)return out;if(out)return `<div class="muted" style="margin:0 0 8px">「${esc(V.banQ)}」に合う盤：${allB.filter(hit).length}面（絞り込み中は「全部 ●」を出しません）</div>`+out;
@@ -6575,7 +6578,7 @@ function vWorkSheet(){
   const from=V.wsFrom||TODAY,to=addD(from,13),L=(S.works||[]).filter(w=>w.date<=to&&(w.endDate||w.date)>=from&&w.status!=='中止').sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
   return `<div class="noprint row" style="margin-bottom:8px;flex-wrap:wrap;gap:6px"><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=addD('${from}',-14);render()">‹ 前の2週</button><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=TODAY;render()">今日</button><button class="btn sec sm" style="min-height:44px" onclick="V.wsFrom=addD('${from}',14);render()">次の2週 ›</button><input type="date" class="grow" value="${from}" onchange="if(this.value){V.wsFrom=this.value;render()}"><button class="btn grow kw" style="min-height:44px" onclick="window.print()">🖨 印刷</button><button class="btn sec" style="min-height:44px" onclick="shareReport()">📤 共有</button></div>
   <div class="rep"><h1 style="text-align:center;font-size:18px">作業予定表（${slash(from)}〜${slash(to)}）</h1>${!L.length?'<div class="c repEmpty" style="padding:6px 8px;border:1px solid #888">予定はありません</div>':`<table class="wsT"><thead><tr><th>日付</th><th>時間</th><th>作業</th><th>担当・協力会社</th><th>勤務</th><th>状態</th></tr></thead><tbody>
-  ${L.map(w=>{const o=crewDay(w.date);return `<tr><td style="white-space:nowrap">${md(w.date)}${holName(w.date)?'<small class="hlb">祝</small>':''}${w.endDate&&w.endDate!==w.date?'〜<br>'+md(w.endDate):''}</td><td style="white-space:nowrap">${esc(w.start)}〜<br>${esc(w.end)}</td><td>${esc(w.no)} ${esc(w.title)}${w.outage.on?'【停電】':''}</td><td>${w.staff.map(n=>`<span style="white-space:nowrap">${esc(n)}</span>`).join('、')}${w.vendor?'<br>'+esc(w.vendor):''}</td><td style="font-size:11px">${o?`<span style="white-space:nowrap">A:${esc(o.A.join('・'))}</span><br><span style="white-space:nowrap">B:${esc(o.B.join('・'))}</span>`:''}</td><td style="white-space:nowrap">${esc(w.status)}</td></tr>`}).join('')}</tbody></table>`}</div>${L.length?'':`<div class="noprint card"><div class="muted" style="margin-bottom:8px">この2週間に作業の予定はありません。前後の2週間を見るか、予定を足してください。</div><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sec sm grow kw" style="min-height:44px" onclick="go('month')">📅 カレンダーで<wbr>予定を<wbr>足す</button><button class="btn sec sm grow kw" style="min-height:44px" onclick="go('works')">📝 作業指示書を<wbr>作る</button></div></div>`}`;
+  ${L.map(w=>{const o=crewDay(w.date);return `<tr><td style="white-space:nowrap">${md(w.date)}${holName(w.date)?'<small class="hlb">祝</small>':''}${w.endDate&&w.endDate!==w.date?'〜<br>'+md(w.endDate):''}</td><td style="white-space:nowrap">${esc(w.start)}〜<br>${esc(w.end)}</td><td>${esc(w.no)} ${esc(w.title)}${w.outage.on?'【停電】':''}</td><td>${w.staff.map(n=>`<span style="${n.length>16?'overflow-wrap:anywhere':'white-space:nowrap'}">${esc(n)}</span>`).join('、')}${w.vendor?'<br>'+esc(w.vendor):''}</td><td style="font-size:11px">${o?`<span style="white-space:nowrap">A:${esc(o.A.join('・'))}</span><br><span style="white-space:nowrap">B:${esc(o.B.join('・'))}</span>`:''}</td><td style="white-space:nowrap">${esc(w.status)}</td></tr>`}).join('')}</tbody></table>`}</div>${L.length?'':`<div class="noprint card"><div class="muted" style="margin-bottom:8px">この2週間に作業の予定はありません。前後の2週間を見るか、予定を足してください。</div><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sec sm grow kw" style="min-height:44px" onclick="go('month')">📅 カレンダーで<wbr>予定を<wbr>足す</button><button class="btn sec sm grow kw" style="min-height:44px" onclick="go('works')">📝 作業指示書を<wbr>作る</button></div></div>`}`;
 }
 function exportWorksCsv(){download(`作業指示_${TODAY}.csv`,csvBlob([['作業番号','件名','種別','状態','作業日','終了日','開始','終了','設備','担当','協力会社','停電','費用','承認'],...(S.works||[]).map(w=>[w.no,w.title,w.kind,w.status,w.date,w.endDate,w.start,w.end,w.equipIds.map(equipName).join('、'),w.staff.join('、'),w.vendor,w.outage.on?'あり':'',w.cost,w.approvals.map(a=>a.by+':'+a.act).join(' / ')])]))}
 
