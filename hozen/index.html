@@ -7248,7 +7248,8 @@ function aiCandidates(){
   aiDraft('異常候補の抽出',`${facLabel()}の点検記録です。人が確認すべき「異常の候補」（値の変化・繰り返し・記録の欠け・管理値への接近など）を、根拠となる日付と値を示して箇条書きで挙げてください。判定はしないでください。\n\n【管理値（施設の設定）】\n${lim}\n\n【日常点検（直近45日）】\n${daily||'記録なし'}\n\n【測定記録（直近40件）】\n${meas||'記録なし'}`+AI_RULE2,'',null);
 }
 function histCorpus(q){
-  const words=q.split(/[\s　]+/).filter(Boolean),m=t=>words.every(w=>t.includes(w)),R=[];
+  /* 半角カナ・全角英数・大文字小文字の違いでも見つかるよう、語と記録の文を両方たたんで比べる（資料の検索と同じ sFold） */
+  const words=q.split(/[\s　]+/).filter(Boolean).map(sFold),m=t=>{const f=sFold(t);return words.every(w=>f.includes(w))},R=[];
   S.issues.forEach(i=>{const t=[i.title,i.place,i.detail,i.action,i.cause,i.prevent,equipName(i.equipId)].join(' ');if(m(t))R.push({date:i.date,kind:i.failure?'故障':'異常',title:i.title,body:`${i.detail} / 処置：${i.action}${i.cause?' / 原因：'+i.cause:''}${i.prevent?' / 再発防止：'+i.prevent:''}`,eq:equipName(i.equipId),on:`editIssue('${i.id}')`})});
   (S.equipment||[]).forEach(e=>(e.repairs||[]).forEach(r=>{const t=[e.name,e.code,r.kind,r.content,r.vendor].join(' ');if(m(t))R.push({date:r.date,kind:r.kind||'修理',title:e.name,body:r.content,eq:e.name,on:`editRepair('${e.id}','${r.id}')`})}));
   (S.works||[]).forEach(w=>{const t=[w.title,w.content,w.result,w.equipIds.map(equipName).join(' ')].join(' ');if(m(t))R.push({date:w.date,kind:'作業',title:w.title,body:`${w.content} / 結果：${w.result}`,eq:w.equipIds.map(equipName).join('、'),on:`editWork('${w.id}')`})});
