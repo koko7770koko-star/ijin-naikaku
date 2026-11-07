@@ -3621,7 +3621,7 @@ function dupEquipName(n){const m=String(n||'').match(/^(.*?)[\s　]*[（(](\d+)[
 function eqMore(key,arr,fn,n=8){const k=(V.eq||'')+':'+key,all=(V.eqMore||{})[k];const list=all?arr:arr.slice(0,n);return list.map(fn).join('')+(arr.length>n?`<button class="btn sec wide" style="min-height:44px;margin-top:6px" onclick="V.eqMore=V.eqMore||{};V.eqMore['${k}']=${all?'false':'true'};render()">${all?'▲ 先頭の'+n+'件だけにする':'ほか'+(arr.length-n)+'件を表示'}</button>`:'')}
 function editEquip(id,dupId){
   const src=dupId?eqById(dupId):null,pre=!id&&!src&&locById(V.eqNewLoc)?V.eqNewLoc:'';V.eqNewLoc='';
-  const e=src?{...src,id:'',code:'',serial:'',name:dupEquipName(src.name),photos:[],docs:[],run:{...(src.run||{}),meters:[]},spec:{...(src.spec||{})}}:eqById(id)||{code:'',name:'',place:pre?locPath(pre):'',locId:pre,maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[]};
+  const e=src?{...src,id:'',code:'',serial:'',name:dupEquipName(src.name),photos:[],docs:[],run:{...(src.run||{}),meters:[]},spec:{...(src.spec||{})}}:eqById(id)||{code:(()=>{const c=EQ_NEW_CODE;EQ_NEW_CODE='';return c})(),name:'',place:pre?locPath(pre):'',locId:pre,maker:'',model:'',serial:'',installed:'',cycle:'',note:'',photos:[],docs:[]};
   TP=[...(e.photos||[])];TD=[...(e.docs||[])];
   loadPhotos(TP).then(()=>{openModal(`<h3>${id?'設備の編集':src?'設備の複製':'設備の追加'}</h3>${src?`<div class="al info">「${esc(src.name)}」と同じ内容で新しい設備を作ります。<b>設備名称・設備ID・製造番号</b>を入れ直して保存してください（写真・資料・修理履歴は引き継ぎません）。</div>`:''}
     <div class="grid2"><div><label class="f">設備ID</label><input id="e_code" value="${esc(e.code)}" maxlength="30" placeholder="例：E-001"></div><div><label class="f">設置年月</label><input id="e_installed" type="month" value="${esc(e.installed)}"></div></div>
@@ -5746,10 +5746,13 @@ function qrOpen(raw){
   toast(`設備「${s}」は設備台帳にありません`);
   if($('#qr_id')){$('#qr_id').value=s;qrSearch(s)}
 }
+/* QR・設備IDで見つからないとき：その設備IDを入れた「設備の追加」を開く（読み取った番号を打ち直さずに済む。hz-v-qr-unknown） */
+let EQ_NEW_CODE='';
+function qrAddEquip(code){qrStop();closeModal(true);go('equip');EQ_NEW_CODE=String(code||'').slice(0,30);editEquip()}
 function qrSearch(q){
   const box=$('#qr_res');if(!box)return;q=String(q||'').trim();if(!q){box.innerHTML='';return}
   const n=normCode(q),L=(S.equipment||[]).filter(e=>normCode(e.code).includes(n)||normCode(e.name).includes(n)||normCode(locPath(e.locId)).includes(n)).slice(0,20);
-  box.innerHTML=L.length?L.map(e=>`<div class="item" onclick="qrStop();closeModal(true);go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${nwlPath(locPath(e.locId)||e.place||'')}</div></div></div>`).join(''):'<div class="muted">見つかりません</div>';
+  box.innerHTML=L.length?L.map(e=>`<div class="item" onclick="qrStop();closeModal(true);go('equipDetail',{eq:'${e.id}'})"><div class="dt" style="min-width:58px">${esc(e.code||'－')}</div><div class="bd"><div class="ti">${esc(e.name)}</div><div class="meta">${nwlPath(locPath(e.locId)||e.place||'')}</div></div></div>`).join(''):`<div class="muted">見つかりません</div><button class="btn sec wide" id="qrAddEq" style="min-height:44px;margin-top:6px" onclick='qrAddEquip(${esc(JSON.stringify(q))})'>＋ 設備ID「${esc(q.slice(0,30))}」で設備を登録</button>`;
 }
 function addMeter(id){
   const e=eqById(id);if(!e)return;const last=(e.run.meters||[]).at(-1);
