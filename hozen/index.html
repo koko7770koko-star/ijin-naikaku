@@ -6613,6 +6613,7 @@ function stockQuick(id,d){const p=partById(id);if(!p)return;
   S.moves.push({id:uid(),partId:id,date:TODAY,type,qty:1,after:p.qty,ref:'',by:txt(who(),60),note:''});
   logEdit('part',id,`在庫（${type}）`,before,p.qty);save();render();
   if(d<0&&p.min!==''&&p.qty<=p.min)toast(`${p.name}：残 ${p.qty}${p.unit}（最低在庫数 ${p.min} 以下）`);else toast(`${p.name}：${type} 1 → 残 ${p.qty}${p.unit}`)}
+let TL_ST=0;function tlSearch(el){clearTimeout(TL_ST);TL_ST=setTimeout(()=>{V.tlQ=el.value;render();const n=document.getElementById('tlQ');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}},350)}
 let PT_ST=0;function ptSearch(el){clearTimeout(PT_ST);PT_ST=setTimeout(()=>{V.ptQ=el.value;render();const n=document.getElementById('ptQ');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length)}catch(e){}}},350)}
 function vStock(){
   const t=V.stTab||'parts';
@@ -6626,8 +6627,10 @@ function vStock(){
     const M0=(S.moves||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)),M=V.mvAll?M0:M0.slice(0,20);
     h+=card(V.mvAll?'🔄 入出庫履歴（全'+M0.length+'件）':'🔄 入出庫履歴（最近20件）',M.map(m=>`<div class="item"><div class="dt">${mdY(m.date)}</div><div class="bd"><div class="ti">${esc(m.type)}：${esc(partName(m.partId))} ${m.type==='棚卸'?'→ '+m.after:(m.type==='出庫'?'−':'+')+m.qty}</div><div class="meta">${esc([m.by,m.ref.startsWith('issue:')?'異常案件':m.ref.startsWith('work:')?'作業':'',m.note].filter(Boolean).join('・'))}</div></div></div>`).join('')+(M0.length>20?`<button id="mvMore" class="btn sec wide noprint" style="min-height:44px;margin-top:6px" onclick="V.mvAll=${V.mvAll?0:1};render()">${V.mvAll?'▲ 最近の20件だけにする':'ほか'+(M0.length-20)+'件を表示'}</button>`:'')||emptyBox('まだありません'),`<button class="btn sec sm noprint" onclick="exportStockCsv()">CSV</button>`);
   }else if(t==='tools'){
-    const T=(S.tools||[]).slice().sort((a,b)=>(a.calDue||'9').localeCompare(b.calDue||'9'));
-    h+=card(`🔧 工具・測定器 <span class="muted">${T.length}点</span>`,T.map(t=>{const loan=t.loans.find(l=>!l.back),left=t.calDue?diffD(t.calDue,TODAY):null;
+    // 探す欄（画面だけの状態 V.tlQ。保存しない）：名前・番号・型式・製造番号・メーカー・保管場所（hz-v-tools-many）
+    const tq=(V.tlQ||'').trim(),T=(S.tools||[]).filter(t=>!tq||sFold([t.name,t.code,t.model,t.serial,t.maker,t.place,t.kind].join(' ')).includes(sFold(tq))).sort((a,b)=>(a.calDue||'9').localeCompare(b.calDue||'9'));
+    if((S.tools||[]).length)h+=`<input id="tlQ" class="noprint" type="search" enterkeyhint="search" placeholder="${fsPh('名前・番号・型式・保管場所で検索','名前・番号で検索')}" aria-label="工具・測定器を検索" value="${esc(tq)}" oninput="tlSearch(this)" style="margin-bottom:8px">`;
+    h+=card(`🔧 工具・測定器 <span class="muted">${T.length}点</span>`,(tq&&!T.length?`<div class="empty">見つかりません。言葉を短くしてみてください<div style="margin-top:8px"><button id="tlQClr" class="btn sec sm" style="min-height:44px" onclick="V.tlQ='';render()">条件を外す</button></div></div>`:'')+T.map(t=>{const loan=t.loans.find(l=>!l.back),left=t.calDue?diffD(t.calDue,TODAY):null;
       return `<div class="item ${left!=null&&left<0?'ng':''}" onclick="editTool('${t.id}')"><div class="bd"><div class="ti">${esc(t.name)} <span class="muted">${esc(t.kind)}${t.code?'・'+esc(t.code):''}</span></div><div class="meta">${esc([t.maker,t.model,t.place].filter(Boolean).join('・'))}</div>
         ${t.calDue?`<span class="pill ${left<0?'ng':left<=30?'warn':'ok'}">校正期限 ${slash(t.calDue)}${left<0?'（期限切れ）':left<=30?`（あと${left}日）`:''}</span>`:t.kind==='測定器'?'<span class="pill warn">校正期限 未登録</span>':''}${loan?`<span class="pill ${loan.due&&loan.due<TODAY?'ng':'plan'}">貸出中：${esc(loan.to)}${loan.due?'（'+md(loan.due)+'まで）':''}</span>`:''}</div></div>`}).join('')||emptyGuide('工具・測定器はまだありません。登録しておくと、校正の期限と貸出の状況を知らせます。','工具・測定器を登録','editTool()'),`<button class="btn sm noprint" style="min-height:40px" onclick="editTool()">＋ 追加</button>`);
   }else{
