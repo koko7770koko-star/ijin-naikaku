@@ -6669,9 +6669,11 @@ function saveBudget(id){const o={fy:parseInt($('#bg_fy').value),cat:$('#bg_cat')
   const b=(S.budget||[]).find(x=>x.id===id);if(b){logEdit('budget',id,'予算',`${b.cat} ${b.amount}`,`${o.cat} ${o.amount}`);Object.assign(b,o)}else S.budget.push({id:uid(),...o});V.bgFy=o.fy;save();closeModal(true);render()}
 function delBudget(id){const i=S.budget.findIndex(x=>x.id===id),b=S.budget[i];S.budget.splice(i,1);save();closeModal(true);render();undoBar('予算を削除しました',()=>S.budget.splice(i,0,b))}
 
+/* 予備品の窓の入出庫履歴：最近 50 件だけ並べ、残りはボタンで窓の中に足す（窓を開き直さないので入力中の値は消えない。hz-v-partmodal-moves-many） */
+const ptMvRow=m=>`<div class="meta">${slash(m.date)} ${esc(m.type)} ${m.type==='棚卸'?'→'+m.after:m.qty}（残 ${m.after}）${m.by?'・'+esc(m.by):''}${m.note?'・'+esc(m.note):''}</div>`;let PT_MV_REST='';
 function editPart(id){
   const p=partById(id)||{code:'',name:'',spec:'',maker:'',place:'',unit:'個',qty:0,min:'',price:'',equipIds:[],note:''};
-  const M=(S.moves||[]).filter(m=>m.partId===id).sort((a,b)=>b.date.localeCompare(a.date));
+  const M=(S.moves||[]).filter(m=>m.partId===id).sort((a,b)=>b.date.localeCompare(a.date));PT_MV_REST=M.slice(50).map(ptMvRow).join('');
   openModal(`<h3>${id?'予備品':'予備品の登録'}</h3>
     <div class="grid2"><div><label class="f">品番・コード</label><input id="pt_code" value="${esc(p.code)}" maxlength="30"></div><div><label class="f">単位</label><input id="pt_unit" value="${esc(p.unit)}" maxlength="10"></div></div>
     <label class="f">品名 *</label><input id="pt_name" value="${esc(p.name)}" maxlength="80"><label class="f">仕様・型式</label><input id="pt_spec" value="${esc(p.spec)}" maxlength="200">
@@ -6680,7 +6682,7 @@ function editPart(id){
     <label class="f">使用する設備</label>${eqMulti(p.equipIds,'pt_eqs')}
     <label class="f">備考</label><input id="pt_note" value="${esc(p.note)}" maxlength="1000">
     ${id?`<div class="row" style="margin-top:8px"><button class="btn sec sm grow" onclick="stockMove('${id}','入庫')">＋ 入庫</button><button class="btn sec sm grow" onclick="stockMove('${id}','出庫')">− 出庫</button><button class="btn sec sm grow" onclick="stockMove('${id}','棚卸')">棚卸</button></div>
-      <div class="grp"><b>入出庫履歴</b>${M.map(m=>`<div class="meta">${slash(m.date)} ${esc(m.type)} ${m.type==='棚卸'?'→'+m.after:m.qty}（残 ${m.after}）${m.by?'・'+esc(m.by):''}${m.note?'・'+esc(m.note):''}</div>`).join('')||'<div class="muted">なし</div>'}</div>`:''}
+      <div class="grp"><b>入出庫履歴${M.length>50?`（全${M.length}件）`:''}</b>${M.slice(0,50).map(ptMvRow).join('')||'<div class="muted">なし</div>'}${M.length>50?`<button type="button" id="ptMvMore" class="btn sec wide sm" style="min-height:44px;margin-top:6px" onclick="this.outerHTML=PT_MV_REST;PT_MV_REST=''">ほか${M.length-50}件を表示</button>`:''}</div>`:''}
     ${modalFoot(`<button class="btn sec" onclick="closeModal()">閉じる</button><button class="btn" onclick="savePart('${id||''}')">保存</button>`,id?`<button class="btn red sm" onclick="delPart('${id}')">削除</button>`:'')}`);modalEnterNext('pt_');
 }
 function savePart(id,silent){const g=k=>$('#pt_'+k).value.trim();
