@@ -1422,12 +1422,13 @@ function renderAgg(){
 }
 
 /* ---------- 予定変更画面 ---------- */
-function checkChange(ch){
-  const c=ctx(); const i=c.mem.findIndex(m=>m.name===ch.name); if(i<0) return 'NG：メンバーにいません';
-  const d=dn(ch.date); const R=compute(c,d,d+1);
-  const v=R[i][d];
+function checkChange(ch,c0){
+  const c=c0||ctx(); const i=c.mem.findIndex(m=>m.name===ch.name); if(i<0) return 'NG：メンバーにいません';
+  // その人の行だけを計算する（勤務は本人の前日だけで決まるので結果は全員分を計算したときと同じ。一覧で件数が多いときに速くするため）
+  const d=dn(ch.date); const R=compute({...c,mem:[c.mem[i]],idx:[c.idx[i]]},d,d+1);
+  const v=R[0][d];
   if(v==='連続NG'||v==='明けNG') return 'NG：明けの日（前日が夜勤）は入れません';
-  if(isNight(ch.val)&&isNight(R[i][d+1])) return '注意：翌日の自分の夜勤に入れなくなります→入れ替えを';
+  if(isNight(ch.val)&&isNight(R[0][d+1])) return '注意：翌日の自分の夜勤に入れなくなります→入れ替えを';
   return 'OK';
 }
 function renderHist(){
@@ -1441,8 +1442,9 @@ function renderChg(){
   if(!$('cDate').value) $('cDate').value=ds(periodOf(S.view).from);
   const list=S.changes.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.name<b.name?-1:1);
   if(!list.length){$('chgList').innerHTML='<tr><td class="hint">まだありません</td></tr>';return;}
+  const C0=ctx(); // 一覧の間は計算の表を1回だけ作って使い回す（変更 4500 件で 1 件ごとに作り直すと 10 秒かかっていたため。hz-v-shift-year-many）
   $('chgList').innerHTML='<tr><th>日付</th><th>氏名</th><th>内容</th><th>チェック</th><th></th></tr>'+list.map(c=>{
-    const k=checkChange(c);const t=ymd(dn(c.date));
+    const k=checkChange(c,C0);const t=ymd(dn(c.date));
     return '<tr><td>'+t.y+'/'+t.m+'/'+t.d+'（'+WD[t.w]+'）</td><td>'+esc(c.name)+'</td><td>'+esc(c.val)+'</td><td class="'+(k==='OK'?'ok':k.startsWith('NG')?'ngt':'warn')+'">'+esc(k)+'</td><td><button type="button" class="btn sm" data-n="'+esc(c.name)+'" data-d="'+c.date+'">削除</button></td></tr>';
   }).join('');
 }
