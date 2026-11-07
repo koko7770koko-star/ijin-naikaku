@@ -4189,12 +4189,15 @@ function aiHandover(ds){
   aiDraft(`${md(ds)}の申し送りの下書き`,`${facLabel()}の担当者の勤務交代時の申し送り文を作ってください。次の勤務者が確認・対応すべきことを先に、箇条書きで10行以内。\n\n${data}`,'申し送りに入れる',t=>{const e=$('#ho_text');if(e){e.value=t;toast('下書きを入れました。確認して「保存」を押してください')}else saveHandover(ds,t)});
 }
 // 月報の所見
+/* 作業が多い月は、要観察・不良と未完了を先に、日付順で n 件まで。省略した数を後ろに付ける */
+function aiTaskLine(ts,n=120){const L=ts.length>n?ts.map((t,k)=>[t,k]).sort((a,b)=>((isNG(a[0])?0:a[0].status!=='完了'?1:2)-(isNG(b[0])?0:b[0].status!=='完了'?1:2))||a[1]-b[1]).slice(0,n).sort((a,b)=>a[1]-b[1]).map(x=>x[0]):ts;
+  return L.map(t=>`${md(t.date)} ${t.title}[${t.status}${t.result?'・'+t.result:''}]`).join('、')+(ts.length>L.length?`（全${ts.length}件のうち要観察・不良と未完了を先に${L.length}件。ほか${ts.length-L.length}件は省略）`:'')}
 function aiMonthlyNote(y,m){
   const st=monthStats(y,m),key=`${y}-${pad(m)}`,IS=issuesInMonth(y,m);
   const data=[`対象：${y}年${m}月`,`作業：予定${st.tot}件・完了${st.done}件・要観察/不良${st.ng}件`,`日常点検：記録${st.ddays}日・完了${st.ddone}日・未実施${st.dmiss}日・異常あり${st.dng}日`,
     ...numDefs().map(n=>{const a=st.vals[n.id]||[];return a.length?`${n.name}：最小${Math.min(...a)}・最大${Math.max(...a)}${n.unit}・基準外${a.filter(v=>outOfRange(n,v)).length}日`:''}).filter(Boolean),
-    `作業実績：${st.ts.map(t=>`${md(t.date)} ${t.title}[${t.status}${t.result?'・'+t.result:''}]`).join('、')||'なし'}`,
-    `異常案件：${IS.map(i=>`${md(i.date)} ${i.title}（${i.st}）${i.action?'処置:'+i.action:''}`).join('、')||'なし'}`].join('\n');
+    `作業実績：${aiTaskLine(st.ts)||'なし'}`,
+    `異常案件：${aiIssLine(IS,i=>`${md(i.date)} ${i.title}（${i.st}）${i.action?'処置:'+String(i.action).slice(0,200):''}`)||'なし'}`].join('\n');
   aiDraft(`${y}年${m}月 月報の所見の下書き`,`${facLabel()}の保守管理の月次報告書の「所見・特記事項」を200〜300字で書いてください。記録の事実だけを使ってください。\n\n${data}`,'所見に入れる',t=>{S.notes[key]=t;logEdit('report',key,'所見（AI下書きを採用）','',t);save();render();toast('所見に入れました。内容を確認してください')});
 }
 
