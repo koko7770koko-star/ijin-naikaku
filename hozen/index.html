@@ -2419,9 +2419,12 @@ function syncTaskIssue(t){if(isNG(t))t.issueId=ensureIssue('task:'+t.id,{date:t.
 const openIssues=()=>S.issues.filter(i=>i.status!=='完了').sort((a,b)=>a.date.localeCompare(b.date));
 
 // 期限
-function lastDone(it){
+// 完了の予定の「題（norm）→ いちばん新しい日」の表。deadlines() を作る間だけ使う（項目 2000 × 予定 6000 で 2 秒かかっていたため。hz-v-year-many）
+function doneDateMap(){const m=new Map();for(const t of S.tasks){if(t.status!=='完了')continue;const k=norm(t.title),d=t.date||'';if(d>(m.get(k)||''))m.set(k,d)}return m}
+function lastDone(it,DM){
   let best='';
-  for(const t of S.tasks)if(t.status==='完了'&&norm(t.title)===norm(it.name)&&t.date>best)best=t.date;
+  if(DM)best=DM.get(norm(it.name))||'';
+  else for(const t of S.tasks)if(t.status==='完了'&&norm(t.title)===norm(it.name)&&t.date>best)best=t.date;
   if(best)return best;
   for(const fy in S.marks){const r=(S.marks[fy]||{})[it.id];if(!r)continue;
     r.forEach((v,i)=>{if(v!=='済')return;const m=MONTHS[i],y=m>=4?+fy:+fy+1,d=ymd(new Date(y,m,0));if(d>best)best=d})}
@@ -2430,8 +2433,9 @@ function lastDone(it){
 let DL_CACHE=null;
 function deadlines(){
   if(DL_CACHE)return DL_CACHE;
+  const DM=doneDateMap();
   return DL_CACHE=S.items.filter(it=>CYC[it.cycle]&&it.track!==false).map(it=>{
-    const ld=lastDone(it),due=ld?addM(ld,CYC[it.cycle]):(it.base||'');
+    const ld=lastDone(it,DM),due=ld?addM(ld,CYC[it.cycle]):(it.base||'');
     return {it,ld,due,left:due?diffD(due,TODAY):null};
   }).sort((a,b)=>(a.left??1e9)-(b.left??1e9));
 }
@@ -2814,13 +2818,15 @@ function delItem(id){
 function genPlan(fy){
   const from=fy+'-04-01',to=(fy+1)+'-03-31',hol=holidays(),U=newUndo(),made=[],noBase=[];
   const isOff=s=>{const w=pd(s).getDay();return w===0||w===6||hol.has(s)};
+  // 「同じ月に同じ点検があれば作らない」を表で引く（項目×予定を毎回なめると数千件で数十秒かかるため。hz-v-year-many）
+  const HAS=new Set(S.tasks.map(t=>norm(t.title)+'|'+String(t.date||'').slice(0,7)));
   for(const it of S.items){
     const c=CYC[it.cycle];if(!c)continue;
     if(!it.base){noBase.push(it.name);continue}
     for(let k=-60;k<=60;k++){
       let d=addM(it.base,k*c);if(d<from||d>to||d<TODAY)continue;
       if(it.skipOff!==false)for(let n=0;isOff(d)&&n<10;n++)d=addD(d,1);
-      if(S.tasks.some(t=>norm(t.title)===norm(it.name)&&t.date.slice(0,7)===d.slice(0,7)))continue;
+      const hk=norm(it.name)+'|'+d.slice(0,7);if(HAS.has(hk))continue;HAS.add(hk);
       const t={id:uid(),date:d,time:it.time||'',kind:c===1?'月次':c===12?'年次':'定期',cat:it.cat,title:it.name,place:it.place||'',staff:it.staff||(it.who==='委託'?'委託業者':''),attend:it.attend||'',status:'予定',result:'',note:'周期から自動作成',photos:[],equipId:it.equipId||''};
       S.tasks.push(t);made.push(t);U.tasks.push(t.id);
       setMark(it.id,d,v=>v||'○',U);
