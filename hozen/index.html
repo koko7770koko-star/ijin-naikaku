@@ -4146,10 +4146,13 @@ async function copyDraft(){try{await navigator.clipboard.writeText($('#ai_text')
 
 // 傾向分析（数値と管理値を渡す。画像は送らない）
 function aiTrend(id){
-  const n=numDef(id),[from,to]=histRange(),pts=Object.keys(S.daily).filter(k=>k>=from&&k<=to&&S.daily[k][id]!=null).sort().map(k=>`${k} ${S.daily[k][id]}`);
-  if(pts.length<3){toast('分析には3日以上の記録が必要です');return}
+  const n=numDef(id),[from,to]=histRange(),ks=Object.keys(S.daily).filter(k=>k>=from&&k<=to&&S.daily[k][id]!=null).sort();
+  if(ks.length<3){toast('分析には3日以上の記録が必要です');return}
+  /* 長い期間は送る文が大きくなりすぎないよう、3000 日（約 8 年）を超えたら等間隔に間引く（管理値を外れた日・最初と最後の日は必ず残し、間引いたことを書く） */
+  const MAXP=3000,step=Math.ceil(ks.length/MAXP),keep=step<=1?ks:ks.filter((k,i)=>i%step===0||i===ks.length-1||outOfRange(n,S.daily[k][id]));
+  const pts=keep.map(k=>`${k} ${S.daily[k][id]}`),thin=keep.length<ks.length?`（記録は全${ks.length}日。${step}日おきに間引いた${keep.length}日。管理値を外れた日はすべて含む）`:'';
   aiDraft(`${n.name}の傾向（${md(from==='0000-00-00'?pts[0].slice(0,10):from)}〜${md(to)}）`,
-    `${facLabel()}の日常点検で記録した「${n.name}」（単位${n.unit}）の値です。施設が設定した管理値：下限${n.min===''?'なし':n.min}、上限${n.max===''?'なし':n.max}。\n${pts.join('\n')}\n\nこの記録から読み取れる傾向（増加・減少・変動の大きさ・急な変化があった日・管理値に近づいている期間）を、箇条書き5行以内で書いてください。`,
+    `${facLabel()}の日常点検で記録した「${n.name}」（単位${n.unit}）の値です${thin}。施設が設定した管理値：下限${n.min===''?'なし':n.min}、上限${n.max===''?'なし':n.max}。\n${pts.join('\n')}\n\nこの記録から読み取れる傾向（増加・減少・変動の大きさ・急な変化があった日・管理値に近づいている期間）を、箇条書き5行以内で書いてください。`,
     '',null);
 }
 // 異常案件の要約
