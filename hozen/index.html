@@ -241,6 +241,7 @@ table.yr td.mk{width:44px;min-width:44px;height:44px;font-size:18px;font-weight:
 .mk-o{background:var(--a-bg);color:var(--navy)}.mk-d{background:#c6efce;color:var(--ok)}.mk-e{background:var(--ng-bg);color:var(--ng)}
 table.yr .cur{box-shadow:inset 0 0 0 2px #e0b000}
 table.yr th .yrmh{all:unset;display:block;box-sizing:border-box;min-height:44px;line-height:44px;width:100%;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}table.yr th .yrmh:focus-visible{outline:2px solid #e0b000}
+/* 月の見出しは <button> にしない：印刷で次の頁に繰り返す見出しの中のボタンの字を Chrome が描かないため（hz-v-year-print-2000） */
 @media print{table.yr th .yrmh{min-height:0;line-height:inherit;text-decoration:none}}
 
 /* ---------- 日常点検 ---------- */
@@ -2671,14 +2672,14 @@ function vYear(){
   const yShow=it=>(!yCat||it.cat===yCat)&&(!yNow||(mk[it.id]||[])[curIdx]==='○');
   const yN=S.items.filter(yShow).length,yO=curIdx>=0?S.items.filter(it=>yShow(it)&&(mk[it.id]||[])[curIdx]==='○').length:0;
   h+=`<div class="card noprint" id="yrFlt" style="padding:10px"><div class="row" style="flex-wrap:nowrap"><select class="grow" aria-label="分類で絞り込む" onchange="V.yrCat=this.value;render()"><option value="">分類：すべて</option>${S.settings.cats.map(c=>`<option ${c===yCat?'selected':''}>${esc(c)}</option>`).join('')}</select>${curIdx>=0?`<button class="btn sm ${yNow?'':'sec'}" style="min-height:44px" onclick="V.yrNow=!V.yrNow;render()">${yNow?'✔ 今月の ◯ だけ':'今月の ◯ だけ'}</button>`:''}</div>${yO?`<button class="btn sm sec wide" id="yrAllDone" style="margin-top:8px;min-height:44px" onclick="yearAllDone()">今月の ◯ ${yO}件を全部 ●（実施済み）にする</button>`:''}${yCat||yNow?`<div class="muted" style="margin-top:6px">絞り込み中：${yN}／${S.items.length} 件を表示（記録は消えません）${yN?'':'　該当する項目がありません'} <a href="#" onclick="V.yrCat='';V.yrNow=false;render();return false">絞り込みをやめる</a></div>`:''}</div>`;
-  h+=`<div class="tbw"><table class="yr"><thead><tr><th class="nm">点検・作業項目</th>${MONTHS.map((m,i)=>`<th class="${i===curIdx?'cur':''}"><button type="button" class="yrmh" aria-label="${m}月の予定を開く" onclick="yrMonth(${i})">${m}月</button></th>`).join('')}<th>済/予</th></tr></thead>`;
+  h+=`<div class="tbw"><table class="yr" onclick="yrEv(event,0)" ontouchstart="yrEv(event,1)" ontouchend="markRelease()" ontouchmove="markRelease()" oncontextmenu="return yrEv(event,2)"><thead><tr><th class="nm">点検・作業項目</th>${MONTHS.map((m,i)=>`<th class="${i===curIdx?'cur':''}"><span role="button" tabindex="0" class="yrmh" aria-label="${m}月の予定を開く" onclick="yrMonth(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();yrMonth(${i})}">${m}月</span></th>`).join('')}<th>済/予</th></tr></thead>`;
   let lastCat=null;
   for(const it of [...S.items].filter(yShow).sort((a,b)=>S.settings.cats.indexOf(a.cat)-S.settings.cats.indexOf(b.cat))){
     const row=mk[it.id]||Array(12).fill('');
     if(it.cat!==lastCat){h+=`<tr class="cat"><td colspan="14"><span>${esc(it.cat||'未分類')}</span></td></tr>`;lastCat=it.cat}
     const sub=[it.cycle,it.who,it.base?'初回'+md(it.base):''].filter(Boolean).join('・');
-    h+=`<tr><td class="nm" onclick="editItem('${it.id}')">${esc(it.name)}${sub?`<small>${esc(sub)}</small>`:''}</td>`
-      +row.map((v,i)=>`<td class="mk ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''} ${i===curIdx?'cur':''}" onclick="markTap(event,'${it.id}',${i})" ontouchstart="markPress('${it.id}',${i})" ontouchend="markRelease()" ontouchmove="markRelease()" oncontextmenu="return markCtx(event,'${it.id}',${i})">${mkShow(v)}</td>`).join('')
+    h+=`<tr data-it="${it.id}"><td class="nm" onclick="editItem('${it.id}')">${esc(it.name)}${sub?`<small>${esc(sub)}</small>`:''}</td>`
+      +row.map((v,i)=>`<td class="mk ${{'○':'mk-o','済':'mk-d','延':'mk-e'}[v]||''}${i===curIdx?' cur':''}" data-i="${i}">${mkShow(v)}</td>`).join('')
       +`<td>${row.filter(x=>x==='済').length}/${row.filter(Boolean).length}</td></tr>`;
   }
   h+=`</table><div class="yrleg" style="font-size:12px;color:var(--mut);margin:6px 4px 2px">印の見方：◯ 予定　● 実施済み　延 延期</div></div></div>`;
@@ -2713,6 +2714,9 @@ function cycleMark(id,i,toEnki){const seq=['','○','済'];const fy=V.fy;S.marks
   if(old!==r[i]&&(r[i]==='済'||r[i]==='延')){const it=S.items.find(x=>x.id===id),fyv=fy;undoBar(`「${it?it.name:'項目'}」${(i+3)%12+1}月を ${r[i]==='済'?'●（実施済み）':'延期'} にしました`,()=>{if(S.marks[fyv]&&S.marks[fyv][id])S.marks[fyv][id][i]=old},'印')}}
 let _mkT=null,_mkLong=false;
 function markPress(id,i){_mkTouchAt=Date.now();_mkLong=false;clearTimeout(_mkT);_mkT=setTimeout(()=>{_mkLong=true;_mkT=null;if(navigator.vibrate)try{navigator.vibrate(30)}catch(e){}cycleMark(id,i,true)},550)}
+/* 年間表のマスの押し方は表に1つだけ付けて、押したマスを data-it（行）・data-i（月）で見分ける（2000 項目でも描き直しが軽い。hz-v-year-print-2000） */
+function yrEv(e,k){const td=e&&e.target&&e.target.closest?e.target.closest('td.mk'):null;if(!td||!td.parentNode||!td.parentNode.dataset.it)return k===2?true:undefined;const id=td.parentNode.dataset.it,i=+td.dataset.i;
+  if(k===0)markTap(e,id,i);else if(k===1)markPress(id,i);else return markCtx(e,id,i)}
 function markRelease(){clearTimeout(_mkT);_mkT=null}
 function markTap(e,id,i){if(_mkLong){_mkLong=false;if(e&&e.preventDefault)e.preventDefault();return}cycleMark(id,i,_mkEnji)}
 // 延期モード（画面だけの状態。保存しない）と、マウスの右クリックでも「延」にできる道
