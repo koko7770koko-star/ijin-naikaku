@@ -1894,7 +1894,7 @@ const RE_ID=/^[A-Za-z0-9_-]{1,40}$/, RE_DATE=/^\d{4}-\d{2}-\d{2}$/, RE_TIME=/^\d
 const isDate=s=>typeof s==='string'&&RE_DATE.test(s)&&ymd(pd(s))===s;
 const isTime=s=>typeof s==='string'&&RE_TIME.test(s)&&+s.split(':')[0]<24&&+s.split(':')[1]<60;
 const isObj=o=>!!o&&typeof o==='object'&&!Array.isArray(o);
-/* 上限で切るとき、絵文字・異体字（2 つで 1 字）の片方だけが残って「�」にならないよう、半端な前半は落とす */
+/* 上限で切るとき、絵文字・異体字（2 つで 1 字）の片方だけが残って「文字化け」にならないよう、半端な前半は落とす */
 const cutU=(s,n)=>{s=String(s);if(s.length<=n)return s;s=s.slice(0,n);const c=s.charCodeAt(s.length-1);return c>=0xD800&&c<=0xDBFF?s.slice(0,-1):s};
 const txt=(v,max=1000)=>v==null?'':cutU(v,max);
 const numOrBlank=v=>v===''||v==null?null:(Number.isFinite(Number(v))?Number(v):undefined);
