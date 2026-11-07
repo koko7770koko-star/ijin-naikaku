@@ -369,6 +369,8 @@ html[data-fs=xl] .chk .l{flex:1 1 100%}
   table.mpt .n{font-weight:700;font-size:9pt}
   table.mpt .sun,table.mpt th.sun{color:#c00000}table.mpt .sat,table.mpt th.sat{color:#1f5f99}
   table.mpt .t{overflow-wrap:anywhere;line-height:1.25;margin-top:.5mm}table.mpt .t.wk{color:#7a4a00}
+  /* 1 日に 13 件以上の日は、件名を続けて流す（各件は ◯/● で始まる）。40 件の日でも 1 ページに収まり、ページの境で割れない（hz-v-calendar-print-many） */
+  table.mpt td.dn .t{display:inline;font-size:7pt;line-height:1.2;margin:0 1.2mm 0 0}
   table.mpt .wc{margin-top:1mm;font-size:7.5pt;color:#444}table.mpt .wc span{margin-right:2mm;white-space:nowrap}
 }
 .banprint{display:none}
@@ -2721,7 +2723,8 @@ function monthPrintHTML(y,m){
       const ts=S.tasks.filter(t=>t.date===s).sort(byDate),o=crewDay(s);let crew='';
       if(o&&st.showCrew!==false)crew+=o.A.map(n=>`<span>A:${esc(sn(n))}</span>`).join('')+o.B.map(n=>`<span>B:${esc(sn(n))}</span>`).join('');
       if(o&&st.calDay)crew+=o.D.map(n=>`<span>日:${esc(sn(n))}</span>`).join('');
-      tds+=`<td><div class="n ${k===0||holName(s)?'sun':k===6?'sat':''}">${d.getDate()}${holName(s)?'<small class="hlb">祝</small>':''}</div>${ts.map(t=>`<div class="t">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${worksOn(s).map(w=>`<div class="t wk">🔧${esc(w.title)}</div>`).join('')}${crew?`<div class="wc">${crew}</div>`:''}</td>`;
+      const wks=worksOn(s);
+      tds+=`<td${ts.length+wks.length>12?' class="dn"':''}><div class="n ${k===0||holName(s)?'sun':k===6?'sat':''}">${d.getDate()}${holName(s)?'<small class="hlb">祝</small>':''}</div>${ts.map(t=>`<div class="t">${t.status==='完了'?'●':'◯'}${esc(t.title)}</div>`).join('')}${wks.map(w=>`<div class="t wk">🔧${esc(w.title)}</div>`).join('')}${crew?`<div class="wc">${crew}</div>`:''}</td>`;
     }
     rows+=`<tr>${tds}</tr>`;
   }
