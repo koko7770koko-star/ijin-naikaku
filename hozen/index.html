@@ -5041,6 +5041,8 @@ function eqMultiFilter(el,idp){const q=sWords(el.value),g=document.getElementByI
 const eqMultiVal=idp=>[...document.querySelectorAll('#'+idp+' input:checked')].map(i=>i.value).filter(v=>RE_ID.test(v));
 const card=(title,body,right='')=>`<div class="card"><div class="hd-row"><h2>${title}</h2>${right}</div>${body}</div>`;
 const emptyBox=t=>`<div class="empty">${t}</div>`;
+/* 探す語・絞り込みで 0 件のとき：理由と「条件を外す」（44px）。all は「完了も含めて探す」の押し先（無ければ出さない） */
+const qEmpty=(id,clr,all)=>`<div class="empty">見つかりません。言葉を短くするか、条件を外してください<div class="row noprint" style="margin-top:8px;gap:8px;justify-content:center;flex-wrap:wrap"><button type="button" id="${id}" class="btn sec sm" style="min-height:44px" onclick="${clr}">条件を外す</button>${all?`<button type="button" class="btn sec sm" style="min-height:44px" onclick="${all}">完了も含めて探す</button>`:''}</div></div>`;
 const emptyGuide=(t,label,on)=>`<div class="empty emptyg">${t}<div><button type="button" class="btn" style="min-height:44px;margin-top:10px" onclick="${on}">＋ ${label}</button></div></div>`;
 const tabs16=(key,list)=>`<div class="seg tabs noprint${list.length>=4?' t4':''}" style="margin-bottom:10px">${list.map(([v,l])=>`<button class="${(V[key]||list[0][0])===v?'on':''}" onclick="V.${key}='${v}';render()">${l}</button>`).join('')}</div>`;
 
@@ -6557,7 +6559,7 @@ function workListHTML(L,f){
   if(f!=='all')return L.slice(0,n).map(workRow).join('')||emptyBox('該当する作業はありません');
   const A=L.filter(w=>!fin(w)).sort((a,b)=>a.date.localeCompare(b.date)),D=L.filter(fin);
   let h=A.slice(0,n).map(workRow).join('');
-  if(D.length)h+=`<details id="wkFin" class="wkfin" style="margin-top:6px"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">完了・中止 ${D.length}件（押すと開く）</summary>${D.slice(0,n).map(workRow).join('')}</details>`;
+  if(D.length)h+=`<details id="wkFin" class="wkfin"${(V.wkQ||'').trim()&&!A.length?' open':''} style="margin-top:6px"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">完了・中止 ${D.length}件（押すと開く）</summary>${D.slice(0,n).map(workRow).join('')}</details>`;
   return h||emptyBox('該当する作業はありません');
 }
 function vWorks(){
@@ -6566,7 +6568,7 @@ function vWorks(){
   return `<div class="row noprint wkflt" style="margin-bottom:8px"><select onchange="V.wkF=this.value;render()" class="grow"><option value="open" ${f==='open'?'selected':''}>未完了（予定順）</option>${WORK_STAT.map(s=>`<option ${f===s?'selected':''}>${s}</option>`).join('')}<option value="all" ${f==='all'?'selected':''}>すべて</option></select><button class="btn sm" onclick="editWork()">＋ 作業指示</button></div>
     <input id="wkQ" class="noprint" type="search" enterkeyhint="search" placeholder="${fsPh('件名・番号・設備・担当などで探す','件名・設備・担当などで探す')}" aria-label="件名・番号・設備・担当・協力会社で探す" value="${esc(V.wkQ||'')}" oninput="wkSearch(this)" style="margin-bottom:8px">
     <div class="tiles wkt noprint">${['承認待ち','承認済み','実施中','保留'].map(s=>`<div class="tile ${s==='承認待ち'&&cnt(s)?'warn':''} ${f===s?'on':''}" role="button" onclick="V.wkF='${s}';render()"><span class="tl">${s}</span> <span class="tv">${cnt(s)}</span></div>`).join('')}</div>`
-    +card(`🧰 作業指示 <span class="muted">${L.length}件</span>`,workListHTML(L,f)+(L.length>(V.wkMore||100)?`<button class="btn sec wide noprint" onclick="V.wkMore=(V.wkMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.wkMore||100)}件）</button>`:''),`<button class="btn sec sm noprint" onclick="exportWorksCsv()">CSV</button>`)
+    +card(`🧰 作業指示 <span class="muted">${L.length}件</span>`,(wq&&!L.length?qEmpty('wkQClr',"V.wkQ='';render()",f!=='all'?"V.wkF='all';V.wkMore=0;render()":''):workListHTML(L,f))+(L.length>(V.wkMore||100)?`<button class="btn sec wide noprint" onclick="V.wkMore=(V.wkMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.wkMore||100)}件）</button>`:''),`<button class="btn sec sm noprint" onclick="exportWorksCsv()">CSV</button>`)
     +`<div class="noprint">${card('📋 作業表（14日間・印刷用）',`<button class="btn sec sm" onclick="go('workSheet')">作業表を開く</button>`)}</div>`;
 }
 function vWorkSheet(){
@@ -6590,7 +6592,7 @@ function vIssues(){
     <div class="row noprint" style="margin-bottom:8px"><select onchange="V.isF=this.value;render()">${[['open','未完了'],['all','すべて'],['over','期限超過'],['fail','故障のみ'],['緊急','緊急'],['高','高'],['中','中'],['低','低']].map(([v,l])=>`<option value="${v}" ${f===v?'selected':''}>${l}</option>`).join('')}</select>
       <input id="isQ" class="grow" type="search" enterkeyhint="search" placeholder="${fsPh('キーワード（内容・原因・設備）','キーワード')}" aria-label="キーワード（内容・原因・設備）" value="${esc(q)}" oninput="isSearch(this)"></div>
     ${BL.length?`<div class="row noprint" style="margin-bottom:8px"><select aria-label="棟で絞り込む" onchange="V.isB=this.value;render()"><option value="">棟：すべて</option>${BL.map(b=>`<option value="${b.id}" ${b.id===V.isB?'selected':''}>${esc(b.name)}</option>`).join('')}</select></div>`:''}`
-    +card(`🛠 異常・故障 <span class="muted">${L.length}件</span>`,L.slice(0,V.isMore||100).map(i=>issueRow(i).replace('<div class="bd">',`<div class="bd">${i.urgency?`<span class="pill ${URG_CLS[i.urgency]}">${esc(i.urgency)}</span>`:''}${i.failure?'<span class="pill ng">故障</span>':i.icat==='計画停止'?'<span class="pill plan">計画停止</span>':''}${i.due?`<span class="pill ${i.status!=='完了'&&i.due<TODAY?'ng':''}">期限 ${md(i.due)}</span>`:''}`)).join('')+(L.length>(V.isMore||100)?`<button class="btn sec wide noprint" onclick="V.isMore=(V.isMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.isMore||100)}件）</button>`:'')||emptyBox('該当なし'),`<button class="btn sm noprint" style="min-height:40px" onclick="editIssue()">＋ 追加</button>`)
+    +card(`🛠 異常・故障 <span class="muted">${L.length}件</span>`,(!L.length&&(q||bSel)?qEmpty('isQClr',"V.isQ='';V.isB='';render()",f!=='all'?"V.isF='all';render()":''):'')+L.slice(0,V.isMore||100).map(i=>issueRow(i).replace('<div class="bd">',`<div class="bd">${i.urgency?`<span class="pill ${URG_CLS[i.urgency]}">${esc(i.urgency)}</span>`:''}${i.failure?'<span class="pill ng">故障</span>':i.icat==='計画停止'?'<span class="pill plan">計画停止</span>':''}${i.due?`<span class="pill ${i.status!=='完了'&&i.due<TODAY?'ng':''}">期限 ${md(i.due)}</span>`:''}`)).join('')+(L.length>(V.isMore||100)?`<button class="btn sec wide noprint" onclick="V.isMore=(V.isMore||100)+100;render()">さらに100件表示（残り ${L.length-(V.isMore||100)}件）</button>`:'')||emptyBox('該当なし'),`<button class="btn sm noprint" style="min-height:40px" onclick="editIssue()">＋ 追加</button>`)
     +`<div class="row noprint kwrow" style="flex-wrap:wrap;gap:8px"><button class="btn sec sm grow" style="min-height:44px" onclick="exportIssuesCsv()">CSV</button><button class="btn sec sm grow" style="min-height:44px" onclick="go('printDoc',{doc:{t:'issueList'}})">🖨 未完了を印刷</button><button class="btn sec sm grow" style="min-height:44px" onclick="go('diag',{dgTab:'fail'})">📉 故障分析</button><button class="btn sec sm" style="min-height:44px;flex:1 1 100%" onclick="aiSearchHist()">🔍 過去の故障・修理を検索</button></div>`;
 }
 
