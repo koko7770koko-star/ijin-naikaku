@@ -1,15 +1,16 @@
 // 盤の点検：電気室に盤が 60 面あるとき、◯→● を押してから印が変わるまで 150ms 以内、390px で横にはみ出さず、
 // 押した後に一覧の位置（スクロール）が飛ばない（棟→階→電気室→盤。保存の形は変えない。hz-v-ban-many-tap）
-// usage: node hozen/tools/banmanytapcheck.js
+// usage: node hozen/tools/banmanytapcheck.js   （盤の数は env NB、ふだん 60。NB=100 で 1 電気室 100 面＝hz-v-ban-tap-many：2026-11-08 で最大 11ms・描き直し 13ms・HTML 107KB）
+const NB=+(process.env.NB||60);
 const {chromium}=require('playwright');const path=require('path');const FILE=path.resolve(__dirname,'..','index.html');const bad=[],errs=[];
 (async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:390,height:844}});const p=await c.newPage();
  p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('dialog',d=>d.dismiss().catch(()=>{}));
  await c.route('**/*',r=>/^(file|data|blob):/.test(r.request().url())?r.continue():r.abort());
  await p.goto('file://'+FILE);await p.waitForFunction(()=>typeof S==='object'&&S&&document.querySelector('#app')&&document.querySelector('#app').children.length>0,null,{timeout:15000});
- await p.evaluate(()=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});
-  S.locs=[mk('l1','A棟','建屋',''),mk('l2','1階','階','l1'),mk('l3','第1電気室','電気室','l2'),...Array.from({length:60},(_,i)=>mk('b'+(i+1),'盤-'+(i+1),'盤','l3'))];
-  S.banChk={};save();go('ban')});await p.waitForTimeout(300);
- const n=await p.locator('[id^="ban-b"]').count();if(n!==60)bad.push('盤の行の数が '+n);
+ await p.evaluate(NB=>{const mk=(id,name,type,parent)=>({id,name,type,parent,note:'',pos:{}});
+  S.locs=[mk('l1','A棟','建屋',''),mk('l2','1階','階','l1'),mk('l3','第1電気室','電気室','l2'),...Array.from({length:NB},(_,i)=>mk('b'+(i+1),'盤-'+(i+1),'盤','l3'))];
+  S.banChk={};save();go('ban')},NB);await p.waitForTimeout(300);
+ const n=await p.locator('[id^="ban-b"]').count();if(n!==NB)bad.push('盤の行の数が '+n);
  const sw=await p.evaluate(()=>document.documentElement.scrollWidth);if(sw>390)bad.push('横にはみ出す '+sw);
  const times=[],jumps=[];
  for(const id of ['b5','b30','b58']){
