@@ -136,6 +136,8 @@ label.f{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12p
 .pqb{display:flex;gap:6px;align-self:center;flex:none}.pqb .btn{min-width:44px;min-height:44px;padding:0;font-size:20px;font-weight:700}
 .item.ok{border-left-color:var(--ok-line)}.item.ng{border-left-color:var(--ng-line)}.item.dim{border-left-color:#c3c9d0;opacity:.75}
 .item .dt{min-width:58px;font-weight:700;font-size:14px}.item .dt .yr{font-size:11px;font-weight:400}
+/* 日報：去年の日付を開いたとき、上の日付の切り替えにも年を出す（hz-v-dailyrep-oldyear） */
+.mnav .t .yr{font-size:.8em;font-weight:400}
 .item .dt small{display:block;font-weight:400;font-size:12px;color:var(--mut)}
 .item .dt small.old{font-weight:700;color:var(--ng)}
 .item.ng .dt{color:inherit}
@@ -4223,7 +4225,7 @@ function vDailyRep(){
   const iss=S.issues.filter(i=>i.date<=ds&&(!i.closed||i.closed>=ds)).sort((a,b)=>a.date.localeCompare(b.date));
   window._sh=n=>{V.day=addD(V.day,n);render()};
   const emptyDay=!Object.keys(r).length&&!ts.length&&!(S.meas||[]).some(m=>m.date===ds)&&!h&&!(S.dnotes||{})[ds],AUTO='<span class="srcmark" style="font-weight:400;font-size:11px;color:inherit;opacity:.8">（記録から自動）</span>',HAND='<span class="srcmark" style="font-weight:400;font-size:11px;color:inherit;opacity:.8">（手で入力）</span>';
-  return mnav(mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow" style="flex:1 1 100%">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div>
+  return mnav((ds.slice(0,4)!==TODAY.slice(0,4)?`<span class="yr">${ds.slice(0,4)}/</span>`:'')+mdw(ds),'_sh(-1)','_sh(1)')+`<div class="card noprint"><div class="row"><span class="muted grow" style="flex:1 1 100%">この日の記録から日報を作ります。</span><button class="btn" onclick="print()">🖨 印刷／PDF</button><button class="btn sec" onclick="shareReport()">📤 共有</button></div>
     <div class="row" style="margin-top:10px"><label class="f grow" style="margin:0">特記事項（日報に印刷）</label><button class="btn sec sm" style="min-height:44px" onclick="aiDailyNote('${ds}')">🤖 下書き</button></div>
     <button class="btn sec wide kw" id="dnDraft" style="min-height:44px;margin-top:6px" onclick="addDnoteDraft('${ds}')">📝 今日の記録から<wbr>入れる（ネット<wbr>不要・<wbr>あとで<wbr>直せます）</button>
     <textarea maxlength="2000" onchange="setDnote('${ds}',this.value)">${esc((S.dnotes||{})[ds]||'')}</textarea>
