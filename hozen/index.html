@@ -5009,8 +5009,11 @@ const normCode=s=>String(s||'').normalize('NFKC').replace(/\s+/g,'').toUpperCase
 const eqLabel=e=>e?`${e.code?e.code+' ':''}${e.name}`:'';
 function eqMulti(sel,idp){
   const E=(S.equipment||[]).filter(e=>e.status!=='廃止'||sel.includes(e.id));
-  return E.length?`<div class="chkgrid" id="${idp}">${E.map(e=>`<label class="chkl" style="margin:2px 0"><input type="checkbox" value="${e.id}" ${sel.includes(e.id)?'checked':''}>${esc(eqLabel(e))}</label>`).join('')}</div>`:'<div class="muted">設備台帳に設備がありません</div>';
+  // 設備が 21 台以上なら、上に「設備を探す」欄（画面だけで絞る。選んだ物は隠さない。保存しない。hz-v-works-eqpick-many）
+  const LB=new Map();(S.locs||[]).forEach(l=>{if(!LB.has(l.id))LB.set(l.id,l)});const lp=id=>{const o=[];let l=LB.get(id),n=0;while(l&&n<10){o.unshift(l.name);l=LB.get(l.parent);n++}return o.join(' › ')}; // locPath と同じ形（1 台ごとに全部の場所をなめない）
+  return E.length?`${E.length>20?`<input type="search" class="eqmq" enterkeyhint="search" placeholder="設備を探す（名前・番号・場所）" aria-label="設備を探す" style="margin:2px 0 4px" oninput="eqMultiFilter(this,'${idp}')">`:''}<div class="chkgrid" id="${idp}">${E.map(e=>`<label class="chkl" style="margin:2px 0" data-q="${E.length>20?esc(sFold([eqLabel(e),e.code,e.place,lp(e.locId)].join(' '))):''}"><input type="checkbox" value="${e.id}" ${sel.includes(e.id)?'checked':''}>${esc(eqLabel(e))}</label>`).join('')}</div>`:'<div class="muted">設備台帳に設備がありません</div>';
 }
+function eqMultiFilter(el,idp){const q=sFold(el.value.trim()),g=document.getElementById(idp);if(!g)return;let n=0;g.querySelectorAll('label.chkl').forEach(l=>{const ok=!q||(l.dataset.q||'').includes(q)||l.querySelector('input').checked;l.style.display=ok?'':'none';if(ok)n++});g.dataset.n=n}
 const eqMultiVal=idp=>[...document.querySelectorAll('#'+idp+' input:checked')].map(i=>i.value).filter(v=>RE_ID.test(v));
 const card=(title,body,right='')=>`<div class="card"><div class="hd-row"><h2>${title}</h2>${right}</div>${body}</div>`;
 const emptyBox=t=>`<div class="empty">${t}</div>`;
