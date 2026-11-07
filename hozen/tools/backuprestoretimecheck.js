@@ -1,5 +1,5 @@
 // 設定の復元：設備 1000・異常 2000・測定 5000・修正履歴 3 万件（古い分は端末内の別の保管場所へ移る）のバックアップを空の端末に戻すとき、
-// 戻す前の確かめ（件数の表・差分の表）が 2 秒以内に出て設備・異常・測定の数が正しく、戻した後のホームが 1 秒以内に出て、
+// 戻す前の確かめ（件数の表・差分の表）が 2 秒以内に出て設備・異常・測定・修正履歴（保管分を含む）の数が正しく、戻した後のホームが 1 秒以内に出て、
 // 件数がそろい、読み直しても保管分を含めた修正履歴が 3 万件のままか（hz-v-backup-restore-time）。backupmanytimecheck と重ならない所。
 // （設備 2000・異常 5000・測定 2 万は、読み込みで項目を補うと約 920 万字になり、元の端末でも保存の上限（約 520 万字）を超えるので、上限の内に収まる数にした）
 // 保存の形は変えない。外への通信は止める。usage: node hozen/tools/backuprestoretimecheck.js
@@ -30,6 +30,13 @@ const READY=()=>typeof MIRROR_READY!=='undefined'&&MIRROR_READY&&typeof S==='obj
  const t1=Date.now();await q.setInputFiles('input[onchange^="restore("]',file,{timeout:5000});
  await q.waitForFunction(()=>/復元の確認|復元できません/.test(document.body.innerText),null,{timeout:30000}).catch(()=>bad.push('戻す前の確かめが出ない'));const msC=Date.now()-t1;
  const tbl=await q.evaluate(()=>{const R={};document.querySelectorAll('#modal table tr').forEach(tr=>{const td=[...tr.querySelectorAll('td,th')].map(x=>x.textContent.trim());if(td.length>=3&&!(td[0] in R))R[td[0]]=td[2]});return R});
+ await q.waitForTimeout(300);const hrow=await q.evaluate(()=>{let r=null;document.querySelectorAll('#modal .rep table tr').forEach(tr=>{const td=[...tr.querySelectorAll('td')].map(x=>x.textContent.trim());if(td[0]==='修正履歴（保管分を含む）')r=td});return r});
+ if(!hrow)bad.push('確かめの表に「修正履歴（保管分を含む）」の行が無い');else if(+hrow[2]!==NH||+hrow[1]!==0)bad.push('修正履歴の行が違う 今'+hrow[1]+' ファイル'+hrow[2]+'（0／'+NH+'）');
+ // 元の端末（保管分 2.8 万件あり）で同じファイルを開くと「今」も保管分を含めた数になる
+ await p.evaluate(()=>go('set'));await p.waitForTimeout(200);await p.setInputFiles('input[onchange^="restore("]',file,{timeout:5000});
+ await p.waitForFunction(()=>/復元の確認/.test(document.body.innerText),null,{timeout:30000});await p.waitForTimeout(500);
+ const hnow=await p.evaluate(()=>{const e=document.getElementById('rsHistNow');return e?e.textContent:''});if(+hnow!==NH)bad.push('元の端末で「今」の修正履歴が保管分を含まない '+hnow);
+ await p.evaluate(()=>{PENDING_RESTORE=null;closeModal(true)});
  const shown={e:+tbl['設備'],i:+tbl['異常案件'],m:+tbl['測定記録']};
  if(shown.e!==src.e||shown.i!==src.i||shown.m!==src.m)bad.push('件数の表が違う '+JSON.stringify(shown)+' / '+JSON.stringify(src));
  if(msC>2000)bad.push('戻す前の確かめが遅い '+msC+'ms');
