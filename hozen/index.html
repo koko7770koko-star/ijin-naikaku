@@ -647,6 +647,7 @@ mark{background:#fff2a8;padding:0 1px}
 .rep th,.rep td.c,.rep td.cat{overflow-wrap:break-word;word-break:keep-all}
 /* 空白の無い長い英数字（製造番号・貼り付けたアドレスなど）がある欄だけ、どこでも折り返す（lwMark が付ける。ふつうの名前は今までどおり） */
 .rep th.lw,.rep td.lw{overflow-wrap:anywhere;word-break:normal}
+@media print{html[data-fs] .lw .nwl{overflow-wrap:anywhere!important}}
 @media print{.rep td.cat{white-space:nowrap}.rep th{white-space:nowrap}}
 .aisrc{white-space:pre-wrap;font-size:12px;max-height:30vh;overflow:auto;background:#f5f7fa;padding:6px;border-radius:6px}
 .modal h3{overflow-wrap:anywhere}
