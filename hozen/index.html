@@ -1894,7 +1894,9 @@ const RE_ID=/^[A-Za-z0-9_-]{1,40}$/, RE_DATE=/^\d{4}-\d{2}-\d{2}$/, RE_TIME=/^\d
 const isDate=s=>typeof s==='string'&&RE_DATE.test(s)&&ymd(pd(s))===s;
 const isTime=s=>typeof s==='string'&&RE_TIME.test(s)&&+s.split(':')[0]<24&&+s.split(':')[1]<60;
 const isObj=o=>!!o&&typeof o==='object'&&!Array.isArray(o);
-const txt=(v,max=1000)=>v==null?'':String(v).slice(0,max);
+/* 上限で切るとき、絵文字・異体字（2 つで 1 字）の片方だけが残って「�」にならないよう、半端な前半は落とす */
+const cutU=(s,n)=>{s=String(s);if(s.length<=n)return s;s=s.slice(0,n);const c=s.charCodeAt(s.length-1);return c>=0xD800&&c<=0xDBFF?s.slice(0,-1):s};
+const txt=(v,max=1000)=>v==null?'':cutU(v,max);
 const numOrBlank=v=>v===''||v==null?null:(Number.isFinite(Number(v))?Number(v):undefined);
 const MARKS=['','○','済','延'], CHECK_VALS=['○','×','－'];
 /* 表示だけ ◯（予定）・●（実施済み）。保存する値は ○／済／延 のまま */
@@ -3087,7 +3089,7 @@ function lastAbnormal(ds,id){
 function logEdit(type,ref,field,from,to){
   if(String(from??'')===String(to??''))return;
   S.history=S.history||[];
-  const cut=v=>{v=String(v??'');return v.length>1000?v.slice(0,1000)+`…（以下略・全${v.length}字）`:v};
+  const cut=v=>{v=String(v??'');return v.length>1000?cutU(v,1000)+`…（以下略・全${v.length}字）`:v};
   S.history.push({at:new Date().toISOString(),type,ref,field,from:cut(from),to:cut(to),by:S.settings.operator||''});
   trimHistory();
 }
@@ -4167,7 +4169,7 @@ function aiIssLine(A,f,n=60){const L=aiIssPick(A,n);return L.map(f).join('、')+
 function aiIssues(){
   const A=openIssues();if(!A.length){toast('対応中の異常はありません');return}
   /* 多いときは送る文が大きくなりすぎないよう、緊急・高を先に新しい順で AI_ISS_MAX 件まで。各欄も短く切る（送る前の窓に省略を出す） */
-  const sh=v=>{v=String(v||'');return v.length>200?v.slice(0,200)+'…':v};
+  const sh=v=>{v=String(v||'');return v.length>200?cutU(v,200)+'…':v};
   const L=aiIssPick(A,AI_ISS_MAX);
   const lines=L.map(i=>`・${i.date} ${sh(i.title)}${i.place?'（'+sh(i.place)+'）':''}［${i.status}］${i.equipId?'設備:'+equipName(i.equipId):''} 詳細:${sh(i.detail)||'なし'} 処置:${sh(i.action)||'なし'} 経過:${sh((i.log||[]).map(l=>l.to+(l.note?'('+l.note+')':'')).join('→'))}`).join('\n');
   const head=A.length>L.length?`（対応中は全${A.length}件。緊急・高を先に新しい順で${L.length}件を送ります。ほか${A.length-L.length}件は省略）`:`（全${A.length}件）`;
