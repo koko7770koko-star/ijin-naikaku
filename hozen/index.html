@@ -4151,11 +4151,14 @@ function aiTrend(id){
 }
 // 異常案件の要約
 const AI_ISS_MAX=150;
+/* AI に送る異常の並び：多いときは緊急・高を先に新しい順で n 件まで、「（全○件のうち○件。ほか○件は省略）」を後ろに付ける */
+function aiIssPick(A,n){const U={'緊急':0,'高':1};return A.length>n?A.slice().sort((a,b)=>((U[a.urgency]??9)-(U[b.urgency]??9))||String(b.date).localeCompare(String(a.date))).slice(0,n):A}
+function aiIssLine(A,f,n=60){const L=aiIssPick(A,n);return L.map(f).join('、')+(A.length>L.length?`（全${A.length}件のうち緊急・高を先に新しい順で${L.length}件。ほか${A.length-L.length}件は省略）`:'')}
 function aiIssues(){
   const A=openIssues();if(!A.length){toast('対応中の異常はありません');return}
   /* 多いときは送る文が大きくなりすぎないよう、緊急・高を先に新しい順で AI_ISS_MAX 件まで。各欄も短く切る（送る前の窓に省略を出す） */
-  const U={'緊急':0,'高':1},sh=v=>{v=String(v||'');return v.length>200?v.slice(0,200)+'…':v};
-  const L=A.length>AI_ISS_MAX?A.slice().sort((a,b)=>((U[a.urgency]??9)-(U[b.urgency]??9))||b.date.localeCompare(a.date)).slice(0,AI_ISS_MAX):A;
+  const sh=v=>{v=String(v||'');return v.length>200?v.slice(0,200)+'…':v};
+  const L=aiIssPick(A,AI_ISS_MAX);
   const lines=L.map(i=>`・${i.date} ${sh(i.title)}${i.place?'（'+sh(i.place)+'）':''}［${i.status}］${i.equipId?'設備:'+equipName(i.equipId):''} 詳細:${sh(i.detail)||'なし'} 処置:${sh(i.action)||'なし'} 経過:${sh((i.log||[]).map(l=>l.to+(l.note?'('+l.note+')':'')).join('→'))}`).join('\n');
   const head=A.length>L.length?`（対応中は全${A.length}件。緊急・高を先に新しい順で${L.length}件を送ります。ほか${A.length-L.length}件は省略）`:`（全${A.length}件）`;
   aiDraft('対応中の異常案件の要約',`${facLabel()}の対応中の異常案件の一覧です${head}。\n${lines}\n\n全体の状況を3〜6行で要約し、続けて「未完了の対応」「次に確認すること」を箇条書きにしてください。`,'',null);
@@ -4181,7 +4184,7 @@ function aiHandover(ds){
     `日常点検：${dayState(ds).st}${numDefs().filter(n=>r[n.id]!=null).map(n=>` ${n.name}${r[n.id]}${n.unit}`).join('')}${I.ng.length?'　異常：'+I.ng.join('、'):''}${I.warn.length?'　急変：'+I.warn.join('、'):''}${r.note?'　備考：'+r.note:''}`,
     `今日の作業：${tasksBetween(ds,ds).map(t=>`${t.title}[${t.status}${t.result?'・'+t.result:''}]${t.note?'('+t.note+')':''}`).join('、')||'なし'}`,
     `明日の予定：${tasksBetween(addD(ds,1),addD(ds,1)).map(t=>`${t.time?t.time+' ':''}${t.title}${t.staff?'('+t.staff+')':''}`).join('、')||'なし'}`,
-    `対応中の異常：${openIssues().map(i=>`${i.title}[${i.status}]${i.action?'処置:'+i.action:''}`).join('、')||'なし'}`,
+    `対応中の異常：${aiIssLine(openIssues(),i=>`${i.title}[${i.status}]${i.action?'処置:'+String(i.action).slice(0,200):''}`)||'なし'}`,
     handoverOf(addD(ds,-1))?`前日の申し送り：${handoverOf(addD(ds,-1)).text}`:''].filter(Boolean).join('\n');
   aiDraft(`${md(ds)}の申し送りの下書き`,`${facLabel()}の担当者の勤務交代時の申し送り文を作ってください。次の勤務者が確認・対応すべきことを先に、箇条書きで10行以内。\n\n${data}`,'申し送りに入れる',t=>{const e=$('#ho_text');if(e){e.value=t;toast('下書きを入れました。確認して「保存」を押してください')}else saveHandover(ds,t)});
 }
@@ -4220,7 +4223,7 @@ function aiDailyNote(ds){
   const r=S.daily[ds]||{},I=dailyIssues(ds);
   const data=[`日付：${ds}`,`日常点検：${dayState(ds).st}${numDefs().filter(n=>r[n.id]!=null).map(n=>` ${n.name}${r[n.id]}${n.unit}`).join('')}${I.ng.length?'　異常：'+I.ng.join('、'):''}${r.note?'　備考：'+r.note:''}`,
     `作業：${tasksBetween(ds,ds).map(t=>`${t.title}[${t.status}${t.result?'・'+t.result:''}]${t.note?'('+t.note+')':''}`).join('、')||'なし'}`,
-    `異常案件：${S.issues.filter(i=>i.date<=ds&&(!i.closed||i.closed>=ds)).map(i=>`${i.title}[${i.status}]`).join('、')||'なし'}`,
+    `異常案件：${aiIssLine(S.issues.filter(i=>i.date<=ds&&(!i.closed||i.closed>=ds)),i=>`${i.title}[${i.status}]`)||'なし'}`,
     handoverOf(ds)?`申し送り：${handoverOf(ds).text}`:''].filter(Boolean).join('\n');
   aiDraft(`${md(ds)}の日報 特記事項の下書き`,`${facLabel()}の日報に書く「特記事項」を100〜200字で書いてください。\n\n${data}`,'特記事項に入れる',t=>setDnote(ds,t));
 }

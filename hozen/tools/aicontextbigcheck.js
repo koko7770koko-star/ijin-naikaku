@@ -14,6 +14,7 @@ const {chromium}=require('playwright');const path=require('path');const FILE=pat
   for(let i=0;i<400;i++){const d=addD(T,-i);S.daily[d]=S.daily[d]||{}}
   save()});
  const cases=[['異常案件の要約',()=>aiIssues()],['保全計画の改善案',()=>aiPlan()],['異常候補の抽出',()=>aiCandidates()],['設備診断',()=>aiDiag('e0')],
+  ['申し送りの下書き',()=>aiHandover(TODAY)],['日報の特記事項の下書き',()=>aiDailyNote(TODAY)],
   ['過去の故障の要約',()=>{aiSearchHist('VCB');aiHistSummary()}]];
  for(const [name,fn] of cases){
   const s=Date.now();await p.evaluate(`(${fn})()`);await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));const ms=Date.now()-s;
